@@ -1,0 +1,31 @@
+BET TRACKER 1.1.1
+
+AGGIORNAMENTO
+Carica TUTTI i file di questo ZIP nella stessa posizione della precedente app, conservando cartella icons e manifest. Non caricare soltanto index.html: ora codice e stile sono anche nei file app.js, app.css, shared.js e shared.css.
+Mantieni lo stesso indirizzo e lo stesso browser per ritrovare i dati. Esporta prima un backup dalla versione precedente e non cancellare i dati del sito.
+
+NOVITA
+- Esiti per evento nelle multiple; evento annullato con quota effettiva 1 e quota originale conservata.
+- Esito complessivo automatico o manuale, cash out e incasso effettivo.
+- Annulla per 12 secondi dopo un esito rapido.
+- Data giocata e data liquidazione separate, filtri con inizio e fine del periodo.
+- Ricerca per evento/pronostico, calendario con numero e risultato delle giocate selezionate.
+- Grafico con date e dettaglio al tocco, confronto singole/multiple.
+- Pronostici preferiti e recenti, Over 0.5–10.5 HT/FT e testo libero.
+- Movimenti modificabili e retrodatabili, saldo iniziale modificabile, limite mensile facoltativo sulle puntate.
+- Backup con riepilogo prima del ripristino, data di esportazione richiesta e recupero anche in caso di dati locali corrotti.
+- Modifica/Elimina sempre visibili sulla seconda riga; Altri esiti scommessa sulla prima.
+- Barra di navigazione in stile Money Tracker, pulsante inferiore Home neutro.
+- Animazioni di pressione su tutti i pulsanti, rispettando la preferenza di movimento ridotto.
+- Campi data e ora compatti; icone ICO e PNG, inclusa icona Apple alla radice.
+
+DATI
+La migrazione conserva le giocate e i movimenti precedenti. Gli esiti precedenti senza una data di liquidazione possono essere corretti da Altri esiti scommessa; non vengono inventate date per i grafici.
+Percentuale vinte = vinte / (vinte + perse) × 100, con conteggio visibile. Esclude in corso, annullate e cash out. Ogni multipla conta una sola volta. Nessun esito vinto/perso: —. In Statistiche rispetta i filtri. Il limite mensile conta tutte le puntate inserite nel mese e non blocca la registrazione.
+I dati rimangono locali. La data ultima esportazione indica la richiesta di download; verifica che il file sia stato effettivamente salvato.
+
+VERIFICA
+Testate interazioni nel DOM, saldi/esiti, annullamenti, filtri, backup e errori di salvataggio. La resa grafica e i comportamenti specifici di Safari/iPhone richiedono una verifica sul dispositivo.
+
+ICONA
+Pubblica tutto il contenuto dello ZIP nella cartella del sito. Se iPhone conserva la vecchia icona, rimuovi solo il collegamento dalla schermata Home e aggiungilo di nuovo da Safari dopo aver aggiornato la pagina. Non cancellare i dati del sito.
