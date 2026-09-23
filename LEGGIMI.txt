@@ -1,4 +1,4 @@
-BET TRACKER 1.1.4
+BET TRACKER 1.1.5
 
 AGGIORNAMENTO
 Carica TUTTI i file di questo ZIP nella stessa posizione della precedente app, conservando cartella icons e manifest. Non caricare soltanto index.html: ora codice e stile sono anche nei file app.js, app.css, shared.js e shared.css.
@@ -14,7 +14,7 @@ NOVITA
 - Pronostici preferiti e recenti, Over 0.5–10.5 HT/FT e testo libero.
 - Movimenti modificabili e retrodatabili, saldo iniziale modificabile, limite mensile facoltativo sulle puntate.
 - Backup con riepilogo prima del ripristino, data di esportazione richiesta e recupero anche in caso di dati locali corrotti.
-- Modifica/Elimina sempre visibili sulla seconda riga; Altri esiti scommessa sulla prima.
+- Altri esiti, Modifica ed Elimina sempre visibili sulla stessa riga nelle scommesse in corso e nello storico.
 - Barra di navigazione in stile Money Tracker, pulsante inferiore Home neutro.
 - Animazioni di pressione su tutti i pulsanti, rispettando la preferenza di movimento ridotto.
 - Campi data e ora compatti; icone ICO e PNG, inclusa icona Apple alla radice.
@@ -40,3 +40,11 @@ AGGIORNAMENTO 1.1.4
 - Nuova/Modifica scommessa: Salva spostato nell’header in alto a destra con sola icona di spunta.
 - Rimossa la X di chiusura dall’editor scommessa; si chiude toccando/cliccando fuori dal pannello.
 - Selezione Esito/Pronostico spostata in un pannello dedicato separato, con scelte rapide e inserimento personalizzato.
+
+
+AGGIORNAMENTO 1.1.5
+- Card scommesse in corso e storico più compatte.
+- Altri esiti, Modifica ed Elimina riuniti sulla stessa linea.
+- Preferito ridotto alla sola icona stella: ☆ non preferito, ★ preferito.
+- I pronostici salvati come preferiti compaiono ora in una sezione Preferiti dedicata, in alto nel pannello Scegli esito / pronostico.
+- Toccando di nuovo la stella il pronostico viene rimosso dai preferiti.

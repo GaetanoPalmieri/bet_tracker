@@ -117,3 +117,33 @@ button.button-tap{animation:button-tap .22s ease-out}
 
 @media(min-width:600px){.pick-panel-layer{align-items:center}.pick-panel-card{border-radius:22px;box-shadow:0 18px 50px #0009}}
 @media(max-width:360px){.quick-outcomes{gap:6px}.quick-outcomes button{width:46px;height:46px;min-height:46px}.bet-card-title{max-width:calc(100% - 104px)}.pick-panel-card{padding:15px}.bet-save-icon{width:46px;height:46px;min-height:46px}}
+
+/* 1.1.5 — card scommesse più compatte, azioni sulla stessa linea e preferiti espliciti. */
+.bet-card{padding:14px 15px}
+.bet-card>p{margin:10px 0 7px;line-height:1.4}
+.bet-card>.section{margin-top:10px}
+.bet-card-actions{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,.85fr);gap:7px;border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.bet-card-actions button{min-width:0;min-height:38px;padding:7px 8px;font-size:11px;white-space:nowrap}
+.bet-card-actions .bet-outcomes-button{font-size:10.5px}
+.bet-card .quick-outcomes button{width:44px;height:44px;min-height:44px;border-radius:13px;font-size:24px}
+.bet-card .quick-outcomes button[data-quick="won"]{font-size:26px}
+.bet-card .quick-outcomes button[data-quick="lost"]{font-size:27px}
+
+#bet-form .favorite-toggle{width:38px;min-width:38px;padding:5px;font-size:22px;line-height:1;color:#e8c17f}
+#bet-form .favorite-toggle[aria-pressed="true"]{background:#2a2418;border-color:#7a6034}
+
+#bet-form .pick-panel-grid{display:block;max-height:320px;overflow:auto;margin-top:14px;padding:1px;overscroll-behavior:contain}
+.pick-panel-section+.pick-panel-section{margin-top:14px;padding-top:13px;border-top:1px solid #2b3640}
+.pick-panel-section-title{display:flex;align-items:center;gap:6px;margin:0 0 8px;color:#b8c4c0;font-size:11px;font-weight:750;letter-spacing:.03em;text-transform:uppercase}
+.favorites-section .pick-panel-section-title{color:#e8c17f}
+#bet-form .pick-panel-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#bet-form .pick-panel-buttons button{min-height:42px;padding:8px 6px;font-size:12px}
+
+@media(max-width:360px){
+  .bet-card{padding:12px 13px}
+  .bet-card-actions{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr) minmax(0,.8fr);gap:5px}
+  .bet-card-actions button{padding:6px 5px;font-size:10px}
+  .bet-card-actions .bet-outcomes-button{font-size:9.5px}
+  .bet-card .quick-outcomes{gap:5px}
+  .bet-card .quick-outcomes button{width:40px;height:40px;min-height:40px}
+}
