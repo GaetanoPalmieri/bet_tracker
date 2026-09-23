@@ -80,3 +80,40 @@ button.button-tap{animation:button-tap .22s ease-out}
 .kpi-panel-empty{padding:20px 8px}
 .kpi-panel-more{text-align:center;margin:12px 0 0}
 @media(max-width:360px){.kpi-card{min-height:118px;padding:13px 8px}.kpi-card .value{font-size:19px}.kpi-card .kpi-title{font-size:11px}.kpi-card .kpi-detail{font-size:10px}}
+
+/* 1.1.4 — esiti rapidi e nuovo editor scommessa. */
+.bet-card{position:relative}
+.bet-card-head{align-items:flex-start}
+.bet-card-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;padding-top:3px}
+.quick-outcomes{display:flex;gap:8px;flex-shrink:0}
+.quick-outcomes button{width:50px;height:50px;min-height:50px;padding:0;border-radius:15px;display:grid;place-items:center;font-size:27px;font-weight:850;line-height:1;box-shadow:0 3px 12px #0003}
+.quick-outcomes button[data-quick="won"]{font-size:29px}
+.quick-outcomes button[data-quick="lost"]{font-size:30px}
+
+#editor:has(#bet-form) .bet-editor-head{top:-14px;padding:4px 0 10px;z-index:20;border-bottom:1px solid #202b35}
+.bet-editor-head h2{margin:0}
+.bet-save-icon{width:50px;height:50px;min-height:50px;padding:0;border-radius:15px;font-size:27px;line-height:1;display:grid;place-items:center;flex-shrink:0;box-shadow:0 3px 14px #e8a33d20}
+.bet-savebar{position:static;bottom:auto;background:transparent;border-top:1px solid #2b3640;margin:10px 0 0;padding:10px 0 0;z-index:auto}
+#bet-form #preview{margin:0}
+
+#bet-form .pick-selector{position:relative;margin-top:5px}
+#bet-form .pick-trigger{width:100%;height:44px;min-height:44px;margin:0;padding:9px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#222d38;border:1px solid #2b3640;color:#f1f5f4;text-align:left;font-size:16px;font-weight:500}
+.pick-trigger-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-trigger-arrow{color:#e8c17f;font-size:24px;line-height:1;flex-shrink:0}
+
+.pick-panel-layer{position:fixed;inset:0;z-index:100;display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.pick-panel-layer[hidden]{display:none}
+.pick-panel-scrim{position:absolute;inset:0;width:100%;height:100%;min-height:0;padding:0;border:0;border-radius:0;background:#050a10d9;transform:none!important;animation:none!important;filter:none!important}
+.pick-panel-card{position:relative;width:min(100%,490px);max-height:min(78dvh,650px);overflow:auto;overscroll-behavior:contain;background:#161e26;border:1px solid #34414d;border-radius:22px;padding:18px;box-shadow:0 -12px 40px #0008}
+.pick-panel-head small{display:block;color:#e8a33d;font-size:10px;font-weight:750;letter-spacing:.08em;margin-bottom:4px}
+.pick-panel-head h3{margin:0 0 4px;font-size:19px}
+.pick-panel-head p{margin:0 0 12px}
+#bet-form .pick-panel-card label{margin-top:10px}
+#bet-form .pick-panel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:300px;overflow:auto;margin-top:14px;padding:1px;overscroll-behavior:contain}
+#bet-form .pick-panel-grid button{min-height:44px;padding:8px 6px;font-size:12px}
+.pick-panel-actions{display:flex;justify-content:flex-end;margin-top:14px}
+.pick-panel-actions button{width:52px;height:48px;min-height:48px;padding:0;font-size:25px;display:grid;place-items:center}
+#pick-panel-error:empty{display:none}
+
+@media(min-width:600px){.pick-panel-layer{align-items:center}.pick-panel-card{border-radius:22px;box-shadow:0 18px 50px #0009}}
+@media(max-width:360px){.quick-outcomes{gap:6px}.quick-outcomes button{width:46px;height:46px;min-height:46px}.bet-card-title{max-width:calc(100% - 104px)}.pick-panel-card{padding:15px}.bet-save-icon{width:46px;height:46px;min-height:46px}}
