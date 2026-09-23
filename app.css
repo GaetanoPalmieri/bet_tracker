@@ -56,3 +56,27 @@ button.button-tap{animation:button-tap .22s ease-out}
 #bet-form #form-error:empty{display:none}
 @media(max-width:360px){.bet-meta{grid-template-columns:86px minmax(0,1fr);gap:9px}.bet-date>summary b{font-size:12px}.date-edit{float:none;margin-left:6px}.pick-odds-row{grid-template-columns:minmax(0,1fr) 72px}}
 @media(max-width:400px){.bet-meta:has(.bet-date[open]){grid-template-columns:1fr}.bet-meta:has(.bet-date[open])>label{max-width:110px}#bet-form .bet-date input{width:15.5rem}.bet-date[open]>summary{min-height:44px}}
+
+/* KPI alignment, spacing and drill-down panels. */
+.kpi-grid{align-items:stretch}
+.kpi-card{position:relative;min-height:126px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:15px 12px}
+.kpi-card .kpi-title{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;min-height:24px;line-height:1.25}
+.kpi-card .value{width:100%;margin:6px 0 5px;line-height:1.15}
+.kpi-card .kpi-detail{display:block;width:100%;min-height:30px;line-height:1.3}
+.home-kpis{margin-bottom:2px}
+.home-kpis .kpi-action{width:100%;font:inherit;color:var(--text);border:1px solid var(--line);background:var(--card);border-radius:16px;cursor:pointer;overflow:hidden}
+.home-kpis .kpi-action:hover{border-color:#4a5965;background:#202a34}
+.home-kpis .kpi-action:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.home-kpis .kpi-open{position:absolute;right:10px;bottom:8px;color:var(--gold);font-size:20px;line-height:1;opacity:.9}
+.stats-kpis{margin-bottom:20px}
+.stats-chart{margin-top:0}
+.kpi-panel-summary{margin:4px 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#18212a;font-weight:650}
+.kpi-panel-list{display:grid;gap:0;border-top:1px solid var(--line)}
+.kpi-panel-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line)}
+.kpi-panel-row>div{min-width:0;display:grid;gap:3px}
+.kpi-panel-row b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kpi-panel-row small{font-size:11px}
+.kpi-panel-row strong{flex-shrink:0;font-size:14px;text-align:right}
+.kpi-panel-empty{padding:20px 8px}
+.kpi-panel-more{text-align:center;margin:12px 0 0}
+@media(max-width:360px){.kpi-card{min-height:118px;padding:13px 8px}.kpi-card .value{font-size:19px}.kpi-card .kpi-title{font-size:11px}.kpi-card .kpi-detail{font-size:10px}}
