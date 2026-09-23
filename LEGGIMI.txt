@@ -1,4 +1,4 @@
-BET TRACKER 1.1.1
+BET TRACKER 1.1.2
 
 AGGIORNAMENTO
 Carica TUTTI i file di questo ZIP nella stessa posizione della precedente app, conservando cartella icons e manifest. Non caricare soltanto index.html: ora codice e stile sono anche nei file app.js, app.css, shared.js e shared.css.
@@ -29,3 +29,7 @@ Testate interazioni nel DOM, saldi/esiti, annullamenti, filtri, backup e errori 
 
 ICONA
 Pubblica tutto il contenuto dello ZIP nella cartella del sito. Se iPhone conserva la vecchia icona, rimuovi solo il collegamento dalla schermata Home e aggiungilo di nuovo da Safari dopo aver aggiornato la pagina. Non cancellare i dati del sito.
+
+INSERIMENTO COMPATTO 1.1.2
+Puntata e riepilogo data in alto. La data è già compilata: tocca Modifica per cambiarla. Partita su una riga, pronostico e quota affiancati. Nelle multiple è aperto un solo evento; gli altri mostrano partita, pronostico e quota in una riga espandibile. Aggiungi evento controlla prima che quello corrente sia completo. La rimozione aggiorna numerazione e quota. Barra inferiore con quota totale, incasso potenziale e Salva. Gli stessi miglioramenti valgono per la modifica di una scommessa esistente.
+Verificati inserimento singola e multipla a cinque eventi, modifica/rimozione, pronostici, totali e salvataggio senza duplicati. Resa su Safari/iPhone da verificare sul dispositivo.

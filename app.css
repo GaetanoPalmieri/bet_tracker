@@ -15,3 +15,44 @@ button:not(:disabled):active{transform:scale(.95);filter:brightness(1.15)}
 button.button-tap{animation:button-tap .22s ease-out}
 @keyframes button-tap{0%{transform:scale(.95);filter:brightness(1.18)}100%{transform:scale(1);filter:brightness(1)}}
 @media(prefers-reduced-motion:reduce){button{animation:none!important;transition:none!important}button:not(:disabled):active{transform:none}}
+/* Compact bet editor: one event open, collapsed rows for multiples. */
+#editor:has(#bet-form){padding:14px;max-height:92dvh}
+#editor:has(#bet-form) .editor-head{top:-14px;padding:4px 0 12px}
+#bet-form{min-width:0}
+#bet-form label{margin:0;line-height:1.4;font-size:12px}
+#bet-form input{margin-top:5px;height:44px;padding:9px 10px;font-size:16px}
+.bet-meta{display:grid;grid-template-columns:100px minmax(0,1fr);align-items:start;gap:12px;margin:8px 0 14px}
+.bet-date{min-width:0;position:relative}
+.bet-date>summary{display:grid;gap:9px;padding:0;min-height:66px;list-style:none;cursor:pointer}
+.bet-date>summary::-webkit-details-marker,.compact-leg>summary::-webkit-details-marker{display:none}
+.bet-date>summary>span{font-size:12px;color:var(--sub)}
+.bet-date>summary b{font-size:14px;font-weight:500;white-space:nowrap}
+.date-edit{float:right;color:#e8c17f;font-size:11px}
+#bet-form .bet-date input{width:100%;max-width:100%;height:44px;padding:6px;font-size:16px}
+#bet-form .leg{margin:8px 0;padding:0;border-radius:12px;min-width:0;background:#1b232c}
+#bet-form .leg>summary{display:flex;gap:9px;align-items:center;min-height:60px;padding:10px;list-style:none}
+.leg-number{flex-shrink:0;display:grid;place-items:center;width:25px;height:25px;background:#293742;color:#e8c17f;border-radius:7px;font-size:12px}
+.leg-summary{display:grid;gap:2px;min-width:0;flex:1}
+.leg-summary b{font-size:14px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.leg-summary small{font-size:11px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.leg-quote{font-size:13px;color:#e8c17f;flex-shrink:0}
+.leg-chevron{font-size:17px;color:var(--sub)}
+.compact-leg[open] .leg-chevron{transform:rotate(180deg)}
+.leg-fields{padding:0 10px 10px;border-top:1px solid #2b3640}
+.leg-fields>label{display:block;padding-top:9px}
+.pick-odds-row{display:grid;grid-template-columns:minmax(0,1fr) 82px;gap:9px;margin-top:9px}
+#bet-form .pick-options{padding:8px;margin-top:8px}
+#bet-form .pick-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:150px;gap:5px}
+#bet-form .pick-grid button{min-height:40px;padding:7px 4px;font-size:12px}
+#bet-form [data-close-picks]{width:100%;min-height:36px;margin-top:6px;font-size:12px;padding:6px}
+.leg-tools{display:flex;justify-content:space-between;gap:8px;margin-top:8px}
+#bet-form .leg-tools button{font-size:11px;padding:6px 8px;min-height:36px;background:transparent}
+#bet-form [data-remove-leg][hidden]{display:none}
+#add-leg{width:100%;border-style:dashed;background:transparent;min-height:44px;font-size:13px;margin:4px 0}
+.bet-savebar{position:sticky;bottom:-14px;background:#12181f;border-top:1px solid #2b3640;margin:8px -2px -2px;padding:10px 2px 2px;z-index:2}
+#bet-form #preview{display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px;font-size:12px;color:#9fb0ab;margin:0 0 9px}
+#bet-form #preview b{color:#f1f5f4}
+.bet-savebar>button{display:block;width:100%;min-height:44px}
+#bet-form #form-error:empty{display:none}
+@media(max-width:360px){.bet-meta{grid-template-columns:86px minmax(0,1fr);gap:9px}.bet-date>summary b{font-size:12px}.date-edit{float:none;margin-left:6px}.pick-odds-row{grid-template-columns:minmax(0,1fr) 72px}}
+@media(max-width:400px){.bet-meta:has(.bet-date[open]){grid-template-columns:1fr}.bet-meta:has(.bet-date[open])>label{max-width:110px}#bet-form .bet-date input{width:15.5rem}.bet-date[open]>summary{min-height:44px}}
