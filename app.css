@@ -180,3 +180,13 @@ button.button-tap{animation:button-tap .22s ease-out}
 .home-money-grid .value{font-size:20px;margin-top:5px}
 .home-money-grid small:last-child{margin-top:4px;line-height:1.25}
 @media(max-width:360px){.home-money-grid{grid-template-columns:1fr}.home-money-grid .money-summary{min-height:auto}}
+
+/* 1.1.10 — KPI monetari coerenti e interattivi. */
+.home-money-grid{margin-bottom:10px}
+.home-money-grid .money-summary{width:100%;font:inherit;color:var(--text);border:1px solid var(--line);background:var(--card);border-radius:16px}
+.home-money-grid .money-components{font-size:11px;letter-spacing:.01em;color:var(--sub);white-space:nowrap;min-height:18px}
+.kpi-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+.kpi-breakdown>div{display:flex;flex-direction:column;gap:5px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#18212a;min-width:0}
+.kpi-breakdown span{font-size:11px;color:var(--sub)}
+.kpi-breakdown strong{font-size:15px;overflow-wrap:anywhere}
+@media(max-width:360px){.home-money-grid .money-components{font-size:10px}.kpi-breakdown{grid-template-columns:1fr}}
