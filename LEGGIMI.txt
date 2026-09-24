@@ -1,4 +1,4 @@
-BET TRACKER 1.1.5
+BET TRACKER 1.1.7
 
 AGGIORNAMENTO
 Carica TUTTI i file di questo ZIP nella stessa posizione della precedente app, conservando cartella icons e manifest. Non caricare soltanto index.html: ora codice e stile sono anche nei file app.js, app.css, shared.js e shared.css.
@@ -48,3 +48,20 @@ AGGIORNAMENTO 1.1.5
 - Preferito ridotto alla sola icona stella: ☆ non preferito, ★ preferito.
 - I pronostici salvati come preferiti compaiono ora in una sezione Preferiti dedicata, in alto nel pannello Scegli esito / pronostico.
 - Toccando di nuovo la stella il pronostico viene rimosso dai preferiti.
+
+
+AGGIORNAMENTO 1.1.6
+- Nuove scommesse con puntata predefinita di 10,00 €; la spunta di salvataggio usa 10,00 € anche se il campo viene lasciato vuoto.
+- Selezione esito a due livelli: prima la tipologia, poi il valore specifico.
+- Tipologie iniziali: OVER FT, OVER HT, OVER MINUTI, OVER ASIATICO FT e OVER ASIATICO HT.
+- OVER FT/HT: valori da 0.5 a 10.5.
+- OVER MINUTI: entro 10, 20, 30, 40, 50, 60, 70 e 80 minuti.
+- OVER ASIATICO FT/HT: valori da 1 a 5.
+- Pulsante Indietro nel secondo livello; Preferiti ancora disponibili direttamente nel primo pannello.
+
+
+AGGIORNAMENTO 1.1.7
+- Swipe verso sinistra sul contenuto principale per passare alla scheda successiva, come toccando la relativa voce della barra di navigazione.
+- Sequenza: Home → Scommesse → Statistiche → Altro.
+- Su Altro lo swipe a sinistra non ricomincia da Home.
+- La gesture è disattivata quando sono aperti modali/pannelli e quando il gesto parte da pulsanti, campi, link o controlli interattivi, per evitare cambi scheda involontari.

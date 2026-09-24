@@ -147,3 +147,17 @@ button.button-tap{animation:button-tap .22s ease-out}
   .bet-card .quick-outcomes{gap:5px}
   .bet-card .quick-outcomes button{width:40px;height:40px;min-height:40px}
 }
+
+/* 1.1.6 — puntata predefinita e selezione esiti gerarchica. */
+#bet-form .pick-panel-groups{display:grid;grid-template-columns:1fr;gap:8px}
+#bet-form .pick-group-button{width:100%;min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;font-size:13px;font-weight:750}
+#bet-form .pick-group-button span:last-child{color:#e8c17f;font-size:24px;line-height:1}
+#bet-form .pick-back{margin:3px 0 10px;padding:6px 9px;min-height:34px;background:transparent;border-color:#34414d;color:#e8c17f;font-size:12px}
+#bet-form #pick-custom-block[hidden]{display:none}
+#bet-form .pick-values-section{margin-top:0;padding-top:0;border-top:0}
+#bet-form .pick-values-section .pick-panel-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:360px){#bet-form .pick-values-section .pick-panel-buttons{grid-template-columns:1fr}.pick-panel-card{max-height:84dvh}}
+
+
+/* 1.1.7 — navigazione tra schede con swipe verso sinistra. */
+#main{touch-action:pan-y pinch-zoom}
