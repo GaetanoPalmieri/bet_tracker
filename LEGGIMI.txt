@@ -1,4 +1,4 @@
-BET TRACKER 1.1.7
+BET TRACKER 1.1.8
 
 AGGIORNAMENTO
 Carica TUTTI i file di questo ZIP nella stessa posizione della precedente app, conservando cartella icons e manifest. Non caricare soltanto index.html: ora codice e stile sono anche nei file app.js, app.css, shared.js e shared.css.
@@ -65,3 +65,12 @@ AGGIORNAMENTO 1.1.7
 - Sequenza: Home → Scommesse → Statistiche → Altro.
 - Su Altro lo swipe a sinistra non ricomincia da Home.
 - La gesture è disattivata quando sono aperti modali/pannelli e quando il gesto parte da pulsanti, campi, link o controlli interattivi, per evitare cambi scheda involontari.
+
+
+AGGIORNAMENTO 1.1.8
+- Swipe verso sinistra per avanzare: Home → Scommesse → Statistiche → Altro.
+- Swipe verso destra per tornare alla scheda precedente.
+- Nessun loop alle estremità: Home resta la prima scheda e Altro l'ultima.
+- Aggiunta transizione visiva coerente con il verso dello swipe: la scheda corrente scorre fuori e la successiva/precedente entra dal lato opposto.
+- La transizione rispetta l'impostazione di sistema “Riduci movimento”.
+- Restano esclusi dallo swipe modali, pannello esiti e controlli interattivi per evitare cambi involontari.

@@ -159,5 +159,14 @@ button.button-tap{animation:button-tap .22s ease-out}
 @media(max-width:360px){#bet-form .pick-values-section .pick-panel-buttons{grid-template-columns:1fr}.pick-panel-card{max-height:84dvh}}
 
 
-/* 1.1.7 — navigazione tra schede con swipe verso sinistra. */
-#main{touch-action:pan-y pinch-zoom}
+/* 1.1.8 — swipe bidirezionale con transizione visiva tra le schede. */
+#main{touch-action:pan-y pinch-zoom;will-change:transform,opacity}
+#main.tab-exit-left{animation:tab-exit-left .135s ease-in both;pointer-events:none}
+#main.tab-exit-right{animation:tab-exit-right .135s ease-in both;pointer-events:none}
+#main.tab-enter-right{animation:tab-enter-right .21s cubic-bezier(.2,.72,.25,1) both;pointer-events:none}
+#main.tab-enter-left{animation:tab-enter-left .21s cubic-bezier(.2,.72,.25,1) both;pointer-events:none}
+@keyframes tab-exit-left{to{transform:translateX(-18%);opacity:.28}}
+@keyframes tab-exit-right{to{transform:translateX(18%);opacity:.28}}
+@keyframes tab-enter-right{from{transform:translateX(20%);opacity:.2}to{transform:translateX(0);opacity:1}}
+@keyframes tab-enter-left{from{transform:translateX(-20%);opacity:.2}to{transform:translateX(0);opacity:1}}
+@media(prefers-reduced-motion:reduce){#main.tab-exit-left,#main.tab-exit-right,#main.tab-enter-left,#main.tab-enter-right{animation:none!important;transform:none!important;opacity:1!important}}

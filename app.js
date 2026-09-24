@@ -56,11 +56,30 @@ function initialForm(){const d=U.modal(U.head('Saldo iniziale')+`<form><label>Sa
 function exportData(){const n=U.clone(db);n.settings.lastExport=new Date().toISOString();U.download('bet-tracker-backup-'+U.local().slice(0,10)+'.json',n);if(!storageError)commit(n)}
 async function importData(e){const file=e.target.files[0];if(!file)return;try{const raw=JSON.parse(await file.text());if(!validDB(raw))throw Error();const n=normalize(raw),d=U.modal(U.head('Ripristina backup')+`<p>${n.bets.length} scommesse · ${n.transactions.length} movimenti</p><p>Il backup sostituirà i dati attuali. Puoi esportarli prima di proseguire.</p><div class="actions"><button id="before-export">Esporta dati attuali</button><button class="primary" id="confirm-import">Ripristina</button></div>`);d.querySelector('#before-export').onclick=exportData;d.querySelector('#confirm-import').onclick=()=>{if(commit(n,{restore:true})){d.close();U.toast('Backup ripristinato')}}}catch(err){U.toast('Backup non valido. Nessun dato modificato.')}finally{e.target.value=''}}
 document.getElementById('new-bet').onclick=()=>betForm();
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render();window.scrollTo(0,0)});
 
-// 1.1.7 — swipe verso sinistra sul contenuto principale = scheda successiva.
+// 1.1.8 — navigazione bidirezionale con transizione coerente con il verso dello swipe.
 const TAB_ORDER=['home','bets','stats','accounts'];
-let swipeStart=null;
+let swipeStart=null,tabTransitioning=false;
+function prefersReducedMotion(){return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
+function setTab(next,{animate=false,direction=0}={}){
+  if(!TAB_ORDER.includes(next)||next===tab||tabTransitioning)return;
+  const finish=()=>{tab=next;render();window.scrollTo(0,0)};
+  if(!animate||!direction||prefersReducedMotion()){finish();return}
+  tabTransitioning=true;
+  main.classList.remove('tab-exit-left','tab-exit-right','tab-enter-left','tab-enter-right');
+  main.classList.add(direction>0?'tab-exit-left':'tab-exit-right');
+  setTimeout(()=>{
+    finish();
+    main.classList.remove('tab-exit-left','tab-exit-right');
+    main.classList.add(direction>0?'tab-enter-right':'tab-enter-left');
+    setTimeout(()=>{
+      main.classList.remove('tab-enter-left','tab-enter-right');
+      tabTransitioning=false;
+    },210);
+  },135);
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+
 function swipeNavigationBlocked(target){
   return !!(target?.closest?.('button,input,select,textarea,a,label,[contenteditable="true"],dialog,.pick-panel-layer,.pick-panel-card,.touch-chart,.pick-grid'));
 }
@@ -68,19 +87,19 @@ function overlayOpen(){
   return !!document.querySelector('dialog[open],.pick-panel-layer:not([hidden])');
 }
 main.addEventListener('touchstart',e=>{
-  if(e.touches.length!==1||overlayOpen()||swipeNavigationBlocked(e.target)){swipeStart=null;return}
+  if(tabTransitioning||e.touches.length!==1||overlayOpen()||swipeNavigationBlocked(e.target)){swipeStart=null;return}
   const t=e.touches[0];
   swipeStart={x:t.clientX,y:t.clientY,time:Date.now()};
 },{passive:true});
 main.addEventListener('touchend',e=>{
-  if(!swipeStart||e.changedTouches.length!==1){swipeStart=null;return}
+  if(!swipeStart||tabTransitioning||e.changedTouches.length!==1){swipeStart=null;return}
   const t=e.changedTouches[0],dx=t.clientX-swipeStart.x,dy=t.clientY-swipeStart.y,elapsed=Date.now()-swipeStart.time;
   swipeStart=null;
-  const isLeftSwipe=dx<=-70&&Math.abs(dx)>=Math.abs(dy)*1.35&&Math.abs(dy)<=100&&elapsed<=900;
-  if(!isLeftSwipe||overlayOpen())return;
-  const index=TAB_ORDER.indexOf(tab),next=TAB_ORDER[index+1];
+  const horizontal=Math.abs(dx)>=70&&Math.abs(dx)>=Math.abs(dy)*1.35&&Math.abs(dy)<=100&&elapsed<=900;
+  if(!horizontal||overlayOpen())return;
+  const index=TAB_ORDER.indexOf(tab),direction=dx<0?1:-1,next=TAB_ORDER[index+direction];
   if(!next)return;
-  document.querySelector(`nav button[data-tab="${next}"]`)?.click();
+  setTab(next,{animate:true,direction});
 },{passive:true});
 main.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
 
