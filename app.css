@@ -170,3 +170,13 @@ button.button-tap{animation:button-tap .22s ease-out}
 @keyframes tab-enter-right{from{transform:translateX(20%);opacity:.2}to{transform:translateX(0);opacity:1}}
 @keyframes tab-enter-left{from{transform:translateX(-20%);opacity:.2}to{transform:translateX(0);opacity:1}}
 @media(prefers-reduced-motion:reduce){#main.tab-exit-left,#main.tab-exit-right,#main.tab-enter-left,#main.tab-enter-right{animation:none!important;transform:none!important;opacity:1!important}}
+
+/* v1.1.9: allinea il primo riquadro di ogni scheda e riepilogo capitale Home */
+#main{padding-top:12px}
+#main>.card:first-child{margin-top:0}
+#main>.grid:first-child{margin-top:0}
+.home-money-grid{margin-bottom:12px}
+.home-money-grid .money-summary{min-height:104px;display:flex;flex-direction:column;justify-content:center}
+.home-money-grid .value{font-size:20px;margin-top:5px}
+.home-money-grid small:last-child{margin-top:4px;line-height:1.25}
+@media(max-width:360px){.home-money-grid{grid-template-columns:1fr}.home-money-grid .money-summary{min-height:auto}}
