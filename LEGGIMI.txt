@@ -74,3 +74,19 @@ AGGIORNAMENTO 1.1.8
 - Aggiunta transizione visiva coerente con il verso dello swipe: la scheda corrente scorre fuori e la successiva/precedente entra dal lato opposto.
 - La transizione rispetta l'impostazione di sistema “Riduci movimento”.
 - Restano esclusi dallo swipe modali, pannello esiti e controlli interattivi per evitare cambi involontari.
+
+
+Novità 1.1.13
+- Selettore strutturato Partita / evento per club e nazionali.
+- Club: prima Maschile/Femminile, poi Prima squadra/Giovanile; per le giovanili scelta fascia U23/U21/U20/U19/U18/U17/U16/U15; paese con bandiera, campionato e due squadre.
+- Nazionali: prima Maschile/Femminile, poi Prima squadra/Giovanile; per le giovanili scelta fascia U23/U21/U20/U19/U18/U17/U16/U15; competizione/tipo partita e due nazionali.
+- Catalogo locale ampio con arricchimento online delle leghe tramite TheSportsDB quando disponibile.
+- Il campo evento resta sempre modificabile manualmente.
+
+
+Novità 1.1.14
+- Rimossa la voce generica “Prima squadra” nel percorso club.
+- Club: Maschile/Femminile → Campionati senior o giovanili → Paese → divisioni/campionati reali.
+- Le divisioni vengono caricate online da TheSportsDB quando disponibile e ordinate per livello; fallback locale offline.
+- Le squadre della lega selezionata vengono proposte online come suggerimenti, mantenendo sempre la scrittura libera.
+- Nazionali: categoria Senior/Giovanile separata, con sesso e fascia d’età.
