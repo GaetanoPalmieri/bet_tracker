@@ -84,7 +84,7 @@ Novità 1.1.13
 - Il campo evento resta sempre modificabile manualmente.
 
 
-Novità 1.1.14
+Novità 1.1.15
 - Rimossa la voce generica “Prima squadra” nel percorso club.
 - Club: Maschile/Femminile → Campionati senior o giovanili → Paese → divisioni/campionati reali.
 - Le divisioni vengono caricate online da TheSportsDB quando disponibile e ordinate per livello; fallback locale offline.
