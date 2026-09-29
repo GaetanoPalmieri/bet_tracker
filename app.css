@@ -209,3 +209,50 @@ button.button-tap{animation:button-tap .22s ease-out}
 @media(max-width:380px){.event-panel-card{padding:18px 14px 22px;min-height:min(84dvh,720px)}.event-group-button{min-height:58px;padding:12px}.bet-details-grid{grid-template-columns:1fr}.bet-detail-wide{grid-column:auto}.geo-kpis{grid-template-columns:1fr 1fr}}
 
 .team-autocomplete{position:relative;min-width:0}.team-autocomplete input{width:100%}.team-suggestions{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:8;max-height:240px;overflow-y:auto;overscroll-behavior:contain;padding:6px;border:1px solid #3a4a57;border-radius:12px;background:#202b36;box-shadow:0 12px 28px #0008}.team-suggestions[hidden]{display:none}.team-suggestion{display:block;width:100%;min-height:44px;padding:10px 12px;border:0;border-bottom:1px solid #31404c;border-radius:8px;background:transparent;text-align:left;color:var(--text)}.team-suggestion:last-child{border-bottom:0}.team-suggestion:active{background:#2a3844}.event-team-form label{position:relative;z-index:auto}.event-team-form label:focus-within{z-index:9}
+
+/* v1.1.16 — card scommesse compatte per in corso e storico. */
+.compact-bet-card{padding:10px 11px 9px;margin-bottom:8px;border-radius:13px}
+.compact-bet-card .bet-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 7px}
+.compact-bet-card .bet-card-heading{display:flex;align-items:center;gap:7px;min-width:0;flex:1}
+.compact-bet-card .bet-card-title{display:flex;align-items:baseline;gap:7px;min-width:0}
+.compact-bet-card .bet-card-title>b{font-size:12px;white-space:nowrap}
+.compact-bet-card .bet-card-date{font-size:9.5px;color:var(--sub);white-space:nowrap}
+.compact-bet-card .badge{padding:3px 6px;border-radius:6px;font-size:9px;line-height:1.1}
+.compact-bet-card .compact-quick-outcomes{display:flex;gap:4px;flex:0 0 auto}
+.compact-bet-card .compact-quick-outcomes button{width:29px;height:29px;min-height:29px;padding:0;border-radius:8px;font-size:17px;line-height:1}
+.compact-bet-card .compact-bet-legs{display:grid;gap:5px;margin:0}
+.compact-bet-card .bet-leg-compact{display:flex;align-items:center;gap:8px;min-width:0;padding:7px 8px;border:1px solid #2f3b46;border-radius:9px;background:#18212a}
+.compact-bet-card .bet-leg-main{display:grid;gap:2px;min-width:0;flex:1}
+.compact-bet-card .bet-leg-topline{display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden}
+.compact-bet-card .bet-leg-index{display:grid;place-items:center;flex:0 0 auto;width:16px;height:16px;border-radius:5px;background:#2b3742;color:#d6dfdc;font-size:9px;font-weight:800}
+.compact-bet-card .bet-leg-division{font-size:9px;font-weight:800;letter-spacing:.02em;color:#e8c17f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compact-bet-card .bet-leg-meta{font-size:8.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compact-bet-card .bet-leg-match{font-size:11.5px;line-height:1.22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compact-bet-card .bet-leg-bottomline{display:flex;align-items:center;gap:10px;min-width:0;font-size:10px;color:#dfe7e5}
+.compact-bet-card .bet-leg-bottomline small{font-size:8.5px;color:var(--sub)}
+.compact-bet-card .bet-leg-pick{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.compact-bet-card .bet-leg-odds{white-space:nowrap;margin-left:auto}
+.compact-bet-card .bet-leg-status{flex:0 0 auto;padding:3px 5px;border-radius:5px;background:#273641;font-size:8.5px;font-weight:750;white-space:nowrap}
+.compact-bet-card .bet-leg-status.won{color:var(--green)}
+.compact-bet-card .bet-leg-status.lost{color:var(--red)}
+.compact-bet-card .bet-leg-status.pending{color:var(--gold)}
+.compact-bet-card .bet-leg-status.void{color:var(--sub)}
+.compact-bet-card .bet-summary-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:6px}
+.compact-bet-card.is-closed .bet-summary-strip{grid-template-columns:repeat(4,minmax(0,1fr))}
+.compact-bet-card .bet-summary-strip>span{display:grid;gap:1px;min-width:0;padding:5px 6px;border-radius:7px;background:#202a34;text-align:center}
+.compact-bet-card .bet-summary-strip small{font-size:8px;line-height:1.1;color:var(--sub)}
+.compact-bet-card .bet-summary-strip b{font-size:10.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compact-bet-card .bet-settled-date{display:block;margin:5px 1px 0;font-size:8.5px;line-height:1.2;color:var(--sub)}
+.compact-bet-card .compact-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px;padding-top:6px;border-top:1px solid #29343e}
+.compact-bet-card .compact-actions button{min-height:28px;padding:4px 6px;border-radius:7px;font-size:9px;line-height:1.1}
+@media(max-width:380px){
+  .compact-bet-card{padding:9px}
+  .compact-bet-card .bet-card-heading{gap:5px}
+  .compact-bet-card .bet-card-title{display:grid;gap:0}
+  .compact-bet-card .bet-card-date{font-size:8.5px}
+  .compact-bet-card .bet-leg-compact{padding:6px 7px}
+  .compact-bet-card .bet-leg-meta{display:none}
+  .compact-bet-card .bet-summary-strip,.compact-bet-card.is-closed .bet-summary-strip{gap:4px}
+  .compact-bet-card .bet-summary-strip>span{padding:5px 3px}
+  .compact-bet-card .bet-summary-strip b{font-size:9.5px}
+}
