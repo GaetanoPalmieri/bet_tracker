@@ -1,0 +1,7 @@
+BET TRACKER 2.1.2 — Revisione visuale pannelli e calendario Home
+
+- Pannelli e modal ridisegnati con glass effect più trasparente, blur più marcato, bordi luminosi e animazioni più morbide.
+- Uniformati anche i pannelli interni di selezione evento/esito e le finestre di conferma.
+- Calendario saldo della Home completamente ridisegnato: nuova testata mese, celle più leggibili, stati positivo/negativo/oggi più chiari, riepilogo mensile e legenda.
+- Nessuna modifica alla logica dei dati: registrazione saldo, navigazione mese e apertura del giorno restano invariati.
+- Versione portata a 2.1.2 per invalidare correttamente la cache PWA/service worker.

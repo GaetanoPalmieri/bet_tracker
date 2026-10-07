@@ -1,0 +1,5 @@
+BET TRACKER 2.1.3
+
+- L'intestazione della pagina non resta più fissa durante lo scroll.
+- Il nome/titolo dell'app scorre normalmente con il contenuto.
+- Resta fisso in alto soltanto il pulsante “+ Scommessa”.

@@ -1,0 +1,177 @@
+const U = {
+  esc: (s) =>
+    String(s ?? '').replace(
+      /[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+    ),
+  uid: () => Date.now().toString(36) + '-' + Math.random().toString(36).slice(2),
+  clone: (v) => JSON.parse(JSON.stringify(v)),
+  round: (n) => Math.round((n + Number.EPSILON) * 100) / 100,
+  // formato unico della suite (suite.js): 1.234,56 €
+  money: (n) => (window.SuiteFmt ? SuiteFmt.money(n) : new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n || 0)),
+  local: (d = new Date()) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16),
+  date: (s) =>
+    s
+      ? new Date(s).toLocaleString('it-IT', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : 'Data non disponibile',
+  finite: (n) => typeof n === 'number' && Number.isFinite(n),
+  validDate: (s) => typeof s === 'string' && Number.isFinite(Date.parse(s)),
+  duration: (ms) => {
+    const n = Math.max(0, Math.floor(ms / 1000));
+    return [Math.floor(n / 3600), Math.floor(n / 60) % 60, n % 60].map((x) => String(x).padStart(2, '0')).join(':');
+  },
+  download: (name, obj) => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  },
+  toast: (text, undo) => {
+    document.querySelector('.app-toast')?.remove();
+    const div = document.createElement('div');
+    div.className = 'app-toast';
+    div.textContent = text;
+    if (undo) {
+      const b = document.createElement('button');
+      b.textContent = 'Annulla';
+      b.onclick = () => {
+        undo();
+        div.remove();
+      };
+      div.append(b);
+    }
+    document.body.append(div);
+    setTimeout(() => div.remove(), undo ? 12000 : 3500);
+  },
+  modal: (body, { backdropClose = false } = {}) => {
+    let d = document.getElementById('editor');
+    if (!d) {
+      d = document.createElement('dialog');
+      d.id = 'editor';
+      document.body.append(d);
+    }
+    if (d.open) d.close();
+    d.innerHTML = body;
+    d.onclick = backdropClose
+      ? (e) => {
+          if (e.target !== d) return;
+          const r = d.getBoundingClientRect();
+          if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) d.close();
+        }
+      : null;
+    d.showModal();
+    d.querySelector('[data-close]')?.addEventListener('click', () => d.close());
+    return d;
+  },
+  head: (title) =>
+    `<div class="row editor-head"><h2>${U.esc(title)}</h2><button type="button" data-close aria-label="Chiudi">✕</button></div>`,
+  bounds: (period, day, from, to) => {
+    const n = new Date();
+    let a = null,
+      b = null;
+    if (period === 'month') {
+      a = new Date(n.getFullYear(), n.getMonth(), 1);
+      b = new Date(n.getFullYear(), n.getMonth() + 1, 1);
+    }
+    if (period === 'week') {
+      a = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+      a.setDate(a.getDate() - ((a.getDay() + 6) % 7));
+      b = new Date(a);
+      b.setDate(b.getDate() + 7);
+    }
+    if (period === 'year') {
+      a = new Date(n.getFullYear(), 0, 1);
+      b = new Date(n.getFullYear() + 1, 0, 1);
+    }
+    if (period === 'day' && day) {
+      a = new Date(day + 'T00:00');
+      b = new Date(a);
+      b.setDate(b.getDate() + 1);
+    }
+    if (period === 'custom') {
+      if (from) a = new Date(from + 'T00:00');
+      if (to) {
+        b = new Date(to + 'T00:00');
+        b.setDate(b.getDate() + 1);
+      }
+    }
+    return [a, b];
+  },
+  inRange: (s, bounds) => {
+    if (!U.validDate(s)) return false;
+    const t = new Date(s);
+    return (!bounds[0] || t >= bounds[0]) && (!bounds[1] || t < bounds[1]);
+  },
+  calendar: (month, selected, summary) => {
+    const d = new Date(month + '-01T12:00'),
+      y = d.getFullYear(),
+      m = d.getMonth(),
+      offset = (d.getDay() + 6) % 7,
+      count = new Date(y, m + 1, 0).getDate();
+    return `<div class="calendar"><div class="row"><button data-month="-1" aria-label="Mese precedente">‹</button><b>${d.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}</b><button data-month="1" aria-label="Mese successivo">›</button></div><div class="calendar-grid">${['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((x) => `<small>${x}</small>`).join('')}${'<span></span>'.repeat(offset)}${Array.from(
+      { length: count },
+      (_, i) => {
+        const key = `${month}-${String(i + 1).padStart(2, '0')}`,
+          v = summary(key);
+        return `<button class="${key === selected ? 'chosen' : ''}" data-day="${key}"><b>${i + 1}</b>${v ? `<small>${U.esc(v)}</small>` : ''}</button>`;
+      },
+    ).join('')}</div></div>`;
+  },
+  shiftMonth: (month, delta) => {
+    const d = new Date(month + '-01T12:00');
+    d.setMonth(d.getMonth() + delta);
+    return U.local(d).slice(0, 7);
+  },
+  chart: (points, label) => {
+    if (!points.length) return '<div class="empty">Nessun dato disponibile per il periodo selezionato.</div>';
+    const values = points.map((p) => p.value),
+      lo = Math.min(0, ...values),
+      hi = Math.max(1, ...values),
+      first = Date.parse(points[0].date),
+      last = Date.parse(points.at(-1).date),
+      pos = points.map((p, i) => ({
+        x: last === first ? 190 : 48 + ((Date.parse(p.date) - first) / (last - first)) * 290,
+        y: 150 - ((p.value - lo) / (hi - lo)) * 120,
+      }));
+    return `<svg class="touch-chart" viewBox="0 0 380 190" role="img" aria-label="${U.esc(label)}"><path d="M48 20V150H350" fill="none" stroke="#52616c"/><text x="0" y="30">${U.round(hi)}</text><text x="0" y="153">${U.round(lo)}</text><polyline points="${pos.map((p) => p.x + ',' + p.y).join(' ')}" fill="none" stroke="#55c3a7" stroke-width="3"/>${pos.map((p, i) => `<g class="chart-point" tabindex="0" role="button" aria-label="${U.esc(points[i].detail)}" data-chart-point="${i}"><circle cx="${p.x}" cy="${p.y}" r="18" fill="transparent"/><circle cx="${p.x}" cy="${p.y}" r="5" fill="#e8a33d"/></g>`).join('')}<text x="48" y="180">${new Date(points[0].date).toLocaleDateString('it-IT')}</text><text x="350" y="180" text-anchor="end">${new Date(points.at(-1).date).toLocaleDateString('it-IT')}</text></svg><p class="chart-detail muted" aria-live="polite">Tocca un punto per vedere il dettaglio.</p>`;
+  },
+  bindChart: (root, points) =>
+    root.querySelectorAll('[data-chart-point]').forEach((b) => {
+      const action = () => {
+        root.querySelector('.chart-detail').textContent = points[Number(b.dataset.chartPoint)].detail;
+      };
+      b.onclick = action;
+      b.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          action();
+        }
+      };
+    }),
+  // 2.1.0 — Conferma in stile app (al posto della finestra di sistema). Restituisce una Promise<boolean>.
+  confirm: ({ title = 'Confermi?', text = '', detail = '', ok = 'Elimina', cancel = 'Annulla', danger = true } = {}) =>
+    new Promise((resolve) => {
+      document.querySelector('.app-confirm')?.remove();
+      const wrap = document.createElement('div');
+      wrap.className = 'app-update-modal app-confirm';
+      wrap.setAttribute('role', 'alertdialog');
+      wrap.setAttribute('aria-modal', 'true');
+      wrap.innerHTML = `<div class="app-update-card"><div class="app-update-icon${danger ? ' danger' : ''}" aria-hidden="true">${danger ? '🗑' : '?'}</div><h3>${U.esc(title)}</h3>${text ? `<p>${U.esc(text)}</p>` : ''}${detail ? `<p class="app-confirm-detail">${U.esc(detail)}</p>` : ''}<div class="app-update-actions"><button type="button" class="app-confirm-cancel">${U.esc(cancel)}</button><button type="button" class="app-confirm-ok${danger ? ' danger' : ''}">${U.esc(ok)}</button></div></div>`;
+      document.body.append(wrap);
+      const done = (v) => { wrap.classList.remove('show'); setTimeout(() => wrap.remove(), 200); document.removeEventListener('keydown', key); resolve(v); };
+      const key = (e) => { if (e.key === 'Escape') done(false); };
+      document.addEventListener('keydown', key);
+      wrap.addEventListener('click', (e) => { if (e.target === wrap) done(false); });
+      wrap.querySelector('.app-confirm-cancel').onclick = () => done(false);
+      wrap.querySelector('.app-confirm-ok').onclick = () => done(true);
+      requestAnimationFrame(() => { wrap.classList.add('show'); wrap.querySelector('.app-confirm-cancel').focus(); });
+    }),
+};
