@@ -1,0 +1,199 @@
+/* =====================================================================
+   suite.css — Bet Tracker allineato alle altre app della suite
+   (Bilancio, Noi Due, RecompApp, Style Wishlist): sfondo con bagliori,
+   card in vetro, barra di navigazione flottante, pulsanti ambra,
+   schede comuni (Aspetto, Sincronizzazione, popup aggiornamento/backup).
+   I colori arrivano da suite-tokens.css (caricato dopo) e da colors.css.
+   ===================================================================== */
+
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+
+/* ---------- Sfondo con bagliori (come nelle altre app) ---------- */
+body { background: transparent !important; font-family: var(--suite-font-body); }
+html { background: var(--suite-bg); }
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10vh -10vw;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 30% at 10% 6%, rgba(232,163,61,.14), transparent 70%),
+    radial-gradient(38% 30% at 96% 34%, rgba(58,166,132,.18), transparent 70%),
+    radial-gradient(46% 34% at 26% 90%, rgba(110,120,230,.13), transparent 72%),
+    var(--suite-bg);
+}
+
+/* ---------- Intestazione ---------- */
+header {
+  background: transparent !important;
+  max-width: 560px;
+}
+header .eyebrow { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--suite-text-soft); }
+header h1 { font-family: var(--suite-font-display); font-weight: 750; letter-spacing: -.02em; }
+#new-bet {
+  background: var(--suite-amber-grad) !important;
+  color: var(--suite-on-amber) !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 20px -8px rgba(232,147,44,.6) !important;
+}
+
+/* ---------- Card in vetro ---------- */
+main .card,
+main details.card {
+  background: var(--suite-glass-card) !important;
+  border: 1px solid var(--suite-glass-edge) !important;
+  box-shadow: var(--suite-glass-shadow) !important;
+  border-radius: var(--suite-radius-xl) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+}
+main .card.hero {
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(58,166,132,.30), transparent 60%),
+    var(--suite-glass-strong) !important;
+}
+:root[data-theme="light"] main .card.hero {
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(58,166,132,.16), transparent 60%),
+    var(--suite-glass-strong) !important;
+}
+.big, .value { font-family: var(--suite-font-display); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+h2, h3 { font-family: var(--suite-font-display); }
+
+/* ---------- Barra di navigazione flottante in vetro ---------- */
+nav.tabbar.tabbar-bottom {
+  left: 12px !important;
+  right: 12px !important;
+  bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+  max-width: 536px !important;
+  margin: 0 auto !important;
+  padding: 6px !important;
+  gap: 2px;
+  border-radius: 24px !important;
+  border: 1px solid var(--suite-glass-edge) !important;
+  background: rgba(27,35,44,.58) !important;
+  box-shadow: 0 14px 36px -10px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06) !important;
+  -webkit-backdrop-filter: saturate(1.8) blur(18px);
+  backdrop-filter: saturate(1.8) blur(18px);
+}
+:root[data-theme="light"] nav.tabbar.tabbar-bottom {
+  background: rgba(255,255,255,.7) !important;
+  box-shadow: 0 14px 36px -10px rgba(20,24,26,.176), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+nav.tabbar.tabbar-bottom button {
+  margin: 0 !important;
+  min-height: 52px;
+  border: 0 !important;
+  border-radius: 18px !important;
+  color: var(--suite-text-soft) !important;
+  background: transparent !important;
+}
+nav.tabbar.tabbar-bottom button span { font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+nav.tabbar.tabbar-bottom button.active {
+  background: var(--suite-teal-grad) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 20px -8px rgba(58,166,132,.8), inset 0 1px 0 rgba(255,255,255,.22) !important;
+}
+main { padding-bottom: calc(110px + env(safe-area-inset-bottom)) !important; }
+
+/* ---------- Pulsanti principali ambra (come le altre app) ---------- */
+main button.primary,
+dialog button.primary {
+  background: var(--suite-amber-grad) !important;
+  color: var(--suite-on-amber) !important;
+  border: 0 !important;
+  box-shadow: 0 8px 20px -8px rgba(232,147,44,.6);
+}
+
+/* ---------- Dialog in vetro ---------- */
+dialog {
+  background: var(--suite-glass-strong) !important;
+  color: var(--suite-text) !important;
+  border: 1px solid var(--suite-glass-edge) !important;
+  border-radius: 22px !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+}
+:root[data-theme="dark"] dialog { background: rgba(22,30,38,.94) !important; }
+:root[data-theme="light"] dialog { background: rgba(250,250,247,.97) !important; }
+dialog .head, .editor-head { background: transparent !important; }
+:root[data-theme="light"] dialog::backdrop { background: rgba(20,24,26,.28); }
+:root[data-theme="light"] .app-toast { background: #14181a; color: #fff; }
+
+/* ---------- Splash ---------- */
+:root[data-theme="light"] #splash { background: radial-gradient(ellipse, #dff3ec, #f1f2ed 65%); }
+
+/* ---------- Grafico profitto (statistiche) leggibile in chiaro ---------- */
+.touch-chart text { fill: var(--suite-text-soft) !important; }
+.touch-chart path[stroke="#52616c"] { stroke: var(--suite-line); }
+
+/* ---------- Aspetto (tema) ---------- */
+.suite-seg { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 4px; padding: 4px; margin-top: 8px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.07); }
+.suite-seg-opt { display: flex !important; align-items: center; justify-content: center; gap: 6px; min-height: 40px !important; padding: 6px 4px !important; border: 0 !important; border-radius: 11px !important; background: transparent !important; color: inherit; font-weight: 700; font-size: 14px; box-shadow: none !important; }
+.suite-seg-opt.active { background: var(--suite-teal-grad) !important; color: #fff !important; box-shadow: 0 6px 16px -6px rgba(58,166,132,.75), inset 0 1px 0 rgba(255,255,255,.22) !important; }
+:root[data-theme="light"] .suite-seg { background: rgba(20,24,26,.05); border-color: rgba(20,24,26,.08); }
+.suite-theme-hint { margin: 8px 0 0; }
+
+/* ---------- Sincronizzazione (stessa scheda delle altre app) ---------- */
+.suite-sync-card h2 { margin: 0 0 6px; }
+.suite-sync-card .suite-sync-status { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 12px; font-size: 13px; line-height: 1.45; opacity: .85; }
+.suite-sync-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; background: #8a979f; }
+.suite-sync-dot.on { background: #3fb38e; }
+.suite-sync-dot.busy { background: #e8a33d; }
+.suite-sync-dot.err { background: #e5584f; }
+.suite-sync-card input { margin-bottom: 8px; }
+.suite-sync-card button { min-height: 44px; padding: 8px 14px; border-radius: 12px; border: 1px solid rgba(127,140,150,.3); background: transparent; color: inherit; font: inherit; font-weight: 700; font-size: 15px; }
+.suite-sync-card .suite-sync-primary { width: 100%; border: 0; background: var(--suite-amber-grad) !important; color: var(--suite-on-amber) !important; box-shadow: 0 8px 20px -8px rgba(232,147,44,.6); }
+.suite-sync-card .suite-sync-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.suite-sync-card .suite-sync-actions button { width: 100%; margin: 0; }
+.suite-sync-card .suite-sync-link { display: block; margin: 10px auto 0; background: none !important; border: 0 !important; text-decoration: underline; font-size: 13px; color: inherit; opacity: .8; }
+.suite-sync-card button:disabled { opacity: .6; }
+
+/* ---------- Popup aggiornamento / backup (uguale nelle app) ---------- */
+.app-update-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(8,12,16,.45); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+.app-update-modal.show { opacity: 1; pointer-events: auto; }
+.app-update-card { width: min(340px,100%); padding: 22px 20px 18px; border-radius: 22px; text-align: center; background: rgba(27,35,44,.86); color: #f1f5f4; border: 1px solid rgba(255,255,255,.07); box-shadow: 0 24px 60px rgba(0,0,0,.35); -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); }
+.app-update-icon { width: 46px; height: 46px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 800; background: rgba(85,195,167,.18); color: #55c3a7; }
+.app-update-card h3 { margin: 0 0 6px; font-size: 18px; }
+.app-update-card p { margin: 0 0 16px; font-size: 14px; line-height: 1.45; color: #9fb0ab; }
+.app-update-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.app-update-actions.one { grid-template-columns: 1fr; }
+.app-update-card button { min-height: 44px; border-radius: 14px; font: inherit; font-weight: 700; font-size: 15px; border: 1px solid rgba(255,255,255,.1); background: transparent; color: inherit; }
+.app-update-card .app-update-now { border: 0; background: var(--suite-amber-grad); color: var(--suite-on-amber); }
+:root[data-theme="light"] .app-update-modal { background: rgba(20,24,26,.28); }
+:root[data-theme="light"] .app-update-card { background: rgba(255,255,255,.92); color: #14181a; border-color: rgba(20,24,26,.08); box-shadow: 0 24px 60px rgba(20,24,26,.18); }
+:root[data-theme="light"] .app-update-card p { color: #4b5450; }
+:root[data-theme="light"] .app-update-icon { background: rgba(31,93,76,.12); color: #1f5d4c; }
+:root[data-theme="light"] .app-update-card button { border-color: rgba(20,24,26,.12); }
+@media (prefers-reduced-motion: reduce) { .app-update-modal, .app-update-card { transition: none; } }
+
+/* ---------- Sincronizzazione: altre azioni, versioni precedenti, finestre (da Style Wishlist) ---------- */
+.suite-sync-more{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.suite-sync-more button{font-size:13px!important;font-weight:600!important;padding:8px 6px!important;}
+.suite-modal-card{max-height:min(80vh,620px);display:flex;flex-direction:column;text-align:left;}
+.suite-modal-card h3{text-align:center;}
+.suite-modal-text{font-size:13.5px;line-height:1.45;opacity:.8;margin:0 0 12px!important;}
+.suite-history-list{display:grid;gap:6px;overflow-y:auto;margin-bottom:12px;}
+.suite-history-row{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid rgba(127,140,150,.3);background:transparent;color:inherit;font:inherit;font-size:14px;text-align:left;}
+.suite-history-row.confirm{border:0;background:linear-gradient(145deg,#f7c463,#e48d24);color:#241800;font-weight:700;}
+.suite-modal .suite-sync-form{gap:10px;}
+
+/* ---------- 2.1.0 — Conferma in stile app ---------- */
+:root .app-update-icon.danger, :root[data-theme="light"] .app-update-icon.danger { background: rgba(229,88,79,.16); color: var(--bt-down-text, #f08b86); }
+.app-confirm-detail { margin-top: -8px !important; font-weight: 600; color: inherit !important; opacity: .9; overflow-wrap: anywhere; }
+.app-update-card .app-confirm-ok.danger { border: 0; background: linear-gradient(145deg, #ec6b62, #c8473f); color: #fff; }
+
+/* ---------- 2.1.0 — Leghe e squadre ---------- */
+.toggle-line { display: flex !important; align-items: center; gap: 10px; margin: 10px 0 4px !important; font-size: 14px !important; color: var(--suite-text) !important; }
+.toggle-line input { width: 20px !important; height: 20px; flex: 0 0 auto; accent-color: #3fb38e; }
+
+/* ---------- 2.1.0 — Notifiche (promemoria serale) ---------- */
+.push-card .push-settings { display: grid; gap: 8px; margin: 0 0 10px; }
+.push-card .push-line { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; margin: 0 !important; font-size: 14px !important; color: var(--suite-text) !important; }
+.push-card .push-line select { width: auto; min-width: 104px; min-height: 42px; }
+.push-card .push-on-btn { width: 100%; }
+.push-card .push-msg { margin: 10px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--suite-text-soft); }
+.push-card .push-msg.err { color: var(--bt-down-text); }

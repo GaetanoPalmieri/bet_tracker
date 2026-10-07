@@ -1,0 +1,199 @@
+/* =====================================================================
+   suite-tokens.css — Token grafici condivisi dalle quattro app
+   (Bilancio, Noi Due, RecompApp, Style Wishlist).
+
+   QUESTO FILE È IDENTICO IN TUTTE E QUATTRO LE APP.
+   Se lo modifichi, copialo nelle altre tre cartelle.
+
+   Come funziona
+   -------------
+   Tutte e quattro le app impostano sempre data-theme="light" oppure
+   data-theme="dark" sull'elemento <html> via JavaScript (nessuna resta
+   senza attributo). Quindi basta agganciarsi a quei due selettori per
+   ottenere lo stesso risultato in tutte, qualunque sia il tema di
+   partenza scritto nel loro CSS.
+
+   Il selettore :root[data-theme="..."] ha specificità più alta dei
+   blocchi usati dalle singole app (:root e :root:where(...)), e il file
+   va caricato PER ULTIMO: così vince sempre, senza bisogno di
+   !important e senza dover riscrivere il CSS esistente.
+
+   I nomi canonici sono --suite-*. Sotto ci sono gli alias verso i nomi
+   già usati dalle app, così il CSS esistente continua a funzionare:
+     Bilancio / Noi Due : --paper --card --ink --ink-soft --line
+     RecompApp          : --bg --card --card2 --text --sub --line
+     Style Wishlist     : --bg --panel --panel2 --text --muted --line
+
+   NON vengono toccati --accent e --accent2: in RecompApp --accent è il
+   verde e in Style Wishlist è l'ambra, quindi lo stesso nome ha
+   significati opposti e unificarlo romperebbe una delle due.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   Token indipendenti dal tema
+   --------------------------------------------------------------------- */
+:root {
+  /* Tipografia: Display per titoli e numeri, Text per il corpo */
+  --suite-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, "Segoe UI", Roboto, sans-serif;
+  --suite-font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--suite-font-display);
+  --font-body: var(--suite-font-body);
+
+  /* Scala dei raggi */
+  --suite-radius-xl: 18px;
+  --suite-radius-lg: 14px;
+  --suite-radius-md: 12px;
+  --suite-radius-sm: 10px;
+  --radius-xl: var(--suite-radius-xl);
+  --radius-lg: var(--suite-radius-lg);
+  --radius-card: var(--suite-radius-lg);
+  --radius-chip: var(--suite-radius-sm);
+
+  /* Gradienti degli accenti: ambra per le azioni, verde per le conferme */
+  --suite-amber-grad: linear-gradient(145deg, #f7c463, #e48d24);
+  --suite-teal-grad: linear-gradient(135deg, #3fb38e, #1f7a62);
+  --amber-grad: var(--suite-amber-grad);
+  --teal-grad: var(--suite-teal-grad);
+  --gold-grad: var(--suite-amber-grad);
+
+  /* Inchiostro sopra i fondi ambra (usato per il testo dei pulsanti) */
+  --suite-on-amber: #241800;
+}
+
+/* ---------------------------------------------------------------------
+   Tema scuro
+   --------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --suite-bg: #12181f;
+  --suite-surface: #1b232c;
+  --suite-surface-2: #222d38;
+  --suite-line: #2b3640;
+  --suite-text: #f1f5f4;
+  --suite-text-soft: #9fb0ab;
+
+  --suite-glass-card: rgba(27, 35, 44, .62);
+  --suite-glass-row: rgba(27, 35, 44, .70);
+  --suite-glass-strong: rgba(27, 35, 44, .78);
+  --suite-glass-edge: rgba(255, 255, 255, .07);
+  --suite-glass-shadow: 0 12px 30px -14px rgba(0, 0, 0, .6);
+
+  --suite-glow-a: rgba(58, 166, 132, .24);
+  --suite-glow-b: rgba(138, 107, 214, .20);
+  --suite-glow-c: rgba(232, 163, 61, .12);
+
+  /* Alias: Bilancio e Noi Due */
+  --paper: var(--suite-bg);
+  --card: var(--suite-surface);
+  --ink: var(--suite-text);
+  --ink-soft: var(--suite-text-soft);
+  --line: var(--suite-line);
+  /* Alias: RecompApp */
+  --bg: var(--suite-bg);
+  --card2: var(--suite-surface-2);
+  --text: var(--suite-text);
+  --sub: var(--suite-text-soft);
+  --g-bg: var(--suite-bg);
+  /* Alias: Style Wishlist */
+  --panel: var(--suite-surface);
+  --panel2: var(--suite-surface-2);
+  --muted: var(--suite-text-soft);
+  /* Alias: vetro e bagliori */
+  --glass-card: var(--suite-glass-card);
+  --glass-row: var(--suite-glass-row);
+  --glass-strong: var(--suite-glass-strong);
+  --glass-edge: var(--suite-glass-edge);
+  --glass-shadow: var(--suite-glass-shadow);
+  --glow-a: var(--suite-glow-a);
+  --glow-b: var(--suite-glow-b);
+  --glow-c: var(--suite-glow-c);
+}
+
+/* ---------------------------------------------------------------------
+   Tema chiaro — palette unificata su quella di Bilancio e Noi Due
+   (crema caldo con card bianche). Prima RecompApp e Style Wishlist
+   usavano un grigio freddo con card grigie: era l'unica vera
+   differenza visiva rimasta fra le quattro app.
+   --------------------------------------------------------------------- */
+:root[data-theme="light"] {
+  --suite-bg: #f1f2ed;
+  --suite-surface: #ffffff;
+  --suite-surface-2: #f3f4ef;
+  --suite-line: #c9d5cf;
+  --suite-text: #14181a;
+  --suite-text-soft: #4b5450;
+
+  --suite-glass-card: rgba(255, 255, 255, .74);
+  --suite-glass-row: rgba(255, 255, 255, .80);
+  --suite-glass-strong: rgba(255, 255, 255, .90);
+  --suite-glass-edge: rgba(20, 24, 26, .088);
+  --suite-glass-shadow: 0 1px 2px rgba(20, 24, 26, .04), 0 10px 28px -12px rgba(20, 24, 26, .16);
+
+  --suite-glow-a: rgba(58, 166, 132, .16);
+  --suite-glow-b: rgba(138, 107, 214, .13);
+  --suite-glow-c: rgba(232, 163, 61, .13);
+
+  /* Alias: Bilancio e Noi Due */
+  --paper: var(--suite-bg);
+  --card: var(--suite-surface);
+  --ink: var(--suite-text);
+  --ink-soft: var(--suite-text-soft);
+  --line: var(--suite-line);
+  /* Alias: RecompApp */
+  --bg: var(--suite-bg);
+  --card2: var(--suite-surface-2);
+  --text: var(--suite-text);
+  --sub: var(--suite-text-soft);
+  --g-bg: var(--suite-bg);
+  /* Alias: Style Wishlist */
+  --panel: var(--suite-surface);
+  --panel2: var(--suite-surface-2);
+  --muted: var(--suite-text-soft);
+  /* Alias: vetro e bagliori */
+  --glass-card: var(--suite-glass-card);
+  --glass-row: var(--suite-glass-row);
+  --glass-strong: var(--suite-glass-strong);
+  --glass-edge: var(--suite-glass-edge);
+  --glass-shadow: var(--suite-glass-shadow);
+  --glow-a: var(--suite-glow-a);
+  --glow-b: var(--suite-glow-b);
+  --glow-c: var(--suite-glow-c);
+}
+
+/* ---------------------------------------------------------------------
+   Tipografia condivisa: Display sui titoli in tutte e quattro le app
+   --------------------------------------------------------------------- */
+body,
+input,
+textarea,
+select,
+button {
+  font-family: var(--suite-font-body);
+}
+h1, h2, h3,
+.view-title,
+.brandrow h1,
+.sectiontitle,
+.editor-head h2,
+.sheet-head h3,
+.card h2,
+.card h3,
+.morecard h3,
+.month-label,
+.calendar-month-label {
+  font-family: var(--suite-font-display);
+  letter-spacing: -.015em;
+}
+/* Numeri grandi: Display e cifre di larghezza fissa, così le colonne
+   di importi e carichi restano allineate */
+.hero-amount,
+.account-balance,
+.session-clock,
+.inline-session-clock,
+.timer-num,
+.stats-kpi b,
+.closed-summary-kpis b,
+.budgetcard strong,
+.suite-num {
+  font-family: var(--suite-font-display);
+  font-variant-numeric: tabular-nums;
+}
