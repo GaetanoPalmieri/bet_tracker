@@ -3,27 +3,27 @@
    - Pagina: rete con timeout di 3 secondi, poi la copia salvata (funziona anche offline).
    - File con ?v= e icone: prima la cache; un nuovo rilascio cambia ?v= e quindi l'indirizzo.
    - Il nuovo worker resta in attesa finché l'app non chiede di attivarlo (avviso "Aggiorna"). */
-const VERSION = '2.1.3';
+const VERSION = '2.1.2';
 const PREFIX = 'bet-tracker-';
 const CACHE = PREFIX + VERSION;
 const SHELL = [
   './',
   './index.html',
-  './suite.js?v=2.1.3',
-  './colors.css?v=2.1.3',
-  './base.css?v=2.1.3',
-  './shared.css?v=2.1.3',
-  './app.css?v=2.1.3',
-  './suite.css?v=2.1.3',
-  './suite-tokens.css?v=2.1.3',
-  './shared.js?v=2.1.3',
-  './app.js?v=2.1.3',
-  './manifest.webmanifest?v=2.1.3',
-  './favicon.ico?v=2.1.3',
-  './favicon-32.png?v=2.1.3',
-  './apple-touch-icon.png?v=2.1.3',
-  './bet-icon-192.png?v=2.1.3',
-  './bet-icon-512.png?v=2.1.3'
+  './suite.js?v=2.1.2',
+  './colors.css?v=2.1.2',
+  './base.css?v=2.1.2',
+  './shared.css?v=2.1.2',
+  './app.css?v=2.1.2',
+  './suite.css?v=2.1.2',
+  './suite-tokens.css?v=2.1.2',
+  './shared.js?v=2.1.2',
+  './app.js?v=2.1.2',
+  './manifest.webmanifest?v=2.1.2',
+  './favicon.ico?v=2.1.2',
+  './favicon-32.png?v=2.1.2',
+  './apple-touch-icon.png?v=2.1.2',
+  './bet-icon-192.png?v=2.1.2',
+  './bet-icon-512.png?v=2.1.2'
 ];
 const NETWORK_TIMEOUT_MS = 3000;
 
@@ -79,7 +79,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(caches.match(req).then((cached) => cached || fromNetworkAndStore(req)));
 });
 
-/* 2.1.3 — Promemoria serale (notifica push inviata dalla funzione notify-bet su Supabase) */
+/* 2.1.2 — Promemoria serale (notifica push inviata dalla funzione notify-bet su Supabase) */
 self.addEventListener('push', (event) => {
   let d = {};
   try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : '' }; }
