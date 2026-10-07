@@ -1,4 +1,4 @@
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.1.1';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -2783,13 +2783,7 @@ function diaryPage() {
       '</tbody></table></section>';
   }
 
-  if (!series.length) {
-    return (
-      hero +
-      '<section class="card diary-card diary-intro"><h2>Come funziona</h2><ol><li>Ogni sera tocca <b>Segna il saldo di oggi</b> e scrivi quanto hai.</li><li>Il saldo segnato per l’ultimo giorno diventa il saldo di tutta l’app (Riepilogo, Altro).</li><li>Le scommesse che registri continuano a funzionare come sempre e aggiornano il saldo attuale qui sopra.</li><li>Giorno dopo giorno vedrai andamento, variazioni e statistiche.</li></ol></section>' +
-      agenda
-    );
-  }
+  if (!series.length) return hero + agenda;
   var weekday =
     '<section class="card diary-card"><h2>Per giorno della settimana</h2><p class="muted diary-hint">Variazione media del saldo nel periodo scelto, per giorno.</p>' +
     diaryWeekdayChart(points) +

@@ -1,0 +1,10 @@
+BET TRACKER 2.1.1 — Ritocchi di stile
+
+- Trasparenza come nelle altre app: pulsanti, campi, righe delle giocate ed etichette sono
+  velature semitrasparenti; finestre (scommessa, esiti, movimenti, saldo), pannelli di scelta
+  esito/evento, conferme e avvisi sono in vetro sfocato, con lo sfondo velato e sfocato.
+- X di chiusura: solo la X grigia, senza riquadro e non più rossa.
+- Intestazione: più spazio tra "Bet Tracker" / "+ Scommessa" e l'isola dinamica.
+- iPhone: lo sfondo copre sempre tutto lo schermo (correzione per la fascia vuota in basso
+  che compariva nella scheda Scommesse).
+- Home: tolta la sezione "Come funziona".
