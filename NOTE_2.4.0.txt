@@ -1,0 +1,17 @@
+VERSIONE 2.4.0
+
+AI (serve la funzione suite-ai versione 2 su Supabase: vedi GUIDA_AI.txt)
+- Nuova scommessa > campo in alto "Scrivila a parole":
+  "Inter-Milan 1 a 2,10 e Juve-Roma over 2.5 a 1,80, 10 euro" compila puntata,
+  partite, esiti e quote. Quello che manca resta da completare a mano.
+- Nuova scommessa > "Leggi la schedina": fotografi la ricevuta o scegli uno screenshot
+  della giocata e i campi si riempiono da soli.
+- Statistiche > "Com'è andata" > Spiegamelo: due righe sui tuoi numeri del periodo
+  scelto (profitto, rendimento, singole contro multiple, esiti più giocati, limite mensile).
+- L'AI registra e racconta solo quello che hai già giocato: niente pronostici e niente
+  consigli su cosa o quanto giocare.
+- Se l'AI non risponde, sotto il campo compare il motivo.
+
+Grafica (come nelle altre app)
+- I messaggi in basso sono un riquadro di vetro trasparente con pallino verde
+  (prima pieno). File condivisi suite.js e suite-ui.css allineati alle altre app.

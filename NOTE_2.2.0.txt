@@ -1,0 +1,16 @@
+VERSIONE 2.2.0
+
+Grafica comune
+- Bet Tracker adesso usa suite-ui.css come le altre app: sfumatura sotto la barra in
+  basso, barra con lo sfondo sfocato, menu e pulsanti con la stessa forma.
+
+Menu a tendina
+- Toccandoli non si apre più la rotellina di iOS ma un elenco disegnato come l'app
+  (periodo, stato, esito, paese, ora del promemoria).
+
+Testi
+- Tutte le dimensioni sono ora sui sei valori della suite: 11 - 13 - 15 - 17 - 22 - 34 px.
+
+Pulsanti
+- Ogni pulsante piccolo prende il tocco anche un po' fuori dal bordo (fino a 44 px),
+  senza cambiare il disegno.

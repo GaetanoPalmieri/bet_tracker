@@ -567,3 +567,806 @@
     }
   };
 })();
+
+/* ===================== Versione dell'app scritta in pagina =====================
+   Ogni <span data-app-version></span> prende il numero dal <meta name="app-version">
+   in cima a index.html, che rilascio.py tiene sempre aggiornato. Così la riga
+   "Versione …" in fondo alla scheda Altro non resta mai vuota. */
+(function () {
+  function fill() {
+    var m = document.querySelector('meta[name="app-version"]');
+    var v = m && m.content ? m.content.trim() : '';
+    if (!v) return;
+    var list = document.querySelectorAll('[data-app-version]');
+    for (var i = 0; i < list.length; i++) list[i].textContent = v;
+  }
+  window.SuiteVersion = { text: function () {
+    var m = document.querySelector('meta[name="app-version"]');
+    return m && m.content ? m.content.trim() : '';
+  }, fill: fill };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fill);
+  else fill();
+  /* Se una scheda viene ridisegnata dopo, il numero torna comunque al suo posto. */
+  window.addEventListener('load', fill);
+})();
+
+/* ===================== SuiteUI — comportamenti grafici comuni =====================
+   Pulsante "+" che si rimpicciolisce scorrendo verso il basso (così non copre importi e
+   righe) e torna grande appena si risale o si arriva in cima. Vale per tutte le app:
+   basta che il pulsante abbia id fabAdd o quick-add (o l'attributo data-suite-fab). */
+(function () {
+  var last = 0, ticking = false;
+  function y() { return window.scrollY || document.documentElement.scrollTop || 0; }
+  function update() {
+    ticking = false;
+    var cur = y(), root = document.documentElement;
+    /* Soglie basse di proposito: basta un dito di scorrimento perché si rimpicciolisca.
+       Per tornare grande serve un po' più di risalita, così non lampeggia. */
+    if (cur < 12) root.classList.remove('suite-fab-mini');
+    else if (cur > last + 1) root.classList.add('suite-fab-mini');
+    else if (cur < last - 8) root.classList.remove('suite-fab-mini');
+    last = cur;
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+})();
+
+/* ===================== SuiteSelect — menu a tendina fatti in casa =====================
+   Al posto della rotellina di iOS apre un elenco disegnato come il resto dell'app.
+   Vale per ogni <select> a scelta singola, anche creato dopo; per lasciare il menu di
+   sistema su un singolo menu basta aggiungergli l'attributo data-native. */
+(function () {
+  var openState = null;
+
+  function labelOf(sel) {
+    if (sel.getAttribute('aria-label')) return sel.getAttribute('aria-label');
+    if (sel.id) {
+      var l = document.querySelector('label[for="' + (window.CSS && CSS.escape ? CSS.escape(sel.id) : sel.id) + '"]');
+      if (l) return l.textContent.trim();
+    }
+    var p = sel.closest('label');
+    if (p) return p.textContent.replace(sel.textContent, '').trim();
+    return 'Scegli';
+  }
+
+  function close() {
+    if (!openState) return;
+    var st = openState;
+    openState = null;
+    st.wrap.classList.remove('show');
+    document.removeEventListener('keydown', onKeyDown, true);
+    setTimeout(function () {
+      try { if (st.wrap.open) st.wrap.close(); } catch (_) {}
+      st.wrap.remove();
+    }, 200);
+  }
+
+  function onKeyDown(e) {
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
+  }
+
+  function choose(sel, idx) {
+    close();
+    if (sel.selectedIndex === idx) return;
+    sel.selectedIndex = idx;
+    sel.dispatchEvent(new Event('input', { bubbles: true }));
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function openFor(sel) {
+    close();
+    /* è un <dialog>: così resta sopra anche ai pannelli che sono già <dialog> (Style Wishlist) */
+    var wrap = document.createElement('dialog');
+    wrap.className = 'ss-wrap';
+    var sheet = document.createElement('div');
+    sheet.className = 'ss-sheet';
+    sheet.setAttribute('role', 'listbox');
+    sheet.setAttribute('aria-label', labelOf(sel));
+    var head = document.createElement('div');
+    head.className = 'ss-head';
+    head.textContent = labelOf(sel);
+    sheet.appendChild(head);
+    var list = document.createElement('div');
+    list.className = 'ss-list';
+
+    var opts = sel.options, selectedBtn = null;
+    for (var i = 0; i < opts.length; i++) {
+      var o = opts[i];
+      if (o.parentElement && o.parentElement.tagName === 'OPTGROUP' &&
+          (i === 0 || opts[i - 1].parentElement !== o.parentElement)) {
+        var g = document.createElement('div');
+        g.className = 'ss-group';
+        g.textContent = o.parentElement.label || '';
+        list.appendChild(g);
+      }
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ss-opt' + (i === sel.selectedIndex ? ' active' : '');
+      b.setAttribute('role', 'option');
+      b.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+      if (o.disabled) b.disabled = true;
+      b.innerHTML = '<span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>';
+      b.firstChild.textContent = o.textContent;
+      b.dataset.i = String(i);
+      list.appendChild(b);
+      if (i === sel.selectedIndex) selectedBtn = b;
+    }
+    sheet.appendChild(list);
+    wrap.appendChild(sheet);
+    document.body.appendChild(wrap);
+
+    list.addEventListener('click', function (e) {
+      var b = e.target.closest('.ss-opt');
+      if (!b || b.disabled) return;
+      choose(sel, Number(b.dataset.i));
+    });
+    wrap.addEventListener('click', function (e) { if (e.target === wrap) close(); });
+
+    wrap.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
+    openState = { wrap: wrap, sel: sel };
+    document.addEventListener('keydown', onKeyDown, true);
+    try { wrap.showModal(); } catch (_) { wrap.setAttribute('open', ''); }
+    requestAnimationFrame(function () {
+      wrap.classList.add('show');
+      if (selectedBtn && selectedBtn.scrollIntoView) selectedBtn.scrollIntoView({ block: 'center' });
+    });
+  }
+
+  function target(e) {
+    var el = e.target && e.target.closest ? e.target.closest('select') : null;
+    if (!el || el.multiple || el.disabled || el.hasAttribute('data-native') || el.size > 1) return null;
+    return el;
+  }
+
+  /* iOS apre il menu al tocco: blocchiamo tutte le strade e apriamo il nostro elenco. */
+  ['pointerdown', 'mousedown', 'touchstart'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      var sel = target(e);
+      if (!sel) return;
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+    }, { capture: true, passive: false });
+  });
+  document.addEventListener('click', function (e) {
+    var sel = target(e);
+    if (!sel) return;
+    e.preventDefault();
+    e.stopPropagation();
+    try { sel.blur(); } catch (_) {}
+    openFor(sel);
+  }, true);
+  document.addEventListener('keydown', function (e) {
+    var sel = target(e);
+    if (!sel) return;
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      openFor(sel);
+    }
+  }, true);
+  window.addEventListener('pagehide', close);
+})();
+
+/* ===================== SuiteTap — aree da toccare di almeno 44 px =====================
+   I pulsanti piccoli restano piccoli da vedere, ma prendono il tocco anche poco fuori dal
+   bordo. L'allargamento è invisibile e al massimo di 10 px per lato, così due pulsanti
+   vicini non si rubano il tocco. Per escludere un pulsante: attributo data-no-tap. */
+(function () {
+  var SEL = 'button, [role="button"], .iconbtn, .pill-btn, .chip, a.btn, label.switch';
+  var MIN = 44, MAXGROW = 20;
+
+  function pad(el) {
+    if (el.hasAttribute('data-no-tap') || el.closest('.ss-sheet, .lp-popup')) return;
+    var r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    var dx = Math.max(0, Math.min(MIN - r.width, MAXGROW)) / 2;
+    var dy = Math.max(0, Math.min(MIN - r.height, MAXGROW)) / 2;
+    el.dataset.suiteTap = '1';
+    if (dx < 1 && dy < 1) { el.classList.remove('suite-tap'); return; }
+    /* se il pulsante usa già ::after per una spunta o un pallino, lo lasciamo stare */
+    var after = getComputedStyle(el, '::after').content;
+    if (after && after !== 'none' && after !== 'normal') return;
+    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+    el.style.setProperty('--suite-tap-x', (-dx) + 'px');
+    el.style.setProperty('--suite-tap-y', (-dy) + 'px');
+    el.classList.add('suite-tap');
+  }
+
+  /* Di norma si misurano solo i pulsanti nuovi; dopo un cambio di larghezza si rimisura tutto. */
+  var NEW = SEL.split(', ').map(function (s) { return s + ':not([data-suite-tap])'; }).join(', ');
+  var timer = null, full = true;
+  function sweep() {
+    timer = null;
+    var list = document.querySelectorAll(full ? SEL : NEW);
+    full = false;
+    for (var i = 0; i < list.length; i++) { try { pad(list[i]); } catch (_) {} }
+  }
+  function schedule() {
+    if (timer) return;
+    timer = setTimeout(function () {
+      if (window.requestIdleCallback) requestIdleCallback(sweep, { timeout: 500 });
+      else sweep();
+    }, 260);
+  }
+
+  function start() {
+    sweep();
+    new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('resize', function () { full = true; schedule(); }, { passive: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+
+/* ===================== Tieni premuto (Bilancio e Noi Due) =====================
+   bindLongPress(el, handler): tenendo premuto 0,5 s chiama handler; il tocco che segue non
+   apre anche l'azione normale. closeLongPressPopup() chiude il popup #lpPopup aperto. */
+function lpOutside(e){ if(!e.target.closest("#lpPopup")) closeLongPressPopup(); }
+function closeLongPressPopup(){
+  document.getElementById("lpPopup")?.remove();
+  document.removeEventListener("pointerdown",lpOutside,true);
+}
+var lpSuppressClick = false;
+document.addEventListener("click",e=>{ if(lpSuppressClick){ e.preventDefault(); e.stopPropagation(); lpSuppressClick=false; } },true);
+function bindLongPress(el,handler){
+  if(!el || el.dataset.lpBound) return;
+  el.dataset.lpBound="1"; el.classList.add("lp-target");
+  let timer=null,x=0,y=0;
+  const cancel=()=>{clearTimeout(timer);timer=null;el.classList.remove("lp-pressing");};
+  el.addEventListener("pointerdown",e=>{
+    if(e.button!==undefined && e.button!==0) return;
+    x=e.clientX;y=e.clientY;el.classList.add("lp-pressing");
+    timer=setTimeout(()=>{timer=null;el.classList.remove("lp-pressing");lpSuppressClick=true;setTimeout(()=>{lpSuppressClick=false;},700);try{navigator.vibrate?.(12);}catch(_){};handler(e);},480);
+  });
+  el.addEventListener("pointermove",e=>{if(timer && Math.hypot(e.clientX-x,e.clientY-y)>10) cancel();});
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>el.addEventListener(ev,cancel));
+  el.addEventListener("contextmenu",e=>e.preventDefault());
+}
+
+/* ===================== SuiteLink — dati di un prodotto da un link =====================
+   SuiteLink.preview(url) → {title, image, price, publisher, url} oppure null.
+   Il browser non può leggere le pagine di altri siti: passa da Microlink (gratuito, senza chiave).
+   Usato da Style Wishlist e da Noi Due. */
+(function () {
+  function cleanTitle(title, publisher) {
+    var t = String(title || '').replace(/\s+/g, ' ').trim();
+    var parts = t.split(/\s+[|·•–—-]\s+/);
+    if (parts.length > 1 && parts[0].length >= 4) {
+      var last = parts[parts.length - 1].toLowerCase();
+      if (!publisher || last.indexOf(String(publisher).toLowerCase().slice(0, 5)) >= 0 || /amazon|ikea|zalando|shop|store|online|\.it|\.com/.test(last)) t = parts.slice(0, -1).join(' - ');
+    }
+    return t.replace(/^(Amazon\.it\s*:\s*)/i, '').slice(0, 120);
+  }
+  async function preview(url) {
+    var base = 'https://api.microlink.io/?url=' + encodeURIComponent(url);
+    var rules = '&data.price.selector=' + encodeURIComponent('meta[property="product:price:amount"],meta[property="og:price:amount"],meta[itemprop="price"],[itemprop="price"][content]') + '&data.price.attr=content';
+    var qs = [base + rules, base];
+    for (var i = 0; i < qs.length; i++) {
+      try {
+        var r = await fetch(qs[i]);
+        var j = await r.json();
+        if (j && j.status === 'success' && j.data) {
+          var d = j.data, price = parseFloat(String(d.price == null ? '' : d.price).replace(',', '.'));
+          var img = (d.image && /^https:\/\//.test(d.image.url || '')) ? d.image.url : ((d.logo && /^https:\/\//.test(d.logo.url || '')) ? d.logo.url : '');
+          return { title: cleanTitle(d.title, d.publisher), image: img, url: /^https?:\/\//.test(d.url || '') ? d.url : url,
+            price: isFinite(price) && price > 0 && price < 100000 ? Math.round(price * 100) / 100 : null, publisher: String(d.publisher || '').slice(0, 40) };
+        }
+      } catch (e) { /* rete assente o limite gratuito: riprovo senza regole o rinuncio */ }
+    }
+    return null;
+  }
+  window.SuiteLink = { preview: preview, cleanTitle: cleanTitle };
+})();
+
+/* ===================== SuiteLock — apertura con Face ID =====================
+   Blocca l'app finché non ti riconosce il telefono. Usa le "passkey" (WebAuthn):
+   il riconoscimento lo fa iOS, l'app non vede mai il tuo volto né conserva nulla
+   del Face ID — riceve solo un sì o un no.
+   - si sblocca all'avvio e quando torni dopo più di 2 minuti in un'altra app;
+   - se il riconoscimento non c'è o fallisce, resta il codice di 6 cifre;
+   - si accende dalle impostazioni di ogni app (scheda "Apertura protetta").
+   Attenzione, è una serratura sulla porta, non una cassaforte: i dati restano
+   dove sono. Serve a non far leggere i tuoi conti a chi ha in mano il telefono. */
+(function () {
+  var APP = (document.querySelector('meta[name="apple-mobile-web-app-title"]') || {}).content
+    || (document.title || 'App').split('·')[0].trim();
+  var KEY = 'suite_lock_' + APP.toLowerCase().replace(/[^a-z0-9]/g, '');
+  var GRACE = 120000; /* 2 minuti fuori dall'app prima di richiedere lo sblocco */
+  var cfg = null, locked = false, overlay = null, hiddenAt = 0, busy = false;
+
+  /* Subito, prima che la pagina si disegni: se il blocco è acceso l'app resta coperta,
+     così non si vede un lampo di dati prima dello sblocco. */
+  try {
+    var early = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (early && early.on) document.documentElement.classList.add('suite-locked');
+  } catch (e) {}
+
+  function read() {
+    if (cfg) return cfg;
+    try { cfg = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { cfg = null; }
+    if (!cfg || typeof cfg !== 'object') cfg = { on: false, credId: '', pin: '', salt: '' };
+    return cfg;
+  }
+  function write() {
+    try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {}
+  }
+  function b64(buf) {
+    var b = new Uint8Array(buf), s = '';
+    for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function unb64(str) {
+    var s = String(str).replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    var bin = atob(s), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function rand(n) { return crypto.getRandomValues(new Uint8Array(n)); }
+
+  /* Il codice non viene salvato: si salva solo la sua impronta. */
+  async function hashPin(pin, saltB64) {
+    var salt = unb64(saltB64);
+    var key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
+    var bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, key, 256);
+    return b64(bits);
+  }
+
+  async function faceIdAvailable() {
+    try {
+      if (!window.PublicKeyCredential || !navigator.credentials) return false;
+      if (!window.isSecureContext) return false;
+      return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    } catch (e) { return false; }
+  }
+
+  /* Registra il riconoscimento su questo telefono. */
+  async function enroll() {
+    var c = read();
+    var cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: rand(32),
+        rp: { name: APP, id: location.hostname },
+        user: { id: rand(16), name: APP, displayName: APP },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'preferred', userVerification: 'required' },
+        timeout: 60000,
+        attestation: 'none'
+      }
+    });
+    if (!cred) throw new Error('niente');
+    c.credId = b64(cred.rawId);
+    write();
+    return true;
+  }
+  /* Chiede il riconoscimento. Torna true solo se il telefono dice di sì. */
+  async function askFaceId() {
+    var c = read();
+    var opts = { challenge: rand(32), timeout: 60000, userVerification: 'required', rpId: location.hostname };
+    if (c.credId) opts.allowCredentials = [{ type: 'public-key', id: unb64(c.credId), transports: ['internal'] }];
+    var got = await navigator.credentials.get({ publicKey: opts });
+    return !!got;
+  }
+
+  /* ---------- Schermata di sblocco ---------- */
+  function buildOverlay() {
+    var el = document.createElement('div');
+    el.className = 'suite-lock';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'App bloccata');
+    el.innerHTML =
+      '<div class="sl-box">' +
+        '<div class="sl-face" aria-hidden="true">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/>' +
+          '<path d="M9 10v1M15 10v1M12 10v3l-1 1M9 15.5s1.2 1 3 1 3-1 3-1"/></svg>' +
+        '</div>' +
+        '<p class="sl-app"></p>' +
+        '<p class="sl-msg">Sbloccala per vedere i tuoi dati.</p>' +
+        '<button type="button" class="sl-main primary">Sblocca con Face ID</button>' +
+        '<form class="sl-pin" hidden autocomplete="off">' +
+          '<input class="sl-pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="••••••" aria-label="Codice di 6 cifre">' +
+          '<button type="submit" class="sl-pin-ok primary">Apri</button>' +
+        '</form>' +
+        '<button type="button" class="sl-alt">Usa il codice</button>' +
+      '</div>';
+    return el;
+  }
+  function show() {
+    if (locked) return;
+    locked = true;
+    document.documentElement.classList.add('suite-locked');
+    overlay = buildOverlay();
+    document.body.appendChild(overlay);
+    var box = overlay.querySelector('.sl-box');
+    var main = overlay.querySelector('.sl-main');
+    var alt = overlay.querySelector('.sl-alt');
+    var form = overlay.querySelector('.sl-pin');
+    var input = overlay.querySelector('.sl-pin-input');
+    var msg = overlay.querySelector('.sl-msg');
+    overlay.querySelector('.sl-app').textContent = APP;
+    var c = read();
+    if (!c.credId) { main.hidden = true; alt.hidden = true; form.hidden = false; }
+    if (!c.pin) alt.hidden = true;
+
+    main.addEventListener('click', async function () {
+      if (busy) return; busy = true; main.disabled = true;
+      msg.textContent = 'Guarda il telefono…';
+      try {
+        if (await askFaceId()) { hide(); return; }
+        msg.textContent = 'Non riconosciuto. Riprova o usa il codice.';
+      } catch (e) {
+        msg.textContent = c.pin ? 'Riconoscimento non riuscito: usa il codice.' : 'Riconoscimento non riuscito. Riprova.';
+        if (c.pin) { form.hidden = false; alt.hidden = true; setTimeout(function(){ input.focus(); }, 60); }
+      }
+      busy = false; main.disabled = false;
+    });
+    alt.addEventListener('click', function () {
+      form.hidden = false; alt.hidden = true; main.hidden = true;
+      msg.textContent = 'Scrivi il codice di 6 cifre.';
+      setTimeout(function () { input.focus(); }, 60);
+    });
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var v = (input.value || '').replace(/\D/g, '');
+      if (v.length < 4) { msg.textContent = 'Il codice è di 6 cifre.'; return; }
+      var h = await hashPin(v, c.salt);
+      if (h === c.pin) { hide(); return; }
+      input.value = '';
+      msg.textContent = 'Codice sbagliato.';
+      box.classList.remove('sl-shake'); void box.offsetWidth; box.classList.add('sl-shake');
+    });
+    /* su iPhone il riconoscimento parte solo da un tocco: nessun tentativo automatico */
+  }
+  function hide() {
+    locked = false; busy = false;
+    document.documentElement.classList.remove('suite-locked');
+    if (overlay) { overlay.remove(); overlay = null; }
+    hiddenAt = 0;
+  }
+
+  function lockIfNeeded() {
+    var c = read();
+    if (!c.on) return;
+    show();
+  }
+
+  /* ---------- Scheda nelle impostazioni ---------- */
+  function cardHtml(o) {
+    o = o || {};
+    var c = read(), H = o.h || 'h2', cls = o.cls || 'card';
+    var stato = c.on ? 'Attiva: l’app chiede il riconoscimento all’avvio e dopo due minuti in un’altra app.'
+                     : 'Spenta: chiunque abbia il telefono sbloccato può aprire l’app.';
+    return '<div class="' + cls + ' suite-lock-card" data-suite-lock-card="1" data-h="' + H + '" data-cls="' + cls + '">' +
+      '<' + H + '>Apertura protetta</' + H + '>' +
+      '<p class="suite-lock-status"><span class="suite-lock-dot ' + (c.on ? 'on' : 'off') + '" aria-hidden="true"></span>' + stato + '</p>' +
+      (c.on
+        ? '<div class="suite-lock-actions"><button type="button" data-suite-lock="off">Disattiva</button>' +
+          '<button type="button" data-suite-lock="pin">🔢 Cambia codice</button></div>'
+        : '<button type="button" class="primary" data-suite-lock="on">🔒 Attiva Face ID</button>') +
+      '<p class="suite-lock-note">È una serratura sulla porta: impedisce di aprire l’app a chi ha in mano il telefono. I dati restano dove sono.</p>' +
+      '</div>';
+  }
+  function refreshCards() {
+    var list = document.querySelectorAll('[data-suite-lock-card]');
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      var tmp = document.createElement('div');
+      tmp.innerHTML = cardHtml({ h: c.getAttribute('data-h'), cls: c.getAttribute('data-cls') });
+      c.replaceWith(tmp.firstChild);
+    }
+  }
+  /* Se l'app non ha previsto un posto, la scheda si mette accanto a quella della
+     sincronizzazione: così compare in tutte e cinque senza toccarle una per una. */
+  function place() {
+    if (document.querySelector('[data-suite-lock-card]')) return;
+    var slot = document.querySelector('[data-suite-lock-slot]');
+    var sync = document.querySelector('[data-suite-sync-card]');
+    var host = slot || sync;
+    if (!host) return;
+    var tmp = document.createElement('div');
+    tmp.innerHTML = cardHtml({ h: sync && !slot ? (sync.getAttribute('data-h') || 'h2') : 'h2',
+                               cls: sync && !slot ? (sync.getAttribute('data-cls') || 'card') : 'card' });
+    if (slot) slot.replaceWith(tmp.firstChild); else sync.after(tmp.firstChild);
+  }
+
+  async function askPin(titolo) {
+    var v = prompt(titolo + '\nScrivi 6 cifre (ti servono se il riconoscimento non funziona):', '');
+    if (v === null) return null;
+    v = String(v).replace(/\D/g, '');
+    if (v.length < 4) { alert('Il codice deve avere almeno 4 cifre.'); return null; }
+    return v.slice(0, 6);
+  }
+
+  document.addEventListener('click', async function (e) {
+    var b = e.target.closest && e.target.closest('[data-suite-lock]');
+    if (!b) return;
+    var act = b.getAttribute('data-suite-lock'), c = read();
+    if (act === 'off') {
+      if (!confirm('Disattivo l’apertura protetta?')) return;
+      cfg = { on: false, credId: '', pin: '', salt: '' }; write(); refreshCards();
+      return;
+    }
+    if (act === 'pin') {
+      var p = await askPin('Nuovo codice');
+      if (p == null) return;
+      c.salt = b64(rand(16)); c.pin = await hashPin(p, c.salt); write();
+      alert('Codice aggiornato.');
+      return;
+    }
+    /* accensione */
+    b.disabled = true;
+    try {
+      if (await faceIdAvailable()) {
+        await enroll();
+      } else {
+        alert('Su questo dispositivo non c’è il riconoscimento: userò solo il codice.');
+      }
+      var pin = await askPin('Codice di riserva');
+      if (pin == null) { cfg.credId = ''; write(); b.disabled = false; return; }
+      c = read();
+      c.salt = b64(rand(16)); c.pin = await hashPin(pin, c.salt); c.on = true; write();
+      refreshCards();
+      alert('Fatto: da adesso l’app si apre solo dopo il riconoscimento.');
+    } catch (err) {
+      alert('Non sono riuscito a registrare il riconoscimento. Riprova, oppure lascia solo il codice.');
+    }
+    b.disabled = false;
+  });
+
+  /* ---------- Avvio e rientro ---------- */
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    if (!read().on || locked) return;
+    if (hiddenAt && Date.now() - hiddenAt > GRACE) show();
+  });
+  function start() { place(); lockIfNeeded(); }
+  if (document.body) start();
+  else document.addEventListener('DOMContentLoaded', start);
+  /* Le app che ridisegnano le impostazioni da sole cancellerebbero la scheda:
+     appena ricompare quella della sincronizzazione, la rimettiamo accanto. */
+  var replaceTimer = null;
+  function watchSettings() {
+    if (!document.body) return;
+    new MutationObserver(function () {
+      if (replaceTimer) return;
+      replaceTimer = setTimeout(function () { replaceTimer = null; try { place(); } catch (e) {} }, 200);
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.body) watchSettings();
+  else document.addEventListener('DOMContentLoaded', watchSettings);
+
+  window.SuiteLock = {
+    cardHtml: cardHtml, refresh: refreshCards, lock: show, isOn: function () { return !!read().on; },
+    available: faceIdAvailable
+  };
+})();
+
+/* ===================== SuiteAI — il collegamento al modello =====================
+   Le app non parlano mai direttamente con il modello: la chiave dell'API non può stare
+   dentro una pagina web. Qui si chiama la funzione "suite-ai" su Supabase, che tiene
+   la chiave al sicuro e accetta solo i compiti che conosce.
+   Serve l'accesso alla sincronizzazione; se manca, o se la rete non va, le funzioni
+   tornano null e l'app continua con le sue regole scritte a mano. */
+(function () {
+  var cache = {};           /* stesse domande nella stessa sessione: una sola chiamata */
+  var spento = false;       /* se la funzione non c'è, smettiamo di riprovare */
+  var ultimoErrore = null;  /* perché l'ultima chiamata non ha portato dati (si mostra all'utente) */
+
+  /* Numeri scritti in tutti i modi: 35 · "35,50" · "€ 1.234,56" · "1,234.56" · "12 euro" */
+  function numero(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : NaN;
+    if (v == null) return NaN;
+    var t = String(v).replace(/[^0-9,.\-]/g, '');
+    if (!t) return NaN;
+    var c = t.lastIndexOf(','), d = t.lastIndexOf('.');
+    if (c >= 0 && d >= 0) t = c > d ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+    else if (c >= 0) t = /,\d{3}$/.test(t) && t.split(',').length > 2 ? t.replace(/,/g, '') : t.replace(',', '.');
+    else if (d >= 0 && t.split('.').length > 2) t = t.replace(/\.(?=\d{3}(\.|$))/g, '');
+    else if (d >= 0 && /^-?\d{1,3}\.\d{3}$/.test(t)) t = t.replace('.', '');
+    var n = parseFloat(t);
+    return isFinite(n) ? Math.round(n * 100) / 100 : NaN;
+  }
+  /* La funzione può rispondere {ok, dati} oppure direttamente con i dati: accettiamo entrambi. */
+  function estrai(r) {
+    if (!r) return null;
+    if (typeof r === 'string') { try { r = JSON.parse(r); } catch (e) { ultimoErrore = { messaggio: 'risposta non leggibile' }; return null; } }
+    if (r.ok === false) { ultimoErrore = { messaggio: String(r.errore || r.error || r.messaggio || 'la funzione ha risposto con un errore').slice(0, 160) }; return null; }
+    var d = r.dati || r.data || r.risultato || r.result || null;
+    if (!d && typeof r === 'object' && r.ok === undefined) d = r;
+    if (typeof d === 'string') { try { d = JSON.parse(d.replace(/^```(json)?|```$/g, '')); } catch (e) { d = null; } }
+    if (!d || typeof d !== 'object') { ultimoErrore = { messaggio: 'risposta vuota' }; return null; }
+    ultimoErrore = null;
+    return d;
+  }
+  function erroreDa(e) {
+    var st = e && e.status;
+    /* la funzione suite-ai spiega il problema nel campo "error": lo mostriamo così com'è */
+    var m = e && e.message && /"error"\s*:\s*"([^"]+)"/.exec(e.message);
+    if (m) { ultimoErrore = { status: st || 0, messaggio: m[1] }; return; }
+    var msg = st === 404 ? 'la funzione suite-ai non è pubblicata su Supabase'
+      : st === 401 ? 'accesso scaduto: rientra in Altro › Sincronizzazione'
+      : st === 403 ? 'questa email non è abilitata (SUITE_AI_EMAILS)'
+      : st ? ('errore ' + st + (e.message ? ' · ' + String(e.message).replace(/^Errore \d+:?\s*/, '').slice(0, 120) : ''))
+      : 'rete non raggiungibile';
+    ultimoErrore = { status: st || 0, messaggio: msg };
+  }
+  function messaggioErrore(base) {
+    if (!ultimoErrore) return base;
+    return 'L\u2019AI non ha risposto (' + ultimoErrore.messaggio + ').' + (base ? ' ' + base : '');
+  }
+
+  function disponibile() {
+    return !spento && !!(window.SuiteSync && SuiteSync.signedIn);
+  }
+  async function ask(task, testo, extra) {
+    if (!disponibile()) return null;
+    extra = extra || {};
+    var k = task + '|' + testo + '|' + JSON.stringify(extra.opzioni || '');
+    if (cache[k]) { ultimoErrore = null; return cache[k]; }
+    ultimoErrore = null;
+    try {
+      var r = await SuiteSync.api('/functions/v1/suite-ai', {
+        method: 'POST',
+        json: { task: task, testo: String(testo || ''), opzioni: extra.opzioni || [], contesto: extra.contesto || {} }
+      });
+      var dati = estrai(r);
+      if (dati) cache[k] = dati;   /* le risposte vuote non si tengono: un nuovo tentativo riprova davvero */
+      return dati;
+    } catch (e) {
+      erroreDa(e);
+      /* 404 = funzione non pubblicata: non insistiamo */
+      if (e && e.status === 404) spento = true;
+      return null;
+    }
+  }
+  /* Sceglie fra un elenco di chiavi. Torna la chiave solo se il modello è convinto. */
+  async function scegli(task, testo, elenco, soglia) {
+    var d = await ask(task, testo, { opzioni: elenco });
+    if (!d || !d.chiave) return null;
+    var ok = elenco.some(function (o) { return (o.chiave || o.key) === d.chiave; });
+    if (!ok) return null;
+    if (typeof d.sicurezza === 'number' && d.sicurezza < (soglia == null ? 0.55 : soglia)) return null;
+    return d.chiave;
+  }
+  /* ---------- Foto ----------
+     La foto viene rimpicciolita e ricompressa prima di partire: una foto da 4 MB
+     diventa 150 KB e il modello legge lo stesso. Meno dati, meno attesa, meno costo. */
+  function fotoInBase64(file, lato) {
+    return new Promise(function (ok, no) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var max = lato || 1400;
+        var s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * s);
+        c.height = Math.round(img.naturalHeight * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        var d = c.toDataURL('image/jpeg', 0.82);
+        ok({ tipo: 'image/jpeg', dati: d.slice(d.indexOf(',') + 1) });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); no(new Error('foto non leggibile')); };
+      img.src = url;
+    });
+  }
+  async function daFoto(task, file, extra) {
+    if (!disponibile() || !file) return null;
+    extra = extra || {};
+    try {
+      var im = await fotoInBase64(file, extra.lato);
+      ultimoErrore = null;
+      var r = await SuiteSync.api('/functions/v1/suite-ai', {
+        method: 'POST',
+        json: { task: task, testo: extra.testo || '', opzioni: extra.opzioni || [], contesto: extra.contesto || {}, immagine: im }
+      });
+      return estrai(r);
+    } catch (e) {
+      erroreDa(e);
+      if (e && e.status === 404) spento = true;
+      return null;
+    }
+  }
+
+  window.SuiteAI = {
+    disponibile: disponibile,
+    ask: ask,
+    scegli: scegli,
+    daFoto: daFoto,
+    fotoInBase64: fotoInBase64,
+    numero: numero,
+    messaggioErrore: messaggioErrore,
+    get ultimoErrore() { return ultimoErrore; },
+    /* Importo da una risposta, qualunque nome abbia il campo e comunque sia scritto. */
+    importoDa: function (d, campi) {
+      if (!d) return NaN;
+      var lista = campi || ['importo', 'totale', 'amount', 'total', 'cifra', 'prezzo'];
+      for (var i = 0; i < lista.length; i++) { var n = numero(d[lista[i]]); if (n > 0) return n; }
+      return NaN;
+    },
+    /* Frase libera → movimento. Torna null se non ha capito l'importo. */
+    movimento: async function (frase, opts) {
+      var d = await ask('movimento', frase, opts || {});
+      if (!d) return null;
+      var n = window.SuiteAI.importoDa(d);
+      if (!(n > 0)) { if (!ultimoErrore) ultimoErrore = null; return null; }
+      d.importo = n;
+      return d;
+    },
+    /* Numeri → un paragrafo in italiano. Il contesto lo prepara l'app. */
+    riepilogo: async function (contesto, domanda) {
+      var d = await ask('riepilogo', domanda || 'Spiegami com\u2019\u00e8 andata.', { contesto: contesto });
+      if (!d || !d.testo) return null;
+      return { testo: String(d.testo), punti: Array.isArray(d.punti) ? d.punti.map(String).slice(0, 5) : [] };
+    },
+
+    /* ---------- Componenti pronti ----------
+       Due pezzi di interfaccia uguali in tutte le app, così ogni punto nuovo
+       costa poche righe e si comporta sempre allo stesso modo. */
+
+    /* Riga "scrivilo a parole": campo + pulsante. onDati riceve la risposta. */
+    riga: function (opts) {
+      var o = opts || {};
+      var wrap = document.createElement('div');
+      wrap.className = 'ai-row';
+      wrap.innerHTML =
+        '<div class="ai-row-input"><input type="text" class="text-input ai-input" autocomplete="off" enterkeyhint="go">' +
+        '<button type="button" class="ai-go" aria-label="Leggi la frase">\u2728</button></div>' +
+        '<small class="field-hint ai-hint"></small>';
+      var inp = wrap.querySelector('.ai-input'), btn = wrap.querySelector('.ai-go'), hint = wrap.querySelector('.ai-hint');
+      inp.placeholder = o.placeholder || 'Scrivilo a parole\u2026';
+      hint.textContent = o.hint || '';
+      var busy = false;
+      async function vai() {
+        var t = inp.value.trim();
+        if (!t) { inp.focus(); return; }
+        if (busy) return;
+        busy = true; btn.disabled = true; hint.textContent = o.attesa || 'Sto leggendo\u2026';
+        var d = await ask(o.task, t, { opzioni: o.opzioni ? o.opzioni() : [], contesto: o.contesto ? o.contesto() : {} });
+        busy = false; btn.disabled = false;
+        if (!wrap.isConnected) return;
+        var esito = o.onDati ? o.onDati(d) : null;
+        hint.textContent = (!d && ultimoErrore) ? messaggioErrore('Puoi scriverlo a mano qui sotto.')
+          : (esito || (d ? (o.fatto || 'Fatto: controlla e salva.') : (o.niente || 'Non ho capito: scrivilo a mano.')));
+        if (d && !esito) inp.value = '';
+      }
+      btn.addEventListener('click', vai);
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); vai(); } });
+      wrap.setHint = function (t) { hint.textContent = t; };
+      return wrap;
+    },
+
+    /* Pulsante "dalla foto": apre fotocamera o galleria e manda lo scatto. */
+    pulsanteFoto: function (opts) {
+      var o = opts || {};
+      var wrap = document.createElement('div');
+      wrap.className = 'ai-photo';
+      wrap.innerHTML =
+        '<button type="button" class="pill-btn ai-shot">' + (o.etichetta || '\ud83d\udcf7 Dalla foto') + '</button>' +
+        '<input type="file" accept="image/*" capture="environment" hidden class="ai-cam">' +
+        '<input type="file" accept="image/*" hidden class="ai-gal">' +
+        '<button type="button" class="pill-btn ai-pick">\ud83d\uddbc\ufe0f Galleria</button>' +
+        '<small class="field-hint ai-hint"></small>';
+      var shot = wrap.querySelector('.ai-shot'), pick = wrap.querySelector('.ai-pick');
+      var cam = wrap.querySelector('.ai-cam'), gal = wrap.querySelector('.ai-gal'), hint = wrap.querySelector('.ai-hint');
+      shot.addEventListener('click', function () { cam.click(); });
+      pick.addEventListener('click', function () { gal.click(); });
+      async function leggi(input) {
+        var f = input.files && input.files[0]; input.value = '';
+        if (!f) return;
+        shot.disabled = pick.disabled = true;
+        hint.textContent = o.attesa || 'Sto leggendo la foto\u2026';
+        var d = await daFoto(o.task, f, { contesto: o.contesto ? o.contesto() : {}, opzioni: o.opzioni ? o.opzioni() : [], lato: o.lato });
+        shot.disabled = pick.disabled = false;
+        if (!wrap.isConnected) return;
+        var esito = o.onDati ? o.onDati(d, f) : null;
+        hint.textContent = (!d && ultimoErrore) ? messaggioErrore('Puoi scriverlo a mano.')
+          : (esito || (d ? (o.fatto || 'Fatto: controlla e salva.') : (o.niente || 'Non sono riuscito a leggere la foto.')));
+      }
+      cam.addEventListener('change', function () { leggi(cam); });
+      gal.addEventListener('change', function () { leggi(gal); });
+      wrap.setHint = function (t) { hint.textContent = t; };
+      return wrap;
+    }
+  };
+})();

@@ -91,7 +91,7 @@ nav.tabbar.tabbar-bottom button {
   color: var(--suite-text-soft) !important;
   background: transparent !important;
 }
-nav.tabbar.tabbar-bottom button span { font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+nav.tabbar.tabbar-bottom button span { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 nav.tabbar.tabbar-bottom button.active {
   background: var(--suite-teal-grad) !important;
   color: #fff !important;
@@ -132,7 +132,7 @@ dialog .head, .editor-head { background: transparent !important; }
 
 /* ---------- Aspetto (tema) ---------- */
 .suite-seg { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 4px; padding: 4px; margin-top: 8px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.07); }
-.suite-seg-opt { display: flex !important; align-items: center; justify-content: center; gap: 6px; min-height: 40px !important; padding: 6px 4px !important; border: 0 !important; border-radius: 11px !important; background: transparent !important; color: inherit; font-weight: 700; font-size: 14px; box-shadow: none !important; }
+.suite-seg-opt { display: flex !important; align-items: center; justify-content: center; gap: 6px; min-height: 40px !important; padding: 6px 4px !important; border: 0 !important; border-radius: 11px !important; background: transparent !important; color: inherit; font-weight: 700; font-size: 15px; box-shadow: none !important; }
 .suite-seg-opt.active { background: var(--suite-teal-grad) !important; color: #fff !important; box-shadow: 0 6px 16px -6px rgba(58,166,132,.75), inset 0 1px 0 rgba(255,255,255,.22) !important; }
 :root[data-theme="light"] .suite-seg { background: rgba(20,24,26,.05); border-color: rgba(20,24,26,.08); }
 .suite-theme-hint { margin: 8px 0 0; }
@@ -157,8 +157,8 @@ dialog .head, .editor-head { background: transparent !important; }
 .app-update-modal.show { opacity: 1; pointer-events: auto; }
 .app-update-card { width: min(340px,100%); padding: 22px 20px 18px; border-radius: 22px; text-align: center; background: rgba(27,35,44,.86); color: #f1f5f4; border: 1px solid rgba(255,255,255,.07); box-shadow: 0 24px 60px rgba(0,0,0,.35); -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); }
 .app-update-icon { width: 46px; height: 46px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 800; background: rgba(85,195,167,.18); color: #55c3a7; }
-.app-update-card h3 { margin: 0 0 6px; font-size: 18px; }
-.app-update-card p { margin: 0 0 16px; font-size: 14px; line-height: 1.45; color: #9fb0ab; }
+.app-update-card h3 { margin: 0 0 6px; font-size: 17px; }
+.app-update-card p { margin: 0 0 16px; font-size: 15px; line-height: 1.45; color: #9fb0ab; }
 .app-update-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .app-update-actions.one { grid-template-columns: 1fr; }
 .app-update-card button { min-height: 44px; border-radius: 14px; font: inherit; font-weight: 700; font-size: 15px; border: 1px solid rgba(255,255,255,.1); background: transparent; color: inherit; }
@@ -175,9 +175,9 @@ dialog .head, .editor-head { background: transparent !important; }
 .suite-sync-more button{font-size:13px!important;font-weight:600!important;padding:8px 6px!important;}
 .suite-modal-card{max-height:min(80vh,620px);display:flex;flex-direction:column;text-align:left;}
 .suite-modal-card h3{text-align:center;}
-.suite-modal-text{font-size:13.5px;line-height:1.45;opacity:.8;margin:0 0 12px!important;}
+.suite-modal-text{font-size:13px;line-height:1.45;opacity:.8;margin:0 0 12px!important;}
 .suite-history-list{display:grid;gap:6px;overflow-y:auto;margin-bottom:12px;}
-.suite-history-row{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid rgba(127,140,150,.3);background:transparent;color:inherit;font:inherit;font-size:14px;text-align:left;}
+.suite-history-row{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid rgba(127,140,150,.3);background:transparent;color:inherit;font:inherit;font-size:15px;text-align:left;}
 .suite-history-row.confirm{border:0;background:linear-gradient(145deg,#f7c463,#e48d24);color:#241800;font-weight:700;}
 .suite-modal .suite-sync-form{gap:10px;}
 
@@ -187,116 +187,114 @@ dialog .head, .editor-head { background: transparent !important; }
 .app-update-card .app-confirm-ok.danger { border: 0; background: linear-gradient(145deg, #ec6b62, #c8473f); color: #fff; }
 
 /* ---------- 2.1.0 — Leghe e squadre ---------- */
-.toggle-line { display: flex !important; align-items: center; gap: 10px; margin: 10px 0 4px !important; font-size: 14px !important; color: var(--suite-text) !important; }
+.toggle-line { display: flex !important; align-items: center; gap: 10px; margin: 10px 0 4px !important; font-size: 15px !important; color: var(--suite-text) !important; }
 .toggle-line input { width: 20px !important; height: 20px; flex: 0 0 auto; accent-color: #3fb38e; }
 
 /* ---------- 2.1.0 — Notifiche (promemoria serale) ---------- */
 .push-card .push-settings { display: grid; gap: 8px; margin: 0 0 10px; }
-.push-card .push-line { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; margin: 0 !important; font-size: 14px !important; color: var(--suite-text) !important; }
+.push-card .push-line { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; margin: 0 !important; font-size: 15px !important; color: var(--suite-text) !important; }
 .push-card .push-line select { width: auto; min-width: 104px; min-height: 42px; }
 .push-card .push-on-btn { width: 100%; }
-.push-card .push-msg { margin: 10px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--suite-text-soft); }
+.push-card .push-msg { margin: 10px 0 0; font-size: 13px; line-height: 1.4; color: var(--suite-text-soft); }
 .push-card .push-msg.err { color: var(--bt-down-text); }
 
-/* 2.1.4 — iPhone safe areas and translucent surfaces. */
-:root {
-  --bt-top-space: calc(env(safe-area-inset-top, 0px) + 22px);
-}
+/* =====================================================================
+   2.1.1 — Trasparenza come nelle altre app (RecompApp, Bilancio)
+   Le superfici che erano piene diventano velature semitrasparenti; pannelli e
+   popup sono vetro sfocato. Si cambiano le variabili di colors.css (usate solo
+   come sfondo), così ogni elemento dell'app le segue senza riscrivere le regole.
+   Restano piene solo la schermata di caricamento (--bt-12181f, --bt-23433e).
+   ===================================================================== */
 :root[data-theme="dark"] {
-  --bt-glass: rgba(27,35,44,.40);
-  --bt-sheet: rgba(27,35,44,.66);
-  --bt-inset: rgba(255,255,255,.045);
-  --bt-edge: rgba(255,255,255,.16);
+  /* superfici interne alle card */
+  --bt-17212a: rgba(255,255,255,.035); --bt-18212a: rgba(255,255,255,.04); --bt-182029: rgba(255,255,255,.04);
+  --bt-1b232c: rgba(255,255,255,.045); --bt-1e2a34: rgba(255,255,255,.05); --bt-202a34: rgba(255,255,255,.07); --bt-202b36: rgba(30,40,50,.86);
+  /* pulsanti, campi, menu */
+  --bt-222d38: rgba(255,255,255,.06); --bt-25313b: rgba(255,255,255,.07); --bt-273641: rgba(255,255,255,.07); --bt-27313a: rgba(255,255,255,.07);
+  --bt-293742: rgba(255,255,255,.08); --bt-2a3844: rgba(255,255,255,.08); --bt-2b3742: rgba(255,255,255,.08); --bt-31404c: rgba(255,255,255,.10);
+  /* tinte: verde, rosso, blu, oro */
+  --bt-214c3d: rgba(58,166,132,.20); --bt-26473d: rgba(38,71,61,.82); --bt-2d5148: rgba(58,166,132,.22);
+  --bt-402b30: rgba(229,88,79,.16); --bt-522d32: rgba(229,88,79,.20); --bt-542e2e: rgba(229,88,79,.22);
+  --bt-244568: rgba(90,140,220,.20); --bt-46361e: rgba(232,163,61,.18); --bt-3b321f: rgba(232,163,61,.16); --bt-2a2418: rgba(232,163,61,.14);
+  /* pannello esito/evento */
+  --bt-161e26: rgba(22,30,38,.62);
 }
 :root[data-theme="light"] {
-  --bt-glass: rgba(255,255,255,.44);
-  --bt-sheet: rgba(255,255,255,.68);
-  --bt-inset: rgba(255,255,255,.32);
-  --bt-edge: rgba(85,105,100,.20);
+  --bt-17212a: rgba(255,255,255,.5); --bt-18212a: rgba(255,255,255,.55); --bt-182029: rgba(255,255,255,.55);
+  --bt-1b232c: rgba(255,255,255,.6); --bt-1e2a34: rgba(255,255,255,.55); --bt-202a34: rgba(255,255,255,.7); --bt-202b36: rgba(255,255,255,.9);
+  --bt-222d38: rgba(20,24,26,.045); --bt-25313b: rgba(20,24,26,.05); --bt-273641: rgba(20,24,26,.05); --bt-27313a: rgba(20,24,26,.05);
+  --bt-293742: rgba(20,24,26,.06); --bt-2a3844: rgba(20,24,26,.06); --bt-2b3742: rgba(20,24,26,.06); --bt-31404c: rgba(20,24,26,.08);
+  --bt-214c3d: rgba(31,138,108,.12); --bt-26473d: rgba(20,24,26,.86); --bt-2d5148: rgba(31,138,108,.14);
+  --bt-402b30: rgba(200,71,63,.10); --bt-522d32: rgba(200,71,63,.12); --bt-542e2e: rgba(200,71,63,.14);
+  --bt-244568: rgba(31,95,153,.10); --bt-46361e: rgba(232,163,61,.18); --bt-3b321f: rgba(232,163,61,.16); --bt-2a2418: rgba(232,163,61,.14);
+  --bt-161e26: rgba(255,255,255,.66);
 }
-html { min-height: 100%; overflow-x: clip; }
-body { min-height: 100vh; min-height: 100dvh; overflow-x: clip; isolation: isolate; }
-body::before {
-  inset: 0;
-  background: radial-gradient(ellipse at 0% 10%, var(--suite-glow-a), transparent 65%),
-    radial-gradient(ellipse at 100% 55%, var(--suite-glow-b), transparent 65%),
-    radial-gradient(ellipse at 15% 100%, var(--suite-glow-c), transparent 60%), var(--suite-bg);
+/* bordi dei controlli: il filo di vetro delle altre app */
+main button:not(.primary):not(.active):not([data-diary-range]):not(.dcal-day),
+main input, main select, dialog input, dialog select, dialog textarea {
+  border-color: var(--suite-glass-edge) !important;
 }
-body > header {
-  position: relative; top: auto; z-index: 3;
-  padding-top: var(--bt-top-space); padding-bottom: 18px;
-  min-height: calc(var(--bt-top-space) + 66px);
-  padding-right: 164px;
+
+/* ---------- Popup e pannelli: vetro sfocato ---------- */
+dialog, :root[data-theme="dark"] dialog, :root[data-theme="light"] dialog {
+  background: color-mix(in srgb, var(--suite-surface) 60%, transparent) !important;
+  border: 1px solid var(--suite-glass-edge) !important;
+  box-shadow: 0 24px 60px -18px rgba(0,0,0,.55) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.8) !important;
+  backdrop-filter: blur(24px) saturate(1.8) !important;
 }
-#new-bet {
-  position: fixed; top: var(--bt-top-space);
-  right: max(16px, calc((100vw - 528px) / 2));
-  min-height: 46px; z-index: 30;
+:root[data-theme="light"] dialog {
+  background: color-mix(in srgb, #ffffff 72%, transparent) !important;
+  box-shadow: 0 24px 60px -18px rgba(20,24,26,.28) !important;
 }
-main { min-height: calc(100dvh - var(--bt-top-space) - 66px); }
-main .card, main details.card, main .card.hero,
-:root[data-theme="light"] main .card.hero {
-  background: var(--bt-glass) !important;
-  border-color: var(--bt-edge) !important;
-  box-shadow: 0 12px 32px -20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.13) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(1.55);
-  backdrop-filter: blur(18px) saturate(1.55);
+dialog::backdrop { background: rgba(8,11,13,.42) !important; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+:root[data-theme="light"] dialog::backdrop { background: rgba(20,24,26,.26) !important; }
+dialog .editor-head, dialog .head, .editor-head {
+  background: transparent !important;
+  border-bottom: 1px solid var(--suite-glass-edge);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
 }
-:root[data-theme] dialog, :root[data-theme] .app-update-card,
-:root[data-theme] .pick-panel-card {
-  background: var(--bt-sheet) !important;
-  color: var(--suite-text); border: 1px solid var(--bt-edge) !important;
-  border-radius: 26px !important;
-  box-shadow: 0 24px 65px -20px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.65);
-  backdrop-filter: blur(24px) saturate(1.65);
+.bet-savebar {
+  background: color-mix(in srgb, var(--suite-surface) 55%, transparent) !important;
+  border-top: 1px solid var(--suite-glass-edge) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
 }
-dialog { max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px); }
-:root[data-theme] dialog::backdrop { background: rgba(5,10,16,.28); }
-.pick-panel-scrim { background: rgba(5,10,16,.25); }
-:root[data-theme] .app-update-modal { background: rgba(5,10,16,.25); }
-:root[data-theme] .leg, :root[data-theme] .pick-options,
-:root[data-theme] .diary-row, :root[data-theme] .diary-stat,
-:root[data-theme] .bet-meta, :root[data-theme] .bet-savebar {
-  background: var(--bt-inset); border-color: var(--bt-edge);
+.pick-panel-scrim { background: rgba(8,11,13,.42) !important; -webkit-backdrop-filter: blur(5px) !important; backdrop-filter: blur(5px) !important; }
+:root[data-theme="light"] .pick-panel-scrim { background: rgba(20,24,26,.26) !important; }
+.pick-panel-card, .event-panel-card {
+  border: 1px solid var(--suite-glass-edge) !important;
+  box-shadow: 0 -16px 40px -12px rgba(0,0,0,.5) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.6);
+  backdrop-filter: blur(26px) saturate(1.6);
 }
-dialog input, dialog select, dialog textarea,
-.pick-panel-card button:not(.primary):not(.sheet-close):not(.selected) {
-  background: var(--bt-inset); border-color: var(--bt-edge); color: var(--suite-text);
+.team-suggestions { border-color: var(--suite-glass-edge) !important; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+.app-update-card { background: color-mix(in srgb, var(--suite-surface) 62%, transparent) !important; -webkit-backdrop-filter: blur(26px) saturate(1.6); backdrop-filter: blur(26px) saturate(1.6); }
+:root[data-theme="light"] .app-update-card { background: rgba(255,255,255,.78) !important; }
+.app-toast { -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); border: 1px solid var(--suite-glass-edge); border-radius: 14px !important; }
+
+/* ---------- X di chiusura: solo la X, grigia, senza riquadro ---------- */
+button[data-close], dialog .editor-head button[data-close] {
+  width: 34px !important; min-width: 34px !important; height: 34px !important; min-height: 34px !important;
+  padding: 0 !important; display: grid !important; place-items: center !important;
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  color: var(--suite-text-soft) !important; font-size: 17px !important; font-weight: 600 !important;
 }
-:root[data-theme] button[data-close], :root[data-theme] .sheet-close {
-  background: transparent !important; color: var(--suite-text) !important;
-  border: 0 !important; box-shadow: none !important; border-radius: 0;
-  min-width: 44px; min-height: 44px; padding: 8px; font-size: 21px;
+button[data-close]:active { opacity: .6; }
+
+/* ---------- Intestazione: più aria sotto l'isola dinamica / tacca ---------- */
+header {
+  padding-top: calc(16px + env(safe-area-inset-top)) !important;
+  padding-bottom: 12px !important;
+  align-items: flex-end !important;
 }
-.pick-panel-head { position: relative; padding-right: 40px; }
-.sheet-close { position: absolute; right: -8px; top: -8px; }
-.dcal-head { margin: 6px 0 20px; gap: 12px; }
-.dcal-head b { font-size: 18px; }
-.dcal-nav { width: 44px; min-height: 44px !important; background: var(--bt-inset); border-color: var(--bt-edge); }
-.dcal-grid { gap: 6px 4px; }
-.dcal-wd { font-size: 11px; padding-bottom: 8px; font-weight: 600; }
-.dcal-day { min-height: 57px !important; justify-content: center; gap: 5px; border-radius: 14px !important; }
-.dcal-day b { font-size: 15px; }
-.dcal-day small { font-size: 9px; max-width: 100%; overflow-wrap: anywhere; line-height: 1.2; }
-:root[data-theme] .dcal-day.has { background: var(--bt-inset) !important; border-color: var(--bt-edge) !important; }
-.dcal-day.today { border: 1.5px solid var(--gold) !important; background: rgba(232,163,61,.12) !important; }
-.dcal-day.future { opacity: .30; }
-.dcal-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 10px; color: var(--suite-text-soft); margin-top: 16px; }
-.dcal-summary { gap: 10px; margin-top: 14px; padding-top: 14px; border-color: var(--bt-edge); }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root[data-theme] dialog, :root[data-theme] .pick-panel-card, :root[data-theme] .app-update-card { background: var(--suite-surface) !important; }
-}
-:root[data-theme] .kpi-breakdown > div,
-:root[data-theme] .event-selection-summary,
-:root[data-theme] .bet-leg-block, :root[data-theme] .bet-detail-box,
-:root[data-theme] .compact-bet-card .bet-leg-compact,
-:root[data-theme] .diary-row {
-  background: var(--bt-inset) !important; border-color: var(--bt-edge);
-}
-:root[data-theme] .team-suggestions, :root[data-theme] .app-toast {
-  background: var(--bt-sheet); color: var(--suite-text);
-  border: 1px solid var(--bt-edge);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
-  backdrop-filter: blur(20px) saturate(1.5);
-}
+
+/* ---------- iPhone: lo sfondo copre sempre tutto lo schermo ----------
+   Con html e body entrambi in overflow-x:hidden, Safari fa scorrere il body come
+   un riquadro alto quanto il contenuto: su una scheda corta (es. Scommesse con
+   pochi risultati) sotto restava una fascia scoperta. clip taglia lo sbordo
+   orizzontale senza creare un riquadro di scorrimento. */
+html { overflow-x: clip !important; min-height: 100%; background: var(--suite-bg) !important; }
+body { overflow-x: clip !important; min-height: 100vh; min-height: 100dvh; }
+@supports not (overflow: clip) { html, body { overflow-x: hidden !important; } }

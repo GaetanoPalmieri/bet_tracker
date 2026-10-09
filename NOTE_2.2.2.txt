@@ -1,0 +1,9 @@
+VERSIONE 2.2.2
+
+Numero di versione in fondo alla pagina
+- In Bilancio e Noi Due la riga "Versione ..." in fondo alla scheda Altro restava
+  vuota: nessuno riempiva piu quello spazio.
+- Ora ci pensa suite.js: legge il numero dal <meta name="app-version"> in cima a
+  index.html, quello che rilascio.py tiene sempre aggiornato, e lo scrive in ogni
+  punto marcato con data-app-version.
+- Vale per tutte le app della suite, anche quelle che oggi non mostrano il numero.

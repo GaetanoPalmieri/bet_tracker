@@ -116,13 +116,13 @@ button.button-tap {
 #bet-form label {
   margin: 0;
   line-height: 1.4;
-  font-size: 12px;
+  font-size: 13px;
 }
 #bet-form input {
   margin-top: 5px;
   height: 44px;
   padding: 9px 10px;
-  font-size: 16px;
+  font-size: 17px;
 }
 .bet-meta {
   display: grid;
@@ -148,11 +148,11 @@ button.button-tap {
   display: none;
 }
 .bet-date > summary > span {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--sub);
 }
 .bet-date > summary b {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -166,7 +166,7 @@ button.button-tap {
   max-width: 100%;
   height: 44px;
   padding: 6px;
-  font-size: 16px;
+  font-size: 17px;
 }
 #bet-form .leg {
   margin: 8px 0;
@@ -192,7 +192,7 @@ button.button-tap {
   background: var(--bt-293742);
   color: var(--bt-e8c17f);
   border-radius: 7px;
-  font-size: 12px;
+  font-size: 13px;
 }
 .leg-summary {
   display: grid;
@@ -201,7 +201,7 @@ button.button-tap {
   flex: 1;
 }
 .leg-summary b {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   overflow: hidden;
   white-space: nowrap;
@@ -251,13 +251,13 @@ button.button-tap {
 #bet-form .pick-grid button {
   min-height: 40px;
   padding: 7px 4px;
-  font-size: 12px;
+  font-size: 13px;
 }
 #bet-form [data-close-picks] {
   width: 100%;
   min-height: 36px;
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 13px;
   padding: 6px;
 }
 .leg-tools {
@@ -297,7 +297,7 @@ button.button-tap {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 5px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--bt-9fb0ab);
   margin: 0 0 9px;
 }
@@ -318,7 +318,7 @@ button.button-tap {
     gap: 9px;
   }
   .bet-date > summary b {
-    font-size: 12px;
+    font-size: 13px;
   }
   .date-edit {
     float: none;
@@ -328,7 +328,7 @@ button.button-tap {
     grid-template-columns: minmax(0, 1fr) 72px;
   }
 }
-@media (max-width: 400px) {
+@media (max-width: 480px) {
   .bet-meta:has(.bet-date[open]) {
     grid-template-columns: 1fr;
   }
@@ -403,7 +403,7 @@ button.button-tap {
   right: 10px;
   bottom: 8px;
   color: var(--gold);
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   opacity: 0.9;
 }
@@ -450,7 +450,7 @@ button.button-tap {
 }
 .kpi-panel-row strong {
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: 15px;
   text-align: right;
 }
 .kpi-panel-empty {
@@ -466,13 +466,13 @@ button.button-tap {
     padding: 13px 8px;
   }
   .kpi-card .value {
-    font-size: 19px;
+    font-size: 17px;
   }
   .kpi-card .kpi-title {
     font-size: 11px;
   }
   .kpi-card .kpi-detail {
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 
@@ -531,7 +531,7 @@ button.button-tap {
   min-height: 50px;
   padding: 0;
   border-radius: 15px;
-  font-size: 27px;
+  font-size: 22px;
   line-height: 1;
   display: grid;
   place-items: center;
@@ -569,7 +569,7 @@ button.button-tap {
   border: 1px solid var(--bt-2b3640);
   color: var(--bt-f1f5f4);
   text-align: left;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 500;
 }
 .pick-trigger-text {
@@ -579,7 +579,7 @@ button.button-tap {
 }
 .pick-trigger-arrow {
   color: var(--bt-e8c17f);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
   flex-shrink: 0;
 }
@@ -625,14 +625,14 @@ button.button-tap {
 .pick-panel-head small {
   display: block;
   color: var(--bt-e8a33d);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 750;
   letter-spacing: 0.08em;
   margin-bottom: 4px;
 }
 .pick-panel-head h3 {
   margin: 0 0 4px;
-  font-size: 19px;
+  font-size: 17px;
 }
 .pick-panel-head p {
   margin: 0 0 12px;
@@ -653,7 +653,7 @@ button.button-tap {
 #bet-form .pick-panel-grid button {
   min-height: 44px;
   padding: 8px 6px;
-  font-size: 12px;
+  font-size: 13px;
 }
 .pick-panel-actions {
   display: flex;
@@ -665,7 +665,7 @@ button.button-tap {
   height: 48px;
   min-height: 48px;
   padding: 0;
-  font-size: 25px;
+  font-size: 22px;
   display: grid;
   place-items: center;
 }
@@ -731,7 +731,7 @@ button.button-tap {
   white-space: nowrap;
 }
 .bet-card-actions .bet-outcomes-button {
-  font-size: 10.5px;
+  font-size: 11px;
 }
 .bet-card .quick-outcomes button {
   width: 44px;
@@ -795,7 +795,7 @@ button.button-tap {
 #bet-form .pick-panel-buttons button {
   min-height: 42px;
   padding: 8px 6px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 @media (max-width: 360px) {
@@ -808,10 +808,10 @@ button.button-tap {
   }
   .bet-card-actions button {
     padding: 6px 5px;
-    font-size: 10px;
+    font-size: 11px;
   }
   .bet-card-actions .bet-outcomes-button {
-    font-size: 9.5px;
+    font-size: 11px;
   }
   .bet-card .quick-outcomes {
     gap: 5px;
@@ -843,7 +843,7 @@ button.button-tap {
 }
 #bet-form .pick-group-button span:last-child {
   color: var(--bt-e8c17f);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
 }
 #bet-form .pick-back {
@@ -853,7 +853,7 @@ button.button-tap {
   background: transparent;
   border-color: var(--bt-34414d);
   color: var(--bt-e8c17f);
-  font-size: 12px;
+  font-size: 13px;
 }
 #bet-form #pick-custom-block[hidden] {
   display: none;
@@ -959,7 +959,7 @@ button.button-tap {
   justify-content: center;
 }
 .home-money-grid .value {
-  font-size: 20px;
+  font-size: 22px;
   margin-top: 5px;
 }
 .home-money-grid small:last-child {
@@ -1020,7 +1020,7 @@ button.button-tap {
 }
 @media (max-width: 360px) {
   .home-money-grid .money-components {
-    font-size: 10px;
+    font-size: 11px;
   }
   .kpi-breakdown {
     grid-template-columns: 1fr;
@@ -1082,12 +1082,12 @@ button.button-tap {
   font-size: 13px;
 }
 .event-group-button small {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
 }
 .event-group-button > span:last-child {
   color: var(--bt-e8c17f);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
 }
 .event-panel-card label {
@@ -1108,7 +1108,7 @@ button.button-tap {
   border: 1px solid var(--bt-34414d);
   border-radius: 11px;
   background: var(--bt-18212a);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--bt-b8c4c0);
   line-height: 1.4;
 }
@@ -1121,7 +1121,7 @@ button.button-tap {
   margin: 14px 0 0;
   padding-top: 10px;
   border-top: 1px solid var(--bt-2b3640);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.35;
 }
 /* v1.1.15 — selezione campionati più ampia, card strutturate, statistiche geografiche */
@@ -1142,7 +1142,7 @@ button.button-tap {
   border-radius: 14px;
 }
 .event-group-button b {
-  font-size: 14px;
+  font-size: 15px;
 }
 .event-group-button small {
   font-size: 11px;
@@ -1201,7 +1201,7 @@ button.button-tap {
   background: var(--bt-202b36);
 }
 .bet-detail-box small {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--sub);
@@ -1240,14 +1240,14 @@ button.button-tap {
   gap: 3px;
 }
 .stats-filter summary small {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.055em;
 }
 .stats-filter summary b {
   font-size: 15px;
 }
 .stats-filter-chevron {
-  font-size: 20px;
+  font-size: 22px;
   color: var(--gold);
   transition: transform 0.2s;
 }
@@ -1274,7 +1274,7 @@ button.button-tap {
   margin-bottom: 12px;
 }
 .geo-mini-value {
-  font-size: 19px;
+  font-size: 17px;
 }
 .geo-chart h2 {
   margin-bottom: 16px;
@@ -1309,7 +1309,7 @@ button.button-tap {
   border-radius: 999px;
 }
 .geo-bar-row > small {
-  font-size: 10px;
+  font-size: 11px;
 }
 @media (max-width: 380px) {
   .event-panel-card {
@@ -1409,18 +1409,18 @@ button.button-tap {
   min-width: 0;
 }
 .compact-bet-card .bet-card-title > b {
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
 }
 .compact-bet-card .bet-card-date {
-  font-size: 9.5px;
+  font-size: 11px;
   color: var(--sub);
   white-space: nowrap;
 }
 .compact-bet-card .badge {
   padding: 3px 6px;
   border-radius: 6px;
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.1;
 }
 .compact-bet-card .compact-quick-outcomes {
@@ -1476,11 +1476,11 @@ button.button-tap {
   border-radius: 5px;
   background: var(--bt-2b3742);
   color: var(--bt-d6dfdc);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
 }
 .compact-bet-card .bet-leg-division {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
   color: var(--bt-e8c17f);
@@ -1489,14 +1489,14 @@ button.button-tap {
   text-overflow: ellipsis;
 }
 .compact-bet-card .bet-leg-meta {
-  font-size: 8.5px;
+  font-size: 11px;
   color: var(--sub);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .compact-bet-card .bet-leg-match {
-  font-size: 11.5px;
+  font-size: 11px;
   line-height: 1.22;
   white-space: nowrap;
   overflow: hidden;
@@ -1507,11 +1507,11 @@ button.button-tap {
   align-items: center;
   gap: 10px;
   min-width: 0;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--bt-dfe7e5);
 }
 .compact-bet-card .bet-leg-bottomline small {
-  font-size: 8.5px;
+  font-size: 11px;
   color: var(--sub);
 }
 .compact-bet-card .bet-leg-pick {
@@ -1529,7 +1529,7 @@ button.button-tap {
   padding: 3px 5px;
   border-radius: 5px;
   background: var(--bt-273641);
-  font-size: 8.5px;
+  font-size: 11px;
   font-weight: 750;
   white-space: nowrap;
 }
@@ -1564,12 +1564,12 @@ button.button-tap {
   text-align: center;
 }
 .compact-bet-card .bet-summary-strip small {
-  font-size: 8px;
+  font-size: 11px;
   line-height: 1.1;
   color: var(--sub);
 }
 .compact-bet-card .bet-summary-strip b {
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
@@ -1578,7 +1578,7 @@ button.button-tap {
 .compact-bet-card .bet-settled-date {
   display: block;
   margin: 5px 1px 0;
-  font-size: 8.5px;
+  font-size: 11px;
   line-height: 1.2;
   color: var(--sub);
 }
@@ -1594,7 +1594,7 @@ button.button-tap {
   min-height: 28px;
   padding: 4px 6px;
   border-radius: 7px;
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.1;
 }
 @media (max-width: 380px) {
@@ -1618,7 +1618,7 @@ button.button-tap {
     gap: 0;
   }
   .compact-bet-card .bet-card-date {
-    font-size: 8.5px;
+    font-size: 11px;
   }
   .compact-bet-card .bet-leg-compact {
     padding: 6px 7px;
@@ -1634,7 +1634,7 @@ button.button-tap {
     padding: 5px 3px;
   }
   .compact-bet-card .bet-summary-strip b {
-    font-size: 9.5px;
+    font-size: 11px;
   }
 }
 
@@ -1673,7 +1673,7 @@ button.button-tap {
   margin: 6px 0 4px;
 }
 .diary-chip {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   padding: 5px 10px;
   border-radius: 999px;
@@ -1704,7 +1704,7 @@ button.button-tap {
 .diary-record {
   width: 100%;
   min-height: 50px;
-  font-size: 16px !important;
+  font-size: 17px !important;
   border-radius: 16px !important;
 }
 
@@ -1720,7 +1720,7 @@ button.button-tap {
 }
 .diary-kpi small {
   display: block;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--suite-text-soft);
   font-weight: 600;
 }
@@ -1728,7 +1728,7 @@ button.button-tap {
   display: block;
   font-family: var(--suite-font-display);
   font-variant-numeric: tabular-nums;
-  font-size: 20px;
+  font-size: 22px;
   margin: 4px 0 2px;
   letter-spacing: -0.01em;
 }
@@ -1792,7 +1792,7 @@ button.button-tap {
 }
 .dc-axis {
   fill: var(--suite-text-soft);
-  font-size: 10.5px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 .dc-path {
@@ -1858,7 +1858,7 @@ button.button-tap {
 .diary-chart-detail {
   margin: 8px 0 0;
   min-height: 34px;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.4;
   color: var(--suite-text-soft);
 }
@@ -1866,7 +1866,7 @@ button.button-tap {
   padding: 26px 10px;
   text-align: center;
   color: var(--suite-text-soft);
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -1894,12 +1894,12 @@ button.button-tap {
   display: block;
   font-family: var(--suite-font-display);
   font-variant-numeric: tabular-nums;
-  font-size: 16px;
+  font-size: 17px;
   margin: 3px 0 1px;
 }
 .diary-stat span {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--suite-text-soft);
   line-height: 1.3;
 }
@@ -1919,7 +1919,7 @@ button.button-tap {
   width: 40px;
   padding: 0 !important;
   border-radius: 12px !important;
-  font-size: 20px !important;
+  font-size: 22px !important;
 }
 .dcal-grid {
   display: grid;
@@ -1928,7 +1928,7 @@ button.button-tap {
   text-align: center;
 }
 .dcal-wd {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--suite-text-soft);
   padding-bottom: 2px;
 }
@@ -1950,7 +1950,7 @@ button.button-tap {
   font-weight: 600;
 }
 .dcal-day small {
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -2028,7 +2028,7 @@ button.button-tap {
   font-size: 17px;
 }
 .diary-row-date small {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--suite-text-soft);
   text-transform: capitalize;
 }
@@ -2041,7 +2041,7 @@ button.button-tap {
   font-variant-numeric: tabular-nums;
 }
 .diary-row-main small {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--suite-text-soft);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2050,13 +2050,13 @@ button.button-tap {
 .diary-row-delta {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 .diary-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 .diary-table th {
   font-size: 11px;
@@ -2083,7 +2083,7 @@ button.button-tap {
   margin: 0;
   padding-left: 20px;
   line-height: 1.6;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--suite-text-soft);
 }
 .diary-intro ol b {
@@ -2106,271 +2106,30 @@ button.button-tap {
 /* 2.1.0 — Diario: giorno della settimana e confronto con le scommesse (colori validati) */
 :root { --bt-vs-a: #c4842a; --bt-vs-b: #7383ea; }
 :root[data-theme='light'] { --bt-vs-a: #c47a12; --bt-vs-b: #5363d8; }
-.dc-val { fill: var(--suite-text); font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.dc-val { fill: var(--suite-text); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .vs-a, .vs-b { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .vs-a { stroke: var(--bt-vs-a); }
 .vs-b { stroke: var(--bt-vs-b); stroke-dasharray: 6 4; }
-.vs-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 8px; font-size: 12.5px; color: var(--suite-text-soft); }
+.vs-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 8px; font-size: 13px; color: var(--suite-text-soft); }
 .vs-legend b { color: var(--suite-text); font-variant-numeric: tabular-nums; }
 .vs-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
 .vs-key.a { border-color: var(--bt-vs-a); }
 .vs-key.b { border-color: var(--bt-vs-b); border-top-style: dashed; }
 .vs-rows { display: grid; gap: 0; margin-top: 6px; }
-.vs-rows > div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--suite-line); font-size: 13.5px; }
+.vs-rows > div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--suite-line); font-size: 13px; }
 .vs-rows > div span { color: var(--suite-text-soft); }
 .vs-rows b { font-variant-numeric: tabular-nums; }
 .vs-rows .vs-gap { border-bottom: 0; font-weight: 700; }
 .vs-rows .vs-gap span { color: var(--suite-text); }
 .vs-note { margin: 4px 0 0; }
 
-/* =====================================================================
-   2.1.2 — Home: calendario saldo ridisegnato
-   Più leggibile su mobile, gerarchia chiara e stati giornalieri immediati.
-   ===================================================================== */
-.dcal-shell {
-  position: relative;
-  padding: 10px;
-  border: 1px solid var(--suite-glass-edge);
-  border-radius: 20px;
-  background:
-    radial-gradient(120% 90% at 50% -20%, rgba(232, 163, 61, 0.10), transparent 58%),
-    rgba(255, 255, 255, 0.025);
-  overflow: hidden;
-}
-:root[data-theme='light'] .dcal-shell {
-  background:
-    radial-gradient(120% 90% at 50% -20%, rgba(232, 163, 61, 0.10), transparent 58%),
-    rgba(255, 255, 255, 0.34);
-}
-.dcal-toolbar {
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 42px;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.dcal-month-label {
-  min-width: 0;
-  text-align: center;
-}
-.dcal-month-label small {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--suite-text-soft);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-}
-.dcal-month-label b {
-  display: block;
-  overflow: hidden;
-  color: var(--suite-text);
-  font-family: var(--suite-font-display);
-  font-size: 17px;
-  font-weight: 760;
-  line-height: 1.2;
-  text-transform: capitalize;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.dcal-nav {
-  width: 42px !important;
-  min-width: 42px !important;
-  height: 42px !important;
-  min-height: 42px !important;
-  padding: 0 !important;
-  border: 1px solid var(--suite-glass-edge) !important;
-  border-radius: 14px !important;
-  background: rgba(255, 255, 255, 0.055) !important;
-  color: var(--suite-text) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  font-size: 24px !important;
-  font-weight: 500 !important;
-  line-height: 1 !important;
-}
-:root[data-theme='light'] .dcal-nav {
-  background: rgba(255, 255, 255, 0.52) !important;
-}
-.dcal-nav:disabled {
-  opacity: 0.25 !important;
-}
-.dcal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 5px;
-  text-align: center;
-}
-.dcal-wd {
-  padding: 3px 0 5px;
-  color: var(--suite-text-soft);
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-.dcal-spacer {
-  min-width: 0;
-}
-.dcal-day {
-  position: relative;
-  min-width: 0;
-  min-height: 54px !important;
-  padding: 7px 2px 5px !important;
-  border: 1px solid transparent !important;
-  border-radius: 14px !important;
-  background: rgba(255, 255, 255, 0.018) !important;
-  color: var(--suite-text) !important;
+/* 2.4.0 — riquadro AI in cima alla nuova scommessa */
+.ai-bet {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2px;
-  box-shadow: none !important;
-  overflow: hidden;
+  gap: 8px;
+  margin: 0 0 14px;
 }
-:root[data-theme='light'] .dcal-day {
-  background: rgba(20, 24, 26, 0.018) !important;
-}
-.dcal-day.weekend:not(.has) {
-  color: color-mix(in srgb, var(--suite-text) 72%, transparent) !important;
-}
-.dcal-date {
-  position: relative;
-  z-index: 1;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.dcal-value {
-  position: relative;
-  z-index: 1;
-  min-height: 12px;
-  max-width: 100%;
-  overflow: hidden;
-  color: var(--suite-text-soft);
-  font-size: 8.5px;
-  font-weight: 800;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.dcal-day.has {
-  border-color: var(--suite-glass-edge) !important;
-  background: rgba(255, 255, 255, 0.055) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
-}
-:root[data-theme='light'] .dcal-day.has {
-  background: rgba(255, 255, 255, 0.56) !important;
-}
-.dcal-day.has.positive {
-  background:
-    linear-gradient(180deg, rgba(54, 160, 127, 0.13), rgba(54, 160, 127, 0.035)) !important;
-  border-color: color-mix(in srgb, var(--bt-up) 38%, var(--suite-glass-edge)) !important;
-}
-.dcal-day.has.negative {
-  background:
-    linear-gradient(180deg, rgba(229, 88, 79, 0.13), rgba(229, 88, 79, 0.035)) !important;
-  border-color: color-mix(in srgb, var(--bt-down) 36%, var(--suite-glass-edge)) !important;
-}
-.dcal-day.has.positive .dcal-value {
-  color: var(--bt-up-text);
-}
-.dcal-day.has.negative .dcal-value {
-  color: var(--bt-down-text);
-}
-.dcal-day.today {
-  border-color: var(--bt-line-color) !important;
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--bt-line-color) 14%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-}
-.dcal-day.today::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--bt-line-color);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bt-line-color) 14%, transparent);
-}
-.dcal-day.future {
-  opacity: 0.24;
-}
-.dcal-day:not(:disabled):active {
-  transform: scale(0.94);
-}
-.dcal-summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-  margin-top: 10px;
-  padding: 0;
-  border: 0;
-}
-.dcal-summary-item {
-  min-width: 0;
-  padding: 9px 10px;
-  border: 1px solid var(--suite-glass-edge);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.035);
-}
-:root[data-theme='light'] .dcal-summary-item {
-  background: rgba(255, 255, 255, 0.45);
-}
-.dcal-summary-item small {
-  display: block;
-  overflow: hidden;
-  color: var(--suite-text-soft);
-  font-size: 8.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.dcal-summary-item b {
-  display: block;
-  margin-top: 3px;
-  color: var(--suite-text);
-  font-family: var(--suite-font-display);
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
-}
-.dcal-legend {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 12px;
-  margin-top: 9px;
-  color: var(--suite-text-soft);
-  font-size: 9.5px;
-  font-weight: 650;
-}
-.dcal-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.dcal-legend i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--suite-text-soft);
-}
-.dcal-legend i.up { background: var(--bt-up); }
-.dcal-legend i.down { background: var(--bt-down); }
-.dcal-legend i.today { background: var(--bt-line-color); }
-
-@media (max-width: 360px) {
-  .dcal-shell { padding: 8px; }
-  .dcal-grid { gap: 3px; }
-  .dcal-day {
-    min-height: 49px !important;
-    border-radius: 12px !important;
-  }
-  .dcal-date { font-size: 12px; }
-  .dcal-value { font-size: 7.5px; }
-  .dcal-month-label b { font-size: 15px; }
+.ai-analisi-card .row h2 {
+  margin: 0;
 }

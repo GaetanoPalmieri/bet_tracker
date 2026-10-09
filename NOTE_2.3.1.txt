@@ -1,0 +1,7 @@
+VERSIONE 2.3.1
+
+Allineamento ai file condivisi
+- Aggiornati suite.js e suite-ui.css insieme alle altre app (nuove funzioni AI
+  usate altrove, pezzi grafici comuni).
+- In Bet Tracker non e' stata aggiunta nessuna funzione AI: analisi dei propri dati
+  si potrebbe fare, pronostici no.

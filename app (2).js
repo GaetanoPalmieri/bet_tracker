@@ -1,4 +1,4 @@
-const APP_VERSION = '2.1.2';
+const APP_VERSION = '2.4.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -549,6 +549,7 @@ function render() {
     html =
       statsFilters() +
       kpis(rows, { context: 'stats-kpis' }) +
+      aiAnalisiCard(rows) +
       geoStats(rows) +
       `<div class="card stats-chart"><h2>Profitto cumulato</h2>${U.chart(chartPoints, 'Profitto cumulato in euro')}<small>Ordine di liquidazione. Gli esiti senza data restano nello storico, esclusi dal grafico.</small></div><div class="card"><h2>Singole e multiple</h2><table class="list-table"><tr><th>Tipo</th><th>Numero</th><th>Puntate</th><th>Profitto</th></tr>${[
         false,
@@ -582,7 +583,79 @@ function render() {
   bind();
   U.bindChart(main, chartPoints);
   if (tab === 'home') bindDiary();
+  if (tab === 'stats') bindAiAnalisi(selectedBets());
   if (tab === 'accounts' && typeof renderPushCard === 'function') renderPushCard();
+}
+/* v2.4.0 — "Com'è andata": l'AI racconta i TUOI numeri del periodo scelto.
+   Solo dati già nell'app; niente pronostici e niente inviti a giocare di più. */
+function aiAnalisiCard(rows) {
+  if (!(window.SuiteAI && SuiteAI.disponibile()) || !rows.length) return '';
+  return `<div class="card ai-analisi-card"><div class="row"><h2>Com’è andata</h2><button type="button" id="ai-analisi-btn">✨ Spiegamelo</button></div><p class="muted" id="ai-analisi-hint">Due righe sui tuoi numeri di ${U.esc(periodLabel ? periodLabel() : 'questo periodo')}. Nessun pronostico.</p><div class="ai-summary" id="ai-analisi-out" hidden></div></div>`;
+}
+function analisiContesto(rows) {
+  const closed = rows.filter((b) => b.status !== 'pending'),
+    staked = closed.reduce((n, b) => n + b.stake, 0),
+    net = U.round(closed.reduce((n, b) => n + profit(b), 0)),
+    rate = winRate(rows),
+    tipo = (m) => {
+      const r = closed.filter((b) => b.legs.length > 1 === m);
+      return { numero: r.length, puntato: U.round(r.reduce((n, b) => n + b.stake, 0)), profitto: U.round(r.reduce((n, b) => n + profit(b), 0)) };
+    },
+    perEsito = {};
+  closed.forEach((b) =>
+    b.legs.forEach((l) => {
+      const k = String(l.pick || '').trim() || '?';
+      const e = (perEsito[k] = perEsito[k] || { giocati: 0, vinti: 0 });
+      e.giocati++;
+      if (l.status === 'won') e.vinti++;
+    }),
+  );
+  const quote = closed.map((b) => odds(b)).filter((q) => Number.isFinite(q));
+  const mese = new Date().toISOString().slice(0, 7);
+  const puntatoMese = U.round(db.bets.filter((b) => String(b.date).slice(0, 7) === mese).reduce((n, b) => n + b.stake, 0));
+  return {
+    periodo: typeof periodLabel === 'function' ? periodLabel() : '',
+    scommesse: rows.length,
+    concluse: closed.length,
+    inCorso: rows.length - closed.length,
+    puntatoConcluse: U.round(staked),
+    profittoNetto: net,
+    rendimentoPercento: staked ? U.round((net / staked) * 100) : null,
+    vinte: rate.won,
+    giocateConEsito: rate.played,
+    percentualeVinte: rate.percentage,
+    quotaMedia: quote.length ? U.round(quote.reduce((n, q) => n + q, 0) / quote.length) : null,
+    singole: tipo(false),
+    multiple: tipo(true),
+    esitiPiuGiocati: Object.entries(perEsito)
+      .sort((a, b) => b[1].giocati - a[1].giocati)
+      .slice(0, 6)
+      .map(([esito, v]) => ({ esito, ...v })),
+    saldoDisponibile: U.round(balance()),
+    limiteMensile: db.settings.monthlyLimit || 0,
+    puntatoQuestoMese: puntatoMese,
+  };
+}
+function bindAiAnalisi(rows) {
+  const btn = document.getElementById('ai-analisi-btn');
+  if (!btn) return;
+  btn.onclick = async () => {
+    const hint = document.getElementById('ai-analisi-hint'),
+      out = document.getElementById('ai-analisi-out');
+    btn.disabled = true;
+    hint.textContent = 'Sto guardando i tuoi numeri…';
+    const d = await SuiteAI.ask('analisi_scommesse', 'Com’è andata?', { contesto: analisiContesto(rows) });
+    btn.disabled = false;
+    if (!btn.isConnected) return;
+    if (!d || !d.testo) {
+      hint.textContent = SuiteAI.messaggioErrore('Riprova tra poco.');
+      return;
+    }
+    const punti = Array.isArray(d.punti) ? d.punti.slice(0, 5) : [];
+    out.innerHTML = `<p>${U.esc(String(d.testo))}</p>${punti.length ? `<ul>${punti.map((p) => `<li>${U.esc(String(p))}</li>`).join('')}</ul>` : ''}<p class="ai-note">Scritto dall’AI sui tuoi dati: può sbagliare. Non è un pronostico.</p>`;
+    out.hidden = false;
+    hint.textContent = '';
+  };
 }
 function sportsCard() {
   const info = sdbInfo(),
@@ -1663,6 +1736,62 @@ function betForm(b) {
       preview();
     }
   };
+  /* v2.4.0 — "Scrivila a parole" e "Leggi la schedina": compilano puntata, eventi, esiti e quote.
+     Solo per una scommessa nuova e solo con l'AI accesa (serve la sincronizzazione).
+     L'AI legge quello che hai giocato: non suggerisce cosa giocare. */
+  if (!b && window.SuiteAI && SuiteAI.disponibile()) {
+    const holder0 = d.querySelector('#legs');
+    const contestoAI = () => ({ oggi: new Date().toISOString().slice(0, 10), esitiRecenti: (db.settings.recent || []).slice(0, 12) });
+    const applica = (dati) => {
+      if (!dati) return null;
+      const eventi = (Array.isArray(dati.eventi) ? dati.eventi : [])
+        .map((e) => ({
+          event: String(e.evento || e.partita || '')
+            .replace(/\s+(?:-|vs\.?|v)\s+/i, ' – ')
+            .trim()
+            .slice(0, 220),
+          pick: String(e.esito || e.pronostico || '').trim().slice(0, 100),
+          odds: SuiteAI.numero(e.quota),
+        }))
+        .filter((e) => e.event || e.pick);
+      const stake = SuiteAI.numero(dati.puntata ?? dati.importo);
+      if (!eventi.length && !(stake > 0)) return 'Non trovo eventi né puntata: scrivila a mano.';
+      if (stake > 0) form.elements.stake.value = stake.toFixed(2);
+      if (typeof dati.data === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dati.data)) {
+        const dt = new Date(dati.data.length === 10 ? dati.data + 'T12:00' : dati.data);
+        if (!isNaN(dt) && dt <= new Date()) form.elements.date.value = U.local(dt);
+      }
+      if (eventi.length) {
+        holder0.innerHTML = eventi
+          .slice(0, 30)
+          .map((e, i) => legHTML({ event: e.event, pick: e.pick, odds: e.odds >= 1 ? e.odds : '' }, i))
+          .join('');
+        openLeg(holder0.firstElementChild);
+      }
+      preview();
+      const mancano = eventi.filter((e) => !e.event || !e.pick || !(e.odds >= 1)).length;
+      const q = eventi.reduce((n, e) => n * (e.odds >= 1 ? e.odds : 1), 1);
+      return `${eventi.length} ${eventi.length === 1 ? 'evento' : 'eventi'}${eventi.length ? ' · quota ' + q.toFixed(2) : ''}${stake > 0 ? ' · puntata ' + U.money(stake) : ''}. ${mancano ? 'Completa i campi mancanti e salva.' : 'Controlla e salva.'}`;
+    };
+    const box = document.createElement('div');
+    box.className = 'ai-bet';
+    const riga = SuiteAI.riga({
+      task: 'scommessa',
+      placeholder: 'es. Inter-Milan 1 a 2,10 e Juve-Roma over 2.5 a 1,80, 10 euro',
+      hint: 'Scrivi o detta la giocata: puntata, partite, esiti e quote si riempiono da soli.',
+      contesto: contestoAI,
+      onDati: applica,
+    });
+    const foto = SuiteAI.pulsanteFoto({
+      task: 'schedina',
+      etichetta: '🧾 Leggi la schedina',
+      attesa: 'Sto leggendo la schedina…',
+      contesto: contestoAI,
+      onDati: applica,
+    });
+    box.append(riga, foto);
+    form.prepend(box);
+  }
   d.querySelector('#add-leg').onclick = () => {
     const invalid = invalidLeg();
     if (invalid) {
@@ -2479,27 +2608,24 @@ function diaryCalendar(series) {
   series.forEach(function (p) {
     byDate[p.date] = p;
   });
-
   var cells = '';
   for (var i = 1; i <= count; i++) {
     var key = month + '-' + String(i).padStart(2, '0'),
       p = byDate[key],
-      future = key > today,
-      weekDay = new Date(y, m, i).getDay();
+      future = key > today;
     var cls = [
       'dcal-day',
       p ? 'has' : '',
       p && p.delta != null ? sClass(p.delta) : '',
       key === today ? 'today' : '',
       future ? 'future' : '',
-      weekDay === 0 || weekDay === 6 ? 'weekend' : '',
     ]
       .filter(Boolean)
       .join(' ');
     var sub = p
       ? p.delta != null
         ? (p.delta > 0.004 ? '+' : p.delta < -0.004 ? '−' : '') + eurShort(Math.abs(p.delta))
-        : '•'
+        : '●'
       : '';
     cells +=
       '<button type="button" class="' +
@@ -2511,13 +2637,12 @@ function diaryCalendar(series) {
       ' aria-label="' +
       dLabel(key, { weekday: 'long', day: 'numeric', month: 'long' }) +
       (p ? ', saldo ' + U.money(p.balance) : ', non segnato') +
-      '"><span class="dcal-date">' +
+      '"><b>' +
       i +
-      '</span><span class="dcal-value">' +
+      '</b><small>' +
       sub +
-      '</span></button>';
+      '</small></button>';
   }
-
   var inMonth = series.filter(function (p) {
     return p.date.slice(0, 7) === month;
   });
@@ -2526,33 +2651,35 @@ function diaryCalendar(series) {
   });
   var startVal = before.length ? before[before.length - 1].balance : inMonth[0] ? inMonth[0].balance : null;
   var endP = inMonth[inMonth.length - 1];
-  var monthChange = endP && startVal != null ? U.round(endP.balance - startVal) : null;
   var summary =
-    '<div class="dcal-summary"><div class="dcal-summary-item"><small>GIORNI REGISTRATI</small><b>' +
-    inMonth.length +
-    '</b></div><div class="dcal-summary-item"><small>VARIAZIONE MESE</small><b class="' +
-    (monthChange != null ? sClass(monthChange) : '') +
-    '">' +
-    (monthChange != null ? sMoney(monthChange) : '—') +
-    '</b></div></div>';
-
+    endP && startVal != null
+      ? '<div class="dcal-summary"><span>' +
+        inMonth.length +
+        ' ' +
+        (inMonth.length === 1 ? 'giorno segnato' : 'giorni segnati') +
+        '</span><b class="' +
+        sClass(endP.balance - startVal) +
+        '">' +
+        sMoney(endP.balance - startVal) +
+        '</b></div>'
+      : '<div class="dcal-summary"><span>Nessun giorno segnato in questo mese</span></div>';
   var isCurrent = month >= today.slice(0, 7);
   return (
-    '<div class="dcal-shell"><div class="dcal-toolbar"><button type="button" class="dcal-nav" data-dcal-month="-1" aria-label="Mese precedente">‹</button><div class="dcal-month-label"><small>CALENDARIO SALDO</small><b>' +
+    '<div class="dcal-head"><button type="button" class="dcal-nav" data-dcal-month="-1" aria-label="Mese precedente">‹</button><b>' +
     first.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }) +
-    '</b></div><button type="button" class="dcal-nav" data-dcal-month="1" aria-label="Mese successivo"' +
+    '</b><button type="button" class="dcal-nav" data-dcal-month="1" aria-label="Mese successivo"' +
     (isCurrent ? ' disabled' : '') +
-    '>›</button></div><div class="dcal-grid">' +
+    '>›</button></div>' +
+    '<div class="dcal-grid">' +
     ['L', 'M', 'M', 'G', 'V', 'S', 'D']
       .map(function (d) {
         return '<small class="dcal-wd">' + d + '</small>';
       })
       .join('') +
-    '<span class="dcal-spacer" aria-hidden="true"></span>'.repeat(offset) +
+    '<span></span>'.repeat(offset) +
     cells +
     '</div>' +
-    summary +
-    '<div class="dcal-legend"><span><i class="up"></i>In aumento</span><span><i class="down"></i>In calo</span><span><i class="today"></i>Oggi</span></div></div>'
+    summary
   );
 }
 
@@ -2696,7 +2823,7 @@ function diaryPage() {
   }
 
   var agenda =
-    '<section class="card diary-card"><h2>Calendario saldo</h2><p class="muted diary-hint">Tocca un giorno per segnare o correggere il saldo.</p>' +
+    '<section class="card diary-card"><h2>Agenda</h2><p class="muted diary-hint">Tocca un giorno per segnare o correggere il saldo.</p>' +
     diaryCalendar(series) +
     '</section>';
 

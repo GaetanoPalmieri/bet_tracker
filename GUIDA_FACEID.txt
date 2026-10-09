@@ -1,0 +1,38 @@
+APERTURA PROTETTA CON FACE ID
+=============================
+
+COME SI ACCENDE
+   - In ogni app: scheda "Altro" > riquadro "Apertura protetta" > "Attiva Face ID".
+   - Il telefono chiede il riconoscimento una volta per registrarlo.
+   - Poi ti chiede un codice di 6 cifre: serve se il riconoscimento non funziona
+     (occhiali da sole, mascherina, iPad senza Face ID, browser diverso).
+   - Si attiva per ogni app separatamente: puoi proteggere Bilancio e Noi Due e
+     lasciare aperta RecompApp.
+
+QUANDO CHIEDE DI SBLOCCARE
+   - All'avvio dell'app.
+   - Quando torni dopo piu' di 2 minuti passati in un'altra app.
+   - Se esci e rientri subito non chiede niente.
+
+COME FUNZIONA DAVVERO
+   - Usa le "passkey" (WebAuthn): il riconoscimento lo fa iOS, l'app non vede mai il
+     tuo volto e non conserva niente del Face ID. Riceve solo un si' o un no.
+   - Il codice di riserva non viene salvato: si salva solo la sua impronta
+     (PBKDF2-SHA256, 120.000 giri, con un sale casuale).
+
+COSA PROTEGGE E COSA NO
+   - Protegge da chi ha in mano il tuo telefono gia' sbloccato: non puo' aprire l'app
+     e leggere i tuoi conti.
+   - NON e' una cassaforte: i dati restano dove sono (memoria del browser e, se usi la
+     sincronizzazione, Supabase). Chi sa quello che fa potrebbe raggiungerli per altre
+     strade. E' una serratura sulla porta, non un muro.
+
+SE RESTI FUORI
+   - Prima il codice di 6 cifre.
+   - Se hai perso anche quello: Impostazioni > Safari > Avanzate > Dati dei siti web,
+     cancelli i dati del sito e l'app riparte senza blocco. Attenzione: cosi' si
+     perdono anche i dati locali, quindi fallo solo se hai la sincronizzazione attiva.
+
+DOVE NON FUNZIONA
+   - Serve HTTPS (il tuo sito lo e') e un iPhone con iOS 16 o piu' recente.
+   - Dove manca il riconoscimento resta solo il codice.

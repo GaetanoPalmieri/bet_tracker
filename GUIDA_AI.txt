@@ -1,0 +1,116 @@
+COME ACCENDERE L'AI NELLE APP
+=============================
+
+Tutto passa da una sola funzione su Supabase, chiamata "suite-ai", che vale per
+tutte e cinque le app (hanno lo stesso progetto Supabase).
+
+Perche' una funzione e non il modello chiamato dall'app: la chiave dell'API non puo'
+stare dentro una pagina web, chiunque la leggerebbe guardando il codice sorgente.
+Nella funzione invece vive nei Secrets di Supabase e non esce mai dal server.
+
+
+1) PRENDI LA CHIAVE
+   - Vai su  platform.claude.com  (il vecchio console.anthropic.com porta li').
+   - Accedi con la tua email. E' un account separato dall'abbonamento di Claude:
+     l'uso dell'API si paga a parte, quindi serve caricare un credito
+     (Billing / Fatturazione > aggiungi credito). Per queste app bastano 5 euro
+     e durano mesi.
+   - Settings (Impostazioni) > API keys > "Create key".
+     In alternativa: la voce "API keys" nella colonna di sinistra.
+   - Dai un nome alla chiave (es. "suite app"), scegli una scadenza e conferma.
+   - COPIALA SUBITO: viene mostrata una volta sola e non e' piu' recuperabile.
+     Se la perdi, si revoca e se ne crea un'altra.
+   - Inizia con  sk-ant-  seguito da una lunga sequenza di lettere e numeri.
+   - Metti un tetto di spesa mensile (Billing > Limits): e' la rete di sicurezza
+     se qualcosa chiama la funzione piu' del previsto.
+   - La chiave non va mai incollata dentro le app: solo nei Secrets di Supabase
+     (passo 2). Chiunque apra il codice di una pagina web vedrebbe quello che c'e'
+     dentro.
+
+2) METTI LA CHIAVE SU SUPABASE
+   - Supabase > il tuo progetto > Edge Functions > Secrets > "Add new secret".
+   - Nome:  ANTHROPIC_API_KEY      Valore: la chiave appena copiata.
+   - Facoltativi:
+       SUITE_AI_MODEL    per cambiare modello (default claude-haiku-5-5, il piu' economico)
+       SUITE_AI_EMAILS   le email ammesse, separate da virgola (es. tua@mail.it,sua@mail.it)
+
+3) PUBBLICA LA FUNZIONE
+   - Supabase > Edge Functions > "Deploy a new function" > nome esatto: suite-ai
+   - Incolla il contenuto di  _condivisi/supabase/functions/suite-ai/index.ts
+   - Lascia "Verify JWT" ATTIVO: cosi' Supabase scarta da sola le chiamate senza accesso.
+   - Deploy.
+
+4) NELLE APP
+   - Serve l'accesso alla sincronizzazione (la scheda "Sincronizzazione" in Altro):
+     e' quello che identifica te e tua moglie. Senza accesso, l'AI resta spenta e le
+     app continuano con le regole scritte a mano, senza errori.
+
+COSA FA OGGI
+
+  BILANCIO
+   - Nuovo movimento > campo in alto: "35 euro spesa alla Coop ieri" diventa un
+     movimento gia compilato (tipo, importo, data, conto, categoria).
+   - Nuovo movimento > "Leggi lo scontrino": fotografi lo scontrino e riempie
+     importo, negozio, data, categoria; le voci finiscono nelle note.
+   - Nuovo ricorrente > campo in alto: "ogni 5 del mese 12 euro Netflix" compila
+     importo, cadenza, giorno, conto e categoria.
+   - Categoria: quando il nome non assomiglia a niente di gia' visto, la sceglie
+     il modello invece di lasciare il campo vuoto.
+   - Home > "Com'e' andato il mese" > Spiegamelo: due righe sui tuoi numeri del
+     mese, con i punti che meritano attenzione.
+
+  NOI DUE
+   - Lista > "Incolla lista" > "Leggi la frase": "servono latte, due pacchi di
+     pasta e il detersivo" diventa un elenco con quantita' e reparto.
+   - Lista > "Scontrino": fotografi lo scontrino e le voci entrano in lista gia'
+     spuntate, con il prezzo di riga.
+   - Reparti: i prodotti finiti in "Altro" vengono rimessi al posto giusto
+     quando apri la lista.
+   - Coppia > "Com'e' andato il mese" > Spiegamelo: chi ha pagato cosa, come
+     siete messi, cosa e' cambiato.
+
+  RECOMPAPP
+   - Allenamento > "Scrivilo a parole": "panca 4x8 a 60, croci 3x12 a 14"
+     riempie carichi e ripetizioni degli esercizi di oggi. Non tocca quello che
+     hai gia' scritto.
+   - Altro > "Alimento dall'etichetta": fotografi la tabella nutrizionale e
+     l'alimento entra nel tuo elenco con i valori per 100 g.
+
+  STYLE WISHLIST
+   - Nuovo articolo o nuovo capo: alla prima foto, se il nome e' vuoto, vengono
+     compilati nome, categoria, colore, stagione e tag guardando lo scatto.
+
+  BET TRACKER  (serve la funzione suite-ai versione 2, quella di ottobre 2026)
+   - Nuova scommessa > campo in alto: "Inter-Milan 1 a 2,10 e Juve-Roma over 2.5
+     a 1,80, 10 euro" compila puntata, partite, esiti e quote.
+   - Nuova scommessa > "Leggi la schedina": foto o screenshot della giocata.
+   - Statistiche > "Com'e' andata" > Spiegamelo: due righe sui tuoi numeri del
+     periodo (profitto, rendimento, singole contro multiple, limite mensile).
+   - Mai pronostici e mai consigli su cosa o quanto giocare: l'AI registra e
+     racconta solo quello che hai gia' giocato.
+
+QUANTO COSTA
+   - Ogni richiesta e' poche centinaia di parole: con il modello piu' piccolo si parla
+     di frazioni di centesimo. Le stesse domande nella stessa sessione non vengono
+     rifatte due volte.
+
+SE QUALCOSA NON VA
+   - Quando l'AI non risponde, sotto il campo compare il motivo tra parentesi:
+       "L'AI non ha risposto (manca ANTHROPIC_API_KEY nei Secrets di Supabase)"
+       "(chiave ANTHROPIC_API_KEY non valida)"
+       "(modello ... non trovato (controlla SUITE_AI_MODEL))"
+       "(troppe richieste o credito esaurito)"      -> carica credito su platform.claude.com
+       "(questa email non è in SUITE_AI_EMAILS)"
+       "(la funzione suite-ai non è pubblicata su Supabase)"
+       "(accesso non valido: rientra in Sincronizzazione)"
+   - Nel frattempo il Nuovo movimento prende comunque importo, data e nome dalla frase.
+   - Per vedere tutti gli errori: Supabase > Edge Functions > suite-ai > Logs.
+
+AGGIORNAMENTO OTTOBRE 2026 (versione 2 della funzione) — DA FARE UNA VOLTA
+   Prima tutte le funzioni rispondevano "non ho capito l'importo". Il motivo: i modelli
+   5.5 ragionano prima di rispondere e quel ragionamento consuma lo spazio della
+   risposta. Con lo spazio piccolo che avevamo dato, finivano prima di scrivere i dati.
+   La versione 2 chiede un ragionamento breve e lascia molto più spazio.
+   - Supabase > Edge Functions > suite-ai > Code (o "Edit")
+   - Sostituisci tutto il contenuto con il nuovo  _condivisi/supabase/functions/suite-ai/index.ts
+   - Deploy. Lascia "Verify JWT" attivo. I Secrets restano quelli di prima.

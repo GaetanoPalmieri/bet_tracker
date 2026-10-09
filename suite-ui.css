@@ -1,0 +1,643 @@
+/* =====================================================================
+   suite-ui.css — Componenti grafici comuni (identico in tutte le app).
+   Modificalo SOLO in _condivisi e poi: python strumenti/rilascio.py condivisi
+   Va caricato dopo il CSS dell'app e prima di suite-tokens.css.
+
+   Regole della suite
+   - Colori: verde = elemento selezionato · ambra = azione principale ·
+     rosso = pericolo / uscite.
+   - Testi: scala 11 · 13 · 15 · 17 · 22 · 34 px, mai sotto gli 11 px.
+   - Pulsanti: area da toccare di almeno 44 px (anche se il disegno è più piccolo).
+   - Schermi: una sola soglia per tutti gli iPhone moderni, @media (max-width: 480px).
+     Dal 17 (393 px) al 17 Pro Max (440 px) valgono le stesse regole, così cambiando
+     telefono il layout non salta. Sotto i 390 px restano le soglie strette esistenti.
+   ===================================================================== */
+:root {
+  --suite-fs-xs: 11px;
+  --suite-fs-sm: 13px;
+  --suite-fs-md: 15px;
+  --suite-fs-lg: 17px;
+  --suite-fs-xl: 22px;
+  --suite-fs-xxl: 34px;
+  --suite-accent-select: #3fb38e;
+  --suite-select-grad: linear-gradient(135deg, #3fb38e, #1f7a62);
+}
+
+/* ---- Sfumatura sotto la barra in basso: quello che scorre sotto non si legge più
+        attraverso le etichette della barra ---- */
+body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(118px + env(safe-area-inset-bottom));
+  pointer-events: none;
+  z-index: 20;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--suite-bg, #12181f) 0%, transparent) 0%,
+    color-mix(in srgb, var(--suite-bg, #12181f) 78%, transparent) 45%,
+    var(--suite-bg, #12181f) 100%);
+}
+html body nav.tabbar,
+html body nav.tabbar-bottom {
+  background: color-mix(in srgb, var(--suite-surface, #1b232c) 84%, transparent) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.7) !important;
+  backdrop-filter: blur(26px) saturate(1.7) !important;
+}
+
+/* ---- Pulsante "+": scorrendo verso il basso diventa più piccolo e si sposta in basso,
+        così non copre gli importi; risalendo torna normale (vedi SuiteUI in suite.js) ---- */
+:is(#fabAdd, #quick-add, [data-suite-fab]) {
+  transition: transform .22s cubic-bezier(.2, .8, .2, 1), opacity .22s ease !important;
+  transform-origin: 100% 100%;
+}
+html.suite-fab-mini :is(#fabAdd, #quick-add, [data-suite-fab]) {
+  /* Rimpicciolito resta staccato dall'angolo: un po' più in alto e più a sinistra.
+     I valori sono nello spazio già scalato (0,72), quindi lo spostamento reale è ~-13/-16 px. */
+  transform: scale(.72) translate(-18px, -22px) !important;
+  opacity: .9;
+}
+
+/* ---- Menu a tendina nello stile dell'app (stessa forma dei campi e dei pulsanti) ---- */
+html body select:not([multiple]) {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  min-height: 44px;
+  padding-right: 38px !important;
+  border-radius: 14px !important;
+  border: 1px solid color-mix(in srgb, var(--suite-text, #f1f5f4) 12%, transparent) !important;
+  background-color: color-mix(in srgb, var(--suite-text, #f1f5f4) 6%, transparent) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%233fb38e' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 14px 14px !important;
+  color: var(--suite-text, inherit) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+html body select:not([multiple]):focus {
+  outline: none !important;
+  border-color: color-mix(in srgb, #3fb38e 70%, transparent) !important;
+}
+html body select:not([multiple]):not([data-native]) {
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ---- Elenco che si apre al posto del menu di sistema (vedi SuiteSelect in suite.js) ---- */
+html body dialog.ss-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: transparent;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+html body dialog.ss-wrap:not([open]) {
+  display: none;
+}
+dialog.ss-wrap::backdrop {
+  background: rgba(0, 0, 0, .34);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.ss-wrap.show {
+  opacity: 1;
+}
+.ss-sheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0 8px calc(8px + env(safe-area-inset-bottom));
+  padding: 12px 8px 8px;
+  border-radius: 22px;
+  border: 1px solid var(--glass-edge, var(--line, rgba(255,255,255,.14)));
+  background: color-mix(in srgb, var(--card, var(--suite-surface, #1b232c)) 92%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  backdrop-filter: blur(24px) saturate(1.8);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, .45);
+  color: var(--ink, var(--suite-text, #f1f5f4));
+  transform: translateY(14px);
+  transition: transform .2s cubic-bezier(.2, .8, .2, 1);
+}
+.ss-wrap.show .ss-sheet {
+  transform: none;
+}
+.ss-head {
+  font-size: var(--suite-fs-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--ink-soft, inherit);
+  opacity: .85;
+  margin: 2px 10px 8px;
+}
+.ss-list {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+.ss-group {
+  font-size: var(--suite-fs-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  opacity: .6;
+  margin: 10px 10px 4px;
+}
+.ss-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--suite-fs-md);
+  font-weight: 600;
+  text-align: left;
+}
+.ss-opt:disabled {
+  opacity: .4;
+}
+.ss-opt svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--suite-accent-select);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+.ss-opt.active {
+  background: color-mix(in srgb, var(--suite-accent-select) 18%, transparent);
+  color: var(--suite-accent-select);
+  font-weight: 700;
+}
+.ss-opt.active svg {
+  opacity: 1;
+}
+.ss-opt:active {
+  background: color-mix(in srgb, var(--ink, #fff) 12%, transparent);
+}
+
+/* ---- Pulsanti piccoli più facili da toccare ---- */
+:is(.nd-info, .chart-info-btn) {
+  min-width: 30px !important;
+  min-height: 30px !important;
+}
+.pill-btn.mini-btn {
+  min-height: 36px !important;
+}
+/* Area di tocco allargata senza cambiare il disegno (vedi SuiteTap in suite.js) */
+.suite-tap::after {
+  content: "";
+  position: absolute;
+  left: var(--suite-tap-x, 0);
+  right: var(--suite-tap-x, 0);
+  top: var(--suite-tap-y, 0);
+  bottom: var(--suite-tap-y, 0);
+  border-radius: inherit;
+  background: none;
+  pointer-events: auto;
+}
+
+/* ---- Titolo di pagina uniforme ---- */
+.suite-page-title {
+  display: block !important;
+  margin: 4px 2px 14px !important;
+  padding: 0 !important;
+  font-family: var(--suite-font-display, inherit) !important;
+  font-size: var(--suite-fs-xl) !important;
+  font-weight: 800 !important;
+  letter-spacing: -.4px !important;
+  line-height: 1.15 !important;
+  color: var(--suite-text, inherit) !important;
+  text-align: left !important;
+}
+
+/* ---- "Oggi": torna al mese corrente (Bilancio e Noi Due) ---- */
+.topbar .back-to-current {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  height: 34px;
+  padding: 0 13px 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-edge, var(--line));
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+  box-shadow: 0 6px 16px -8px rgba(0,0,0,.45);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform .12s ease, background .12s ease;
+}
+#views .view > .topbar .back-to-current {
+  top: calc(50% + (env(safe-area-inset-top) - 2px) / 2);
+}
+.topbar .back-to-current[hidden] {
+  display: none;
+}
+.topbar .back-to-current svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: #3fb38e;
+}
+:root[data-theme="dark"] .topbar .back-to-current {
+  color: #fff;
+}
+.topbar .back-to-current:active {
+  transform: translateY(-50%) scale(.95);
+}
+/* ---- Tieni premuto: menu veloce (popup) e lista dei mesi ---- */
+.lp-target {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.lp-pressing {
+  opacity: .75;
+  transition: opacity .2s ease;
+}
+.lp-popup {
+  position: fixed;
+  z-index: 400;
+  color: var(--ink);
+  border: 1px solid var(--glass-edge, var(--line));
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.38);
+  background: color-mix(in srgb, var(--card) 86%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.8);
+  backdrop-filter: blur(18px) saturate(1.8);
+  padding: 10px 8px 8px;
+  opacity: 0;
+  transform: translateY(-4px) scale(.98);
+  transition: opacity .14s ease, transform .14s ease;
+}
+.lp-popup.show {
+  opacity: 1;
+  transform: none;
+}
+.lp-head {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin: 2px 4px 6px;
+}
+.mp-list {
+  display: flex;
+  flex-direction: column;
+}
+.mp-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  color: var(--ink);
+  border-radius: 10px;
+}
+.mp-row:first-of-type {
+  border-top: 0;
+}
+.mp-row b {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.mp-row.mp-all b {
+  text-transform: none;
+  white-space: nowrap;
+}
+.mp-row small {
+  white-space: nowrap;
+}
+.mp-row small {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.mp-row.active {
+  background: color-mix(in srgb, #3fb38e 18%, transparent);
+}
+.mp-row.active b {
+  color: #3fb38e;
+}
+.mp-row:active {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* ---- Apertura protetta: schermata di sblocco e scheda nelle impostazioni ---- */
+html.suite-locked body > *:not(.suite-lock) {
+  filter: blur(18px);
+  pointer-events: none;
+  user-select: none;
+}
+html.suite-locked {
+  overflow: hidden;
+}
+.suite-lock {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--suite-bg, #12181f) 86%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+}
+.suite-lock .sl-box {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  color: var(--suite-text, #f1f5f4);
+}
+.suite-lock .sl-face {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  color: var(--suite-accent-select);
+  background: color-mix(in srgb, var(--suite-accent-select) 16%, transparent);
+}
+.suite-lock .sl-face svg { width: 34px; height: 34px; }
+.suite-lock .sl-app {
+  margin: 4px 0 0;
+  font-size: var(--suite-fs-lg);
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+.suite-lock .sl-msg {
+  margin: 0 0 6px;
+  font-size: var(--suite-fs-sm);
+  color: var(--suite-text-soft, #9fb0ab);
+  min-height: 2.4em;
+}
+.suite-lock .sl-main,
+.suite-lock .sl-pin-ok {
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  border-radius: 14px;
+  font: inherit;
+  font-size: var(--suite-fs-md);
+  font-weight: 700;
+  color: #0f1512;
+  background: var(--suite-select-grad);
+}
+.suite-lock .sl-main[hidden],
+.suite-lock .sl-alt[hidden],
+.suite-lock .sl-pin[hidden] { display: none; }
+.suite-lock .sl-pin {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.suite-lock .sl-pin-input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--suite-text, #fff) 16%, transparent);
+  background: color-mix(in srgb, var(--suite-text, #fff) 7%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: var(--suite-fs-xl);
+  letter-spacing: 8px;
+  text-align: center;
+}
+.suite-lock .sl-alt {
+  border: 0;
+  background: none;
+  color: var(--suite-accent-select);
+  font: inherit;
+  font-size: var(--suite-fs-sm);
+  font-weight: 700;
+  padding: 6px;
+}
+.suite-lock .sl-shake { animation: slShake .3s ease; }
+@keyframes slShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-7px); }
+  75% { transform: translateX(7px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .suite-lock .sl-shake { animation: none; }
+}
+.suite-lock-card .suite-lock-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--suite-fs-sm);
+}
+.suite-lock-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: #8a9490;
+}
+.suite-lock-dot.on { background: var(--suite-accent-select); }
+.suite-lock-card .suite-lock-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.suite-lock-card .suite-lock-note {
+  margin: 8px 0 0;
+  font-size: var(--suite-fs-xs);
+  opacity: .75;
+}
+
+/* ---- Pezzi dell'AI: riga "scrivilo a parole" e pulsanti "dalla foto" ---- */
+.ai-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ai-row-input {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ai-row .ai-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ai-row .ai-go {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--suite-accent-select) 45%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--suite-accent-select) 16%, transparent);
+  color: var(--suite-accent-select);
+  font: inherit;
+  font-size: var(--suite-fs-lg);
+  line-height: 1;
+}
+.ai-row .ai-go:disabled {
+  opacity: .5;
+}
+.ai-photo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+.ai-photo .ai-hint,
+.ai-row .ai-hint {
+  flex: 1 1 100%;
+  margin: 0;
+  min-height: 1.3em;
+  font-size: var(--suite-fs-xs);
+  color: var(--suite-text-soft, inherit);
+}
+.ai-photo .pill-btn {
+  flex: 0 0 auto;
+}
+/* Riquadro del riepilogo scritto dall'AI */
+.ai-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ai-summary p {
+  margin: 0;
+  font-size: var(--suite-fs-sm);
+  line-height: 1.5;
+}
+.ai-summary ul {
+  margin: 0;
+  padding-left: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ai-summary li {
+  font-size: var(--suite-fs-xs);
+  line-height: 1.45;
+}
+.ai-summary .ai-note {
+  font-size: var(--suite-fs-xs);
+  opacity: .7;
+}
+
+/* ---- Messaggi (toast): vetro trasparente, uguale in tutte le app ----
+   Bilancio e Noi Due: #appToast · Allenamento: .app-toast · Wishlist: .toast */
+:root[data-theme] :is(#appToast, .app-toast, body > .toast) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: max-content !important;
+  max-width: calc(100vw - 32px) !important;
+  box-sizing: border-box !important;
+  padding: 11px 16px 11px 14px !important;
+  border-radius: 16px !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  line-height: 1.35 !important;
+  text-align: left !important;
+  text-shadow: none !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.8) !important;
+  backdrop-filter: blur(22px) saturate(1.8) !important;
+}
+:root[data-theme="dark"] :is(#appToast, .app-toast, body > .toast) {
+  background: rgba(34, 43, 52, .58) !important;
+  color: #f1f5f4 !important;
+  border: 1px solid rgba(255, 255, 255, .12) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06) !important;
+}
+:root[data-theme="light"] :is(#appToast, .app-toast, body > .toast) {
+  background: rgba(255, 255, 255, .62) !important;
+  color: #141a1f !important;
+  border: 1px solid rgba(20, 30, 40, .09) !important;
+  box-shadow: 0 10px 30px -12px rgba(20, 30, 40, .28), inset 0 1px 0 rgba(255, 255, 255, .7) !important;
+}
+/* pallino colorato a sinistra: dà il tono senza colorare tutto il riquadro */
+:root[data-theme] :is(#appToast, .app-toast, body > .toast)::before {
+  content: "";
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3fb38e;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #3fb38e 22%, transparent);
+}
+:root[data-theme] :is(#appToast, .app-toast, body > .toast) span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+:root[data-theme] :is(#appToast, .app-toast, body > .toast) button {
+  flex: none !important;
+  margin: 0 !important;
+  padding: 5px 11px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, #e8a33d 20%, transparent) !important;
+  color: #c97e16 !important;
+  font: inherit !important;
+  font-weight: 800 !important;
+}
+:root[data-theme="dark"] :is(#appToast, .app-toast, body > .toast) button {
+  color: #f2b65a !important;
+}

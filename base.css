@@ -65,11 +65,11 @@ header {
   z-index: 2;
 }
 h1 {
-  font-size: 27px;
+  font-size: 22px;
   margin: 0;
 }
 h2 {
-  font-size: 18px;
+  font-size: 17px;
   margin: 0 0 14px;
 }
 h3 {
@@ -82,7 +82,7 @@ p {
 .muted,
 small {
   color: var(--sub);
-  font-size: 12px;
+  font-size: 13px;
 }
 .card {
   background: var(--card);
@@ -134,7 +134,7 @@ small {
   margin-top: 12px;
 }
 .actions button {
-  font-size: 12px;
+  font-size: 13px;
   padding: 9px 11px;
 }
 .section {
@@ -185,7 +185,7 @@ nav button {
 }
 nav span {
   display: block;
-  font-size: 21px;
+  font-size: 22px;
   margin-bottom: 3px;
 }
 nav button.active {
@@ -210,7 +210,7 @@ select {
   color: var(--text);
   padding: 12px 10px;
   border-radius: 9px;
-  font-size: 16px;
+  font-size: 17px;
 }
 label {
   display: block;
@@ -363,7 +363,7 @@ a {
 }
 #start {
   padding: 15px 26px;
-  font-size: 16px;
+  font-size: 17px;
 }
 button[data-close],
 .remove-leg {
@@ -449,7 +449,7 @@ header h1 {
 #new-bet {
   flex-shrink: 0;
   padding: 11px 10px;
-  font-size: 14px;
+  font-size: 15px;
 }
 .grid,
 .filters {
@@ -473,7 +473,7 @@ textarea {
   box-sizing: border-box;
   min-width: 0;
   max-width: 100%;
-  font-size: 16px !important;
+  font-size: 17px !important;
   touch-action: pan-y;
 }
 input[type='date'],
@@ -505,7 +505,7 @@ dialog {
     padding: 14px;
   }
   .value {
-    font-size: 20px;
+    font-size: 22px;
   }
   .actions {
     gap: 6px;
@@ -559,7 +559,7 @@ dialog {
 .pick-close {
   width: 100%;
   margin-top: 10px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--sub);
 }
 
