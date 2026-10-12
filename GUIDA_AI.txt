@@ -80,14 +80,8 @@ COSA FA OGGI
    - Nuovo articolo o nuovo capo: alla prima foto, se il nome e' vuoto, vengono
      compilati nome, categoria, colore, stagione e tag guardando lo scatto.
 
-  BET TRACKER  (serve la funzione suite-ai versione 2, quella di ottobre 2026)
-   - Nuova scommessa > campo in alto: "Inter-Milan 1 a 2,10 e Juve-Roma over 2.5
-     a 1,80, 10 euro" compila puntata, partite, esiti e quote.
-   - Nuova scommessa > "Leggi la schedina": foto o screenshot della giocata.
-   - Statistiche > "Com'e' andata" > Spiegamelo: due righe sui tuoi numeri del
-     periodo (profitto, rendimento, singole contro multiple, limite mensile).
-   - Mai pronostici e mai consigli su cosa o quanto giocare: l'AI registra e
-     racconta solo quello che hai gia' giocato.
+  BET TRACKER
+   - Niente. Analisi dei propri dati si potrebbe fare, pronostici no.
 
 QUANTO COSTA
    - Ogni richiesta e' poche centinaia di parole: con il modello piu' piccolo si parla
@@ -95,22 +89,6 @@ QUANTO COSTA
      rifatte due volte.
 
 SE QUALCOSA NON VA
-   - Quando l'AI non risponde, sotto il campo compare il motivo tra parentesi:
-       "L'AI non ha risposto (manca ANTHROPIC_API_KEY nei Secrets di Supabase)"
-       "(chiave ANTHROPIC_API_KEY non valida)"
-       "(modello ... non trovato (controlla SUITE_AI_MODEL))"
-       "(troppe richieste o credito esaurito)"      -> carica credito su platform.claude.com
-       "(questa email non è in SUITE_AI_EMAILS)"
-       "(la funzione suite-ai non è pubblicata su Supabase)"
-       "(accesso non valido: rientra in Sincronizzazione)"
-   - Nel frattempo il Nuovo movimento prende comunque importo, data e nome dalla frase.
-   - Per vedere tutti gli errori: Supabase > Edge Functions > suite-ai > Logs.
-
-AGGIORNAMENTO OTTOBRE 2026 (versione 2 della funzione) — DA FARE UNA VOLTA
-   Prima tutte le funzioni rispondevano "non ho capito l'importo". Il motivo: i modelli
-   5.5 ragionano prima di rispondere e quel ragionamento consuma lo spazio della
-   risposta. Con lo spazio piccolo che avevamo dato, finivano prima di scrivere i dati.
-   La versione 2 chiede un ragionamento breve e lascia molto più spazio.
-   - Supabase > Edge Functions > suite-ai > Code (o "Edit")
-   - Sostituisci tutto il contenuto con il nuovo  _condivisi/supabase/functions/suite-ai/index.ts
-   - Deploy. Lascia "Verify JWT" attivo. I Secrets restano quelli di prima.
+   - L'app non cambia comportamento: se la funzione non c'e', non risponde o la chiave
+     e' finita, le funzioni AI restano silenziose e valgono le regole di prima.
+   - Per vedere gli errori: Supabase > Edge Functions > suite-ai > Logs.
