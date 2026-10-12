@@ -1,4 +1,4 @@
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.6.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -302,43 +302,59 @@ function kpis(bets, { interactive = false, context = '' } = {}) {
 function kpiLabel(b) {
   return b.legs.length > 1 ? `Multipla · ${b.legs.length} eventi` : b.legs[0]?.event || 'Scommessa';
 }
+/* 2.6.0 — Testata unica dei pannelli, come quella della nuova scommessa:
+   titolo a sinistra; a destra cestino (se serve) e spunta ambra per salvare.
+   I pannelli che mostrano soltanto dati hanno la X grigia per chiudere. */
+const IC = (k, f) => (window.SuiteIcons && SuiteIcons.icons[k]) || f;
+function sheetHead(title, { form = '', del = '', sub = '' } = {}) {
+  const actions =
+    (del ? `<button type="button" class="sheet-btn sheet-del" id="${del}" aria-label="Elimina" title="Elimina">${IC('trash', '🗑')}</button>` : '') +
+    (form
+      ? `<button type="submit" class="sheet-btn sheet-save" form="${form}" aria-label="Salva" title="Salva">${IC('check', '✓')}</button>`
+      : `<button type="button" class="sheet-btn sheet-close" data-close aria-label="Chiudi" title="Chiudi">${IC('close', '✕')}</button>`);
+  return `<div class="row editor-head sheet-head"><div class="sheet-title"><h2>${U.esc(title)}</h2>${sub ? `<small>${sub}</small>` : ''}</div><div class="sheet-actions">${actions}</div></div>`;
+}
+function sheetModal(html) {
+  const d = U.modal(html, { backdropClose: true });
+  d.classList.add('sheet');
+  /* niente contorno sul primo pulsante appena si apre il pannello */
+  if (document.activeElement && d.contains(document.activeElement) && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) document.activeElement.blur();
+  return d;
+}
+const sheetRow = ({ icon = '', tone = '', title = '', meta = '', value = '', vtone = '', badge = '' }) =>
+  `<div class="sheet-row${tone ? ' ' + tone : ''}"><span class="sheet-row-ic" aria-hidden="true">${icon}</span><div class="sheet-row-main"><b>${title}</b>${meta ? `<small>${meta}</small>` : ''}</div><div class="sheet-row-end"><strong class="${vtone}">${value}</strong>${badge}</div></div>`;
+const statusBadge = (st) => `<span class="sheet-badge st-${st}">${labels[st]}</span>`;
 function moneyKpiPanel(kind) {
   const txDesc = db.transactions.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
   if (kind === 'deposited') {
     const deposits = txDesc.filter((t) => t.amount > 0 && t.kind !== 'adjust'),
       depositTotal = deposits.reduce((n, t) => n + t.amount, 0),
       initial = db.accounts[0].initial;
-    return U.modal(
-      U.head('Totale versato') +
-        `<p class="kpi-panel-summary">${U.money(totalDeposited())}</p><div class="kpi-breakdown"><div><span>Saldo iniziale</span><strong>${U.money(initial)}</strong></div><div><span>Depositi</span><strong>${U.money(depositTotal)}</strong></div></div><div class="kpi-panel-list">${
+    return sheetModal(
+      sheetHead('Totale versato') +
+        `<div class="sheet-hero"><small>Saldo iniziale + depositi</small><b>${U.money(totalDeposited())}</b></div><div class="sheet-tiles"><div><small>Saldo iniziale</small><b>${U.money(initial)}</b></div><div><small>Depositi</small><b>${U.money(depositTotal)}</b></div></div><h3 class="sheet-section">Depositi recenti</h3><div class="sheet-list">${
           deposits.length
             ? deposits
                 .slice(0, 8)
-                .map(
-                  (t) =>
-                    `<div class="kpi-panel-row"><div><b>Deposito</b><small>${U.date(t.date)}</small></div><strong class="positive">${U.money(t.amount)}</strong></div>`,
-                )
+                .map((t) => sheetRow({ icon: '↓', tone: 'tone-in', title: 'Deposito', meta: U.date(t.date), value: '+' + U.money(t.amount), vtone: 'positive' }))
                 .join('')
-            : '<div class="empty kpi-panel-empty">Nessun deposito registrato.</div>'
-        }</div>${deposits.length > 8 ? `<p class="muted kpi-panel-more">Mostrati gli 8 depositi più recenti su ${deposits.length}.</p>` : ''}`,
+            : '<div class="sheet-empty">Nessun deposito registrato.</div>'
+        }</div>${deposits.length > 8 ? `<p class="sheet-note">Mostrati gli 8 depositi più recenti su ${deposits.length}.</p>` : ''}`,
     );
   }
   const withdrawals = txDesc.filter((t) => t.amount < 0 && t.kind !== 'adjust'),
     withdrawTotal = withdrawals.reduce((n, t) => n + Math.abs(t.amount), 0),
     available = balance();
-  return U.modal(
-    U.head('Capitale complessivo') +
-      `<p class="kpi-panel-summary">${U.money(totalCapital())}</p><div class="kpi-breakdown"><div><span>Saldo disponibile</span><strong>${U.money(available)}</strong></div><div><span>Prelievi</span><strong>${U.money(withdrawTotal)}</strong></div></div><div class="kpi-panel-list">${
+  return sheetModal(
+    sheetHead('Capitale complessivo') +
+      `<div class="sheet-hero"><small>Saldo disponibile + prelievi</small><b>${U.money(totalCapital())}</b></div><div class="sheet-tiles"><div><small>Saldo disponibile</small><b>${U.money(available)}</b></div><div><small>Prelievi</small><b>${U.money(withdrawTotal)}</b></div></div><h3 class="sheet-section">Prelievi recenti</h3><div class="sheet-list">${
         withdrawals.length
           ? withdrawals
               .slice(0, 8)
-              .map(
-                (t) =>
-                  `<div class="kpi-panel-row"><div><b>Prelievo</b><small>${U.date(t.date)}</small></div><strong>${U.money(Math.abs(t.amount))}</strong></div>`,
-              )
+              .map((t) => sheetRow({ icon: '↑', tone: 'tone-out', title: 'Prelievo', meta: U.date(t.date), value: '−' + U.money(Math.abs(t.amount)) }))
               .join('')
-          : '<div class="empty kpi-panel-empty">Nessun prelievo registrato.</div>'
-      }</div>${withdrawals.length > 8 ? `<p class="muted kpi-panel-more">Mostrati gli 8 prelievi più recenti su ${withdrawals.length}.</p>` : ''}`,
+          : '<div class="sheet-empty">Nessun prelievo registrato.</div>'
+      }</div>${withdrawals.length > 8 ? `<p class="sheet-note">Mostrati gli 8 prelievi più recenti su ${withdrawals.length}.</p>` : ''}`,
   );
 }
 function kpiPanel(kind, bets) {
@@ -386,9 +402,9 @@ function kpiPanel(kind, bets) {
       .sort((a, b) => new Date(c.date(b)) - new Date(c.date(a)))
       .slice(0, 8),
     more = Math.max(0, c.rows.length - rows.length);
-  return U.modal(
-    U.head(c.title) +
-      `<p class="kpi-panel-summary">${c.summary}</p><div class="kpi-panel-list">${rows.length ? rows.map((b) => `<div class="kpi-panel-row"><div><b>${U.esc(kpiLabel(b))}</b><small>${U.date(c.date(b))} · ${labels[b.status]}</small></div><strong class="${c.tone(b)}">${c.value(b)}</strong></div>`).join('') : '<div class="empty kpi-panel-empty">Nessun dato disponibile.</div>'}</div>${more ? `<p class="muted kpi-panel-more">Mostrate le 8 più recenti su ${c.rows.length}.</p>` : ''}`,
+  return sheetModal(
+    sheetHead(c.title) +
+      `<div class="sheet-hero"><small>${c.summary}</small></div><h3 class="sheet-section">Più recenti</h3><div class="sheet-list">${rows.length ? rows.map((b) => sheetRow({ icon: b.legs.length > 1 ? '⧉' : '◎', tone: 'tone-bet', title: U.esc(kpiLabel(b)), meta: U.date(c.date(b)), value: c.value(b), vtone: c.tone(b), badge: kind === 'winrate' ? '' : statusBadge(b.status) })).join('') : '<div class="sheet-empty">Nessun dato disponibile.</div>'}</div>${more ? `<p class="sheet-note">Mostrate le 8 più recenti su ${c.rows.length}.</p>` : ''}`,
   );
 }
 function periodLabel() {
@@ -607,9 +623,9 @@ function bind() {
     (b) =>
       (b.onclick = (e) => {
         e.stopPropagation();
-        U.modal(
-          U.head('Percentuale vinte') +
-            '<p>Scommesse vinte ÷ (vinte + perse) × 100.</p><p>6 vinte e 4 perse = 60%. Ogni singola o multipla conta come una scommessa, indipendentemente da puntata e quota.</p><p>In corso, annullate e cash out sono escluse dal conteggio. In Statistiche si applicano i filtri selezionati.</p>',
+        sheetModal(
+          sheetHead('Percentuale vinte') +
+            '<div class="sheet-hero"><small>Come si calcola</small><b class="sheet-formula">vinte ÷ (vinte + perse) × 100</b></div><div class="sheet-box"><p>6 vinte e 4 perse = 60%. Ogni singola o multipla conta come una scommessa, indipendentemente da puntata e quota.</p><p>In corso, annullate e cash out sono escluse dal conteggio. In Statistiche si applicano i filtri selezionati.</p></div>',
         );
       }),
   );
@@ -1755,15 +1771,15 @@ function derivedStatus(legs) {
   return 'pending';
 }
 function settleForm(b) {
-  const d = U.modal(
-    U.head('Altri esiti scommessa') +
-      `<form><h3>Esiti dei singoli eventi</h3>${b.legs.map((l, i) => `<label>${U.esc(l.event)} · ${U.esc(l.pick)}</label><select data-leg-outcome="${i}">${['pending', 'won', 'lost', 'void'].map((v) => `<option value="${v}" ${l.status === v ? 'selected' : ''}>${labels[v]}</option>`).join('')}</select>`).join('')}<label>Esito complessivo</label><select name="status"><option value="auto">Automatico dagli eventi</option>${Object.entries(
+  const d = sheetModal(
+    sheetHead('Esito scommessa', { form: 'settle-form', sub: U.esc(kpiLabel(b)) + ' · ' + U.money(b.stake) }) +
+      `<form id="settle-form" class="sheet-form"><h3 class="sheet-section">Esiti dei singoli eventi</h3><div class="sheet-group">${b.legs.map((l, i) => `<label class="sheet-field"><span>${U.esc(l.event)} · <b>${U.esc(l.pick)}</b> <em>@ ${Number(l.odds).toFixed(2)}</em></span><select data-leg-outcome="${i}">${['pending', 'won', 'lost', 'void'].map((v) => `<option value="${v}" ${l.status === v ? 'selected' : ''}>${labels[v]}</option>`).join('')}</select></label>`).join('')}</div><h3 class="sheet-section">Esito complessivo</h3><div class="sheet-group"><label class="sheet-field"><span>Esito</span><select name="status"><option value="auto">Automatico dagli eventi</option>${Object.entries(
         labels,
       )
         .map(([v, l]) => `<option value="${v}" ${b.status === v ? 'selected' : ''}>${l}</option>`)
         .join(
           '',
-        )}</select><p id="estimated" class="muted"></p><label>Data e ora dell’esito</label><input name="settled" type="datetime-local" value="${U.local(new Date(b.settledAt || Date.now()))}"><label>Incasso effettivo (€), vuoto = calcolato</label><input name="actual" type="number" min="0" step="0.01" value="${b.actualPayout ?? (b.status === 'cashout' ? b.cashout : '')}"><p class="muted">Comprende la puntata restituita. Gli eventi annullati hanno quota effettiva 1, senza perdere la quota originale.</p><p class="error" id="error"></p><div class="save-center"><button class="primary">Salva esito</button></div></form>`,
+        )}</select></label><p id="estimated" class="sheet-calc"></p><label class="sheet-field"><span>Data e ora dell’esito</span><input name="settled" type="datetime-local" value="${U.local(new Date(b.settledAt || Date.now()))}"></label><label class="sheet-field"><span>Incasso effettivo (€) · vuoto = calcolato</span><input name="actual" type="number" min="0" step="0.01" inputmode="decimal" value="${b.actualPayout ?? (b.status === 'cashout' ? b.cashout : '')}"></label></div><p class="sheet-note">Comprende la puntata restituita. Gli eventi annullati hanno quota effettiva 1, senza perdere la quota originale.</p><p class="error" id="error"></p></form>`,
   );
   const form = d.querySelector('form');
   const read = () => {
@@ -1813,9 +1829,9 @@ function settleForm(b) {
   };
 }
 function transactionForm(sign, t) {
-  const d = U.modal(
-    U.head(t ? 'Modifica movimento' : sign < 0 ? 'Prelievo' : 'Deposito') +
-      `<form><label>Importo (€)</label><input name="amount" type="number" min="0.01" step="0.01" required value="${t ? Math.abs(t.amount) : ''}"><label>Data e ora</label><input name="date" type="datetime-local" required value="${U.local(t ? new Date(t.date) : new Date())}"><p class="error" id="error"></p><div class="save-center"><button class="primary">Salva movimento</button></div></form>`,
+  const d = sheetModal(
+    sheetHead(t ? 'Modifica movimento' : sign < 0 ? 'Prelievo' : 'Deposito', { form: 'tx-form', sub: sign < 0 ? 'Soldi tolti dal conto di gioco' : 'Soldi versati sul conto di gioco' }) +
+      `<form id="tx-form" class="sheet-form"><div class="sheet-group sheet-amount ${sign < 0 ? 'tone-out' : 'tone-in'}"><label class="sheet-field"><span>Importo (€)</span><div class="sheet-amount-row"><em aria-hidden="true">${sign < 0 ? '−' : '+'}</em><input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0,00" value="${t ? Math.abs(t.amount) : ''}"></div></label></div><div class="sheet-group"><label class="sheet-field"><span>Data e ora</span><input name="date" type="datetime-local" required value="${U.local(t ? new Date(t.date) : new Date())}"></label>${sign < 0 ? `<p class="sheet-calc">Disponibile ora: <b>${U.money(balance() - (t?.amount || 0))}</b></p>` : ''}</div><p class="error" id="error"></p></form>`,
   );
   d.querySelector('form').onsubmit = (e) => {
     e.preventDefault();
@@ -1838,9 +1854,9 @@ function transactionForm(sign, t) {
   };
 }
 function initialForm() {
-  const d = U.modal(
-    U.head('Saldo iniziale') +
-      `<form><label>Saldo prima delle giocate registrate (€)</label><input name="initial" type="number" min="0" step="0.01" required value="${db.accounts[0].initial}"><p class="muted">Per nuovi versamenti usa Deposita.</p><button class="primary">Salva</button></form>`,
+  const d = sheetModal(
+    sheetHead('Saldo iniziale', { form: 'initial-form' }) +
+      `<form id="initial-form" class="sheet-form"><div class="sheet-group sheet-amount"><label class="sheet-field"><span>Saldo prima delle giocate registrate (€)</span><input name="initial" type="number" min="0" step="0.01" inputmode="decimal" required value="${db.accounts[0].initial}"></label></div><p class="sheet-note">Per nuovi versamenti usa Deposita.</p></form>`,
   );
   d.querySelector('form').onsubmit = (e) => {
     e.preventDefault();
@@ -1860,9 +1876,9 @@ async function importData(e) {
     const raw = JSON.parse(await file.text());
     if (!validDB(raw)) throw Error();
     const n = normalize(raw),
-      d = U.modal(
-        U.head('Ripristina backup') +
-          `<p>${n.bets.length} scommesse · ${n.transactions.length} movimenti</p><p>Il backup sostituirà i dati attuali. Puoi esportarli prima di proseguire.</p><div class="actions"><button id="before-export">Esporta dati attuali</button><button class="primary" id="confirm-import">Ripristina</button></div>`,
+      d = sheetModal(
+        sheetHead('Ripristina backup') +
+          `<div class="sheet-tiles"><div><small>Scommesse</small><b>${n.bets.length}</b></div><div><small>Movimenti</small><b>${n.transactions.length}</b></div></div><div class="sheet-box"><p>Il backup sostituirà i dati attuali. Puoi esportarli prima di proseguire.</p></div><div class="sheet-actions-row"><button type="button" class="sheet-wide" id="before-export">Esporta dati attuali</button><button type="button" class="sheet-wide primary" id="confirm-import">Ripristina</button></div>`,
       );
     d.querySelector('#before-export').onclick = exportData;
     d.querySelector('#confirm-import').onclick = () => {
@@ -2512,6 +2528,7 @@ function diaryCalendar(series) {
     return (
       '<button type="button" class="wk-day' +
       (x.p ? ' has' : '') +
+      (!x.future && dayHasMovements(x.key) ? ' mv' : '') +
       (tone ? ' ' + tone : '') +
       (x.today ? ' today' : '') +
       (x.future ? ' future' : '') +
@@ -2524,6 +2541,7 @@ function diaryCalendar(series) {
       ' aria-label="' +
       dLabel(x.key, { weekday: 'long', day: 'numeric', month: 'long' }) +
       (x.p ? ', saldo ' + U.money(x.p.balance) : ', non segnato') +
+      (!x.future && dayHasMovements(x.key) ? ', con movimenti' : '') +
       '"><small>' +
       wd +
       '</small><b>' +
@@ -2749,7 +2767,7 @@ function diaryPage() {
   }
 
   var agenda =
-    '<section class="card diary-card"><h2>Agenda</h2><p class="muted diary-hint">Tocca un giorno per segnare o correggere il saldo.</p>' +
+    '<section class="card diary-card"><h2>Agenda</h2><p class="muted diary-hint">Tocca un giorno: vedi i movimenti oppure segni il saldo. Il puntino indica che ci sono movimenti.</p>' +
     diaryCalendar(series) +
     '</section>';
 
@@ -3231,24 +3249,19 @@ function diaryForm(date) {
             })
             .pop() || {}
         ).balance || balance();
-  var d = U.modal(
-    U.head(existing ? 'Correggi saldo' : 'Segna saldo') +
-      '<form class="diary-form"><label for="diary-date">Giorno</label><input id="diary-date" name="date" type="date" max="' +
+  var d = sheetModal(
+    sheetHead(existing ? 'Correggi saldo' : 'Segna saldo', { form: 'diary-form', del: existing ? 'diary-delete' : '' }) +
+      '<form id="diary-form" class="diary-form sheet-form"><div class="sheet-group sheet-amount"><label class="sheet-field" for="diary-value"><span>Saldo a fine giornata (€)</span><input id="diary-value" name="value" type="number" inputmode="decimal" step="0.01" required value="' +
+      U.round(suggested) +
+      '"></label></div><div class="sheet-group"><label class="sheet-field" for="diary-date"><span>Giorno</span><input id="diary-date" name="date" type="date" max="' +
       today +
       '" required value="' +
       date +
-      '">' +
-      '<label for="diary-value">Saldo a fine giornata (€)</label><input id="diary-value" name="value" type="number" inputmode="decimal" step="0.01" required value="' +
-      U.round(suggested) +
-      '">' +
-      '<label for="diary-note">Nota (facoltativa)</label><input id="diary-note" name="note" type="text" maxlength="140" placeholder="es. giornata di Champions" value="' +
+      '"></label>' +
+      '<label class="sheet-field" for="diary-note"><span>Nota (facoltativa)</span><input id="diary-note" name="note" type="text" maxlength="140" placeholder="es. giornata di Champions" value="' +
       U.esc((existing && existing.note) || '') +
-      '">' +
-      '<div class="diary-effect" id="diary-effect"></div><p class="error" id="diary-error"></p>' +
-      '<div class="save-center"><button class="primary">Salva</button></div>' +
-      (existing
-        ? '<button type="button" class="danger diary-delete" id="diary-delete">Elimina questo giorno</button>'
-        : '') +
+      '"></label></div>' +
+      '<div class="diary-effect sheet-box" id="diary-effect"></div><p class="error" id="diary-error"></p>' +
       '</form>',
   );
   var f = d.querySelector('form'),
@@ -3318,13 +3331,13 @@ function diaryForm(date) {
   };
   var del = d.querySelector('#diary-delete');
   if (del)
-    del.onclick = function () {
+    del.onclick = async function () {
       var latest = diaryIsLatest(existing.date);
-      if (del.dataset.confirm !== '1') {
-        del.dataset.confirm = '1';
-        del.textContent = latest ? 'Conferma: elimina e togli il suo allineamento' : 'Conferma eliminazione';
-        return;
-      }
+      var ok = await U.confirm({
+        title: 'Eliminare il saldo di questo giorno?',
+        text: latest ? 'È il giorno più recente: verrà tolto anche il suo allineamento.' : 'Le scommesse e i movimenti non cambiano.',
+      });
+      if (!ok) return;
       if (
         mutate(function (n) {
           n.diary = (n.diary || []).filter(function (x) {
@@ -3497,6 +3510,140 @@ function bindMonthPicker(el) {
   });
 }
 
+/* ---------- 2.6.0 — Agenda: tocca un giorno ----------
+   Se quel giorno ci sono movimenti (depositi, prelievi, scommesse giocate o chiuse) si apre
+   il riepilogo del giorno, una scheda per movimento in ordine di orario. Dal riepilogo si può
+   segnare o correggere il saldo. Se non c'è niente, si apre direttamente "Segna saldo". */
+function dayKey(iso) {
+  return iso ? U.local(new Date(iso)).slice(0, 10) : '';
+}
+function dayMovements(date) {
+  var out = [];
+  db.transactions.forEach(function (t) {
+    if (t.kind === 'adjust' || dayKey(t.date) !== date) return;
+    out.push({ at: t.date, kind: t.amount >= 0 ? 'dep' : 'wd', t: t });
+  });
+  db.bets.forEach(function (b) {
+    if (dayKey(b.date) === date) out.push({ at: b.date, kind: 'bet', b: b });
+    else if (b.settledAt && b.status !== 'pending' && dayKey(b.settledAt) === date) out.push({ at: b.settledAt, kind: 'settle', b: b });
+  });
+  return out.sort(function (a, b) {
+    return new Date(a.at) - new Date(b.at);
+  });
+}
+function dayHasMovements(date) {
+  return dayMovements(date).length > 0;
+}
+function openDayPanel(date) {
+  var list = dayMovements(date);
+  if (!list.length) return diaryForm(date);
+  var entry = diaryOn(date);
+  var time = function (iso) {
+    return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  };
+  var dep = 0,
+    wd = 0,
+    net = 0,
+    nBets = 0;
+  var cards = list
+    .map(function (x) {
+      if (x.kind === 'dep' || x.kind === 'wd') {
+        var a = x.t.amount;
+        if (a >= 0) dep += a;
+        else wd += -a;
+        return (
+          '<div class="day-card ' +
+          (a >= 0 ? 'tone-in' : 'tone-out') +
+          '"><div class="day-card-top"><span class="day-ic" aria-hidden="true">' +
+          (a >= 0 ? '↓' : '↑') +
+          '</span><div class="day-card-title"><b>' +
+          (a >= 0 ? 'Deposito' : 'Prelievo') +
+          '</b><small>' +
+          time(x.at) +
+          '</small></div><strong class="' +
+          (a >= 0 ? 'positive' : '') +
+          '">' +
+          (a >= 0 ? '+' : '−') +
+          U.money(Math.abs(a)) +
+          '</strong></div></div>'
+        );
+      }
+      var b = x.b,
+        p = b.status === 'pending' ? null : profit(b);
+      if (x.kind === 'bet') nBets++;
+      if (p != null && (x.kind === 'settle' || dayKey(b.settledAt) === date)) net += p;
+      var legs = b.legs
+        .map(function (l) {
+          return (
+            '<li class="leg-' +
+            (l.status || 'pending') +
+            '"><span>' +
+            U.esc(l.event || 'Evento') +
+            '</span><em>' +
+            U.esc(l.pick) +
+            ' · ' +
+            Number(l.odds).toFixed(2) +
+            '</em></li>'
+          );
+        })
+        .join('');
+      return (
+        '<div class="day-card tone-bet st-' +
+        b.status +
+        '"><div class="day-card-top"><span class="day-ic" aria-hidden="true">' +
+        (b.legs.length > 1 ? '⧉' : '◎') +
+        '</span><div class="day-card-title"><b>' +
+        (x.kind === 'settle' ? 'Esito · ' : '') +
+        U.esc(b.legs.length > 1 ? 'Multipla · ' + b.legs.length + ' eventi' : 'Singola') +
+        '</b><small>' +
+        (x.kind === 'settle' ? 'chiusa alle ' + time(x.at) + ' · giocata il ' + U.date(b.date).slice(0, 5) : 'giocata alle ' + time(x.at)) +
+        '</small></div>' +
+        statusBadge(b.status) +
+        '</div><ul class="day-legs">' +
+        legs +
+        '</ul><div class="day-card-foot"><span>Puntata <b>' +
+        U.money(b.stake) +
+        '</b></span><span>Quota <b>' +
+        odds(b).toFixed(2) +
+        '</b></span><span>' +
+        (p == null ? 'Possibile vincita <b>' + U.money(b.stake * odds(b)) + '</b>' : 'Risultato <b class="' + (p < 0 ? 'negative' : p > 0 ? 'positive' : '') + '">' + (p > 0 ? '+' : '') + U.money(p) + '</b>') +
+        '</span></div></div>'
+      );
+    })
+    .join('');
+  var tiles =
+    '<div class="sheet-tiles three"><div><small>Depositi</small><b class="' +
+    (dep ? 'positive' : '') +
+    '">' +
+    (dep ? '+' + U.money(dep) : '—') +
+    '</b></div><div><small>Prelievi</small><b>' +
+    (wd ? '−' + U.money(wd) : '—') +
+    '</b></div><div><small>Scommesse</small><b class="' +
+    (net < 0 ? 'negative' : net > 0 ? 'positive' : '') +
+    '">' +
+    (nBets || net ? (net > 0 ? '+' : '') + U.money(net) : '—') +
+    '</b></div></div>';
+  var title = dParse(date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+  var d = sheetModal(
+    sheetHead(title.charAt(0).toUpperCase() + title.slice(1), {
+      sub: list.length + (list.length === 1 ? ' movimento' : ' movimenti') + (entry ? ' · saldo segnato ' + U.money(entry.balance) : ''),
+    }) +
+      tiles +
+      '<div class="day-list">' +
+      cards +
+      '</div><button type="button" class="sheet-wide day-diary-btn" id="day-diary">' +
+      IC('edit', '✎') +
+      '<span>' +
+      (entry ? 'Correggi il saldo del giorno' : 'Segna il saldo del giorno') +
+      '</span></button>',
+  );
+  d.classList.add('day-sheet');
+  d.querySelector('#day-diary').onclick = function () {
+    d.close();
+    diaryForm(date);
+  };
+}
+
 /* ---------- Eventi ---------- */
 function bindDiary() {
   bindDiaryExtra();
@@ -3507,7 +3654,7 @@ function bindDiary() {
   });
   main.querySelectorAll('[data-dcal]').forEach(function (b) {
     b.onclick = function () {
-      diaryForm(b.dataset.dcal);
+      openDayPanel(b.dataset.dcal);
     };
   });
   main.querySelectorAll('[data-diary-range]').forEach(function (b) {

@@ -160,13 +160,16 @@ const U = {
   confirm: ({ title = 'Confermi?', text = '', detail = '', ok = 'Elimina', cancel = 'Annulla', danger = true } = {}) =>
     new Promise((resolve) => {
       document.querySelector('.app-confirm')?.remove();
-      const wrap = document.createElement('div');
+      // 2.6.0 — è un <dialog> modale: così resta sopra anche ai pannelli già aperti.
+      const wrap = document.createElement('dialog');
       wrap.className = 'app-update-modal app-confirm';
       wrap.setAttribute('role', 'alertdialog');
       wrap.setAttribute('aria-modal', 'true');
       wrap.innerHTML = `<div class="app-update-card"><div class="app-update-icon${danger ? ' danger' : ''}" aria-hidden="true">${danger ? '🗑' : '?'}</div><h3>${U.esc(title)}</h3>${text ? `<p>${U.esc(text)}</p>` : ''}${detail ? `<p class="app-confirm-detail">${U.esc(detail)}</p>` : ''}<div class="app-update-actions"><button type="button" class="app-confirm-cancel">${U.esc(cancel)}</button><button type="button" class="app-confirm-ok${danger ? ' danger' : ''}">${U.esc(ok)}</button></div></div>`;
       document.body.append(wrap);
-      const done = (v) => { wrap.classList.remove('show'); setTimeout(() => wrap.remove(), 200); document.removeEventListener('keydown', key); resolve(v); };
+      try { wrap.showModal(); } catch (e) { wrap.setAttribute('open', ''); }
+      wrap.addEventListener('cancel', (e) => { e.preventDefault(); done(false); });
+      const done = (v) => { wrap.classList.remove('show'); setTimeout(() => { try { wrap.close(); } catch (e) {} wrap.remove(); }, 200); document.removeEventListener('keydown', key); resolve(v); };
       const key = (e) => { if (e.key === 'Escape') done(false); };
       document.addEventListener('keydown', key);
       wrap.addEventListener('click', (e) => { if (e.target === wrap) done(false); });
