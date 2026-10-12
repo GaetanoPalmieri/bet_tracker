@@ -643,18 +643,18 @@ dialog textarea,
 }
 
 /* =====================================================================
-   Bet Tracker 2.4.0 — Agenda della Home rifatta: numeri grandi, mese da scegliere
+   Bet Tracker 2.4.1 — Agenda della Home: testi compatti, mese da scegliere
    ===================================================================== */
-.dcal-shell { padding: 14px 12px 14px !important; }
-.dcal-head { align-items: center; margin: 0 0 12px !important; }
+.dcal-shell { padding: 12px 10px !important; }
+.dcal-head { align-items: center; margin: 0 0 10px !important; }
 button.dcal-month-copy {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
-  margin: -6px 0 -6px -8px;
-  padding: 6px 8px;
+  margin: -4px 0 -4px -6px;
+  padding: 4px 6px;
   border: 0 !important;
-  border-radius: 12px;
+  border-radius: 10px;
   background: transparent !important;
   box-shadow: none !important;
   color: var(--suite-text);
@@ -666,47 +666,72 @@ button.dcal-month-copy {
 }
 button.dcal-month-copy:active,
 button.dcal-month-copy.lp-pressing { background: color-mix(in srgb, var(--suite-text) 8%, transparent) !important; }
+button.dcal-month-copy small { font-size: 9px; }
 button.dcal-month-copy b {
-  font-size: 22px;
-  line-height: 1.1;
-  font-weight: 800;
-  letter-spacing: -.02em;
+  font-size: 16px;
+  line-height: 1.15;
+  font-weight: 750;
+  letter-spacing: -.01em;
   text-transform: capitalize;
   white-space: nowrap;
 }
-.dcal-caret { font-size: 12px; color: var(--suite-text-soft); vertical-align: 3px; }
-.dcal-nav-group { grid-template-columns: 42px 42px !important; }
-.dcal-nav { width: 42px !important; min-height: 40px !important; font-size: 24px !important; }
+.dcal-caret { font-size: 10px; color: var(--suite-text-soft); vertical-align: 2px; }
+.dcal-nav-group { grid-template-columns: 34px 34px !important; gap: 4px !important; padding: 3px !important; border-radius: 12px !important; }
+.dcal-nav { width: 34px !important; min-height: 32px !important; font-size: 19px !important; border-radius: 9px !important; }
 
-.dcal-grid { gap: 4px !important; }
-.dcal-wd { font-size: 11px !important; padding: 0 0 4px !important; }
+.dcal-grid { gap: 3px !important; }
+.dcal-wd { font-size: 9.5px !important; padding: 0 0 3px !important; }
 .dcal-day {
-  min-height: 62px !important;
-  padding: 6px 1px 7px !important;
-  gap: 4px !important;
-  border-radius: 14px !important;
+  min-height: 46px !important;
+  padding: 5px 1px 5px !important;
+  gap: 2px !important;
+  border-radius: 11px !important;
 }
 .dcal-day-number {
-  width: 32px;
-  height: 32px;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -.01em;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
 .dcal-day-value {
-  min-height: 12px;
-  font-size: 10.5px;
+  min-height: 10px;
+  font-size: 8.5px;
   letter-spacing: -.02em;
 }
-.dcal-day.future { opacity: .32 !important; }
-.dcal-legend { font-size: 11px; }
-.dcal-summary b { font-size: 16px; }
+.dcal-day.future { opacity: .3 !important; }
+.dcal-legend { font-size: 10px; margin-top: 10px !important; }
+.dcal-summary { margin-top: 10px !important; }
+.dcal-summary > div { padding: 8px 10px !important; }
+.dcal-summary small { font-size: 8px !important; }
+.dcal-summary b { font-size: 14px !important; }
 @media (max-width: 380px) {
-  .dcal-day { min-height: 56px !important; }
-  .dcal-day-number { width: 28px; height: 28px; font-size: 15.5px; }
-  .dcal-day-value { font-size: 9.5px; }
-  button.dcal-month-copy b { font-size: 20px; }
+  .dcal-day { min-height: 42px !important; }
+  .dcal-day-number { width: 20px; height: 20px; font-size: 12px; }
+  .dcal-day-value { font-size: 7.8px; }
+  button.dcal-month-copy b { font-size: 15px; }
+}
+
+/* Pulsanti più piccoli: "+ Scommessa" in alto e "Segna / Aggiorna il saldo di oggi" */
+header { padding-right: 120px !important; }
+#new-bet {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 11px !important;
+  border-radius: 11px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+}
+main .diary-record {
+  min-height: 34px !important;
+  height: auto !important;
+  padding: 7px 12px !important;
+  border-radius: 11px !important;
+  font-size: 13px !important;
+}
+@media (max-width: 380px) {
+  header { padding-right: 118px !important; }
+  #new-bet { padding: 0 10px !important; font-size: 12.5px !important; }
 }
 
 /* Scelta rapida del mese (stesso aspetto delle altre app) */
