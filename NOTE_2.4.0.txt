@@ -1,17 +1,15 @@
 VERSIONE 2.4.0
 
-AI (serve la funzione suite-ai versione 2 su Supabase: vedi GUIDA_AI.txt)
-- Nuova scommessa > campo in alto "Scrivila a parole":
-  "Inter-Milan 1 a 2,10 e Juve-Roma over 2.5 a 1,80, 10 euro" compila puntata,
-  partite, esiti e quote. Quello che manca resta da completare a mano.
-- Nuova scommessa > "Leggi la schedina": fotografi la ricevuta o scegli uno screenshot
-  della giocata e i campi si riempiono da soli.
-- Statistiche > "Com'è andata" > Spiegamelo: due righe sui tuoi numeri del periodo
-  scelto (profitto, rendimento, singole contro multiple, esiti più giocati, limite mensile).
-- L'AI registra e racconta solo quello che hai già giocato: niente pronostici e niente
-  consigli su cosa o quanto giocare.
-- Se l'AI non risponde, sotto il campo compare il motivo.
+Home > Agenda rifatta
+- Numeri dei giorni molto piu' grandi, variazioni piu' leggibili, celle piu' alte.
+- Nome del mese piu' grande: toccalo o tienilo premuto e si apre l'elenco con i 3 mesi
+  prima e i 3 dopo (come nelle altre app). I mesi futuri sono visibili ma spenti.
 
-Grafica (come nelle altre app)
-- I messaggi in basso sono un riquadro di vetro trasparente con pallino verde
-  (prima pieno). File condivisi suite.js e suite-ui.css allineati alle altre app.
+Per tutte le app (file condivisi suite.js e suite-tokens.css)
+- Pulsanti d'azione come icone: Salva / Conferma / Fatto = spunta, Elimina / Rimuovi = cestino,
+  Modifica = matita, Annulla / Chiudi = X, Duplica = due fogli, Aggiungi = +.
+  Nel messaggio in basso dopo un'eliminazione, "Annulla" diventa la freccia indietro.
+  Il nome dell'azione resta per il lettore vocale. I menu che si aprono tenendo premuto
+  restano con icona + scritta.
+- Tenendo premuto su un testo non si seleziona piu' e non compare il menu "Copia" di iOS.
+  Nei campi dove si scrive la selezione funziona come prima.

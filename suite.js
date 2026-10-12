@@ -567,3 +567,99 @@
     }
   };
 })();
+
+/* ===================== SuiteIcons — pulsanti d'azione come icone (tutte le app) =====================
+   Salva / Conferma / Fatto → spunta · Elimina / Rimuovi → cestino · Modifica → matita
+   Annulla / Chiudi → X (nei messaggi in basso "Annulla" = freccia indietro) · Duplica → due fogli
+   Aggiungi → +.
+   Lavora da solo: guarda i pulsanti che compaiono nella pagina e, se il testo è una di queste
+   azioni, lo sostituisce con l'icona. Il testo resta come aria-label e title (lettore vocale,
+   pressione lunga sul computer). Se il codice di un'app riscrive il testo del pulsante,
+   l'icona viene rimessa da sola. Per tenere un pulsante a parole: data-no-icon. */
+(function () {
+  if (window.SuiteIcons) return;
+  var P = '<svg class="suite-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">';
+  var ICONS = {
+    check: P + '<path d="M4.5 12.5l5 5L19.5 7"/></svg>',
+    trash: P + '<path d="M4 7h16"/><path d="M9.5 7V4.8c0-.4.4-.8.8-.8h3.4c.4 0 .8.4.8.8V7"/><path d="M6.5 7l.9 12.2c.1 1 .9 1.8 1.9 1.8h5.4c1 0 1.8-.8 1.9-1.8L17.5 7"/><path d="M10 11v6M14 11v6"/></svg>',
+    edit: P + '<path d="M4 20h4.2L19 9.2a2.1 2.1 0 0 0 0-3L17.8 5a2.1 2.1 0 0 0-3 0L4 15.8V20z"/><path d="M13.5 6.5l4 4"/></svg>',
+    close: P + '<path d="M6 6l12 12M18 6L6 18"/></svg>',
+    undo: P + '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>',
+    copy: P + '<rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.2"/><path d="M15.5 8.5V6.2c0-1.2-1-2.2-2.2-2.2H6.2C5 4 4 5 4 6.2v7.1c0 1.2 1 2.2 2.2 2.2h2.3"/></svg>',
+    plus: P + '<path d="M12 5v14M5 12h14"/></svg>'
+  };
+  /* Ordine importante: la prima regola che corrisponde vince. */
+  var RULES = [
+    [/^(elimina|rimuovi)\b(?!.*\btutt[ie]\b)/i, 'trash'],
+    [/^🗑️?$/, 'trash'],
+    [/^modifica\b/i, 'edit'],
+    [/^✎︎?️?$/, 'edit'],
+    [/^(salva|conferma|fatto|ok)\b/i, 'check'],
+    [/^sì, /i, 'check'],
+    [/^(annulla|chiudi)$/i, 'close'],
+    [/^duplica$/i, 'copy'],
+    [/^aggiungi$/i, 'plus']
+  ];
+  var SKIP = '[data-no-icon],.movement-action-menu,.movement-action-buttons,#lpPopup,.lp-popup,[role="menu"],.period-menu,.type-toggle,.type-opt,select,option';
+  var TOAST = '[id*="oast"],[class*="toast"],[class*="Toast"],[class*="snack"]';
+
+  function labelOf(btn) {
+    for (var i = 0; i < btn.childNodes.length; i++) {
+      var n = btn.childNodes[i];
+      if (n.nodeType === 1 && (n.children.length || !/^(SPAN|B|STRONG)$/.test(n.tagName))) return null;
+    }
+    return (btn.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+  function iconFor(text) {
+    /* toglie simboli in testa (✓ ✎ 🗑 ✕ …) ma non le lettere */
+    var t = text.replace(/^[^\p{L}\p{N}]+(?=\p{L})/u, '').replace(/\s*[›»]$/, '');
+    for (var i = 0; i < RULES.length; i++) if (RULES[i][0].test(t) || RULES[i][0].test(text)) return RULES[i][1];
+    return null;
+  }
+  function apply(btn) {
+    if (!btn || btn.nodeType !== 1 || btn.tagName !== 'BUTTON') return;
+    if (btn.querySelector('svg.suite-ic')) return;
+    if (btn.closest(SKIP)) return;
+    var text = labelOf(btn);
+    if (!text || text.length > 40) return;
+    var kind = iconFor(text);
+    if (!kind) return;
+    if (kind === 'close' && /^annulla$/i.test(text) && btn.closest(TOAST)) kind = 'undo';
+    btn.innerHTML = ICONS[kind];
+    btn.classList.add('suite-ic-btn', 'suite-ic-' + kind);
+    var aria = btn.getAttribute('aria-label');
+    if (!aria || btn.dataset.icAria === aria) { btn.setAttribute('aria-label', text); btn.dataset.icAria = text; }
+    if (!btn.title) btn.title = text;
+  }
+  function scan(root) {
+    if (!root || !root.querySelectorAll) return;
+    if (root.tagName === 'BUTTON') apply(root);
+    var list = root.querySelectorAll('button');
+    for (var i = 0; i < list.length; i++) apply(list[i]);
+  }
+  var pending = new Set(), scheduled = false;
+  function flush() {
+    scheduled = false;
+    pending.forEach(function (el) { if (el.isConnected) scan(el); });
+    pending.clear();
+  }
+  function queue(el) {
+    if (!el) return;
+    pending.add(el);
+    if (!scheduled) { scheduled = true; (window.queueMicrotask || setTimeout)(flush); }
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        var m = muts[i], t = m.target;
+        if (m.type === 'characterData') { t = t.parentElement; if (t) queue(t.closest('button') || t); continue; }
+        if (t.nodeType === 1 && t.tagName === 'BUTTON') { queue(t); continue; }
+        if (t.nodeType === 1 && t.closest && t.closest('button')) { queue(t.closest('button')); continue; }
+        for (var j = 0; j < m.addedNodes.length; j++) { var n = m.addedNodes[j]; if (n.nodeType === 1) queue(n); }
+      }
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  window.SuiteIcons = { apply: apply, scan: scan, icons: ICONS };
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();

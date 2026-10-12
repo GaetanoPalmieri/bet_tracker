@@ -197,3 +197,74 @@ h1, h2, h3,
   font-family: var(--suite-font-display);
   font-variant-numeric: tabular-nums;
 }
+
+
+/* =====================================================================
+   Regole comuni a tutte le app (ottobre 2026)
+   Stanno qui perché questo file è identico ovunque ed è caricato per ultimo.
+   ===================================================================== */
+
+/* 1) Tenere premuto non seleziona il testo e non apre il menu "Copia" di iOS.
+      Nei campi dove si scrive, invece, la selezione resta possibile. */
+html, body, body * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+body :is(input, textarea, select, [contenteditable=""], [contenteditable="true"]),
+body :is([contenteditable=""], [contenteditable="true"]) * {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+img, svg { -webkit-user-drag: none; }
+
+/* 2) Pulsanti d'azione come icone (vedi SuiteIcons in suite.js) */
+svg.suite-ic {
+  width: 1.3em;
+  height: 1.3em;
+  min-width: 18px;
+  min-height: 18px;
+  display: inline-block;
+  vertical-align: middle;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+button.suite-ic-btn {
+  min-width: 40px;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+button.suite-ic-btn svg.suite-ic { margin: -2px 0; }
+button.suite-ic-trash:not(:disabled) { color: #c8463c; }
+:root[data-theme="dark"] button.suite-ic-trash:not(:disabled) { color: #ff7d70; }
+/* sui fondi pieni (pulsanti rossi o ambra) l'icona usa il colore del testo del pulsante */
+button.suite-ic-trash:is(.danger, .primary, .solidbtn, .app-update-now, .ask-ok, [class*="danger"]) { color: inherit !important; }
+
+/* 3) Occhio "mostra / nascondi importi": ben visibile (ambra), pieno quando gli importi sono nascosti */
+html:root:root .eye-fixed,
+html:root:root .balance-hide {
+  color: #c4700f !important;
+}
+html:root:root .eye-fixed {
+  border-color: color-mix(in srgb, #e48d24 45%, transparent) !important;
+  background: color-mix(in srgb, #f7c463 22%, var(--suite-surface, #fff)) !important;
+  box-shadow: 0 6px 18px -10px rgba(228, 141, 36, .65) !important;
+}
+:root:root[data-theme="dark"] .eye-fixed,
+:root:root[data-theme="dark"] .balance-hide {
+  color: #f7c463 !important;
+}
+:root:root[data-theme="dark"] .eye-fixed {
+  background: color-mix(in srgb, #e48d24 20%, var(--suite-surface, #1b232c)) !important;
+}
+html:root:root:root .eye-fixed[aria-label^="Mostra"] {
+  background: var(--suite-amber-grad) !important;
+  border-color: transparent !important;
+  color: var(--suite-on-amber) !important;
+}
+html:root:root .eye-fixed svg { stroke-width: 2.3; }

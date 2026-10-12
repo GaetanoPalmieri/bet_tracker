@@ -1,4 +1,4 @@
-const APP_VERSION = '2.1.2';
+const APP_VERSION = '2.4.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -2542,9 +2542,11 @@ function diaryCalendar(series) {
 
   return (
     '<div class="dcal-shell">' +
-    '<div class="dcal-head"><div class="dcal-month-copy"><small>AGENDA MENSILE</small><b>' +
+    '<div class="dcal-head"><button type="button" class="dcal-month-copy" data-dcal-pick aria-label="' +
     monthLabel +
-    '</b></div><div class="dcal-nav-group"><button type="button" class="dcal-nav" data-dcal-month="-1" aria-label="Mese precedente">‹</button><button type="button" class="dcal-nav" data-dcal-month="1" aria-label="Mese successivo"' +
+    ': tocca o tieni premuto per scegliere il mese"><small>AGENDA MENSILE</small><b>' +
+    monthLabel +
+    ' <span class="dcal-caret" aria-hidden="true">▾</span></b></button><div class="dcal-nav-group"><button type="button" class="dcal-nav" data-dcal-month="-1" aria-label="Mese precedente">‹</button><button type="button" class="dcal-nav" data-dcal-month="1" aria-label="Mese successivo"' +
     (isCurrent ? ' disabled' : '') +
     '>›</button></div></div>' +
     '<div class="dcal-grid">' +
@@ -3337,6 +3339,119 @@ function diarySave(existing, date, value, note) {
   });
 }
 
+/* ---------- Agenda: scelta rapida del mese (come nelle altre app) ----------
+   Tocca o tieni premuto il nome del mese: si apre l'elenco con i 3 mesi prima e i 3 dopo.
+   I mesi futuri restano visibili ma spenti, come la freccia ›. */
+function closeMonthPicker() {
+  var p = document.getElementById('dcalMonthPop');
+  if (p) p.remove();
+  document.removeEventListener('pointerdown', monthPickerOutside, true);
+  window.removeEventListener('scroll', closeMonthPicker, true);
+}
+function monthPickerOutside(e) {
+  if (!e.target.closest('#dcalMonthPop') && !e.target.closest('[data-dcal-pick]')) closeMonthPicker();
+}
+function openMonthPicker(anchor) {
+  closeMonthPicker();
+  var cur = diaryUI.month || dToday().slice(0, 7),
+    nowM = dToday().slice(0, 7),
+    base = dParse(cur + '-01');
+  var rows = '';
+  for (var i = -3; i <= 3; i++) {
+    var d = new Date(base.getFullYear(), base.getMonth() + i, 1),
+      key = U.local(d).slice(0, 7),
+      future = key > nowM;
+    rows +=
+      '<button type="button" class="mp-row' +
+      (i === 0 ? ' active' : '') +
+      '" data-mp="' +
+      key +
+      '"' +
+      (future ? ' disabled' : '') +
+      '><b>' +
+      d.toLocaleDateString('it-IT', { month: 'long' }) +
+      '</b><small>' +
+      (key === nowM ? 'questo mese · ' : '') +
+      d.getFullYear() +
+      '</small></button>';
+  }
+  var pop = document.createElement('div');
+  pop.id = 'dcalMonthPop';
+  pop.className = 'lp-popup mp-popup';
+  pop.setAttribute('role', 'dialog');
+  pop.setAttribute('aria-label', 'Scegli il mese');
+  pop.innerHTML = '<div class="lp-head">Scegli il mese</div><div class="mp-list">' + rows + '</div>';
+  document.body.appendChild(pop);
+  pop.querySelectorAll('[data-mp]').forEach(function (b) {
+    b.onclick = function () {
+      diaryUI.month = b.dataset.mp;
+      closeMonthPicker();
+      render();
+    };
+  });
+  var r = anchor.getBoundingClientRect(),
+    vw = window.innerWidth,
+    vh = window.innerHeight,
+    w = Math.min(230, vw - 24);
+  pop.style.width = w + 'px';
+  pop.style.left = Math.min(Math.max(12, r.left), vw - w - 12) + 'px';
+  var ph = pop.offsetHeight,
+    top = r.bottom + 8;
+  if (top + ph > vh - 90) top = Math.max(12, r.top - ph - 8);
+  pop.style.top = top + 'px';
+  requestAnimationFrame(function () {
+    pop.classList.add('show');
+  });
+  setTimeout(function () {
+    document.addEventListener('pointerdown', monthPickerOutside, true);
+    window.addEventListener('scroll', closeMonthPicker, true);
+  }, 0);
+}
+function bindMonthPicker(el) {
+  var timer = null,
+    x = 0,
+    y = 0,
+    fired = false;
+  var cancel = function () {
+    clearTimeout(timer);
+    timer = null;
+    el.classList.remove('lp-pressing');
+  };
+  el.addEventListener('pointerdown', function (e) {
+    if (e.button) return;
+    x = e.clientX;
+    y = e.clientY;
+    fired = false;
+    el.classList.add('lp-pressing');
+    timer = setTimeout(function () {
+      timer = null;
+      fired = true;
+      el.classList.remove('lp-pressing');
+      try {
+        navigator.vibrate && navigator.vibrate(12);
+      } catch (_) {}
+      openMonthPicker(el);
+    }, 450);
+  });
+  el.addEventListener('pointermove', function (e) {
+    if (timer && Math.hypot(e.clientX - x, e.clientY - y) > 10) cancel();
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+    el.addEventListener(ev, cancel);
+  });
+  el.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+  });
+  el.addEventListener('click', function () {
+    if (fired) {
+      fired = false;
+      return;
+    }
+    if (document.getElementById('dcalMonthPop')) closeMonthPicker();
+    else openMonthPicker(el);
+  });
+}
+
 /* ---------- Eventi ---------- */
 function bindDiary() {
   bindDiaryExtra();
@@ -3355,6 +3470,9 @@ function bindDiary() {
       diaryUI.range = b.dataset.diaryRange;
       render();
     };
+  });
+  main.querySelectorAll('[data-dcal-pick]').forEach(function (b) {
+    bindMonthPicker(b);
   });
   main.querySelectorAll('[data-dcal-month]').forEach(function (b) {
     b.onclick = function () {

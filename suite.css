@@ -641,3 +641,121 @@ dialog textarea,
   .dcal-day-number { width: 24px; height: 24px; font-size: 12px; }
   .dcal-day-value { font-size: 7.8px; }
 }
+
+/* =====================================================================
+   Bet Tracker 2.4.0 — Agenda della Home rifatta: numeri grandi, mese da scegliere
+   ===================================================================== */
+.dcal-shell { padding: 14px 12px 14px !important; }
+.dcal-head { align-items: center; margin: 0 0 12px !important; }
+button.dcal-month-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin: -6px 0 -6px -8px;
+  padding: 6px 8px;
+  border: 0 !important;
+  border-radius: 12px;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--suite-text);
+  font: inherit;
+  text-align: left;
+  min-height: 0 !important;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s ease, opacity .2s ease;
+}
+button.dcal-month-copy:active,
+button.dcal-month-copy.lp-pressing { background: color-mix(in srgb, var(--suite-text) 8%, transparent) !important; }
+button.dcal-month-copy b {
+  font-size: 22px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.dcal-caret { font-size: 12px; color: var(--suite-text-soft); vertical-align: 3px; }
+.dcal-nav-group { grid-template-columns: 42px 42px !important; }
+.dcal-nav { width: 42px !important; min-height: 40px !important; font-size: 24px !important; }
+
+.dcal-grid { gap: 4px !important; }
+.dcal-wd { font-size: 11px !important; padding: 0 0 4px !important; }
+.dcal-day {
+  min-height: 62px !important;
+  padding: 6px 1px 7px !important;
+  gap: 4px !important;
+  border-radius: 14px !important;
+}
+.dcal-day-number {
+  width: 32px;
+  height: 32px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+}
+.dcal-day-value {
+  min-height: 12px;
+  font-size: 10.5px;
+  letter-spacing: -.02em;
+}
+.dcal-day.future { opacity: .32 !important; }
+.dcal-legend { font-size: 11px; }
+.dcal-summary b { font-size: 16px; }
+@media (max-width: 380px) {
+  .dcal-day { min-height: 56px !important; }
+  .dcal-day-number { width: 28px; height: 28px; font-size: 15.5px; }
+  .dcal-day-value { font-size: 9.5px; }
+  button.dcal-month-copy b { font-size: 20px; }
+}
+
+/* Scelta rapida del mese (stesso aspetto delle altre app) */
+.lp-popup {
+  position: fixed;
+  z-index: 400;
+  color: var(--ink);
+  border: 1px solid var(--glass-edge, var(--line));
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.38);
+  background: color-mix(in srgb, var(--card) 86%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.8);
+  backdrop-filter: blur(18px) saturate(1.8);
+  padding: 10px 8px 8px;
+  opacity: 0;
+  transform: translateY(-4px) scale(.98);
+  transition: opacity .14s ease, transform .14s ease;
+}
+.lp-popup.show { opacity: 1; transform: none; }
+.lp-head {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin: 2px 4px 6px;
+}
+.mp-list { display: flex; flex-direction: column; }
+.mp-row {
+  display: flex !important;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 0 !important;
+  padding: 9px 10px !important;
+  border: 0 !important;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 9%, transparent) !important;
+  background: none !important;
+  box-shadow: none !important;
+  text-align: left;
+  font-family: inherit;
+  color: var(--ink) !important;
+  border-radius: 10px !important;
+}
+.mp-row:first-of-type { border-top: 0 !important; }
+.mp-row b { font-size: 15px; font-weight: 700; text-transform: capitalize; }
+.mp-row small { font-size: 13px; color: var(--ink-soft); white-space: nowrap; }
+.mp-row.active { background: color-mix(in srgb, #3fb38e 18%, transparent) !important; }
+.mp-row.active b { color: #3fb38e; }
+.mp-row:disabled { opacity: .35; }
+.mp-row:not(:disabled):active { background: color-mix(in srgb, var(--ink) 10%, transparent) !important; }

@@ -3,27 +3,27 @@
    - Pagina: rete con timeout di 3 secondi, poi la copia salvata (funziona anche offline).
    - File con ?v= e icone: prima la cache; un nuovo rilascio cambia ?v= e quindi l'indirizzo.
    - Il nuovo worker resta in attesa finché l'app non chiede di attivarlo (avviso "Aggiorna"). */
-const VERSION = '2.1.2';
+const VERSION = '2.4.0';
 const PREFIX = 'bet-tracker-';
 const CACHE = PREFIX + VERSION;
 const SHELL = [
   './',
   './index.html',
-  './suite.js?v=2.1.2',
-  './colors.css?v=2.1.2',
-  './base.css?v=2.1.2',
-  './shared.css?v=2.1.2',
-  './app.css?v=2.1.2',
-  './suite.css?v=2.1.2',
-  './suite-tokens.css?v=2.1.2',
-  './shared.js?v=2.1.2',
-  './app.js?v=2.1.2',
-  './manifest.webmanifest?v=2.1.2',
-  './favicon.ico?v=2.1.2',
-  './favicon-32.png?v=2.1.2',
-  './apple-touch-icon.png?v=2.1.2',
-  './bet-icon-192.png?v=2.1.2',
-  './bet-icon-512.png?v=2.1.2'
+  './suite.js?v=2.4.0',
+  './colors.css?v=2.4.0',
+  './base.css?v=2.4.0',
+  './shared.css?v=2.4.0',
+  './app.css?v=2.4.0',
+  './suite.css?v=2.4.0',
+  './suite-tokens.css?v=2.4.0',
+  './shared.js?v=2.4.0',
+  './app.js?v=2.4.0',
+  './manifest.webmanifest?v=2.4.0',
+  './favicon.ico?v=2.4.0',
+  './favicon-32.png?v=2.4.0',
+  './apple-touch-icon.png?v=2.4.0',
+  './bet-icon-192.png?v=2.4.0',
+  './bet-icon-512.png?v=2.4.0'
 ];
 const NETWORK_TIMEOUT_MS = 3000;
 
