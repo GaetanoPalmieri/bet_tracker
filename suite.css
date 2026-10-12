@@ -643,73 +643,79 @@ dialog textarea,
 }
 
 /* =====================================================================
-   Bet Tracker 2.4.1 — Agenda della Home: testi compatti, mese da scegliere
+   Bet Tracker 2.5.0 — Agenda della Home a settimane, colori a intensità
    ===================================================================== */
-.dcal-shell { padding: 12px 10px !important; }
-.dcal-head { align-items: center; margin: 0 0 10px !important; }
-button.dcal-month-copy {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-  margin: -4px 0 -4px -6px;
-  padding: 4px 6px;
-  border: 0 !important;
-  border-radius: 10px;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: var(--suite-text);
-  font: inherit;
-  text-align: left;
-  min-height: 0 !important;
-  -webkit-tap-highlight-color: transparent;
-  transition: background .15s ease, opacity .2s ease;
+.wkcal { margin-top: 10px; color: var(--suite-text); }
+.wkcal button { font: inherit; -webkit-tap-highlight-color: transparent; }
+.wkcal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+button.wkcal-title {
+  margin: -4px 0 -4px -6px; padding: 4px 6px !important; min-height: 0 !important;
+  border: 0 !important; border-radius: 10px !important; background: transparent !important; box-shadow: none !important;
+  color: var(--suite-text) !important; font-family: var(--suite-font-display) !important;
+  font-size: 17px !important; font-weight: 750 !important; letter-spacing: -.01em; text-transform: capitalize;
+  transition: background .15s ease;
 }
-button.dcal-month-copy:active,
-button.dcal-month-copy.lp-pressing { background: color-mix(in srgb, var(--suite-text) 8%, transparent) !important; }
-button.dcal-month-copy small { font-size: 9px; }
-button.dcal-month-copy b {
-  font-size: 16px;
-  line-height: 1.15;
-  font-weight: 750;
-  letter-spacing: -.01em;
-  text-transform: capitalize;
-  white-space: nowrap;
+button.wkcal-title span { font-size: 10px; color: var(--suite-text-soft); vertical-align: 2px; }
+button.wkcal-title:active, button.wkcal-title.lp-pressing { background: color-mix(in srgb, var(--suite-text) 8%, transparent) !important; }
+.wkcal-nav { display: flex; gap: 2px; }
+.wkcal-nav button {
+  width: 34px !important; height: 32px !important; min-height: 0 !important; padding: 0 !important;
+  border: 0 !important; border-radius: 10px !important; background: transparent !important; box-shadow: none !important;
+  color: var(--suite-text) !important; font-size: 21px !important; line-height: 1 !important;
 }
-.dcal-caret { font-size: 10px; color: var(--suite-text-soft); vertical-align: 2px; }
-.dcal-nav-group { grid-template-columns: 34px 34px !important; gap: 4px !important; padding: 3px !important; border-radius: 12px !important; }
-.dcal-nav { width: 34px !important; min-height: 32px !important; font-size: 19px !important; border-radius: 9px !important; }
+.wkcal-nav button:not(:disabled):active { background: color-mix(in srgb, var(--suite-text) 9%, transparent) !important; }
+.wkcal-nav button:disabled { opacity: .25; }
 
-.dcal-grid { gap: 3px !important; }
-.dcal-wd { font-size: 9.5px !important; padding: 0 0 3px !important; }
-.dcal-day {
-  min-height: 46px !important;
-  padding: 5px 1px 5px !important;
-  gap: 2px !important;
-  border-radius: 11px !important;
+.wkcal-weeks { display: grid; gap: 7px; }
+.wk {
+  padding: 8px 8px 8px; border-radius: 14px;
+  background: color-mix(in srgb, var(--suite-text) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--suite-text) 5%, transparent);
 }
-.dcal-day-number {
-  width: 22px;
-  height: 22px;
-  font-size: 13px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
+.wk.current { border-color: color-mix(in srgb, #e8a33d 45%, transparent); }
+.wk.future { opacity: .42; }
+.wk-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 2px 6px; font-size: 11px; font-weight: 600; color: var(--suite-text-soft); }
+.wk-head b { font-size: 12.5px; font-weight: 750; color: var(--suite-text-soft); font-variant-numeric: tabular-nums; }
+.wk-head b.positive { color: var(--bt-up-text); }
+.wk-head b.negative { color: var(--bt-down-text); }
+.wk-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.wk-day {
+  all: unset; box-sizing: border-box; cursor: pointer; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 4px 0 5px; border-radius: 10px;
+  transition: transform .12s ease;
 }
-.dcal-day-value {
-  min-height: 10px;
-  font-size: 8.5px;
-  letter-spacing: -.02em;
+.wk-day:not(:disabled):active { transform: scale(.94); }
+.wk-empty { visibility: hidden; }
+.wk-day small { font-size: 8px; font-weight: 700; letter-spacing: .05em; color: var(--suite-text-soft); }
+.wk-day b { font-size: 13px; font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; color: var(--suite-text-soft); }
+.wk-day span { min-height: 9px; font-size: 8.5px; font-weight: 750; line-height: 1; letter-spacing: -.02em; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--suite-text); }
+.wk-day.has b { color: var(--suite-text); font-weight: 750; }
+.wk-day.up { background: color-mix(in srgb, var(--bt-up) var(--a), transparent); }
+.wk-day.down { background: color-mix(in srgb, var(--bt-down) var(--a), transparent); }
+.wk-day.flat { background: color-mix(in srgb, var(--suite-text) 9%, transparent); }
+.wk-day.flat span { color: var(--suite-text-soft); }
+.wk-day.today { box-shadow: inset 0 0 0 1.5px #e8a33d; }
+.wk-day.today small { color: #c4700f; }
+:root[data-theme="dark"] .wk-day.today small { color: #f7c463; }
+.wk-day.future { cursor: default; }
+
+.wkcal-scale { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 10px; color: var(--suite-text-soft); }
+.wkcal-scale i { flex: 1; height: 5px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--bt-down), color-mix(in srgb, var(--suite-text) 8%, transparent) 50%, var(--bt-up)); }
+.wkcal-foot {
+  display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 9px;
+  border-top: 1px solid color-mix(in srgb, var(--suite-text) 9%, transparent);
+  font-size: 12px; color: var(--suite-text-soft);
 }
-.dcal-day.future { opacity: .3 !important; }
-.dcal-legend { font-size: 10px; margin-top: 10px !important; }
-.dcal-summary { margin-top: 10px !important; }
-.dcal-summary > div { padding: 8px 10px !important; }
-.dcal-summary small { font-size: 8px !important; }
-.dcal-summary b { font-size: 14px !important; }
+.wkcal-foot b { font-size: 14px; font-variant-numeric: tabular-nums; color: var(--suite-text); }
+.wkcal-foot b.positive { color: var(--bt-up-text); }
+.wkcal-foot b.negative { color: var(--bt-down-text); }
 @media (max-width: 380px) {
-  .dcal-day { min-height: 42px !important; }
-  .dcal-day-number { width: 20px; height: 20px; font-size: 12px; }
-  .dcal-day-value { font-size: 7.8px; }
-  button.dcal-month-copy b { font-size: 15px; }
+  .wk { padding: 7px 6px; }
+  .wk-days { gap: 3px; }
+  .wk-day b { font-size: 12px; }
+  .wk-day span { font-size: 7.8px; }
 }
 
 /* Pulsanti più piccoli: "+ Scommessa" in alto e "Segna / Aggiorna il saldo di oggi" */

@@ -1,4 +1,4 @@
-const APP_VERSION = '2.4.1';
+const APP_VERSION = '2.5.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -2468,6 +2468,8 @@ function diaryBarChart(points) {
 
 /* ---------- Agenda del mese ---------- */
 function diaryCalendar(series) {
+  /* 2.5.0 — Agenda a settimane: un blocco per settimana con il totale, dentro i 7 giorni.
+     Il colore del giorno è più intenso quanto più grande è la variazione (verde aumento, rosso calo). */
   var month = diaryUI.month || dToday().slice(0, 7);
   var first = dParse(month + '-01'),
     y = first.getFullYear(),
@@ -2479,87 +2481,130 @@ function diaryCalendar(series) {
   series.forEach(function (p) {
     byDate[p.date] = p;
   });
-
-  var cells = '';
-  for (var i = 1; i <= count; i++) {
-    var key = month + '-' + String(i).padStart(2, '0'),
-      p = byDate[key],
-      future = key > today;
-    var cls = [
-      'dcal-day',
-      p ? 'has' : '',
-      p && p.delta != null ? sClass(p.delta) : '',
-      key === today ? 'today' : '',
-      future ? 'future' : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
-    var sub = p
-      ? p.delta != null
-        ? (p.delta > 0.004 ? '+' : p.delta < -0.004 ? '−' : '') + eurShort(Math.abs(p.delta))
-        : 'Saldo'
-      : '';
-    cells +=
-      '<button type="button" class="' +
-      cls +
-      '" data-dcal="' +
-      key +
-      '"' +
-      (future ? ' disabled' : '') +
-      ' aria-label="' +
-      dLabel(key, { weekday: 'long', day: 'numeric', month: 'long' }) +
-      (p ? ', saldo ' + U.money(p.balance) : ', non segnato') +
-      '"><span class="dcal-day-number">' +
-      i +
-      '</span><span class="dcal-day-value">' +
-      sub +
-      '</span>' +
-      (p ? '<span class="dcal-dot" aria-hidden="true"></span>' : '') +
-      '</button>';
-  }
-
   var inMonth = series.filter(function (p) {
     return p.date.slice(0, 7) === month;
   });
+  var maxAbs = Math.max.apply(
+    null,
+    [1].concat(
+      inMonth.map(function (p) {
+        return Math.abs(p.delta || 0);
+      }),
+    ),
+  );
+  var WD = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+  var shortM = first.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '');
+  var cells = [];
+  for (var k = 0; k < offset; k++) cells.push(null);
+  for (var i = 1; i <= count; i++) {
+    var key = month + '-' + String(i).padStart(2, '0'),
+      p = byDate[key],
+      d = p && p.delta != null ? p.delta : null;
+    cells.push({ i: i, key: key, p: p, d: d, today: key === today, future: key > today });
+  }
+  while (cells.length % 7) cells.push(null);
+
+  var dayBtn = function (x, wd) {
+    if (!x) return '<span class="wk-day wk-empty" aria-hidden="true"></span>';
+    var tone = x.d > 0.004 ? 'up' : x.d < -0.004 ? 'down' : x.p ? 'flat' : '';
+    var a = x.d != null ? Math.round(18 + 52 * Math.min(1, Math.abs(x.d) / maxAbs)) : 0;
+    var val = x.p ? (x.d != null ? (x.d > 0.004 ? '+' : x.d < -0.004 ? '−' : '') + eurShort(Math.abs(x.d)) : 'Saldo') : '';
+    return (
+      '<button type="button" class="wk-day' +
+      (x.p ? ' has' : '') +
+      (tone ? ' ' + tone : '') +
+      (x.today ? ' today' : '') +
+      (x.future ? ' future' : '') +
+      '" style="--a:' +
+      a +
+      '%" data-dcal="' +
+      x.key +
+      '"' +
+      (x.future ? ' disabled' : '') +
+      ' aria-label="' +
+      dLabel(x.key, { weekday: 'long', day: 'numeric', month: 'long' }) +
+      (x.p ? ', saldo ' + U.money(x.p.balance) : ', non segnato') +
+      '"><small>' +
+      wd +
+      '</small><b>' +
+      x.i +
+      '</b><span>' +
+      val +
+      '</span></button>'
+    );
+  };
+
+  var weeks = '';
+  for (var w = 0; w < cells.length; w += 7) {
+    var wk = cells.slice(w, w + 7),
+      real = wk.filter(Boolean),
+      a0 = real[0],
+      b0 = real[real.length - 1];
+    var withD = real.filter(function (x) {
+      return x.d != null;
+    });
+    var tot = withD.reduce(function (s, x) {
+      return s + x.d;
+    }, 0);
+    var allFuture = real.every(function (x) {
+      return x.future;
+    });
+    var hasToday = real.some(function (x) {
+      return x.today;
+    });
+    weeks +=
+      '<div class="wk' +
+      (allFuture ? ' future' : '') +
+      (hasToday ? ' current' : '') +
+      '"><div class="wk-head"><span>' +
+      (a0.i === b0.i ? a0.i : a0.i + '–' + b0.i) +
+      ' ' +
+      shortM +
+      (hasToday ? ' · questa settimana' : '') +
+      '</span><b class="' +
+      (withD.length ? sClass(tot) : '') +
+      '">' +
+      (withD.length ? sMoney(tot) : '—') +
+      '</b></div><div class="wk-days">' +
+      wk
+        .map(function (x, j) {
+          return dayBtn(x, WD[j]);
+        })
+        .join('') +
+      '</div></div>';
+  }
+
   var before = series.filter(function (p) {
     return p.date < month + '-01';
   });
   var startVal = before.length ? before[before.length - 1].balance : inMonth[0] ? inMonth[0].balance : null;
   var endP = inMonth[inMonth.length - 1];
   var monthDelta = endP && startVal != null ? endP.balance - startVal : null;
-  var summary =
-    endP && startVal != null
-      ? '<div class="dcal-summary"><div><small>GIORNI SEGNATI</small><b>' +
-        inMonth.length +
-        '</b></div><div><small>VARIAZIONE MESE</small><b class="' +
-        sClass(monthDelta) +
-        '">' +
-        sMoney(monthDelta) +
-        '</b></div></div>'
-      : '<div class="dcal-summary dcal-summary-empty"><span>Nessun saldo segnato in questo mese</span><small>Tocca un giorno per iniziare.</small></div>';
   var isCurrent = month >= today.slice(0, 7);
   var monthLabel = first.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
 
   return (
-    '<div class="dcal-shell">' +
-    '<div class="dcal-head"><button type="button" class="dcal-month-copy" data-dcal-pick aria-label="' +
+    '<div class="wkcal">' +
+    '<div class="wkcal-head"><button type="button" class="wkcal-title" data-dcal-pick aria-label="' +
     monthLabel +
-    ': tocca o tieni premuto per scegliere il mese"><small>AGENDA MENSILE</small><b>' +
+    ': tocca o tieni premuto per scegliere il mese">' +
     monthLabel +
-    ' <span class="dcal-caret" aria-hidden="true">▾</span></b></button><div class="dcal-nav-group"><button type="button" class="dcal-nav" data-dcal-month="-1" aria-label="Mese precedente">‹</button><button type="button" class="dcal-nav" data-dcal-month="1" aria-label="Mese successivo"' +
+    ' <span aria-hidden="true">▾</span></button><div class="wkcal-nav"><button type="button" data-dcal-month="-1" aria-label="Mese precedente">‹</button><button type="button" data-dcal-month="1" aria-label="Mese successivo"' +
     (isCurrent ? ' disabled' : '') +
     '>›</button></div></div>' +
-    '<div class="dcal-grid">' +
-    ['L', 'M', 'M', 'G', 'V', 'S', 'D']
-      .map(function (d) {
-        return '<small class="dcal-wd">' + d + '</small>';
-      })
-      .join('') +
-    '<span class="dcal-spacer"></span>'.repeat(offset) +
-    cells +
+    '<div class="wkcal-weeks">' +
+    weeks +
     '</div>' +
-    '<div class="dcal-legend"><span><i class="positive"></i>Aumento</span><span><i class="negative"></i>Calo</span><span><i></i>Saldo segnato</span></div>' +
-    summary +
+    '<div class="wkcal-scale" aria-hidden="true"><span>Calo</span><i></i><span>Aumento</span></div>' +
+    '<div class="wkcal-foot"><span>' +
+    (inMonth.length
+      ? inMonth.length + (inMonth.length === 1 ? ' giorno segnato' : ' giorni segnati')
+      : 'Nessun saldo segnato: tocca un giorno') +
+    '</span><b class="' +
+    sClass(monthDelta) +
+    '">' +
+    (monthDelta == null ? '—' : sMoney(monthDelta)) +
+    '</b></div>' +
     '</div>'
   );
 }
