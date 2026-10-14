@@ -1,4 +1,4 @@
-const APP_VERSION = '2.6.0';
+const APP_VERSION = '2.6.1';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -2865,7 +2865,7 @@ function diaryPage() {
     '<section class="card diary-card"><h2>Saldo segnato e scommesse</h2><p class="muted diary-hint">Nel periodo scelto: quanto è cambiato il saldo che hai segnato e quanto lo spiegano scommesse e movimenti.</p>' +
     diaryVsBets(points) +
     '</section>';
-  return hero + kpis + chart + bars + stats + vs + weekday + agenda + log + monthly;
+  return hero + agenda + kpis + chart + bars + stats + vs + weekday + log + monthly;
 }
 
 /* ---------- 2.1.0 — Per giorno della settimana ---------- */
