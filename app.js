@@ -1,4 +1,4 @@
-const APP_VERSION = '2.6.1';
+const APP_VERSION = '2.6.2';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -2046,10 +2046,32 @@ function diarySeries(d) {
   var list = ((d || db).diary || []).slice().sort(function (a, b) {
     return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
   });
-  return list.map(function (e, i) {
-    return Object.assign({}, e, {
-      delta: i ? U.round(e.balance - list[i - 1].balance) : null,
-      prev: i ? list[i - 1] : null,
+  /* 2.6.2 — Depositi e prelievi non sono vincite o perdite: la variazione di un giorno è
+     (saldo di oggi − saldo precedente) − (depositi − prelievi fatti nel frattempo).
+     "perf" è il saldo depurato da tutti i versamenti fino a quel giorno: le differenze
+     di perf sono il vero guadagno o la vera perdita. */
+  var flows = ((d || db).transactions || [])
+    .filter(function (t) {
+      return t.kind !== 'adjust';
+    })
+    .map(function (t) {
+      return { day: dayKey(t.date), amount: t.amount };
+    });
+  var flowsUpTo = function (date) {
+    return flows.reduce(function (n, f) {
+      return f.day <= date ? n + f.amount : n;
+    }, 0);
+  };
+  var out = list.map(function (e) {
+    var cum = U.round(flowsUpTo(e.date));
+    return Object.assign({}, e, { flows: cum, perf: U.round(e.balance - cum) });
+  });
+  return out.map(function (e, i) {
+    var prev = i ? out[i - 1] : null;
+    return Object.assign(e, {
+      delta: prev ? U.round(e.perf - prev.perf) : null,
+      moved: prev ? U.round(e.flows - prev.flows) : 0,
+      prev: prev,
     });
   });
 }
@@ -2074,7 +2096,7 @@ function diaryIsLatest(date) {
 function diaryChange(series, days) {
   if (!series.length) return null;
   var last = series[series.length - 1];
-  if (days === 'all') return { value: U.round(last.balance - series[0].balance), from: series[0] };
+  if (days === 'all') return { value: U.round(last.perf - series[0].perf), from: series[0] };
   var start = dAdd(dToday(), -Number(days));
   var base = null;
   for (var i = series.length - 1; i >= 0; i--) {
@@ -2085,7 +2107,7 @@ function diaryChange(series, days) {
   }
   if (!base) base = series[0];
   if (base === last) return null;
-  return { value: U.round(last.balance - base.balance), from: base };
+  return { value: U.round(last.perf - base.perf), from: base };
 }
 
 /* Statistiche sul periodo scelto */
@@ -2102,8 +2124,8 @@ function diaryStats(points) {
   points.forEach(function (p) {
     if (p.balance > max.balance) max = p;
     if (p.balance < min.balance) min = p;
-    if (p.balance > peak.balance) peak = p;
-    dd = Math.min(dd, p.balance - peak.balance);
+    if (p.perf > peak.perf) peak = p;
+    dd = Math.min(dd, p.perf - peak.perf);
     if (p.delta != null) {
       n++;
       sum += p.delta;
@@ -2124,12 +2146,12 @@ function diaryStats(points) {
     streak++;
   }
   var allMax = points.reduce(function (m, p) {
-    return p.balance > m.balance ? p : m;
+    return p.perf > m.perf ? p : m;
   }, points[0]);
   return {
     max: max,
     min: min,
-    fromPeak: U.round(last.balance - allMax.balance),
+    fromPeak: U.round(last.perf - allMax.perf),
     peak: allMax,
     maxDD: U.round(dd),
     up: up,
@@ -2595,9 +2617,9 @@ function diaryCalendar(series) {
   var before = series.filter(function (p) {
     return p.date < month + '-01';
   });
-  var startVal = before.length ? before[before.length - 1].balance : inMonth[0] ? inMonth[0].balance : null;
+  var startVal = before.length ? before[before.length - 1].perf : inMonth[0] ? inMonth[0].perf : null;
   var endP = inMonth[inMonth.length - 1];
-  var monthDelta = endP && startVal != null ? endP.balance - startVal : null;
+  var monthDelta = endP && startVal != null ? endP.perf - startVal : null;
   var isCurrent = month >= today.slice(0, 7);
   var monthLabel = first.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
 
@@ -2796,6 +2818,9 @@ function diaryPage() {
               U.money(p.balance) +
               '</b>' +
               (p.note ? '<small>' + U.esc(p.note) + '</small>' : '') +
+              (p.moved && Math.abs(p.moved) >= 0.005
+                ? '<small>' + (p.moved > 0 ? 'depositati ' : 'prelevati ') + U.money(Math.abs(p.moved)) + ', non contano</small>'
+                : '') +
               '</span><span class="diary-row-delta ' +
               (p.delta != null ? sClass(p.delta) : '') +
               '">' +
@@ -2830,13 +2855,14 @@ function diaryPage() {
           var firstIn = series.find(function (p) {
             return p.date.slice(0, 7) === k;
           });
-          var base = prevEnd ? prevEnd.balance : firstIn.balance,
-            ch = U.round(end.balance - base);
+          var base = prevEnd ? prevEnd.perf : firstIn.perf,
+            ch = U.round(end.perf - base),
+            baseBal = prevEnd ? prevEnd.balance : firstIn.balance;
           var pct =
-            base > 0
+            baseBal > 0
               ? ' <small>(' +
                 (ch >= 0 ? '+' : '−') +
-                Math.abs(Math.round((ch / base) * 1000) / 10).toLocaleString('it-IT') +
+                Math.abs(Math.round((ch / baseBal) * 1000) / 10).toLocaleString('it-IT') +
                 '%)</small>'
               : '';
           return (
