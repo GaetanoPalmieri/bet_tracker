@@ -1,0 +1,31 @@
+VERSIONE 3.0.0 - Diario del saldo
+
+App piu' snella
+- Tolti inserimento scommesse, Riepilogo e Scommesse (e il pulsante + Scommessa).
+  Restano tre schede: Home, Statistiche, Altro. I dati vecchi non vengono cancellati.
+
+Come si contano i soldi
+- Saldo iniziale (Altro > Saldo iniziale): quanto avevi e da quale giorno.
+- Ogni sera segni il saldo: e' il tuo saldo attuale.
+- Depositi e prelievi si segnano con i pulsanti Deposito / Prelievo (Home, Altro o dal giorno
+  nel calendario). Non contano mai come vincita o perdita:
+  risultato del giorno = saldo di oggi - saldo precedente - depositi + prelievi.
+- Saldo attuale = ultimo saldo segnato + depositi - prelievi fatti dopo.
+
+Home
+- Saldo attuale, risultato di oggi, "Segna il saldo di oggi", Deposito e Prelievo.
+- Calendario: verde guadagno, rosso perdita; freccia giu' = deposito, su = prelievo.
+  Tocca un giorno: saldo segnato, depositi/prelievi, risultato e come e' calcolato;
+  da li' correggi il saldo o aggiungi un deposito/prelievo in quel giorno.
+- Quattro numeri: Oggi, 7 giorni, Questo mese, Dall'inizio.
+
+Statistiche (solo saldo)
+- I tuoi soldi: saldo iniziale, depositi, prelievi, messi in gioco, saldo attuale,
+  risultato netto.
+- Andamento: Saldo oppure Risultato netto (senza versamenti).
+- Risultato giorno per giorno, statistiche del periodo, per giorno della settimana,
+  mese per mese, registro del mese.
+
+Altro
+- Saldo iniziale con data, Deposito/Prelievo, elenco di depositi e prelievi
+  (modifica ed elimina), tema, sincronizzazione, notifiche, backup.

@@ -1,4 +1,4 @@
-const APP_VERSION = '2.6.2';
+const APP_VERSION = '3.0.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -169,12 +169,28 @@ function payout(b) {
 function profit(b) {
   return b.status === 'pending' ? 0 : U.round(payout(b) - b.stake);
 }
+/* 3.0.0 — Il saldo nasce dal diario: saldo iniziale, saldi segnati a fine giornata, depositi e
+   prelievi. Saldo attuale = ultimo saldo segnato + depositi − prelievi fatti dopo quel giorno
+   (senza nessun saldo segnato: saldo iniziale + depositi − prelievi). Le scommesse non contano più. */
+function realFlows(d = db) {
+  return (d.transactions || []).filter((t) => t.kind !== 'adjust');
+}
+function startDate(d = db) {
+  return (d.settings && d.settings.initialDate) || null;
+}
+function hasStart(d = db) {
+  // Il saldo iniziale fa da punto di partenza solo con la sua data (Altro › Saldo iniziale):
+  // i vecchi dati senza data restano come prima, dal primo giorno segnato.
+  return !!startDate(d);
+}
 function balance(d = db) {
-  return U.round(
-    d.accounts[0].initial +
-      d.transactions.reduce((n, t) => n + t.amount, 0) +
-      d.bets.reduce((n, b) => n - b.stake + payout(b), 0),
-  );
+  const list = (d.diary || []).slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const last = list[list.length - 1],
+    s = startDate(d),
+    flows = realFlows(d);
+  if (last)
+    return U.round(last.balance + flows.filter((t) => dayKey(t.date) > last.date).reduce((n, t) => n + t.amount, 0));
+  return U.round(d.accounts[0].initial + flows.filter((t) => !s || dayKey(t.date) >= s).reduce((n, t) => n + t.amount, 0));
 }
 function totalDeposited() {
   return U.round(
@@ -520,10 +536,9 @@ function limitCard() {
     : '';
 }
 function render() {
+  if (!['home', 'stats', 'accounts'].includes(tab)) tab = 'home';
   document.getElementById('title').textContent = {
     home: 'Home',
-    summary: 'Riepilogo',
-    bets: 'Scommesse',
     stats: 'Statistiche',
     accounts: 'Altro',
   }[tab];
@@ -531,73 +546,27 @@ function render() {
   const error = document.getElementById('storage-error');
   error.hidden = !storageError;
   error.textContent = storageError;
-  document.getElementById('new-bet').disabled = !!storageError;
   let html = '';
   chartPoints = [];
-  if (tab === 'home') {
-    html = diaryPage();
-  }
-  if (tab === 'summary') {
-    const pending = db.bets.filter((b) => b.status === 'pending'),
-      initial = db.accounts[0].initial,
-      deposits = db.transactions.filter((t) => t.amount > 0 && t.kind !== 'adjust').reduce((n, t) => n + t.amount, 0),
-      withdrawals = totalWithdrawn();
-    html = `<div class="card hero"><small>SALDO DISPONIBILE</small><div class="big">${U.money(balance())}</div><small>${U.money(pending.reduce((n, b) => n + b.stake, 0))} impegnati · ${pending.length} aperte</small></div><div class="grid kpi-grid home-money-grid home-kpis"><button type="button" class="card kpi-card kpi-action money-summary" data-money-kpi="deposited" aria-label="Apri dettaglio totale versato"><small class="kpi-title">Totale versato</small><div class="value">${U.money(totalDeposited())}</div><small class="kpi-detail money-components">${U.money(initial)} + ${U.money(deposits)}</small><span class="kpi-open" aria-hidden="true">›</span></button><button type="button" class="card kpi-card kpi-action money-summary" data-money-kpi="capital" aria-label="Apri dettaglio capitale complessivo"><small class="kpi-title">Capitale complessivo</small><div class="value">${U.money(totalCapital())}</div><small class="kpi-detail money-components">${U.money(balance())} + ${U.money(withdrawals)}</small><span class="kpi-open" aria-hidden="true">›</span></button></div>${limitCard()}${kpis(db.bets, { interactive: true, context: 'home-kpis' })}<h2 class="section">Scommesse in corso</h2>${pending.map(card).join('') || '<div class="card empty">Nessuna scommessa in corso.<div class="actions" style="justify-content:center"><button data-new>＋ Scommessa</button></div></div>'}`;
-  }
-  if (tab === 'bets') {
-    const rows = selectedBets();
-    html =
-      filters() +
-      `<h2 class="section">Storico · ${rows.length}</h2>` +
-      (rows.map(card).join('') || '<div class="card empty">Nessuna scommessa per questi filtri.</div>');
-  }
-  if (tab === 'stats') {
-    const rows = selectedBets(),
-      closed = rows
-        .filter((b) => b.status !== 'pending' && b.settledAt)
-        .sort((a, b) => new Date(a.settledAt) - new Date(b.settledAt));
-    let total = 0;
-    chartPoints = closed.map((b) => ({
-      date: b.settledAt,
-      value: (total = U.round(total + profit(b))),
-      detail: `${U.date(b.settledAt)} · Puntata ${U.money(b.stake)} · Incasso ${U.money(payout(b))} · Profitto ${U.money(profit(b))} · Cumulato ${U.money(total)}`,
-    }));
-    html =
-      statsFilters() +
-      kpis(rows, { context: 'stats-kpis' }) +
-      geoStats(rows) +
-      `<div class="card stats-chart"><h2>Profitto cumulato</h2>${U.chart(chartPoints, 'Profitto cumulato in euro')}<small>Ordine di liquidazione. Gli esiti senza data restano nello storico, esclusi dal grafico.</small></div><div class="card"><h2>Singole e multiple</h2><table class="list-table"><tr><th>Tipo</th><th>Numero</th><th>Puntate</th><th>Profitto</th></tr>${[
-        false,
-        true,
-      ]
-        .map((m) => {
-          const r = rows.filter((b) => b.legs.length > 1 === m);
-          return `<tr><td>${m ? 'Multiple' : 'Singole'}</td><td>${r.length}</td><td>${U.money(r.reduce((n, b) => n + b.stake, 0))}</td><td>${U.money(r.reduce((n, b) => n + profit(b), 0))}</td></tr>`;
-        })
-        .join('')}</table></div><div class="card"><h2>Esiti</h2>${Object.entries(labels)
-        .map(
-          ([v, l]) =>
-            `<div class="row" style="margin:12px 0"><span>${l}</span><b>${rows.filter((b) => b.status === v).length}</b></div>`,
-        )
-        .join('')}</div>`;
-  }
+  if (tab === 'home') html = diaryPage('home');
+  if (tab === 'stats') html = diaryPage('stats');
   if (tab === 'accounts') {
-    html = `${window.SuiteTheme ? SuiteTheme.card({ cls: 'card' }) : ''}${window.SuiteSync && typeof syncBet !== 'undefined' && syncBet ? SuiteSync.cardHtml('bet', { cls: 'card' }) + '<div class="card suite-sync-card push-card" id="pushCard"></div>' : ''}<div class="card hero"><small>SALDO DISPONIBILE</small><div class="big">${U.money(balance())}</div><div class="actions"><button data-tx="deposit">Deposita</button><button data-tx="withdraw">Preleva</button><button id="initial">Saldo iniziale</button></div></div><div class="card"><h2>Limite personale</h2><label>Puntate mensili (€), 0 = disattivato</label><input id="monthly-limit" type="number" min="0" step="0.01" value="${db.settings.monthlyLimit}"><button id="save-limit" style="margin-top:10px">Salva limite</button></div>${limitCard()}<div class="card"><h2>Backup e ripristino</h2><p class="muted">Dati salvati sul telefono e, se colleghi la sincronizzazione, anche online. Ultima esportazione richiesta: ${db.settings.lastExport ? U.date(db.settings.lastExport) : 'mai'}.</p><div class="actions"><button id="export">Esporta JSON</button><button id="import">Importa backup</button></div><input type="file" accept=".json,application/json" id="import-file" hidden></div>${sportsCard()}<div class="card app-version-card"><h2>Versione app</h2><p class="muted">Bet Tracker ${APP_VERSION} · gli aggiornamenti vengono controllati automaticamente.</p><button type="button" id="check-app-update">Controlla aggiornamenti</button></div><h2 class="section">Movimenti</h2>${
-      db.transactions
+    const s = startDate();
+    html = `${window.SuiteTheme ? SuiteTheme.card({ cls: 'card' }) : ''}${window.SuiteSync && typeof syncBet !== 'undefined' && syncBet ? SuiteSync.cardHtml('bet', { cls: 'card' }) + '<div class="card suite-sync-card push-card" id="pushCard"></div>' : ''}<div class="card hero acc-hero"><small>SALDO ATTUALE</small><div class="big">${U.money(balance())}</div><div class="acc-initial"><span>Saldo iniziale <b>${U.money(db.accounts[0].initial)}</b>${s ? ' · dal ' + U.esc(dLabel(s)) : ''}</span><button type="button" id="initial">Modifica</button></div><div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tx="deposit"><span aria-hidden="true">↓</span>Deposito</button><button type="button" class="flow-btn out" data-tx="withdraw"><span aria-hidden="true">↑</span>Prelievo</button></div></div><h2 class="section">Depositi e prelievi</h2>${
+      realFlows()
         .slice()
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .map((t) =>
-          t.kind === 'adjust'
-            ? `<div class="card tx-adjust"><div class="row"><b>Allineamento saldo</b><span>${U.money(t.amount)}</span></div><p class="muted">${U.date(t.date)} · dal saldo segnato in Home. Si modifica dalla Home.</p></div>`
-            : `<div class="card"><div class="row"><b>${t.amount < 0 ? 'Prelievo' : 'Deposito'}</b><span>${U.money(t.amount)}</span></div><p class="muted">${U.date(t.date)}</p><div class="actions"><button data-tx-edit="${t.id}">Modifica</button><button class="danger" data-tx-delete="${t.id}">Elimina</button></div></div>`,
+        .map(
+          (t) =>
+            `<div class="card flow-row ${t.amount < 0 ? 'out' : 'in'}"><span class="flow-ic" aria-hidden="true">${t.amount < 0 ? '↑' : '↓'}</span><div class="flow-main"><b>${t.amount < 0 ? 'Prelievo' : 'Deposito'}</b><small>${U.date(t.date)}</small></div><strong class="${t.amount < 0 ? 'negative' : 'positive'}">${t.amount < 0 ? '−' : '+'}${U.money(Math.abs(t.amount))}</strong><div class="flow-actions"><button data-tx-edit="${t.id}">Modifica</button><button class="danger" data-tx-delete="${t.id}">Elimina</button></div></div>`,
         )
-        .join('') || '<div class="card empty">Nessun movimento.</div>'
-    }`;
+        .join('') || '<div class="card empty">Nessun deposito o prelievo.</div>'
+    }<div class="card"><h2>Backup e ripristino</h2><p class="muted">Dati salvati sul telefono e, se colleghi la sincronizzazione, anche online. Ultima esportazione richiesta: ${db.settings.lastExport ? U.date(db.settings.lastExport) : 'mai'}.</p><div class="actions"><button id="export">Esporta JSON</button><button id="import">Importa backup</button></div><input type="file" accept=".json,application/json" id="import-file" hidden></div><div class="card app-version-card"><h2>Versione app</h2><p class="muted">Bet Tracker ${APP_VERSION} · gli aggiornamenti vengono controllati automaticamente.</p><button type="button" id="check-app-update">Controlla aggiornamenti</button></div>`;
   }
   main.innerHTML = html;
   bind();
   U.bindChart(main, chartPoints);
-  if (tab === 'home') bindDiary();
+  if (tab === 'home' || tab === 'stats') bindDiary();
   if (tab === 'accounts' && typeof renderPushCard === 'function') renderPushCard();
 }
 function sportsCard() {
@@ -1828,10 +1797,11 @@ function settleForm(b) {
     }
   };
 }
-function transactionForm(sign, t) {
+function transactionForm(sign, t, day) {
+  const when = t ? new Date(t.date) : day && day !== dToday() ? new Date(day + 'T12:00:00') : new Date();
   const d = sheetModal(
     sheetHead(t ? 'Modifica movimento' : sign < 0 ? 'Prelievo' : 'Deposito', { form: 'tx-form', sub: sign < 0 ? 'Soldi tolti dal conto di gioco' : 'Soldi versati sul conto di gioco' }) +
-      `<form id="tx-form" class="sheet-form"><div class="sheet-group sheet-amount ${sign < 0 ? 'tone-out' : 'tone-in'}"><label class="sheet-field"><span>Importo (€)</span><div class="sheet-amount-row"><em aria-hidden="true">${sign < 0 ? '−' : '+'}</em><input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0,00" value="${t ? Math.abs(t.amount) : ''}"></div></label></div><div class="sheet-group"><label class="sheet-field"><span>Data e ora</span><input name="date" type="datetime-local" required value="${U.local(t ? new Date(t.date) : new Date())}"></label>${sign < 0 ? `<p class="sheet-calc">Disponibile ora: <b>${U.money(balance() - (t?.amount || 0))}</b></p>` : ''}</div><p class="error" id="error"></p></form>`,
+      `<form id="tx-form" class="sheet-form"><div class="sheet-group sheet-amount ${sign < 0 ? 'tone-out' : 'tone-in'}"><label class="sheet-field"><span>Importo (€)</span><div class="sheet-amount-row"><em aria-hidden="true">${sign < 0 ? '−' : '+'}</em><input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0,00" value="${t ? Math.abs(t.amount) : ''}"></div></label></div><div class="sheet-group"><label class="sheet-field"><span>Data e ora</span><input name="date" type="datetime-local" required value="${U.local(when)}"></label>${sign < 0 ? `<p class="sheet-calc">Disponibile ora: <b>${U.money(balance() - (t?.amount || 0))}</b></p>` : ''}</div><p class="error" id="error"></p></form>`,
   );
   d.querySelector('form').onsubmit = (e) => {
     e.preventDefault();
@@ -1855,12 +1825,21 @@ function transactionForm(sign, t) {
 }
 function initialForm() {
   const d = sheetModal(
-    sheetHead('Saldo iniziale', { form: 'initial-form' }) +
-      `<form id="initial-form" class="sheet-form"><div class="sheet-group sheet-amount"><label class="sheet-field"><span>Saldo prima delle giocate registrate (€)</span><input name="initial" type="number" min="0" step="0.01" inputmode="decimal" required value="${db.accounts[0].initial}"></label></div><p class="sheet-note">Per nuovi versamenti usa Deposita.</p></form>`,
+    sheetHead('Saldo iniziale', { form: 'initial-form', sub: 'Il punto di partenza dei conti' }) +
+      `<form id="initial-form" class="sheet-form"><div class="sheet-group sheet-amount"><label class="sheet-field"><span>Saldo iniziale (€)</span><input name="initial" type="number" min="0" step="0.01" inputmode="decimal" required value="${db.accounts[0].initial}"></label></div><div class="sheet-group"><label class="sheet-field"><span>Da quale giorno</span><input name="from" type="date" max="${dToday()}" value="${startDate() || (diarySeries()[0] ? dAdd(diarySeries()[0].date, -1) : dToday())}"></label></div><p class="sheet-note">È il saldo che avevi a fine di quel giorno, prima di segnare i giorni successivi. Depositi e prelievi fatti prima di quella data sono già compresi. Per nuovi versamenti usa Deposito.</p></form>`,
   );
   d.querySelector('form').onsubmit = (e) => {
     e.preventDefault();
-    if (mutate((n) => (n.accounts[0].initial = U.round(Number(new FormData(e.target).get('initial')))))) d.close();
+    const f = new FormData(e.target),
+      from = String(f.get('from') || '');
+    if (
+      mutate((n) => {
+        n.accounts[0].initial = U.round(Number(f.get('initial')));
+        if (/^\d{4}-\d{2}-\d{2}$/.test(from)) n.settings.initialDate = from;
+        else delete n.settings.initialDate;
+      })
+    )
+      d.close();
   };
 }
 function exportData() {
@@ -1893,10 +1872,10 @@ async function importData(e) {
     e.target.value = '';
   }
 }
-document.getElementById('new-bet').onclick = () => betForm();
+// 3.0.0 — niente più inserimento scommesse
 
 // 1.1.8 — navigazione bidirezionale con transizione coerente con il verso dello swipe.
-const TAB_ORDER = ['home', 'summary', 'bets', 'stats', 'accounts'];
+const TAB_ORDER = ['home', 'stats', 'accounts'];
 let swipeStart = null,
   tabTransitioning = false;
 function prefersReducedMotion() {
@@ -2050,12 +2029,14 @@ function diarySeries(d) {
      (saldo di oggi − saldo precedente) − (depositi − prelievi fatti nel frattempo).
      "perf" è il saldo depurato da tutti i versamenti fino a quel giorno: le differenze
      di perf sono il vero guadagno o la vera perdita. */
-  var flows = ((d || db).transactions || [])
-    .filter(function (t) {
-      return t.kind !== 'adjust';
-    })
+  var src = d || db,
+    s0 = startDate(src);
+  var flows = realFlows(src)
     .map(function (t) {
       return { day: dayKey(t.date), amount: t.amount };
+    })
+    .filter(function (f) {
+      return !s0 || f.day >= s0;
     });
   var flowsUpTo = function (date) {
     return flows.reduce(function (n, f) {
@@ -2066,14 +2047,22 @@ function diarySeries(d) {
     var cum = U.round(flowsUpTo(e.date));
     return Object.assign({}, e, { flows: cum, perf: U.round(e.balance - cum) });
   });
-  return out.map(function (e, i) {
-    var prev = i ? out[i - 1] : null;
+  // Con un saldo iniziale il primo giorno segnato ha già una variazione: rispetto al saldo iniziale.
+  var start = null;
+  if (out.length && hasStart(src)) {
+    var ini = U.round(src.accounts[0].initial);
+    start = { date: s0 || dAdd(out[0].date, -1), balance: ini, perf: ini, flows: 0, start: true };
+  }
+  var res = out.map(function (e, i) {
+    var prev = i ? out[i - 1] : start;
     return Object.assign(e, {
       delta: prev ? U.round(e.perf - prev.perf) : null,
       moved: prev ? U.round(e.flows - prev.flows) : 0,
       prev: prev,
     });
   });
+  res.start = start;
+  return res;
 }
 function diaryLatest() {
   var s = diarySeries();
@@ -2096,7 +2085,8 @@ function diaryIsLatest(date) {
 function diaryChange(series, days) {
   if (!series.length) return null;
   var last = series[series.length - 1];
-  if (days === 'all') return { value: U.round(last.perf - series[0].perf), from: series[0] };
+  var first = series.start || series[0];
+  if (days === 'all') return first === last ? null : { value: U.round(last.perf - first.perf), from: first };
   var start = dAdd(dToday(), -Number(days));
   var base = null;
   for (var i = series.length - 1; i >= 0; i--) {
@@ -2105,7 +2095,7 @@ function diaryChange(series, days) {
       break;
     }
   }
-  if (!base) base = series[0];
+  if (!base) base = series.start || series[0];
   if (base === last) return null;
   return { value: U.round(last.perf - base.perf), from: base };
 }
@@ -2550,7 +2540,7 @@ function diaryCalendar(series) {
     return (
       '<button type="button" class="wk-day' +
       (x.p ? ' has' : '') +
-      (!x.future && dayHasMovements(x.key) ? ' mv' : '') +
+      (!x.future && dayHasMovements(x.key) ? ' mv mv-' + dayFlowSign(x.key) : '') +
       (tone ? ' ' + tone : '') +
       (x.today ? ' today' : '') +
       (x.future ? ' future' : '') +
@@ -2617,7 +2607,13 @@ function diaryCalendar(series) {
   var before = series.filter(function (p) {
     return p.date < month + '-01';
   });
-  var startVal = before.length ? before[before.length - 1].perf : inMonth[0] ? inMonth[0].perf : null;
+  var startVal = before.length
+    ? before[before.length - 1].perf
+    : series.start
+      ? series.start.perf
+      : inMonth[0]
+        ? inMonth[0].perf
+        : null;
   var endP = inMonth[inMonth.length - 1];
   var monthDelta = endP && startVal != null ? endP.perf - startVal : null;
   var isCurrent = month >= today.slice(0, 7);
@@ -2650,7 +2646,9 @@ function diaryCalendar(series) {
 }
 
 /* ---------- Pagina ---------- */
-function diaryPage() {
+function diaryPage(which) {
+  /* 3.0.0 — Home: saldo, segna il giorno, depositi/prelievi, calendario e quattro numeri.
+     Statistiche: tutto il resto, solo sul saldo. */
   var series = diarySeries(),
     today = dToday(),
     cur = balance(),
@@ -2659,63 +2657,138 @@ function diaryPage() {
     series.find(function (p) {
       return p.date === today;
     }) || null;
-  var sinceLast = last ? U.round(cur - last.balance) : null;
-  var chip = todayEntry
-    ? '<span class="diary-chip ok">✓ Segnato oggi</span>'
-    : '<span class="diary-chip todo">Da segnare oggi</span>';
-  var sub = last
-    ? '<div class="diary-hero-sub"><span>Ultimo segnato: <b>' +
-      dLabel(last.date) +
-      '</b> · ' +
-      U.money(last.balance) +
-      '</span>' +
-      (Math.abs(sinceLast) >= 0.005
-        ? '<span>Da allora <b class="' +
-          sClass(sinceLast) +
-          '">' +
-          sMoney(sinceLast) +
-          '</b> da scommesse e movimenti</span>'
-        : '<span>Nessuna variazione da allora</span>') +
-      '</div>'
-    : '<div class="diary-hero-sub"><span>Segna ogni giorno il saldo che hai: costruisci l’andamento nel tempo.</span></div>';
-  var hero =
-    '<section class="card hero diary-hero"><div class="row"><small>SALDO ATTUALE</small>' +
-    chip +
-    '</div><div class="big">' +
-    U.money(cur) +
-    '</div>' +
-    sub +
-    '<button type="button" class="primary diary-record" data-diary-edit="' +
-    today +
-    '">' +
-    (todayEntry ? '✎ Aggiorna il saldo di oggi' : '＋ Segna il saldo di oggi') +
-    '</button></section>';
+  var flowsAfter = last
+    ? U.round(
+        realFlows()
+          .filter(function (t) {
+            return dayKey(t.date) > last.date;
+          })
+          .reduce(function (n, t) {
+            return n + t.amount;
+          }, 0),
+      )
+    : 0;
 
-  var kpi = function (label, ch) {
-    return (
-      '<div class="card diary-kpi"><small>' +
-      label +
-      '</small><b class="' +
-      (ch ? sClass(ch.value) : '') +
+  if (which !== 'stats') {
+    var chip = todayEntry
+      ? '<span class="diary-chip ok">✓ Segnato oggi</span>'
+      : '<span class="diary-chip todo">Da segnare oggi</span>';
+    var sub = '';
+    if (todayEntry && todayEntry.delta != null)
+      sub +=
+        '<span>Oggi <b class="' +
+        sClass(todayEntry.delta) +
+        '">' +
+        sMoney(todayEntry.delta) +
+        '</b>' +
+        (todayEntry.moved ? ' · ' + (todayEntry.moved > 0 ? 'depositati ' : 'prelevati ') + U.money(Math.abs(todayEntry.moved)) + ' esclusi' : '') +
+        '</span>';
+    else if (last)
+      sub += '<span>Ultimo segnato: <b>' + dLabel(last.date) + '</b> · ' + U.money(last.balance) + '</span>';
+    else sub += '<span>Segna ogni sera il saldo che hai: vedrai se la giornata è andata in positivo o in negativo.</span>';
+    if (Math.abs(flowsAfter) >= 0.005)
+      sub +=
+        '<span>Dopo l’ultimo saldo: ' +
+        (flowsAfter > 0 ? 'depositati <b>' : 'prelevati <b>') +
+        U.money(Math.abs(flowsAfter)) +
+        '</b> (non contano come vincita o perdita)</span>';
+    var hero =
+      '<section class="card hero diary-hero"><div class="row"><small>SALDO ATTUALE</small>' +
+      chip +
+      '</div><div class="big">' +
+      U.money(cur) +
+      '</div><div class="diary-hero-sub">' +
+      sub +
+      '</div><button type="button" class="primary diary-record" data-diary-edit="' +
+      today +
       '">' +
-      (ch ? sMoney(ch.value) : '—') +
-      '</b><span>' +
-      (ch ? 'dal ' + dShort(ch.from.date) : 'servono più giorni') +
-      '</span></div>'
-    );
-  };
-  var todayCh = todayEntry && todayEntry.delta != null ? { value: todayEntry.delta, from: todayEntry.prev } : null;
-  var kpis =
-    '<div class="diary-kpis">' +
-    kpi('Oggi', todayCh) +
-    kpi('7 giorni', diaryChange(series, 7)) +
-    kpi('30 giorni', diaryChange(series, 30)) +
-    kpi('Dall’inizio', diaryChange(series, 'all')) +
-    '</div>';
+      (todayEntry ? '✎ Aggiorna il saldo di oggi' : '＋ Segna il saldo di oggi') +
+      '</button><div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tx="deposit"><span aria-hidden="true">↓</span>Deposito</button><button type="button" class="flow-btn out" data-tx="withdraw"><span aria-hidden="true">↑</span>Prelievo</button></div></section>';
+
+    var kpi = function (label, ch) {
+      return (
+        '<div class="card diary-kpi"><small>' +
+        label +
+        '</small><b class="' +
+        (ch ? sClass(ch.value) : '') +
+        '">' +
+        (ch ? sMoney(ch.value) : '—') +
+        '</b><span>' +
+        (ch ? (ch.from.start ? 'dal saldo iniziale' : 'dal ' + dShort(ch.from.date)) : 'servono più giorni') +
+        '</span></div>'
+      );
+    };
+    var todayCh = todayEntry && todayEntry.delta != null ? { value: todayEntry.delta, from: todayEntry.prev } : null;
+    var monthStart = today.slice(0, 8) + '01';
+    var mBase = null;
+    for (var mi = series.length - 1; mi >= 0; mi--)
+      if (series[mi].date < monthStart) {
+        mBase = series[mi];
+        break;
+      }
+    if (!mBase) mBase = series.start || series[0] || null;
+    var monthCh = last && mBase && mBase !== last ? { value: U.round(last.perf - mBase.perf), from: mBase } : null;
+    var kpis =
+      '<div class="diary-kpis">' +
+      kpi('Oggi', todayCh) +
+      kpi('7 giorni', diaryChange(series, 7)) +
+      kpi('Questo mese', monthCh) +
+      kpi('Dall’inizio', diaryChange(series, 'all')) +
+      '</div>';
+    var agenda =
+      '<section class="card diary-card"><h2>Calendario</h2><p class="muted diary-hint">Verde guadagno, rosso perdita: depositi e prelievi sono già esclusi. ↓ deposito · ↑ prelievo. Tocca un giorno per i dettagli.</p>' +
+      diaryCalendar(series) +
+      '</section>';
+    return hero + agenda + kpis;
+  }
+
+  /* ---------- Statistiche ---------- */
+  var flows = realFlows();
+  var dep = U.round(flows.filter((t) => t.amount > 0).reduce((n, t) => n + t.amount, 0)),
+    wd = U.round(flows.filter((t) => t.amount < 0).reduce((n, t) => n - t.amount, 0)),
+    ini = U.round(db.accounts[0].initial),
+    netIn = U.round(ini + dep - wd),
+    allCh = diaryChange(series, 'all');
+  var money =
+    '<section class="card diary-card money-card"><h2>I tuoi soldi</h2><div class="money-grid">' +
+    '<div><small>Saldo iniziale</small><b>' +
+    U.money(ini) +
+    '</b><span>' +
+    (startDate() ? 'dal ' + dLabel(startDate()) : 'non impostato') +
+    '</span></div>' +
+    '<div><small>Depositi</small><b class="' + (dep ? 'positive' : '') + '">' + (dep ? '+' : '') +
+    U.money(dep) +
+    '</b><span>' +
+    flows.filter((t) => t.amount > 0).length +
+    ' versamenti</span></div>' +
+    '<div><small>Prelievi</small><b class="' + (wd ? 'negative' : '') + '">' + (wd ? '−' : '') +
+    U.money(wd) +
+    '</b><span>' +
+    flows.filter((t) => t.amount < 0).length +
+    ' prelievi</span></div>' +
+    '<div><small>Messi in gioco</small><b>' +
+    U.money(netIn) +
+    '</b><span>iniziale + depositi − prelievi</span></div>' +
+    '<div class="wide"><small>Saldo attuale</small><b>' +
+    U.money(cur) +
+    '</b></div>' +
+    '<div class="wide"><small>Risultato netto</small><b class="' +
+    (allCh ? sClass(allCh.value) : '') +
+    '">' +
+    (allCh ? sMoney(allCh.value) : '—') +
+    '</b><span>' +
+    (allCh ? (allCh.from.start ? 'dal saldo iniziale, versamenti esclusi' : 'dal primo giorno segnato, versamenti esclusi') : 'servono più giorni') +
+    '</span></div></div></section>';
 
   var points = diaryRangePoints(series);
-  var live = !todayEntry && last && Math.abs(cur - last.balance) >= 0.005 ? { date: today, value: cur } : null;
-  if (live && !points.length) live = null;
+  var mode = diaryUI.chartMode || 'saldo';
+  var chartPts =
+    mode === 'risultato'
+      ? points.map(function (p) {
+          var base = (series.start || series[0]).perf;
+          return Object.assign({}, p, { balance: U.round(p.perf - base) });
+        })
+      : points;
   var seg =
     '<div class="diary-seg" role="group" aria-label="Periodo">' +
     DIARY_RANGES.map(function (r) {
@@ -2732,13 +2805,22 @@ function diaryPage() {
       );
     }).join('') +
     '</div>';
+  var modeSeg =
+    '<div class="diary-seg diary-mode" role="group" aria-label="Cosa mostrare"><button type="button" data-chart-mode="saldo" class="' +
+    (mode === 'saldo' ? 'active' : '') +
+    '">Saldo</button><button type="button" data-chart-mode="risultato" class="' +
+    (mode === 'risultato' ? 'active' : '') +
+    '">Risultato netto</button></div>';
   var chart =
-    '<section class="card diary-card"><div class="diary-card-head"><h2>Andamento del saldo</h2></div>' +
+    '<section class="card diary-card"><div class="diary-card-head"><h2>Andamento</h2></div>' +
     seg +
-    diaryLineChart(points, live) +
+    modeSeg +
+    diaryLineChart(chartPts, null) +
+    (mode === 'risultato'
+      ? '<p class="muted diary-hint">Quanto hai guadagnato o perso in totale, senza depositi e prelievi.</p>'
+      : '<p class="muted diary-hint">Il saldo che hai segnato: sale anche quando depositi e scende quando prelevi.</p>') +
     '</section>';
-  var bars = '<section class="card diary-card"><h2>Variazioni giornaliere</h2>' + diaryBarChart(points) + '</section>';
-
+  var bars = '<section class="card diary-card"><h2>Risultato giorno per giorno</h2>' + diaryBarChart(points) + '</section>';
   var st = diaryStats(points),
     stats = '';
   if (st) {
@@ -2788,11 +2870,6 @@ function diaryPage() {
       '</div></section>';
   }
 
-  var agenda =
-    '<section class="card diary-card"><h2>Agenda</h2><p class="muted diary-hint">Tocca un giorno: vedi i movimenti oppure segni il saldo. Il puntino indica che ci sono movimenti.</p>' +
-    diaryCalendar(series) +
-    '</section>';
-
   var month = diaryUI.month || today.slice(0, 7);
   var rows = series
     .filter(function (p) {
@@ -2841,7 +2918,7 @@ function diaryPage() {
   var monthly = '';
   if (mkeys.length) {
     monthly =
-      '<section class="card diary-card"><h2>Mese per mese</h2><table class="diary-table"><thead><tr><th>Mese</th><th>Fine mese</th><th>Variazione</th></tr></thead><tbody>' +
+      '<section class="card diary-card"><h2>Mese per mese</h2><table class="diary-table"><thead><tr><th>Mese</th><th>Fine mese</th><th>Risultato</th></tr></thead><tbody>' +
       mkeys
         .slice()
         .reverse()
@@ -2855,16 +2932,9 @@ function diaryPage() {
           var firstIn = series.find(function (p) {
             return p.date.slice(0, 7) === k;
           });
-          var base = prevEnd ? prevEnd.perf : firstIn.perf,
-            ch = U.round(end.perf - base),
-            baseBal = prevEnd ? prevEnd.balance : firstIn.balance;
-          var pct =
-            baseBal > 0
-              ? ' <small>(' +
-                (ch >= 0 ? '+' : '−') +
-                Math.abs(Math.round((ch / baseBal) * 1000) / 10).toLocaleString('it-IT') +
-                '%)</small>'
-              : '';
+          var base = prevEnd ? prevEnd.perf : series.start ? series.start.perf : firstIn.perf,
+            ch = U.round(end.perf - base);
+          var pct = '';
           return (
             '<tr><td>' +
             dParse(k + '-01').toLocaleDateString('it-IT', { month: 'short', year: '2-digit' }) +
@@ -2882,16 +2952,14 @@ function diaryPage() {
       '</tbody></table></section>';
   }
 
-  if (!series.length) return hero + agenda;
+
+  if (!series.length)
+    return money + '<section class="card diary-card"><p class="muted">Segna il saldo per qualche giorno: qui compariranno grafici e statistiche.</p></section>';
   var weekday =
-    '<section class="card diary-card"><h2>Per giorno della settimana</h2><p class="muted diary-hint">Variazione media del saldo nel periodo scelto, per giorno.</p>' +
+    '<section class="card diary-card"><h2>Per giorno della settimana</h2><p class="muted diary-hint">Risultato medio nel periodo scelto, per giorno.</p>' +
     diaryWeekdayChart(points) +
     '</section>';
-  var vs =
-    '<section class="card diary-card"><h2>Saldo segnato e scommesse</h2><p class="muted diary-hint">Nel periodo scelto: quanto è cambiato il saldo che hai segnato e quanto lo spiegano scommesse e movimenti.</p>' +
-    diaryVsBets(points) +
-    '</section>';
-  return hero + agenda + kpis + chart + bars + stats + vs + weekday + log + monthly;
+  return money + chart + bars + stats + weekday + monthly + log;
 }
 
 /* ---------- 2.1.0 — Per giorno della settimana ---------- */
@@ -3293,39 +3361,50 @@ function diaryForm(date) {
   var f = d.querySelector('form'),
     eff = d.querySelector('#diary-effect');
   var explain = function () {
+    /* 3.0.0 — anteprima del risultato del giorno, depositi e prelievi esclusi */
     var dt = f.elements.date.value,
       v = Number(f.elements.value.value);
-    if (!dt || dt > today) {
+    if (!dt || dt > today || !U.finite(v) || f.elements.value.value === '') {
       eff.innerHTML = '';
       return;
     }
-    if (!diaryIsLatest(dt)) {
-      eff.innerHTML =
-        '<p class="muted">Giorno passato: serve per lo storico e i grafici, il saldo attuale dell’app non cambia.</p>';
+    var ser = diarySeries(),
+      prev = null;
+    for (var k = ser.length - 1; k >= 0; k--)
+      if (ser[k].date < dt && (!existing || ser[k].id !== existing.id)) {
+        prev = ser[k];
+        break;
+      }
+    if (!prev && ser.start && ser.start.date < dt) prev = ser.start;
+    if (!prev) {
+      eff.innerHTML = '<p class="muted">Primo giorno segnato: da qui partono i conti. Se avevi un saldo di partenza, impostalo in Altro › Saldo iniziale.</p>';
       return;
     }
-    var e = diaryOn(dt),
-      base =
-        balance() -
-        ((
-          (e &&
-            db.transactions.find(function (t) {
-              return t.kind === 'adjust' && t.diaryId === e.id;
-            })) ||
-          {}
-        ).amount || 0);
-    var delta = U.round(v - base);
-    eff.innerHTML = U.finite(v)
-      ? Math.abs(delta) < 0.005
-        ? '<p class="muted">Coincide con il saldo calcolato da scommesse e movimenti: nessuna correzione.</p>'
-        : '<p class="muted">È il giorno più recente: il saldo di tutta l’app diventa ' +
-          U.money(v) +
-          '. Verrà registrato un <b>allineamento</b> di <b class="' +
-          sClass(delta) +
-          '">' +
-          sMoney(delta) +
-          '</b> (le scommesse non cambiano).</p>'
-      : '';
+    var moved = U.round(
+      realFlows()
+        .filter(function (t) {
+          var k2 = dayKey(t.date);
+          return k2 > prev.date && k2 <= dt && (!startDate() || k2 >= startDate());
+        })
+        .reduce(function (n, t) {
+          return n + t.amount;
+        }, 0),
+    );
+    var res = U.round(v - prev.balance - moved);
+    eff.innerHTML =
+      '<p>Risultato ' +
+      (dt === today ? 'di oggi' : 'del giorno') +
+      ': <b class="' +
+      sClass(res) +
+      '">' +
+      sMoney(res) +
+      '</b></p><p class="muted">' +
+      (prev.start ? 'Rispetto al saldo iniziale ' : 'Rispetto al ' + dShort(prev.date) + ' ') +
+      '(' +
+      U.money(prev.balance) +
+      ')' +
+      (Math.abs(moved) >= 0.005 ? ', ' + (moved > 0 ? 'depositi ' : 'prelievi ') + U.money(Math.abs(moved)) + ' esclusi.' : '.') +
+      '</p>';
   };
   f.addEventListener('input', explain);
   explain();
@@ -3352,7 +3431,7 @@ function diaryForm(date) {
     }
     if (diarySave(existing, dt, v, note)) {
       d.close();
-      U.toast(diaryIsLatest(dt) ? 'Saldo segnato: aggiornato in tutta l’app' : 'Giorno segnato nello storico');
+      U.toast('Saldo segnato');
     }
   };
   var del = d.querySelector('#diary-delete');
@@ -3361,7 +3440,7 @@ function diaryForm(date) {
       var latest = diaryIsLatest(existing.date);
       var ok = await U.confirm({
         title: 'Eliminare il saldo di questo giorno?',
-        text: latest ? 'È il giorno più recente: verrà tolto anche il suo allineamento.' : 'Le scommesse e i movimenti non cambiano.',
+        text: 'Depositi e prelievi restano.',
       });
       if (!ok) return;
       if (
@@ -3399,27 +3478,8 @@ function diarySave(existing, date, value, note) {
     e.updatedAt = new Date().toISOString();
     if (note) e.note = note;
     else delete e.note;
-    var latest = !n.diary.some(function (x) {
-      return x.id !== e.id && x.date > date;
-    });
-    if (latest) {
-      // Allinea il saldo dell'app: tolgo l'eventuale allineamento precedente di questo giorno e ricalcolo.
-      n.transactions = n.transactions.filter(function (t) {
-        return !(t.kind === 'adjust' && t.diaryId === e.id);
-      });
-      var delta = U.round(e.balance - balance(n));
-      if (Math.abs(delta) >= 0.005)
-        n.transactions.push({
-          id: U.uid(),
-          account: n.accounts[0].id,
-          amount: delta,
-          date: new Date().toISOString(),
-          kind: 'adjust',
-          diaryId: e.id,
-        });
-    } else if (oldDate !== date) {
-      // spostato su un giorno passato: non è più l'ultimo, il suo allineamento resta nella storia
-    }
+    // 3.0.0 — il saldo dell'app viene dal diario: niente più movimenti di allineamento.
+    void oldDate;
   });
 }
 
@@ -3544,130 +3604,124 @@ function dayKey(iso) {
   return iso ? U.local(new Date(iso)).slice(0, 10) : '';
 }
 function dayMovements(date) {
-  var out = [];
-  db.transactions.forEach(function (t) {
-    if (t.kind === 'adjust' || dayKey(t.date) !== date) return;
-    out.push({ at: t.date, kind: t.amount >= 0 ? 'dep' : 'wd', t: t });
-  });
-  db.bets.forEach(function (b) {
-    if (dayKey(b.date) === date) out.push({ at: b.date, kind: 'bet', b: b });
-    else if (b.settledAt && b.status !== 'pending' && dayKey(b.settledAt) === date) out.push({ at: b.settledAt, kind: 'settle', b: b });
-  });
-  return out.sort(function (a, b) {
-    return new Date(a.at) - new Date(b.at);
-  });
+  return realFlows()
+    .filter(function (t) {
+      return dayKey(t.date) === date;
+    })
+    .map(function (t) {
+      return { at: t.date, kind: t.amount >= 0 ? 'dep' : 'wd', t: t };
+    })
+    .sort(function (a, b) {
+      return new Date(a.at) - new Date(b.at);
+    });
 }
 function dayHasMovements(date) {
   return dayMovements(date).length > 0;
 }
+function dayFlowSign(date) {
+  var n = dayMovements(date).reduce(function (s, x) {
+    return s + x.t.amount;
+  }, 0);
+  return n > 0.004 ? 'in' : n < -0.004 ? 'out' : dayHasMovements(date) ? 'mix' : '';
+}
 function openDayPanel(date) {
   var list = dayMovements(date);
-  if (!list.length) return diaryForm(date);
-  var entry = diaryOn(date);
+  var ser = diarySeries(),
+    entry =
+      ser.find(function (p) {
+        return p.date === date;
+      }) || null;
+  if (!list.length && !entry) return diaryForm(date);
   var time = function (iso) {
     return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
   };
   var dep = 0,
-    wd = 0,
-    net = 0,
-    nBets = 0;
+    wd = 0;
   var cards = list
     .map(function (x) {
-      if (x.kind === 'dep' || x.kind === 'wd') {
-        var a = x.t.amount;
-        if (a >= 0) dep += a;
-        else wd += -a;
-        return (
-          '<div class="day-card ' +
-          (a >= 0 ? 'tone-in' : 'tone-out') +
-          '"><div class="day-card-top"><span class="day-ic" aria-hidden="true">' +
-          (a >= 0 ? '↓' : '↑') +
-          '</span><div class="day-card-title"><b>' +
-          (a >= 0 ? 'Deposito' : 'Prelievo') +
-          '</b><small>' +
-          time(x.at) +
-          '</small></div><strong class="' +
-          (a >= 0 ? 'positive' : '') +
-          '">' +
-          (a >= 0 ? '+' : '−') +
-          U.money(Math.abs(a)) +
-          '</strong></div></div>'
-        );
-      }
-      var b = x.b,
-        p = b.status === 'pending' ? null : profit(b);
-      if (x.kind === 'bet') nBets++;
-      if (p != null && (x.kind === 'settle' || dayKey(b.settledAt) === date)) net += p;
-      var legs = b.legs
-        .map(function (l) {
-          return (
-            '<li class="leg-' +
-            (l.status || 'pending') +
-            '"><span>' +
-            U.esc(l.event || 'Evento') +
-            '</span><em>' +
-            U.esc(l.pick) +
-            ' · ' +
-            Number(l.odds).toFixed(2) +
-            '</em></li>'
-          );
-        })
-        .join('');
+      var a = x.t.amount;
+      if (a >= 0) dep += a;
+      else wd += -a;
       return (
-        '<div class="day-card tone-bet st-' +
-        b.status +
+        '<div class="day-card ' +
+        (a >= 0 ? 'tone-in' : 'tone-out') +
         '"><div class="day-card-top"><span class="day-ic" aria-hidden="true">' +
-        (b.legs.length > 1 ? '⧉' : '◎') +
+        (a >= 0 ? '↓' : '↑') +
         '</span><div class="day-card-title"><b>' +
-        (x.kind === 'settle' ? 'Esito · ' : '') +
-        U.esc(b.legs.length > 1 ? 'Multipla · ' + b.legs.length + ' eventi' : 'Singola') +
+        (a >= 0 ? 'Deposito' : 'Prelievo') +
         '</b><small>' +
-        (x.kind === 'settle' ? 'chiusa alle ' + time(x.at) + ' · giocata il ' + U.date(b.date).slice(0, 5) : 'giocata alle ' + time(x.at)) +
-        '</small></div>' +
-        statusBadge(b.status) +
-        '</div><ul class="day-legs">' +
-        legs +
-        '</ul><div class="day-card-foot"><span>Puntata <b>' +
-        U.money(b.stake) +
-        '</b></span><span>Quota <b>' +
-        odds(b).toFixed(2) +
-        '</b></span><span>' +
-        (p == null ? 'Possibile vincita <b>' + U.money(b.stake * odds(b)) + '</b>' : 'Risultato <b class="' + (p < 0 ? 'negative' : p > 0 ? 'positive' : '') + '">' + (p > 0 ? '+' : '') + U.money(p) + '</b>') +
-        '</span></div></div>'
+        time(x.at) +
+        '</small></div><strong class="' +
+        (a >= 0 ? 'positive' : 'negative') +
+        '">' +
+        (a >= 0 ? '+' : '−') +
+        U.money(Math.abs(a)) +
+        '</strong><button type="button" class="day-edit" data-day-tx="' +
+        x.t.id +
+        '" aria-label="Modifica">✎</button></div></div>'
       );
     })
     .join('');
+  var res = entry && entry.delta != null ? entry.delta : null;
   var tiles =
-    '<div class="sheet-tiles three"><div><small>Depositi</small><b class="' +
-    (dep ? 'positive' : '') +
+    '<div class="sheet-tiles three"><div><small>Saldo segnato</small><b>' +
+    (entry ? U.money(entry.balance) : '—') +
+    '</b></div><div><small>Depositi / prelievi</small><b class="' +
+    (dep - wd > 0.004 ? 'positive' : dep - wd < -0.004 ? 'negative' : '') +
     '">' +
-    (dep ? '+' + U.money(dep) : '—') +
-    '</b></div><div><small>Prelievi</small><b>' +
-    (wd ? '−' + U.money(wd) : '—') +
-    '</b></div><div><small>Scommesse</small><b class="' +
-    (net < 0 ? 'negative' : net > 0 ? 'positive' : '') +
+    (dep || wd ? (dep - wd >= 0 ? '+' : '−') + U.money(Math.abs(dep - wd)) : '—') +
+    '</b></div><div><small>Risultato</small><b class="' +
+    (res != null ? (res < 0 ? 'negative' : res > 0 ? 'positive' : '') : '') +
     '">' +
-    (nBets || net ? (net > 0 ? '+' : '') + U.money(net) : '—') +
+    (res != null ? sMoney(res) : '—') +
     '</b></div></div>';
+  var expl =
+    entry && entry.prev
+      ? '<p class="sheet-note">Risultato = ' +
+        U.money(entry.balance) +
+        ' − ' +
+        U.money(entry.prev.balance) +
+        (entry.prev.start ? ' (saldo iniziale)' : ' (' + dShort(entry.prev.date) + ')') +
+        (Math.abs(entry.moved) >= 0.005 ? ' ' + (entry.moved > 0 ? '−' : '+') + ' ' + U.money(Math.abs(entry.moved)) + (entry.moved > 0 ? ' depositati' : ' prelevati') : '') +
+        '</p>'
+      : '';
   var title = dParse(date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
   var d = sheetModal(
     sheetHead(title.charAt(0).toUpperCase() + title.slice(1), {
-      sub: list.length + (list.length === 1 ? ' movimento' : ' movimenti') + (entry ? ' · saldo segnato ' + U.money(entry.balance) : ''),
+      sub: entry ? (entry.note ? U.esc(entry.note) : 'Saldo segnato') : 'Saldo non segnato',
     }) +
       tiles +
-      '<div class="day-list">' +
-      cards +
-      '</div><button type="button" class="sheet-wide day-diary-btn" id="day-diary">' +
+      expl +
+      (cards ? '<h3 class="sheet-section">Depositi e prelievi</h3><div class="day-list">' + cards + '</div>' : '') +
+      '<button type="button" class="sheet-wide day-diary-btn primary" id="day-diary">' +
       IC('edit', '✎') +
       '<span>' +
       (entry ? 'Correggi il saldo del giorno' : 'Segna il saldo del giorno') +
-      '</span></button>',
+      '</span></button><div class="sheet-actions-row"><button type="button" class="sheet-wide" id="day-dep">↓ Deposito</button><button type="button" class="sheet-wide" id="day-wd">↑ Prelievo</button></div>',
   );
   d.classList.add('day-sheet');
   d.querySelector('#day-diary').onclick = function () {
     d.close();
     diaryForm(date);
   };
+  d.querySelector('#day-dep').onclick = function () {
+    d.close();
+    transactionForm(1, null, date);
+  };
+  d.querySelector('#day-wd').onclick = function () {
+    d.close();
+    transactionForm(-1, null, date);
+  };
+  d.querySelectorAll('[data-day-tx]').forEach(function (b) {
+    b.onclick = function () {
+      var t = db.transactions.find(function (x) {
+        return x.id === b.dataset.dayTx;
+      });
+      if (!t) return;
+      d.close();
+      transactionForm(t.amount < 0 ? -1 : 1, t);
+    };
+  });
 }
 
 /* ---------- Eventi ---------- */
@@ -3681,6 +3735,12 @@ function bindDiary() {
   main.querySelectorAll('[data-dcal]').forEach(function (b) {
     b.onclick = function () {
       openDayPanel(b.dataset.dcal);
+    };
+  });
+  main.querySelectorAll('[data-chart-mode]').forEach(function (b) {
+    b.onclick = function () {
+      diaryUI.chartMode = b.dataset.chartMode;
+      render();
     };
   });
   main.querySelectorAll('[data-diary-range]').forEach(function (b) {
