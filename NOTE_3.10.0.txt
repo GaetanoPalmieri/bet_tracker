@@ -1,0 +1,11 @@
+Bet Tracker 3.10.0
+
+Pronostici: l'app impara dai risultati (senza servizi esterni)
+- Calibrazione: per ogni mercato l'app confronta le probabilita' promesse con quanto e' stato vinto davvero (±4 punti) e corregge le stime usate nelle Top. Con pochi risultati la correzione e' piccola. Nelle Top, se la stima e' stata corretta, compare anche quella originale.
+- Statistiche: nuova tabella "Promesso e reale" per fasce (75-79, 80-84, 85-89, 90+).
+- Statistiche: "Statistiche, quote o mix?" confronta l'errore delle sole statistiche, delle sole quote e del mix usato, per decidere quanto devono pesare le quote.
+- Minuto del primo gol: nuovo campo nel dettaglio partita. Serve a imparare quanti gol arrivano entro il 30' (piano 10+20) e a calcolare il risultato reale del piano.
+- Statistiche: "Piano 1° tempo sulle Top" con il guadagno o la perdita reale.
+- "Applica correzioni" ora corregge anche i gol nel 1° tempo campionato per campionato (da 5 partite con il 1° tempo segnato) e la quota di gol entro il 30' (da 10 partite con il minuto del primo gol).
+- Movimento quote: quando Claude aggiorna le quote, nel dettaglio partita compare la quota di apertura (▼ quota scesa, ▲ salita).
+- Avvisi: Claude puo' segnare una partita con un avviso (rotazioni, coppa, meteo...). L'avviso compare sulla card e la partita esce dalle Top.

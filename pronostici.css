@@ -300,3 +300,55 @@ dialog#editor.sheet.tip-dlg {
 .tip-other em { font-style: normal; font-weight: 800; font-size: 10.5px; }
 .tip-other.ok em { color: var(--bt-up-text); }
 .tip-other.ko em { color: var(--bt-down-text); }
+
+/* ---------- 3.9.0 — Quote e liste Top ---------- */
+.tip-tool.icon-only { padding: 0 10px !important; }
+.tip-pick i.tip-odd { font-weight: 700; color: var(--suite-text); opacity: .75; }
+.tip-pick.won i.tip-odd, .tip-pick.lost i.tip-odd { color: #fff; }
+.tip-odds .tip-prob i { display: block; font-style: normal; font-size: 11px; color: var(--suite-text-soft); font-variant-numeric: tabular-nums; }
+.tip-topdays { margin: 0 0 14px; }
+.tip-top { display: grid; gap: 8px; margin: 0 0 12px; padding: 12px 12px 10px; }
+.tip-top-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.tip-top-head b { font-size: 15px; font-family: var(--suite-font-display); }
+.tip-top-head span { font-size: 12px; color: var(--suite-text-soft); font-variant-numeric: tabular-nums; text-align: right; }
+.tip-tlist { display: grid; gap: 6px; }
+.tip-tnone { margin: 0; font-size: 13px; }
+.tip-trow {
+  display: grid !important; grid-template-columns: 22px minmax(0, 1fr) auto auto; align-items: center; gap: 10px;
+  width: 100%; min-height: 0 !important; margin: 0 !important; padding: 8px 10px !important; text-align: left; font: inherit;
+  color: var(--suite-text) !important; border-radius: 12px !important; box-shadow: none !important;
+  background: color-mix(in srgb, var(--suite-text) 5%, transparent) !important; border: 1px solid var(--suite-glass-edge) !important;
+}
+.tip-trow.won { background: rgba(47, 165, 127, .16) !important; border-color: rgba(47, 165, 127, .4) !important; }
+.tip-trow.lost { background: rgba(208, 87, 79, .15) !important; border-color: rgba(208, 87, 79, .38) !important; }
+.tip-tn { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11.5px; font-weight: 800; background: var(--suite-teal-grad); color: #fff; }
+.tip-tmain { display: grid; gap: 2px; min-width: 0; }
+.tip-tmain b { font-size: 13.5px; font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tip-tmain small, .tip-tpick small { font-size: 11.5px; color: var(--suite-text-soft); font-variant-numeric: tabular-nums; }
+.tip-tmain small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tip-tpick { display: grid; gap: 2px; text-align: right; }
+.tip-tpick b { font-size: 13px; white-space: nowrap; }
+.tip-tmark { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-style: normal; font-weight: 900; font-size: 11px; color: #fff; background: var(--tip-mixed); }
+.won .tip-tmark { background: var(--tip-won); }
+.lost .tip-tmark { background: var(--tip-lost); }
+/* 3.9.2 — piano a due passi sul 1° tempo */
+.tip-tpick small.tip-plan { font-size: 10.5px; opacity: .85; }
+.tip-planbox { margin: -4px 4px 12px; }
+.tip-probs .tip-prob i { display: block; font-style: normal; font-size: 11px; color: var(--suite-text-soft); }
+/* 3.10.0 — calibrazione, avvisi, minuto primo gol, movimento quote */
+.tip-caltab { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.tip-caltab th, .tip-caltab td { padding: 7px 4px; text-align: center; border-top: 1px solid var(--suite-glass-edge); vertical-align: top; }
+.tip-caltab tr:first-child th { border-top: 0; font-size: 11px; color: var(--suite-text-soft); font-weight: 700; }
+.tip-caltab th:first-child { text-align: left; font-weight: 700; }
+.tip-caltab th small { color: var(--suite-text-soft); font-weight: 600; }
+.tip-caltab td b { display: block; font-size: 14px; }
+.tip-caltab td small { display: block; font-size: 10.5px; color: var(--suite-text-soft); }
+.tip-caltab td.neg b { color: var(--bt-down-text); }
+.tip-caltab td.pos b { color: var(--bt-up-text); }
+.tip-warn { justify-self: start; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(232, 163, 61, .18); color: var(--bt-e8c17f); }
+.tip-fg { display: grid; gap: 5px; margin: 4px 0 10px; font-size: 13px; font-weight: 700; }
+.tip-fg small { font-weight: 500; color: var(--suite-text-soft); }
+.tip-fg input { max-width: 120px; }
+.tip-prob i.tip-mv { font-size: 10.5px; }
+.tip-prob i.tip-mv.dn { color: var(--bt-up-text); }
+.tip-prob i.tip-mv.up { color: var(--bt-down-text); }

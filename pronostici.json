@@ -1,27 +1,46 @@
 {
  "app": "bet_tracker",
  "kind": "pronostici",
- "batch": "2026-10-16-modello-v2",
- "generatedAt": "2026-10-16T16:45:00+02:00",
- "label": "Modello v2 · 16/10 ore 16:45 · ensemble Claude + GPT",
+ "batch": "2026-10-17-modello-v3.2",
+ "generatedAt": "2026-10-17T00:30:00+02:00",
+ "label": "Modello v3 · 17/10 · + Asia (Singapore, Malesia, Giappone, Hong Kong)",
  "model": {
-  "version": "2",
+  "version": "3",
   "threshold": 70,
   "htShare": 0.45,
   "drawBoost": 1,
   "goalFactor": 1,
   "leagueGoal": {},
   "rho": -0.08,
-  "note": "v2: totali e differenze casa/trasferta riportati verso la media di lega (piu' forte con dati C), media geometrica con la stima GPT dove c'e', leghe con 1X2 esterno ancorate alla media gol di lega, correzione Dixon-Coles rho -0.08 sui punteggi bassi.",
-  "revision": "2026-10-16-v2"
+  "thresholds": {
+   "ht05": 75,
+   "o15": 80,
+   "o25": 71,
+   "gg": 71
+  },
+  "topTargets": {
+   "ht05": 80,
+   "o15": 85,
+   "o25": 75,
+   "gg": 75
+  },
+  "revision": "2026-10-17-v3",
+  "note": "v3: i gol attesi sono una media pesata (in log) tra modello statistico e gol attesi ricavati dalle quote del book (1X2, Over 1.5/2.5/3.5, Goal; peso quote 55% dati A, 60% B, 70% C; se ci sono solo le quote 1X2 il totale resta quello statistico). La quota di gol nel 1° tempo viene dalle quote 1X2 del primo tempo (70%) e dal valore storico 0,45 (30%). Le Top ordinano per probabilita' + bonus favorita (fino a +3 punti con favorita al 75%, -1,5 se la favorita e' sotto il 42%).",
+  "plan": {
+   "s1": 10,
+   "s2": 20,
+   "q1": 1.8,
+   "q2": 1.8,
+   "early": 0.62
+  }
  },
  "audit": {
   "source": [
-   "Claude v1 (pronostici 3.2.0)",
-   "Revisione GPT 3.3.1 (lambda GPT ricavati dalla media pesata)"
+   "Modello v2 (statistiche)",
+   "Quote medie bookmaker da Sofascore, 16/10 sera"
   ],
-  "strategy": "Partite gia' iniziate alle 16:45 invariate. Le altre ricalcolate con il modello v2.",
-  "learned": "GPT comprime totali (gpt = 1,88 + 0,36 x Claude) e differenze casa/trasferta (0,62 x Claude): Claude era troppo estremo con poche giornate di dati."
+  "strategy": "Partite del 16/10 invariate. Le partite del 17-18/10 ricalcolate con statistiche + quote.",
+  "learned": "16/10: Over 0.5 1T 19/31 (61%), sopra il 75% 15/21 (71%); Over 1.5 28/37 (76%), sopra l'80% 18/25 (72%). Il modello v2 dava probabilita' 8-12 punti troppo alte perche' non guardava il mercato. Con le quote, pochissime partite superano davvero il 90% di Over 1.5."
  },
  "retiredMatches": [
   {
@@ -593,8 +612,15 @@
    "lh": 1.238,
    "la": 1.152,
    "rel": "B",
-   "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "note": "Modello v2 Claude (nessuna seconda analisi) Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.238,
+   "laS": 1.152,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 37,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
@@ -602,11 +628,36 @@
    "league": "A-League",
    "home": "Auckland FC",
    "away": "Melbourne City",
-   "lh": 1.556,
-   "la": 1.273,
+   "lh": 1.387,
+   "la": 1.264,
    "rel": "C",
    "note": "Prima giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.556,
+   "laS": 1.273,
+   "lhM": 1.32,
+   "laM": 1.26,
+   "htsM": 0.435,
+   "hts": 0.44,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 2.45,
+    "X": 3.25,
+    "2": 2.75,
+    "o15": 1.3,
+    "o25": 1.95,
+    "gg": 1.75
+   },
+   "mkt": {
+    "p1": 37.8,
+    "px": 28.5,
+    "p2": 33.7,
+    "o15": 72.3,
+    "o25": 48.0,
+    "htx": 43.6
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-17",
@@ -614,11 +665,36 @@
    "league": "A-League",
    "home": "Macarthur",
    "away": "Perth Glory",
-   "lh": 1.666,
-   "la": 1.352,
+   "lh": 1.717,
+   "la": 1.244,
    "rel": "C",
    "note": "Prima giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.666,
+   "laS": 1.352,
+   "lhM": 1.74,
+   "laM": 1.2,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 1.86,
+    "X": 3.75,
+    "2": 3.6,
+    "o15": 1.2,
+    "o25": 1.667,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 49.7,
+    "px": 24.6,
+    "p2": 25.7,
+    "o15": 78.3,
+    "o25": 55.7,
+    "htx": 39.3
+   },
+   "fav": 50
   },
   {
    "date": "2026-10-17",
@@ -626,11 +702,36 @@
    "league": "A-League",
    "home": "Central Coast",
    "away": "Newcastle Jets",
-   "lh": 1.47,
-   "la": 1.788,
+   "lh": 1.385,
+   "la": 2.021,
    "rel": "C",
    "note": "Prima giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.47,
+   "laS": 1.788,
+   "lhM": 1.35,
+   "laM": 2.13,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 4.2,
+    "X": 4.0,
+    "2": 1.71,
+    "o15": 1.111,
+    "o25": 1.4,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 22.2,
+    "px": 23.3,
+    "p2": 54.5,
+    "o15": 85.4,
+    "o25": 66.3,
+    "htx": 35.1
+   },
+   "fav": 55
   },
   {
    "date": "2026-10-17",
@@ -638,11 +739,36 @@
    "league": "Süper Lig",
    "home": "Erzurumspor",
    "away": "Eyüpspor",
-   "lh": 1.653,
-   "la": 0.961,
+   "lh": 1.687,
+   "la": 0.867,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.653,
+   "laS": 0.961,
+   "lhM": 1.71,
+   "laM": 0.81,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.56,
+    "X": 3.6,
+    "2": 5.5,
+    "o15": 1.333,
+    "o25": 2.05,
+    "gg": 2.0
+   },
+   "mkt": {
+    "p1": 58.2,
+    "px": 25.2,
+    "p2": 16.5,
+    "o15": 70.9,
+    "o25": 46.1,
+    "htx": 42.3
+   },
+   "fav": 58
   },
   {
    "date": "2026-10-17",
@@ -650,11 +776,36 @@
    "league": "2. Bundesliga",
    "home": "Greuther Fürth",
    "away": "Braunschweig",
-   "lh": 1.744,
-   "la": 1.684,
+   "lh": 1.742,
+   "la": 1.514,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.744,
+   "laS": 1.684,
+   "lhM": 1.74,
+   "laM": 1.41,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.1,
+    "X": 3.6,
+    "2": 3.1,
+    "o15": 1.167,
+    "o25": 1.533,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 44.2,
+    "px": 25.8,
+    "p2": 30.0,
+    "o15": 81.1,
+    "o25": 61.0,
+    "htx": 38.2
+   },
+   "fav": 44
   },
   {
    "date": "2026-10-17",
@@ -662,11 +813,36 @@
    "league": "2. Bundesliga",
    "home": "Kaiserslautern",
    "away": "Bochum",
-   "lh": 1.325,
-   "la": 0.933,
+   "lh": 1.478,
+   "la": 1.149,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.325,
+   "laS": 0.933,
+   "lhM": 1.59,
+   "laM": 1.32,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.15,
+    "X": 3.5,
+    "2": 3.0,
+    "o15": 1.2,
+    "o25": 1.7,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 42.9,
+    "px": 26.4,
+    "p2": 30.7,
+    "o15": 78.3,
+    "o25": 55.3,
+    "htx": 40.1
+   },
+   "fav": 43
   },
   {
    "date": "2026-10-17",
@@ -674,11 +850,30 @@
    "league": "2. Bundesliga",
    "home": "Wolfsburg",
    "away": "Heidenheim",
-   "lh": 2.23,
-   "la": 1.653,
+   "lh": 2.296,
+   "la": 1.578,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.23,
+   "laS": 1.653,
+   "lhM": 2.37,
+   "laM": 1.5,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.67,
+    "X": 4.2,
+    "2": 4.2
+   },
+   "mkt": {
+    "p1": 55.7,
+    "px": 22.1,
+    "p2": 22.1
+   },
+   "fav": 56,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -686,11 +881,36 @@
    "league": "Chinese SL",
    "home": "Dalian Yingbo",
    "away": "Shenzhen",
-   "lh": 1.71,
-   "la": 1.359,
+   "lh": 1.854,
+   "la": 1.179,
    "rel": "C",
    "note": "Dati aggiornati al 6 settembre · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.71,
+   "laS": 1.359,
+   "lhM": 1.92,
+   "laM": 1.11,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 1.62,
+    "X": 3.9,
+    "2": 4.333,
+    "o15": 1.182,
+    "o25": 1.6,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 55.9,
+    "px": 23.2,
+    "p2": 20.9,
+    "o15": 79.2,
+    "o25": 59.0,
+    "htx": 37.6
+   },
+   "fav": 56
   },
   {
    "date": "2026-10-17",
@@ -701,8 +921,15 @@
    "lh": 1.591,
    "la": 1.743,
    "rel": "C",
-   "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50% Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.591,
+   "laS": 1.743,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 41,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
@@ -710,11 +937,30 @@
    "league": "Championship",
    "home": "Middlesbrough",
    "away": "Cardiff",
-   "lh": 1.847,
-   "la": 1.369,
+   "lh": 2.004,
+   "la": 1.205,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.847,
+   "laS": 1.369,
+   "lhM": 2.19,
+   "laM": 1.05,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.49,
+    "X": 4.5,
+    "2": 5.5
+   },
+   "mkt": {
+    "p1": 62.4,
+    "px": 20.7,
+    "p2": 16.9
+   },
+   "fav": 62,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -722,11 +968,36 @@
    "league": "Championship",
    "home": "Millwall",
    "away": "Lincoln",
-   "lh": 1.801,
-   "la": 1.058,
+   "lh": 1.854,
+   "la": 0.941,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.801,
+   "laS": 1.058,
+   "lhM": 1.89,
+   "laM": 0.87,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.53,
+    "X": 3.9,
+    "2": 5.75,
+    "o15": 1.25,
+    "o25": 1.8,
+    "gg": 1.833
+   },
+   "mkt": {
+    "p1": 60.3,
+    "px": 23.7,
+    "p2": 16.0,
+    "o15": 76.2,
+    "o25": 52.6,
+    "htx": 39.8
+   },
+   "fav": 60
   },
   {
    "date": "2026-10-17",
@@ -734,11 +1005,36 @@
    "league": "Championship",
    "home": "Watford",
    "away": "Charlton",
-   "lh": 1.185,
-   "la": 1.355,
+   "lh": 1.281,
+   "la": 1.334,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.185,
+   "laS": 1.355,
+   "lhM": 1.35,
+   "laM": 1.32,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.55,
+    "X": 3.3,
+    "2": 2.57,
+    "o15": 1.286,
+    "o25": 1.909,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 36.2,
+    "px": 27.9,
+    "p2": 35.9,
+    "o15": 74.5,
+    "o25": 50.0,
+    "htx": 42.3
+   },
+   "fav": 36
   },
   {
    "date": "2026-10-17",
@@ -749,8 +1045,15 @@
    "lh": 1.346,
    "la": 1.19,
    "rel": "C",
-   "note": "Seconda giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Seconda giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50% Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.346,
+   "laS": 1.19,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 39,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
@@ -758,11 +1061,36 @@
    "league": "Premier League",
    "home": "Everton",
    "away": "Chelsea",
-   "lh": 1.379,
-   "la": 1.498,
+   "lh": 1.329,
+   "la": 1.58,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.379,
+   "laS": 1.498,
+   "lhM": 1.29,
+   "laM": 1.65,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 3.2,
+    "X": 3.8,
+    "2": 2.1,
+    "o15": 1.222,
+    "o25": 1.667,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 29.7,
+    "px": 25.0,
+    "p2": 45.3,
+    "o15": 78.0,
+    "o25": 56.9,
+    "htx": 39.8
+   },
+   "fav": 45
   },
   {
    "date": "2026-10-17",
@@ -773,8 +1101,15 @@
    "lh": 1.035,
    "la": 1.493,
    "rel": "C",
-   "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50% Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.035,
+   "laS": 1.493,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 47,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
@@ -782,11 +1117,36 @@
    "league": "Chinese SL",
    "home": "Qingdao Hainiu",
    "away": "Liaoning",
-   "lh": 1.635,
-   "la": 1.563,
+   "lh": 1.151,
+   "la": 2.036,
    "rel": "C",
    "note": "Dati aggiornati al 6 settembre · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.635,
+   "laS": 1.563,
+   "lhM": 0.99,
+   "laM": 2.28,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 6.0,
+    "X": 4.75,
+    "2": 1.37,
+    "o15": 1.143,
+    "o25": 1.475,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 15.1,
+    "px": 19.0,
+    "p2": 65.9,
+    "o15": 82.8,
+    "o25": 63.8,
+    "htx": 34.8
+   },
+   "fav": 66
   },
   {
    "date": "2026-10-17",
@@ -794,11 +1154,36 @@
    "league": "3. Liga",
    "home": "Alemannia Aachen",
    "away": "Hansa Rostock",
-   "lh": 1.777,
-   "la": 1.684,
+   "lh": 1.643,
+   "la": 1.645,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.777,
+   "laS": 1.684,
+   "lhM": 1.56,
+   "laM": 1.62,
+   "htsM": 0.435,
+   "hts": 0.44,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.45,
+    "X": 3.5,
+    "2": 2.35,
+    "o15": 1.143,
+    "o25": 1.533,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 36.5,
+    "px": 25.5,
+    "p2": 38.0,
+    "o15": 82.8,
+    "o25": 61.0,
+    "htx": 38.5
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-17",
@@ -806,11 +1191,36 @@
    "league": "3. Liga",
    "home": "Fortuna Düsseldorf",
    "away": "Saarbrücken",
-   "lh": 1.582,
-   "la": 1.566,
+   "lh": 1.675,
+   "la": 1.489,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.582,
+   "laS": 1.566,
+   "lhM": 1.74,
+   "laM": 1.44,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.05,
+    "X": 3.5,
+    "2": 2.9,
+    "o15": 1.143,
+    "o25": 1.533,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 43.6,
+    "px": 25.5,
+    "p2": 30.8,
+    "o15": 82.8,
+    "o25": 61.0,
+    "htx": 38.2
+   },
+   "fav": 44
   },
   {
    "date": "2026-10-17",
@@ -818,11 +1228,36 @@
    "league": "3. Liga",
    "home": "Großaspach",
    "away": "Preußen Münster",
-   "lh": 1.602,
-   "la": 1.657,
+   "lh": 1.631,
+   "la": 1.523,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.602,
+   "laS": 1.657,
+   "lhM": 1.65,
+   "laM": 1.44,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.15,
+    "X": 3.5,
+    "2": 2.75,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 41.7,
+    "px": 25.6,
+    "p2": 32.6,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 38.3
+   },
+   "fav": 42
   },
   {
    "date": "2026-10-17",
@@ -830,11 +1265,36 @@
    "league": "3. Liga",
    "home": "Ingolstadt",
    "away": "Rot-Weiss Essen",
-   "lh": 1.495,
-   "la": 1.712,
+   "lh": 1.425,
+   "la": 1.799,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.495,
+   "laS": 1.712,
+   "lhM": 1.38,
+   "laM": 1.86,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 3.3,
+    "X": 3.5,
+    "2": 1.9,
+    "o15": 1.143,
+    "o25": 1.5,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 27.2,
+    "px": 25.6,
+    "p2": 47.2,
+    "o15": 82.8,
+    "o25": 62.5,
+    "htx": 36.9
+   },
+   "fav": 47
   },
   {
    "date": "2026-10-17",
@@ -842,11 +1302,36 @@
    "league": "3. Liga",
    "home": "Jahn Regensburg",
    "away": "Wehen Wiesbaden",
-   "lh": 2.044,
-   "la": 1.559,
+   "lh": 1.758,
+   "la": 1.542,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.044,
+   "laS": 1.559,
+   "lhM": 1.59,
+   "laM": 1.53,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.3,
+    "X": 3.4,
+    "2": 2.55,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 38.8,
+    "px": 26.2,
+    "p2": 35.0,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 38.3
+   },
+   "fav": 39
   },
   {
    "date": "2026-10-17",
@@ -854,11 +1339,36 @@
    "league": "Chinese SL",
    "home": "Shandong Taishan",
    "away": "Zhejiang",
-   "lh": 1.811,
-   "la": 1.532,
+   "lh": 2.147,
+   "la": 1.531,
    "rel": "C",
    "note": "Dati aggiornati al 6 settembre · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.811,
+   "laS": 1.532,
+   "lhM": 2.31,
+   "laM": 1.53,
+   "htsM": 0.43,
+   "hts": 0.436,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 1.66,
+    "X": 4.2,
+    "2": 3.8,
+    "o15": 1.071,
+    "o25": 1.286,
+    "gg": 1.333
+   },
+   "mkt": {
+    "p1": 54.6,
+    "px": 21.6,
+    "p2": 23.8,
+    "o15": 89.4,
+    "o25": 73.7,
+    "htx": 34.0
+   },
+   "fav": 55
   },
   {
    "date": "2026-10-17",
@@ -866,11 +1376,36 @@
    "league": "Eliteserien",
    "home": "HamKam",
    "away": "Bodø/Glimt",
-   "lh": 1.173,
-   "la": 2.458,
+   "lh": 1.014,
+   "la": 2.572,
    "rel": "A",
    "note": "Campione ampio (22 giornate); dati Viking e Bodø identici nella fonte, da verificare · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.173,
+   "laS": 2.458,
+   "lhM": 0.9,
+   "laM": 2.67,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 9.5,
+    "X": 5.25,
+    "2": 1.25,
+    "o15": 1.1,
+    "o25": 1.364,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 9.6,
+    "px": 17.4,
+    "p2": 73.0,
+    "o15": 86.4,
+    "o25": 69.4,
+    "htx": 30.9
+   },
+   "fav": 73
   },
   {
    "date": "2026-10-17",
@@ -878,11 +1413,36 @@
    "league": "La Liga",
    "home": "Espanyol",
    "away": "Atlético Madrid",
-   "lh": 1.105,
-   "la": 1.57,
+   "lh": 1.023,
+   "la": 1.708,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.105,
+   "laS": 1.57,
+   "lhM": 0.96,
+   "laM": 1.83,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 5.0,
+    "X": 4.0,
+    "2": 1.7,
+    "o15": 1.25,
+    "o25": 1.8,
+    "gg": 1.8
+   },
+   "mkt": {
+    "p1": 19.3,
+    "px": 24.1,
+    "p2": 56.7,
+    "o15": 76.2,
+    "o25": 52.6,
+    "htx": 39.9
+   },
+   "fav": 57
   },
   {
    "date": "2026-10-17",
@@ -890,11 +1450,36 @@
    "league": "Ligue 2",
    "home": "Metz",
    "away": "Sochaux",
-   "lh": 1.239,
-   "la": 0.968,
+   "lh": 1.455,
+   "la": 0.981,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.239,
+   "laS": 0.968,
+   "lhM": 1.62,
+   "laM": 0.99,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.75,
+    "X": 3.2,
+    "2": 4.2,
+    "o15": 1.286,
+    "o25": 1.95,
+    "gg": 1.833
+   },
+   "mkt": {
+    "p1": 50.9,
+    "px": 27.9,
+    "p2": 21.2,
+    "o15": 73.1,
+    "o25": 48.7,
+    "htx": 42.0
+   },
+   "fav": 51
   },
   {
    "date": "2026-10-17",
@@ -902,11 +1487,36 @@
    "league": "Ligue 2",
    "home": "Nantes",
    "away": "Dunkerque",
-   "lh": 1.432,
-   "la": 1.289,
+   "lh": 1.675,
+   "la": 1.08,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.432,
+   "laS": 1.289,
+   "lhM": 1.86,
+   "laM": 0.96,
+   "htsM": 0.425,
+   "hts": 0.433,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.6,
+    "X": 3.5,
+    "2": 5.0,
+    "o15": 1.222,
+    "o25": 1.75,
+    "gg": 1.8
+   },
+   "mkt": {
+    "p1": 56.3,
+    "px": 25.7,
+    "p2": 18.0,
+    "o15": 76.6,
+    "o25": 53.9,
+    "htx": 40.6
+   },
+   "fav": 56
   },
   {
    "date": "2026-10-17",
@@ -914,11 +1524,30 @@
    "league": "Thai League 1",
    "home": "Rayong",
    "away": "Uthai Thani",
-   "lh": 1.661,
-   "la": 1.74,
+   "lh": 1.655,
+   "la": 1.723,
    "rel": "C",
    "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.661,
+   "laS": 1.74,
+   "lhM": 1.65,
+   "laM": 1.71,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 2.5,
+    "X": 3.4,
+    "2": 2.35
+   },
+   "mkt": {
+    "p1": 35.7,
+    "px": 26.3,
+    "p2": 38.0
+   },
+   "fav": 38,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -926,11 +1555,36 @@
    "league": "Ekstraklasa",
    "home": "Motor Lublin",
    "away": "Śląsk Wrocław",
-   "lh": 1.672,
-   "la": 1.384,
+   "lh": 1.765,
+   "la": 1.308,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.672,
+   "laS": 1.384,
+   "lhM": 1.83,
+   "laM": 1.26,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.83,
+    "X": 3.6,
+    "2": 3.75,
+    "o15": 1.167,
+    "o25": 1.6,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 50.1,
+    "px": 25.5,
+    "p2": 24.4,
+    "o15": 81.1,
+    "o25": 59.0,
+    "htx": 38.5
+   },
+   "fav": 50
   },
   {
    "date": "2026-10-17",
@@ -938,11 +1592,36 @@
    "league": "Serie A",
    "home": "Venezia",
    "away": "Napoli",
-   "lh": 1.063,
-   "la": 1.68,
+   "lh": 1.039,
+   "la": 1.777,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.063,
+   "laS": 1.68,
+   "lhM": 1.02,
+   "laM": 1.86,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 4.75,
+    "X": 3.75,
+    "2": 1.7,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 19.8,
+    "px": 25.0,
+    "p2": 55.2,
+    "o15": 78.0,
+    "o25": 54.9,
+    "htx": 38.8
+   },
+   "fav": 55
   },
   {
    "date": "2026-10-17",
@@ -950,11 +1629,30 @@
    "league": "Serie B",
    "home": "Ascoli",
    "away": "Empoli",
-   "lh": 1.548,
-   "la": 0.924,
+   "lh": 1.539,
+   "la": 0.941,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.548,
+   "laS": 0.924,
+   "lhM": 1.53,
+   "laM": 0.96,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.81,
+    "X": 3.3,
+    "2": 4.0
+   },
+   "mkt": {
+    "p1": 50.0,
+    "px": 27.4,
+    "p2": 22.6
+   },
+   "fav": 50,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -962,11 +1660,30 @@
    "league": "Serie B",
    "home": "Benevento",
    "away": "Vicenza",
-   "lh": 1.785,
-   "la": 1.006,
+   "lh": 1.704,
+   "la": 1.068,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.785,
+   "laS": 1.006,
+   "lhM": 1.62,
+   "laM": 1.14,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.96,
+    "X": 3.25,
+    "2": 3.75
+   },
+   "mkt": {
+    "p1": 47.0,
+    "px": 28.4,
+    "p2": 24.6
+   },
+   "fav": 47,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -974,11 +1691,36 @@
    "league": "Serie B",
    "home": "Carrarese",
    "away": "Modena",
-   "lh": 1.068,
-   "la": 1.32,
+   "lh": 1.039,
+   "la": 1.542,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.068,
+   "laS": 1.32,
+   "lhM": 1.02,
+   "laM": 1.71,
+   "htsM": 0.435,
+   "hts": 0.44,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 4.5,
+    "X": 3.4,
+    "2": 1.76,
+    "o15": 1.25,
+    "o25": 1.85,
+    "gg": 1.75
+   },
+   "mkt": {
+    "p1": 20.5,
+    "px": 27.1,
+    "p2": 52.4,
+    "o15": 75.0,
+    "o25": 51.3,
+    "htx": 41.3
+   },
+   "fav": 52
   },
   {
    "date": "2026-10-17",
@@ -986,11 +1728,30 @@
    "league": "Serie B",
    "home": "Padova",
    "away": "Entella",
-   "lh": 1.193,
-   "la": 1.267,
+   "lh": 1.252,
+   "la": 1.189,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.193,
+   "laS": 1.267,
+   "lhM": 1.32,
+   "laM": 1.11,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 2.3,
+    "X": 3.0,
+    "2": 3.0
+   },
+   "mkt": {
+    "p1": 39.5,
+    "px": 30.3,
+    "p2": 30.3
+   },
+   "fav": 39,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -998,11 +1759,36 @@
    "league": "SuperSport HNL",
    "home": "Lokomotiva Zagabria",
    "away": "Istra 1961",
-   "lh": 1.491,
-   "la": 1.501,
+   "lh": 1.514,
+   "la": 1.427,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.491,
+   "laS": 1.501,
+   "lhM": 1.53,
+   "laM": 1.38,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.25,
+    "X": 3.3,
+    "2": 2.7,
+    "o15": 1.2,
+    "o25": 1.667,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 39.8,
+    "px": 27.1,
+    "p2": 33.1,
+    "o15": 78.3,
+    "o25": 56.3,
+    "htx": 39.9
+   },
+   "fav": 40
   },
   {
    "date": "2026-10-17",
@@ -1010,11 +1796,30 @@
    "league": "Superliga SRB",
    "home": "Čukarički",
    "away": "Zemun",
-   "lh": 1.768,
-   "la": 0.871,
+   "lh": 1.853,
+   "la": 0.795,
    "rel": "B",
    "note": "Orario da verificare (fonte con fuso non indicato) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.768,
+   "laS": 0.871,
+   "lhM": 1.95,
+   "laM": 0.72,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.4,
+    "X": 4.6,
+    "2": 6.5
+   },
+   "mkt": {
+    "p1": 65.8,
+    "px": 20.0,
+    "p2": 14.2
+   },
+   "fav": 66,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1022,11 +1827,36 @@
    "league": "Süper Lig",
    "home": "Amedspor",
    "away": "Konyaspor",
-   "lh": 1.848,
-   "la": 0.981,
+   "lh": 1.727,
+   "la": 0.986,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.848,
+   "laS": 0.981,
+   "lhM": 1.65,
+   "laM": 0.99,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.76,
+    "X": 3.4,
+    "2": 4.1,
+    "o15": 1.286,
+    "o25": 1.9,
+    "gg": 1.8
+   },
+   "mkt": {
+    "p1": 51.4,
+    "px": 26.6,
+    "p2": 22.0,
+    "o15": 73.1,
+    "o25": 50.0,
+    "htx": 41.0
+   },
+   "fav": 51
   },
   {
    "date": "2026-10-17",
@@ -1034,11 +1864,30 @@
    "league": "UAE Pro League",
    "home": "Al Nasr",
    "away": "Hatta",
-   "lh": 1.774,
-   "la": 1.245,
+   "lh": 1.95,
+   "la": 1.057,
    "rel": "C",
    "note": "Inizio stagione: 5 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.774,
+   "laS": 1.245,
+   "lhM": 2.1,
+   "laM": 0.93,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 1.4,
+    "X": 4.2,
+    "2": 6.0
+   },
+   "mkt": {
+    "p1": 63.8,
+    "px": 21.3,
+    "p2": 14.9
+   },
+   "fav": 64,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1046,11 +1895,30 @@
    "league": "2. Liga AUT",
    "home": "Floridsdorfer AC",
    "away": "Admira Wacker",
-   "lh": 1.66,
-   "la": 1.339,
+   "lh": 1.611,
+   "la": 1.373,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.66,
+   "laS": 1.339,
+   "lhM": 1.56,
+   "laM": 1.41,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 2.3,
+    "X": 3.4,
+    "2": 2.7
+   },
+   "mkt": {
+    "p1": 39.6,
+    "px": 26.8,
+    "p2": 33.7
+   },
+   "fav": 40,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1058,11 +1926,30 @@
    "league": "2. Liga AUT",
    "home": "SW Bregenz",
    "away": "Amstetten",
-   "lh": 1.584,
-   "la": 1.624,
+   "lh": 1.543,
+   "la": 1.651,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.584,
+   "laS": 1.624,
+   "lhM": 1.5,
+   "laM": 1.68,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 2.8,
+    "X": 3.5,
+    "2": 2.25
+   },
+   "mkt": {
+    "p1": 32.8,
+    "px": 26.3,
+    "p2": 40.9
+   },
+   "fav": 41,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1070,11 +1957,36 @@
    "league": "Bundesliga",
    "home": "Amburgo",
    "away": "Stoccarda",
-   "lh": 1.38,
-   "la": 1.804,
+   "lh": 1.413,
+   "la": 1.977,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.38,
+   "laS": 1.804,
+   "lhM": 1.44,
+   "laM": 2.13,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 3.7,
+    "X": 4.1,
+    "2": 1.8,
+    "o15": 1.111,
+    "o25": 1.364,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 25.3,
+    "px": 22.8,
+    "p2": 51.9,
+    "o15": 85.4,
+    "o25": 70.1,
+    "htx": 34.9
+   },
+   "fav": 52
   },
   {
    "date": "2026-10-17",
@@ -1082,11 +1994,36 @@
    "league": "Bundesliga",
    "home": "Elversberg",
    "away": "Augsburg",
-   "lh": 1.684,
-   "la": 1.433,
+   "lh": 1.698,
+   "la": 1.549,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.684,
+   "laS": 1.433,
+   "lhM": 1.71,
+   "laM": 1.65,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.45,
+    "X": 3.75,
+    "2": 2.55,
+    "o15": 1.143,
+    "o25": 1.444,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 38.3,
+    "px": 25.0,
+    "p2": 36.8,
+    "o15": 82.8,
+    "o25": 65.6,
+    "htx": 37.0
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-17",
@@ -1094,11 +2031,36 @@
    "league": "Bundesliga",
    "home": "Schalke 04",
    "away": "Mainz",
-   "lh": 1.505,
-   "la": 1.512,
+   "lh": 1.486,
+   "la": 1.57,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.505,
+   "laS": 1.512,
+   "lhM": 1.47,
+   "laM": 1.62,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.75,
+    "X": 3.6,
+    "2": 2.3,
+    "o15": 1.167,
+    "o25": 1.615,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 33.8,
+    "px": 25.8,
+    "p2": 40.4,
+    "o15": 81.1,
+    "o25": 58.7,
+    "htx": 38.7
+   },
+   "fav": 40
   },
   {
    "date": "2026-10-17",
@@ -1106,11 +2068,36 @@
    "league": "Bundesliga",
    "home": "Union Berlino",
    "away": "Borussia Dortmund",
-   "lh": 1.198,
-   "la": 1.86,
+   "lh": 1.149,
+   "la": 2.019,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.198,
+   "laS": 1.86,
+   "lhM": 1.11,
+   "laM": 2.16,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 5.5,
+    "X": 4.2,
+    "2": 1.6,
+    "o15": 1.143,
+    "o25": 1.5,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 17.4,
+    "px": 22.8,
+    "p2": 59.8,
+    "o15": 82.8,
+    "o25": 63.6,
+    "htx": 35.9
+   },
+   "fav": 60
   },
   {
    "date": "2026-10-17",
@@ -1118,11 +2105,36 @@
    "league": "Bundesliga",
    "home": "Werder Brema",
    "away": "Paderborn",
-   "lh": 1.725,
-   "la": 1.219,
+   "lh": 1.845,
+   "la": 1.225,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.725,
+   "laS": 1.219,
+   "lhM": 1.95,
+   "laM": 1.23,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.75,
+    "X": 3.75,
+    "2": 4.2,
+    "o15": 1.167,
+    "o25": 1.533,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 53.1,
+    "px": 24.8,
+    "p2": 22.1,
+    "o15": 81.1,
+    "o25": 62.0,
+    "htx": 36.9
+   },
+   "fav": 53
   },
   {
    "date": "2026-10-17",
@@ -1133,8 +2145,15 @@
    "lh": 1.406,
    "la": 1.232,
    "rel": "B",
-   "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "note": "Modello v2 Claude (nessuna seconda analisi) Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.406,
+   "laS": 1.232,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 40,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
@@ -1142,11 +2161,36 @@
    "league": "Championship",
    "home": "Bristol City",
    "away": "Sheffield Utd",
-   "lh": 1.423,
-   "la": 1.318,
+   "lh": 1.538,
+   "la": 1.208,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.423,
+   "laS": 1.318,
+   "lhM": 1.62,
+   "laM": 1.14,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.96,
+    "X": 3.5,
+    "2": 3.7,
+    "o15": 1.25,
+    "o25": 1.8,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 47.9,
+    "px": 26.8,
+    "p2": 25.3,
+    "o15": 76.2,
+    "o25": 52.6,
+    "htx": 41.2
+   },
+   "fav": 48
   },
   {
    "date": "2026-10-17",
@@ -1154,11 +2198,36 @@
    "league": "Championship",
    "home": "Derby",
    "away": "Stoke",
-   "lh": 1.321,
-   "la": 1.668,
+   "lh": 1.266,
+   "la": 1.508,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.321,
+   "laS": 1.668,
+   "lhM": 1.23,
+   "laM": 1.41,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.85,
+    "X": 3.4,
+    "2": 2.3,
+    "o15": 1.286,
+    "o25": 1.909,
+    "gg": 1.727
+   },
+   "mkt": {
+    "p1": 32.5,
+    "px": 27.2,
+    "p2": 40.3,
+    "o15": 74.5,
+    "o25": 50.0,
+    "htx": 42.3
+   },
+   "fav": 40
   },
   {
    "date": "2026-10-17",
@@ -1166,11 +2235,36 @@
    "league": "Championship",
    "home": "Norwich",
    "away": "Portsmouth",
-   "lh": 1.664,
-   "la": 1.507,
+   "lh": 1.744,
+   "la": 1.234,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.664,
+   "laS": 1.507,
+   "lhM": 1.8,
+   "laM": 1.08,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.76,
+    "X": 3.8,
+    "2": 4.1,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 52.8,
+    "px": 24.5,
+    "p2": 22.7,
+    "o15": 78.0,
+    "o25": 54.9,
+    "htx": 39.2
+   },
+   "fav": 53
   },
   {
    "date": "2026-10-17",
@@ -1178,11 +2272,30 @@
    "league": "Championship",
    "home": "Southampton",
    "away": "Bolton",
-   "lh": 2.096,
-   "la": 1.147,
+   "lh": 2.169,
+   "la": 1.084,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.096,
+   "laS": 1.147,
+   "lhM": 2.25,
+   "laM": 1.02,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.45,
+    "X": 4.75,
+    "2": 6.0
+   },
+   "mkt": {
+    "p1": 64.6,
+    "px": 19.7,
+    "p2": 15.6
+   },
+   "fav": 65,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1190,11 +2303,36 @@
    "league": "Championship",
    "home": "Swansea",
    "away": "West Ham",
-   "lh": 1.495,
-   "la": 1.448,
+   "lh": 1.387,
+   "la": 1.514,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.495,
+   "laS": 1.448,
+   "lhM": 1.32,
+   "laM": 1.56,
+   "htsM": 0.435,
+   "hts": 0.44,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.85,
+    "X": 3.7,
+    "2": 2.15,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 32.3,
+    "px": 24.9,
+    "p2": 42.8,
+    "o15": 78.0,
+    "o25": 54.9,
+    "htx": 40.7
+   },
+   "fav": 43
   },
   {
    "date": "2026-10-17",
@@ -1202,11 +2340,36 @@
    "league": "Championship",
    "home": "West Brom",
    "away": "Blackburn",
-   "lh": 1.398,
-   "la": 1.188,
+   "lh": 1.493,
+   "la": 1.065,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.398,
+   "laS": 1.188,
+   "lhM": 1.56,
+   "laM": 0.99,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.86,
+    "X": 3.5,
+    "2": 4.1,
+    "o15": 1.333,
+    "o25": 2.0,
+    "gg": 1.833
+   },
+   "mkt": {
+    "p1": 50.4,
+    "px": 26.8,
+    "p2": 22.9,
+    "o15": 71.8,
+    "o25": 47.4,
+    "htx": 42.2
+   },
+   "fav": 50
   },
   {
    "date": "2026-10-17",
@@ -1214,11 +2377,36 @@
    "league": "Championship",
    "home": "Wrexham",
    "away": "Preston",
-   "lh": 1.653,
-   "la": 1.082,
+   "lh": 1.722,
+   "la": 0.988,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.653,
+   "laS": 1.082,
+   "lhM": 1.77,
+   "laM": 0.93,
+   "htsM": 0.46,
+   "hts": 0.457,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.62,
+    "X": 3.9,
+    "2": 4.75,
+    "o15": 1.286,
+    "o25": 1.909,
+    "gg": 1.8
+   },
+   "mkt": {
+    "p1": 56.9,
+    "px": 23.6,
+    "p2": 19.4,
+    "o15": 74.5,
+    "o25": 50.0,
+    "htx": 39.9
+   },
+   "fav": 57
   },
   {
    "date": "2026-10-17",
@@ -1226,11 +2414,36 @@
    "league": "Eliteserien",
    "home": "Kristiansund",
    "away": "Aalesund",
-   "lh": 1.648,
-   "la": 1.691,
+   "lh": 1.633,
+   "la": 1.618,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.648,
+   "laS": 1.691,
+   "lhM": 1.62,
+   "laM": 1.56,
+   "htsM": 0.46,
+   "hts": 0.457,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.35,
+    "X": 3.7,
+    "2": 2.55,
+    "o15": 1.167,
+    "o25": 1.533,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 39.1,
+    "px": 24.8,
+    "p2": 36.0,
+    "o15": 81.1,
+    "o25": 61.0,
+    "htx": 37.4
+   },
+   "fav": 39
   },
   {
    "date": "2026-10-17",
@@ -1241,8 +2454,15 @@
    "lh": 1.632,
    "la": 0.945,
    "rel": "C",
-   "note": "Seconda giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Seconda giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50% Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.632,
+   "laS": 0.945,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 53,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
@@ -1250,11 +2470,36 @@
    "league": "Premier League",
    "home": "Brentford",
    "away": "Liverpool",
-   "lh": 1.517,
-   "la": 1.419,
+   "lh": 1.573,
+   "la": 1.463,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.517,
+   "laS": 1.419,
+   "lhM": 1.62,
+   "laM": 1.5,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.4,
+    "X": 3.75,
+    "2": 2.7,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 39.5,
+    "px": 25.3,
+    "p2": 35.1,
+    "o15": 81.1,
+    "o25": 60.2,
+    "htx": 38.7
+   },
+   "fav": 40
   },
   {
    "date": "2026-10-17",
@@ -1262,11 +2507,36 @@
    "league": "Premier League",
    "home": "Fulham",
    "away": "Hull City",
-   "lh": 1.7,
-   "la": 1.114,
+   "lh": 1.786,
+   "la": 1.061,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.7,
+   "laS": 1.114,
+   "lhM": 1.86,
+   "laM": 1.02,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.65,
+    "X": 3.9,
+    "2": 4.75,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 56.5,
+    "px": 23.9,
+    "p2": 19.6,
+    "o15": 78.0,
+    "o25": 54.9,
+    "htx": 38.9
+   },
+   "fav": 56
   },
   {
    "date": "2026-10-17",
@@ -1274,11 +2544,36 @@
    "league": "Premier League",
    "home": "Manchester City",
    "away": "Ipswich",
-   "lh": 2.321,
-   "la": 0.958,
+   "lh": 2.507,
+   "la": 0.891,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.321,
+   "laS": 0.958,
+   "lhM": 2.67,
+   "laM": 0.84,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.25,
+    "X": 6.5,
+    "2": 9.5,
+    "o15": 1.111,
+    "o25": 1.4,
+    "gg": 1.75
+   },
+   "mkt": {
+    "p1": 75.5,
+    "px": 14.5,
+    "p2": 9.9,
+    "o15": 85.4,
+    "o25": 68.2,
+    "htx": 31.1
+   },
+   "fav": 76
   },
   {
    "date": "2026-10-17",
@@ -1286,11 +2581,36 @@
    "league": "La Liga",
    "home": "Villarreal",
    "away": "Elche",
-   "lh": 2.039,
-   "la": 0.995,
+   "lh": 2.152,
+   "la": 1.025,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.039,
+   "laS": 0.995,
+   "lhM": 2.25,
+   "laM": 1.05,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.48,
+    "X": 4.333,
+    "2": 6.0,
+    "o15": 1.143,
+    "o25": 1.5,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 63.0,
+    "px": 21.5,
+    "p2": 15.5,
+    "o15": 82.8,
+    "o25": 63.6,
+    "htx": 35.1
+   },
+   "fav": 63
   },
   {
    "date": "2026-10-17",
@@ -1298,11 +2618,36 @@
    "league": "Superliga ROU",
    "home": "Petrolul Ploiești",
    "away": "Sepsi",
-   "lh": 1.493,
-   "la": 1.045,
+   "lh": 1.477,
+   "la": 1.069,
    "rel": "C",
    "note": "Gol fatti/subiti di Petrolul Ploiești, Sepsi stimati dai punti in classifica · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.493,
+   "laS": 1.045,
+   "lhM": 1.47,
+   "laM": 1.08,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 2.0,
+    "X": 3.2,
+    "2": 3.3,
+    "o15": 1.3,
+    "o25": 2.0,
+    "gg": 1.8
+   },
+   "mkt": {
+    "p1": 44.8,
+    "px": 28.0,
+    "p2": 27.2,
+    "o15": 72.3,
+    "o25": 47.4,
+    "htx": 42.6
+   },
+   "fav": 45
   },
   {
    "date": "2026-10-17",
@@ -1310,11 +2655,36 @@
    "league": "3. Liga",
    "home": "Würzburger Kickers",
    "away": "Waldhof Mannheim",
-   "lh": 1.626,
-   "la": 1.789,
+   "lh": 1.435,
+   "la": 1.796,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.626,
+   "laS": 1.789,
+   "lhM": 1.32,
+   "laM": 1.8,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 3.3,
+    "X": 3.6,
+    "2": 1.9,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 27.4,
+    "px": 25.1,
+    "p2": 47.5,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 38.5
+   },
+   "fav": 48
   },
   {
    "date": "2026-10-17",
@@ -1322,11 +2692,36 @@
    "league": "Eerste Divisie",
    "home": "FC Emmen",
    "away": "Almere City",
-   "lh": 1.605,
-   "la": 1.769,
+   "lh": 1.719,
+   "la": 1.621,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.605,
+   "laS": 1.769,
+   "lhM": 1.8,
+   "laM": 1.53,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.1,
+    "X": 4.0,
+    "2": 2.82,
+    "o15": 1.125,
+    "o25": 1.475,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 44.1,
+    "px": 23.1,
+    "p2": 32.8,
+    "o15": 84.2,
+    "o25": 63.8,
+    "htx": 37.2
+   },
+   "fav": 44
   },
   {
    "date": "2026-10-17",
@@ -1334,11 +2729,36 @@
    "league": "Eredivisie",
    "home": "ADO Den Haag",
    "away": "PSV",
-   "lh": 1.328,
-   "la": 2.139,
+   "lh": 1.149,
+   "la": 2.691,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.328,
+   "laS": 2.139,
+   "lhM": 1.08,
+   "laM": 2.97,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 9.0,
+    "X": 6.25,
+    "2": 1.25,
+    "o15": 1.062,
+    "o25": 1.222,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 10.4,
+    "px": 14.9,
+    "p2": 74.7,
+    "o15": 90.4,
+    "o25": 77.5,
+    "htx": 28.3
+   },
+   "fav": 75
   },
   {
    "date": "2026-10-17",
@@ -1346,11 +2766,30 @@
    "league": "Qatar Stars League",
    "home": "Al Sailiya",
    "away": "Qatar SC",
-   "lh": 1.529,
-   "la": 1.637,
+   "lh": 1.408,
+   "la": 1.774,
    "rel": "C",
    "note": "Solo 2-3 partite per squadra · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.529,
+   "laS": 1.637,
+   "lhM": 1.32,
+   "laM": 1.89,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 3.5,
+    "X": 3.8,
+    "2": 1.833
+   },
+   "mkt": {
+    "p1": 26.1,
+    "px": 24.0,
+    "p2": 49.8
+   },
+   "fav": 50,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1358,11 +2797,36 @@
    "league": "Bundesliga AUT",
    "home": "Austria Lustenau",
    "away": "LASK",
-   "lh": 1.343,
-   "la": 1.943,
+   "lh": 1.098,
+   "la": 2.206,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.343,
+   "laS": 1.943,
+   "lhM": 0.96,
+   "laM": 2.4,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 7.0,
+    "X": 5.25,
+    "2": 1.35,
+    "o15": 1.125,
+    "o25": 1.444,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 13.3,
+    "px": 17.7,
+    "p2": 69.0,
+    "o15": 84.2,
+    "o25": 65.2,
+    "htx": 33.9
+   },
+   "fav": 69
   },
   {
    "date": "2026-10-17",
@@ -1370,11 +2834,30 @@
    "league": "Superliga SRB",
    "home": "Vojvodina",
    "away": "Radnički Kragujevac",
-   "lh": 1.693,
-   "la": 1.144,
+   "lh": 1.757,
+   "la": 1.098,
    "rel": "B",
    "note": "Orario da verificare (fonte con fuso non indicato) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.693,
+   "laS": 1.144,
+   "lhM": 1.83,
+   "laM": 1.05,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.667,
+    "X": 4.0,
+    "2": 4.333
+   },
+   "mkt": {
+    "p1": 55.5,
+    "px": 23.1,
+    "p2": 21.4
+   },
+   "fav": 56,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1382,11 +2865,34 @@
    "league": "Ligue 1",
    "home": "Strasburgo",
    "away": "PSG",
-   "lh": 1.185,
-   "la": 2.007,
+   "lh": 1.143,
+   "la": 2.29,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.185,
+   "laS": 2.007,
+   "lhM": 1.11,
+   "laM": 2.55,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 6.25,
+    "X": 5.5,
+    "2": 1.4,
+    "o15": 1.1,
+    "o25": 1.333,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 15.2,
+    "px": 17.2,
+    "p2": 67.6,
+    "o15": 86.4,
+    "o25": 71.8
+   },
+   "fav": 68
   },
   {
    "date": "2026-10-17",
@@ -1394,11 +2900,30 @@
    "league": "Serie B",
    "home": "Mantova",
    "away": "Palermo",
-   "lh": 1.657,
-   "la": 1.407,
+   "lh": 1.502,
+   "la": 1.532,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.657,
+   "laS": 1.407,
+   "lhM": 1.35,
+   "laM": 1.68,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 3.25,
+    "X": 3.3,
+    "2": 2.1
+   },
+   "mkt": {
+    "p1": 28.3,
+    "px": 27.9,
+    "p2": 43.8
+   },
+   "fav": 44,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1406,11 +2931,30 @@
    "league": "2. Liga AUT",
    "home": "Blau-Weiß Linz",
    "away": "Liefering",
-   "lh": 2.433,
-   "la": 1.223,
+   "lh": 2.446,
+   "la": 1.212,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.433,
+   "laS": 1.223,
+   "lhM": 2.46,
+   "laM": 1.2,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.4,
+    "X": 4.75,
+    "2": 5.5
+   },
+   "mkt": {
+    "p1": 64.5,
+    "px": 19.0,
+    "p2": 16.4
+   },
+   "fav": 65,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1418,11 +2962,36 @@
    "league": "Allsvenskan",
    "home": "AIK",
    "away": "IFK Göteborg",
-   "lh": 1.695,
-   "la": 1.416,
+   "lh": 1.602,
+   "la": 1.493,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.695,
+   "laS": 1.416,
+   "lhM": 1.53,
+   "laM": 1.56,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.55,
+    "X": 3.6,
+    "2": 2.45,
+    "o15": 1.167,
+    "o25": 1.6,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 36.4,
+    "px": 25.8,
+    "p2": 37.9,
+    "o15": 81.1,
+    "o25": 59.0,
+    "htx": 38.7
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-17",
@@ -1430,11 +2999,36 @@
    "league": "Ekstraklasa",
    "home": "GKS Katowice",
    "away": "Pogoń Szczecin",
-   "lh": 1.571,
-   "la": 1.253,
+   "lh": 1.772,
+   "la": 1.328,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.571,
+   "laS": 1.253,
+   "lhM": 1.92,
+   "laM": 1.38,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.9,
+    "X": 3.6,
+    "2": 3.5,
+    "o15": 1.143,
+    "o25": 1.475,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 48.3,
+    "px": 25.5,
+    "p2": 26.2,
+    "o15": 82.8,
+    "o25": 63.8,
+    "htx": 36.5
+   },
+   "fav": 48
   },
   {
    "date": "2026-10-17",
@@ -1442,11 +3036,36 @@
    "league": "Saudi Pro League",
    "home": "NEOM",
    "away": "Al Ettifaq",
-   "lh": 1.74,
-   "la": 1.12,
+   "lh": 1.776,
+   "la": 1.185,
    "rel": "B",
    "note": "Calendario saudita da verificare (fonti in parziale conflitto) · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.74,
+   "laS": 1.12,
+   "lhM": 1.8,
+   "laM": 1.23,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.8,
+    "X": 3.6,
+    "2": 3.6,
+    "o15": 1.182,
+    "o25": 1.615,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 50.0,
+    "px": 25.0,
+    "p2": 25.0,
+    "o15": 79.2,
+    "o25": 58.2,
+    "htx": 38.3
+   },
+   "fav": 50
   },
   {
    "date": "2026-10-17",
@@ -1454,11 +3073,30 @@
    "league": "UAE Pro League",
    "home": "Shabab Al Ahli",
    "away": "Al Ain",
-   "lh": 1.552,
-   "la": 1.503,
+   "lh": 1.453,
+   "la": 1.584,
    "rel": "C",
    "note": "Inizio stagione: 5 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.552,
+   "laS": 1.503,
+   "lhM": 1.38,
+   "laM": 1.65,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 2.875,
+    "X": 3.5,
+    "2": 2.1
+   },
+   "mkt": {
+    "p1": 31.3,
+    "px": 25.7,
+    "p2": 42.9
+   },
+   "fav": 43,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1466,11 +3104,36 @@
    "league": "Eliteserien",
    "home": "Viking",
    "away": "Fredrikstad",
-   "lh": 2.356,
-   "la": 0.878,
+   "lh": 2.524,
+   "la": 0.906,
    "rel": "A",
    "note": "Campione ampio (22 giornate); dati Viking e Bodø identici nella fonte, da verificare · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.356,
+   "laS": 0.878,
+   "lhM": 2.67,
+   "laM": 0.93,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.27,
+    "X": 6.0,
+    "2": 8.0,
+    "o15": 1.1,
+    "o25": 1.364,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 73.0,
+    "px": 15.4,
+    "p2": 11.6,
+    "o15": 86.4,
+    "o25": 69.4,
+    "htx": 30.7
+   },
+   "fav": 73
   },
   {
    "date": "2026-10-17",
@@ -1478,11 +3141,36 @@
    "league": "Serie A",
    "home": "Bologna",
    "away": "Inter",
-   "lh": 1.022,
-   "la": 1.688,
+   "lh": 1.037,
+   "la": 1.812,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.022,
+   "laS": 1.688,
+   "lhM": 1.05,
+   "laM": 1.92,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 4.75,
+    "X": 4.0,
+    "2": 1.65,
+    "o15": 1.2,
+    "o25": 1.667,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 19.7,
+    "px": 23.4,
+    "p2": 56.8,
+    "o15": 78.9,
+    "o25": 56.9,
+    "htx": 38.1
+   },
+   "fav": 57
   },
   {
    "date": "2026-10-17",
@@ -1490,11 +3178,36 @@
    "league": "SuperSport HNL",
    "home": "Osijek",
    "away": "Gorica",
-   "lh": 1.683,
-   "la": 1.064,
+   "lh": 1.752,
+   "la": 1.037,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.683,
+   "laS": 1.064,
+   "lhM": 1.8,
+   "laM": 1.02,
+   "htsM": 0.46,
+   "hts": 0.457,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.62,
+    "X": 3.6,
+    "2": 4.333,
+    "o15": 1.222,
+    "o25": 1.75,
+    "gg": 1.727
+   },
+   "mkt": {
+    "p1": 54.8,
+    "px": 24.7,
+    "p2": 20.5,
+    "o15": 76.6,
+    "o25": 53.9,
+    "htx": 39.1
+   },
+   "fav": 55
   },
   {
    "date": "2026-10-17",
@@ -1502,11 +3215,36 @@
    "league": "Süper Lig",
    "home": "Fenerbahçe",
    "away": "Alanyaspor",
-   "lh": 1.901,
-   "la": 0.943,
+   "lh": 2.17,
+   "la": 0.802,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.901,
+   "laS": 0.943,
+   "lhM": 2.37,
+   "laM": 0.72,
+   "htsM": 0.46,
+   "hts": 0.457,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.22,
+    "X": 5.25,
+    "2": 9.0,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 2.0
+   },
+   "mkt": {
+    "p1": 73.1,
+    "px": 17.0,
+    "p2": 9.9,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 33.6
+   },
+   "fav": 73
   },
   {
    "date": "2026-10-17",
@@ -1514,11 +3252,36 @@
    "league": "Bundesliga",
    "home": "Bayern Monaco",
    "away": "RB Lipsia",
-   "lh": 2.704,
-   "la": 1.206,
+   "lh": 2.987,
+   "la": 1.186,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.704,
+   "laS": 1.206,
+   "lhM": 3.24,
+   "laM": 1.17,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.22,
+    "X": 7.0,
+    "2": 9.5,
+    "o15": 1.04,
+    "o25": 1.167,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 76.8,
+    "px": 13.4,
+    "p2": 9.9,
+    "o15": 92.6,
+    "o25": 81.1,
+    "htx": 26.4
+   },
+   "fav": 77
   },
   {
    "date": "2026-10-17",
@@ -1526,11 +3289,36 @@
    "league": "La Liga",
    "home": "Betis",
    "away": "Barcellona",
-   "lh": 1.257,
-   "la": 2.046,
+   "lh": 1.275,
+   "la": 2.369,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.257,
+   "laS": 2.046,
+   "lhM": 1.29,
+   "laM": 2.67,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 5.5,
+    "X": 5.75,
+    "2": 1.42,
+    "o15": 1.071,
+    "o25": 1.25,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 17.2,
+    "px": 16.4,
+    "p2": 66.4,
+    "o15": 89.4,
+    "o25": 76.2,
+    "htx": 31.1
+   },
+   "fav": 66
   },
   {
    "date": "2026-10-17",
@@ -1538,11 +3326,36 @@
    "league": "Premier League",
    "home": "Newcastle",
    "away": "Aston Villa",
-   "lh": 1.573,
-   "la": 1.325,
+   "lh": 1.615,
+   "la": 1.371,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.573,
+   "laS": 1.325,
+   "lhM": 1.65,
+   "laM": 1.41,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.25,
+    "X": 3.6,
+    "2": 3.0,
+    "o15": 1.2,
+    "o25": 1.615,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 42.1,
+    "px": 26.3,
+    "p2": 31.6,
+    "o15": 78.9,
+    "o25": 58.7,
+    "htx": 39.0
+   },
+   "fav": 42
   },
   {
    "date": "2026-10-17",
@@ -1550,11 +3363,30 @@
    "league": "Qatar Stars League",
    "home": "Lusail",
    "away": "Al Shamal",
-   "lh": 1.675,
-   "la": 1.257,
+   "lh": 1.39,
+   "la": 1.523,
    "rel": "C",
    "note": "Solo 2-3 partite per squadra · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.675,
+   "laS": 1.257,
+   "lhM": 1.2,
+   "laM": 1.77,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 3.6,
+    "X": 3.75,
+    "2": 1.8
+   },
+   "mkt": {
+    "p1": 25.3,
+    "px": 24.2,
+    "p2": 50.5
+   },
+   "fav": 51,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1562,11 +3394,30 @@
    "league": "Superliga SRB",
    "home": "Mačva Šabac",
    "away": "OFK Beograd",
-   "lh": 1.246,
-   "la": 1.351,
+   "lh": 1.179,
+   "la": 1.421,
    "rel": "B",
    "note": "Orario da verificare (fonte con fuso non indicato) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.246,
+   "laS": 1.351,
+   "lhM": 1.11,
+   "laM": 1.5,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 3.5,
+    "X": 3.25,
+    "2": 2.05
+   },
+   "mkt": {
+    "p1": 26.4,
+    "px": 28.5,
+    "p2": 45.1
+   },
+   "fav": 45,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1574,11 +3425,36 @@
    "league": "Bundesliga AUT",
    "home": "Ried",
    "away": "Austria Vienna",
-   "lh": 1.816,
-   "la": 1.207,
+   "lh": 1.6,
+   "la": 1.291,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.816,
+   "laS": 1.207,
+   "lhM": 1.47,
+   "laM": 1.35,
+   "htsM": 0.435,
+   "hts": 0.44,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.35,
+    "X": 3.5,
+    "2": 2.75,
+    "o15": 1.222,
+    "o25": 1.75,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 39.6,
+    "px": 26.6,
+    "p2": 33.8,
+    "o15": 76.6,
+    "o25": 53.9,
+    "htx": 41.5
+   },
+   "fav": 40
   },
   {
    "date": "2026-10-17",
@@ -1586,11 +3462,36 @@
    "league": "Serie B",
    "home": "Pisa",
    "away": "Cremonese",
-   "lh": 1.578,
-   "la": 1.07,
+   "lh": 1.494,
+   "la": 1.058,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.578,
+   "laS": 1.07,
+   "lhM": 1.44,
+   "laM": 1.05,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.05,
+    "X": 3.1,
+    "2": 3.5,
+    "o15": 1.333,
+    "o25": 2.1,
+    "gg": 1.8
+   },
+   "mkt": {
+    "p1": 44.5,
+    "px": 29.4,
+    "p2": 26.1,
+    "o15": 70.9,
+    "o25": 44.7,
+    "htx": 43.7
+   },
+   "fav": 45
   },
   {
    "date": "2026-10-17",
@@ -1598,11 +3499,36 @@
    "league": "Eredivisie",
    "home": "Telstar",
    "away": "Feyenoord",
-   "lh": 1.369,
-   "la": 1.853,
+   "lh": 1.137,
+   "la": 2.374,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.369,
+   "laS": 1.853,
+   "lhM": 1.05,
+   "laM": 2.64,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 7.0,
+    "X": 5.5,
+    "2": 1.33,
+    "o15": 1.083,
+    "o25": 1.333,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 13.3,
+    "px": 16.9,
+    "p2": 69.8,
+    "o15": 88.1,
+    "o25": 71.8,
+    "htx": 31.3
+   },
+   "fav": 70
   },
   {
    "date": "2026-10-17",
@@ -1610,11 +3536,36 @@
    "league": "Ligue 2",
    "home": "Red Star",
    "away": "Saint-Étienne",
-   "lh": 1.303,
-   "la": 1.581,
+   "lh": 1.259,
+   "la": 1.532,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.303,
+   "laS": 1.581,
+   "lhM": 1.23,
+   "laM": 1.5,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 3.0,
+    "X": 3.2,
+    "2": 2.15,
+    "o15": 1.25,
+    "o25": 1.85,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 30.0,
+    "px": 28.1,
+    "p2": 41.9,
+    "o15": 75.0,
+    "o25": 51.3,
+    "htx": 41.5
+   },
+   "fav": 42
   },
   {
    "date": "2026-10-17",
@@ -1622,11 +3573,29 @@
    "league": "Saudi Pro League",
    "home": "Al Diriyah",
    "away": "Al Taawoun",
-   "lh": 1.558,
-   "la": 0.965,
+   "lh": 1.647,
+   "la": 1.066,
    "rel": "B",
    "note": "Calendario saudita da verificare (fonti in parziale conflitto) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.558,
+   "laS": 0.965,
+   "lhM": 1.71,
+   "laM": 1.14,
+   "hts": 0.45,
+   "src": "O/U+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.667
+   },
+   "mkt": {
+    "o15": 76.6,
+    "o25": 54.6
+   },
+   "fav": 50,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -1634,11 +3603,36 @@
    "league": "Ekstraklasa",
    "home": "Cracovia",
    "away": "Legia Varsavia",
-   "lh": 1.065,
-   "la": 1.643,
+   "lh": 1.211,
+   "la": 1.48,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.065,
+   "laS": 1.643,
+   "lhM": 1.32,
+   "laM": 1.38,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.7,
+    "X": 3.25,
+    "2": 2.45,
+    "o15": 1.25,
+    "o25": 1.85,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 34.1,
+    "px": 28.3,
+    "p2": 37.6,
+    "o15": 75.0,
+    "o25": 51.3,
+    "htx": 41.9
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-17",
@@ -1646,11 +3640,36 @@
    "league": "2. Bundesliga",
    "home": "Hannover",
    "away": "St. Pauli",
-   "lh": 1.321,
-   "la": 1.516,
+   "lh": 1.542,
+   "la": 1.47,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.321,
+   "laS": 1.516,
+   "lhM": 1.71,
+   "laM": 1.44,
+   "htsM": 0.465,
+   "hts": 0.461,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.1,
+    "X": 3.6,
+    "2": 2.9,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 43.3,
+    "px": 25.3,
+    "p2": 31.4,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 37.2
+   },
+   "fav": 43
   },
   {
    "date": "2026-10-17",
@@ -1658,11 +3677,36 @@
    "league": "MLS",
    "home": "Philadelphia Union",
    "away": "Charlotte",
-   "lh": 2.057,
-   "la": 1.323,
+   "lh": 2.254,
+   "la": 1.271,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.057,
+   "laS": 1.323,
+   "lhM": 2.43,
+   "laM": 1.23,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.46,
+    "X": 5.0,
+    "2": 5.25,
+    "o15": 1.1,
+    "o25": 1.333,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 63.7,
+    "px": 18.6,
+    "p2": 17.7,
+    "o15": 86.4,
+    "o25": 71.8,
+    "htx": 33.4
+   },
+   "fav": 64
   },
   {
    "date": "2026-10-17",
@@ -1670,11 +3714,36 @@
    "league": "Superliga ROU",
    "home": "Rapid Bucarest",
    "away": "Corvinul",
-   "lh": 1.57,
-   "la": 1.049,
+   "lh": 1.788,
+   "la": 0.92,
    "rel": "C",
    "note": "Gol fatti/subiti di Corvinul stimati dai punti in classifica · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.57,
+   "laS": 1.049,
+   "lhM": 1.89,
+   "laM": 0.87,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 1.5,
+    "X": 3.7,
+    "2": 5.5,
+    "o15": 1.25,
+    "o25": 1.8,
+    "gg": 1.833
+   },
+   "mkt": {
+    "p1": 59.6,
+    "px": 24.2,
+    "p2": 16.3,
+    "o15": 75.0,
+    "o25": 52.6,
+    "htx": 39.0
+   },
+   "fav": 60
   },
   {
    "date": "2026-10-17",
@@ -1682,11 +3751,36 @@
    "league": "Ligue 1",
    "home": "Lille",
    "away": "Brest",
-   "lh": 1.683,
-   "la": 1.12,
+   "lh": 1.762,
+   "la": 1.081,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.683,
+   "laS": 1.12,
+   "lhM": 1.83,
+   "laM": 1.05,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.7,
+    "X": 3.8,
+    "2": 4.5,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 54.8,
+    "px": 24.5,
+    "p2": 20.7,
+    "o15": 78.0,
+    "o25": 54.9,
+    "htx": 39.1
+   },
+   "fav": 55
   },
   {
    "date": "2026-10-17",
@@ -1694,11 +3788,36 @@
    "league": "Ligue 1",
    "home": "Troyes",
    "away": "Lens",
-   "lh": 1.331,
-   "la": 1.648,
+   "lh": 1.274,
+   "la": 1.777,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.331,
+   "laS": 1.648,
+   "lhM": 1.23,
+   "laM": 1.89,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 4.0,
+    "X": 3.8,
+    "2": 1.8,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 23.4,
+    "px": 24.6,
+    "p2": 52.0,
+    "o15": 81.1,
+    "o25": 60.2,
+    "htx": 37.8
+   },
+   "fav": 52
   },
   {
    "date": "2026-10-17",
@@ -1706,11 +3825,36 @@
    "league": "Premier Div. IRL",
    "home": "Sligo Rovers",
    "away": "Dundalk",
-   "lh": 1.266,
-   "la": 1.59,
+   "lh": 1.229,
+   "la": 1.764,
    "rel": "A",
    "note": "Campione ampio (32-33 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.266,
+   "laS": 1.59,
+   "lhM": 1.2,
+   "laM": 1.92,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 3.9,
+    "X": 3.9,
+    "2": 1.7,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 23.3,
+    "px": 23.3,
+    "p2": 53.4,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 37.2
+   },
+   "fav": 53
   },
   {
    "date": "2026-10-17",
@@ -1718,11 +3862,36 @@
    "league": "Serie A",
    "home": "Roma",
    "away": "Genoa",
-   "lh": 1.811,
-   "la": 0.888,
+   "lh": 1.949,
+   "la": 0.861,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.811,
+   "laS": 0.888,
+   "lhM": 2.07,
+   "laM": 0.84,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.45,
+    "X": 4.5,
+    "2": 7.0,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.909
+   },
+   "mkt": {
+    "p1": 65.4,
+    "px": 21.1,
+    "p2": 13.5,
+    "o15": 78.0,
+    "o25": 54.9,
+    "htx": 37.5
+   },
+   "fav": 65
   },
   {
    "date": "2026-10-17",
@@ -1730,11 +3899,36 @@
    "league": "Eredivisie",
    "home": "Sparta Rotterdam",
    "away": "Willem II",
-   "lh": 1.811,
-   "la": 1.292,
+   "lh": 2.029,
+   "la": 1.205,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.811,
+   "laS": 1.292,
+   "lhM": 2.13,
+   "laM": 1.17,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 1.62,
+    "X": 4.333,
+    "2": 4.75,
+    "o15": 1.125,
+    "o25": 1.475,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 58.3,
+    "px": 21.8,
+    "p2": 19.9,
+    "o15": 84.2,
+    "o25": 63.8,
+    "htx": 35.9
+   },
+   "fav": 58
   },
   {
    "date": "2026-10-17",
@@ -1742,11 +3936,36 @@
    "league": "La Liga",
    "home": "Valencia",
    "away": "Athletic Bilbao",
-   "lh": 1.195,
-   "la": 1.302,
+   "lh": 1.13,
+   "la": 1.36,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.195,
+   "laS": 1.302,
+   "lhM": 1.08,
+   "laM": 1.41,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 3.4,
+    "X": 3.3,
+    "2": 2.2,
+    "o15": 1.333,
+    "o25": 2.1,
+    "gg": 1.8
+   },
+   "mkt": {
+    "p1": 28.0,
+    "px": 28.8,
+    "p2": 43.2,
+    "o15": 71.8,
+    "o25": 45.1,
+    "htx": 43.7
+   },
+   "fav": 43
   },
   {
    "date": "2026-10-17",
@@ -1754,23 +3973,73 @@
    "league": "MLS",
    "home": "Minnesota United",
    "away": "St. Louis City",
-   "lh": 1.415,
-   "la": 1.663,
+   "lh": 1.54,
+   "la": 1.639,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.415,
+   "laS": 1.663,
+   "lhM": 1.65,
+   "laM": 1.62,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.45,
+    "X": 3.75,
+    "2": 2.55,
+    "o15": 1.143,
+    "o25": 1.475,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 38.3,
+    "px": 25.0,
+    "p2": 36.8,
+    "o15": 82.8,
+    "o25": 63.8,
+    "htx": 37.0
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-17",
-   "time": "n.d.",
+   "time": "15:00",
    "league": "Süper Lig",
    "home": "Gençlerbirliği",
    "away": "Galatasaray",
-   "lh": 1.23,
-   "la": 1.929,
+   "lh": 1.02,
+   "la": 2.199,
    "rel": "B",
-   "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50% Orario da Sofascore.",
+   "review": "model_v3",
+   "lhS": 1.23,
+   "laS": 1.929,
+   "lhM": 0.9,
+   "laM": 2.4,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 7.5,
+    "X": 4.75,
+    "2": 1.25,
+    "o15": 1.143,
+    "o25": 1.475,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 11.7,
+    "px": 18.4,
+    "p2": 69.9,
+    "o15": 82.8,
+    "o25": 63.8,
+    "htx": 33.9
+   },
+   "fav": 70
   },
   {
    "date": "2026-10-18",
@@ -1778,11 +4047,36 @@
    "league": "MLS",
    "home": "Atlanta United",
    "away": "Inter Miami",
-   "lh": 1.395,
-   "la": 1.995,
+   "lh": 1.499,
+   "la": 2.068,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.395,
+   "laS": 1.995,
+   "lhM": 1.59,
+   "laM": 2.13,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 3.4,
+    "X": 4.1,
+    "2": 1.86,
+    "o15": 1.083,
+    "o25": 1.333,
+    "gg": 1.333
+   },
+   "mkt": {
+    "p1": 27.3,
+    "px": 22.7,
+    "p2": 50.0,
+    "o15": 88.1,
+    "o25": 71.8,
+    "htx": 34.0
+   },
+   "fav": 50
   },
   {
    "date": "2026-10-18",
@@ -1790,11 +4084,36 @@
    "league": "MLS",
    "home": "NY Red Bulls",
    "away": "Toronto",
-   "lh": 1.684,
-   "la": 1.471,
+   "lh": 1.81,
+   "la": 1.47,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.684,
+   "laS": 1.471,
+   "lhM": 1.92,
+   "laM": 1.47,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.96,
+    "X": 4.0,
+    "2": 3.25,
+    "o15": 1.125,
+    "o25": 1.444,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 47.8,
+    "px": 23.4,
+    "p2": 28.8,
+    "o15": 84.2,
+    "o25": 65.2,
+    "htx": 35.9
+   },
+   "fav": 48
   },
   {
    "date": "2026-10-18",
@@ -1802,11 +4121,36 @@
    "league": "MLS",
    "home": "NYCFC",
    "away": "LAFC",
-   "lh": 1.166,
-   "la": 1.303,
+   "lh": 1.279,
+   "la": 1.392,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.166,
+   "laS": 1.303,
+   "lhM": 1.38,
+   "laM": 1.47,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.7,
+    "X": 3.5,
+    "2": 2.45,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 34.8,
+    "px": 26.8,
+    "p2": 38.4,
+    "o15": 76.6,
+    "o25": 54.6,
+    "htx": 40.4
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-18",
@@ -1814,11 +4158,36 @@
    "league": "MLS",
    "home": "New England",
    "away": "Chicago Fire",
-   "lh": 1.574,
-   "la": 1.429,
+   "lh": 1.647,
+   "la": 1.515,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.574,
+   "laS": 1.429,
+   "lhM": 1.71,
+   "laM": 1.59,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.32,
+    "X": 3.8,
+    "2": 2.65,
+    "o15": 1.125,
+    "o25": 1.475,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 40.2,
+    "px": 24.6,
+    "p2": 35.2,
+    "o15": 84.2,
+    "o25": 63.8,
+    "htx": 36.8
+   },
+   "fav": 40
   },
   {
    "date": "2026-10-18",
@@ -1826,11 +4195,36 @@
    "league": "MLS",
    "home": "Orlando City",
    "away": "DC United",
-   "lh": 1.983,
-   "la": 1.446,
+   "lh": 2.157,
+   "la": 1.392,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.983,
+   "laS": 1.446,
+   "lhM": 2.31,
+   "laM": 1.35,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.62,
+    "X": 4.2,
+    "2": 4.5,
+    "o15": 1.083,
+    "o25": 1.333,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 57.3,
+    "px": 22.1,
+    "p2": 20.6,
+    "o15": 88.1,
+    "o25": 71.8,
+    "htx": 34.0
+   },
+   "fav": 57
   },
   {
    "date": "2026-10-18",
@@ -1838,11 +4232,36 @@
    "league": "MLS",
    "home": "Austin",
    "away": "Vancouver",
-   "lh": 0.997,
-   "la": 2.043,
+   "lh": 1.073,
+   "la": 2.09,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 0.997,
+   "laS": 2.043,
+   "lhM": 1.14,
+   "laM": 2.13,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 4.75,
+    "X": 4.5,
+    "2": 1.57,
+    "o15": 1.143,
+    "o25": 1.475,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 19.7,
+    "px": 20.8,
+    "p2": 59.5,
+    "o15": 82.8,
+    "o25": 63.8,
+    "htx": 35.9
+   },
+   "fav": 60
   },
   {
    "date": "2026-10-18",
@@ -1850,11 +4269,36 @@
    "league": "MLS",
    "home": "Houston Dynamo",
    "away": "Dallas",
-   "lh": 1.408,
-   "la": 1.244,
+   "lh": 1.49,
+   "la": 1.269,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.408,
+   "laS": 1.244,
+   "lhM": 1.56,
+   "laM": 1.29,
+   "htsM": 0.43,
+   "hts": 0.436,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.2,
+    "X": 3.5,
+    "2": 3.1,
+    "o15": 1.222,
+    "o25": 1.75,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 42.8,
+    "px": 26.9,
+    "p2": 30.4,
+    "o15": 76.6,
+    "o25": 53.9,
+    "htx": 41.2
+   },
+   "fav": 43
   },
   {
    "date": "2026-10-18",
@@ -1862,11 +4306,36 @@
    "league": "MLS",
    "home": "Sporting KC",
    "away": "Real Salt Lake",
-   "lh": 1.357,
-   "la": 1.802,
+   "lh": 1.465,
+   "la": 1.784,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.357,
+   "laS": 1.802,
+   "lhM": 1.56,
+   "laM": 1.77,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.82,
+    "X": 3.8,
+    "2": 2.2,
+    "o15": 1.125,
+    "o25": 1.475,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 33.1,
+    "px": 24.5,
+    "p2": 42.4,
+    "o15": 84.2,
+    "o25": 63.8,
+    "htx": 37.2
+   },
+   "fav": 42
   },
   {
    "date": "2026-10-18",
@@ -1874,11 +4343,36 @@
    "league": "A-League",
    "home": "Wellington Phoenix",
    "away": "Melbourne Victory",
-   "lh": 1.312,
-   "la": 1.526,
+   "lh": 1.338,
+   "la": 1.673,
    "rel": "C",
    "note": "Prima giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.312,
+   "laS": 1.526,
+   "lhM": 1.35,
+   "laM": 1.74,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 3.3,
+    "X": 3.5,
+    "2": 2.05,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 28.1,
+    "px": 26.5,
+    "p2": 45.3,
+    "o15": 81.1,
+    "o25": 58.9,
+    "htx": 38.5
+   },
+   "fav": 45
   },
   {
    "date": "2026-10-18",
@@ -1886,11 +4380,36 @@
    "league": "MLS",
    "home": "LA Galaxy",
    "away": "San Diego",
-   "lh": 1.557,
-   "la": 1.591,
+   "lh": 1.799,
+   "la": 1.608,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.557,
+   "laS": 1.591,
+   "lhM": 1.98,
+   "laM": 1.62,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.1,
+    "X": 3.8,
+    "2": 3.1,
+    "o15": 1.083,
+    "o25": 1.364,
+    "gg": 1.364
+   },
+   "mkt": {
+    "p1": 44.8,
+    "px": 24.8,
+    "p2": 30.4,
+    "o15": 88.1,
+    "o25": 69.4,
+    "htx": 35.3
+   },
+   "fav": 45
   },
   {
    "date": "2026-10-18",
@@ -1898,11 +4417,36 @@
    "league": "MLS",
    "home": "Portland",
    "away": "Colorado",
-   "lh": 1.626,
-   "la": 1.499,
+   "lh": 1.693,
+   "la": 1.408,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.626,
+   "laS": 1.499,
+   "lhM": 1.74,
+   "laM": 1.35,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.05,
+    "X": 3.7,
+    "2": 3.25,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 45.8,
+    "px": 25.4,
+    "p2": 28.9,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 38.5
+   },
+   "fav": 46
   },
   {
    "date": "2026-10-18",
@@ -1910,11 +4454,36 @@
    "league": "MLS",
    "home": "San Jose",
    "away": "Nashville",
-   "lh": 1.044,
-   "la": 1.766,
+   "lh": 1.185,
+   "la": 1.839,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.044,
+   "laS": 1.766,
+   "lhM": 1.29,
+   "laM": 1.89,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 3.6,
+    "X": 3.9,
+    "2": 1.86,
+    "o15": 1.143,
+    "o25": 1.533,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 25.9,
+    "px": 23.9,
+    "p2": 50.2,
+    "o15": 82.8,
+    "o25": 61.0,
+    "htx": 36.9
+   },
+   "fav": 50
   },
   {
    "date": "2026-10-18",
@@ -1922,11 +4491,36 @@
    "league": "MLS",
    "home": "Seattle",
    "away": "Montreal",
-   "lh": 1.797,
-   "la": 1.011,
+   "lh": 2.105,
+   "la": 0.998,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.797,
+   "laS": 1.011,
+   "lhM": 2.34,
+   "laM": 0.99,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.39,
+    "X": 5.0,
+    "2": 6.5,
+    "o15": 1.125,
+    "o25": 1.475,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 67.0,
+    "px": 18.6,
+    "p2": 14.3,
+    "o15": 84.2,
+    "o25": 63.8,
+    "htx": 33.8
+   },
+   "fav": 67
   },
   {
    "date": "2026-10-18",
@@ -1934,11 +4528,30 @@
    "league": "2. Liga AUT",
    "home": "Sturm Graz II",
    "away": "Kapfenberg",
-   "lh": 2.211,
-   "la": 1.614,
+   "lh": 2.23,
+   "la": 1.588,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.211,
+   "laS": 1.614,
+   "lhM": 2.25,
+   "laM": 1.56,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.75,
+    "X": 3.9,
+    "2": 3.6
+   },
+   "mkt": {
+    "p1": 51.7,
+    "px": 23.2,
+    "p2": 25.1
+   },
+   "fav": 52,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -1949,8 +4562,15 @@
    "lh": 1.717,
    "la": 1.711,
    "rel": "C",
-   "note": "Dati aggiornati al 6 settembre · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "note": "Dati aggiornati al 6 settembre · Modello v2 Claude (nessuna seconda analisi) Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.717,
+   "laS": 1.711,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 38,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
@@ -1958,11 +4578,36 @@
    "league": "Eerste Divisie",
    "home": "RKC Waalwijk",
    "away": "Volendam",
-   "lh": 1.883,
-   "la": 1.564,
+   "lh": 1.941,
+   "la": 1.47,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.883,
+   "laS": 1.564,
+   "lhM": 1.98,
+   "laM": 1.41,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.86,
+    "X": 3.8,
+    "2": 3.6,
+    "o15": 1.111,
+    "o25": 1.444,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 49.8,
+    "px": 24.4,
+    "p2": 25.8,
+    "o15": 85.4,
+    "o25": 65.2,
+    "htx": 35.6
+   },
+   "fav": 50
   },
   {
    "date": "2026-10-18",
@@ -1970,11 +4615,36 @@
    "league": "Ekstraklasa",
    "home": "Górnik Zabrze",
    "away": "Piast Gliwice",
-   "lh": 1.88,
-   "la": 1.221,
+   "lh": 1.868,
+   "la": 1.077,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.88,
+   "laS": 1.221,
+   "lhM": 1.86,
+   "laM": 0.99,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.62,
+    "X": 3.75,
+    "2": 4.75,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.75
+   },
+   "mkt": {
+    "p1": 56.4,
+    "px": 24.4,
+    "p2": 19.2,
+    "o15": 76.6,
+    "o25": 54.6,
+    "htx": 39.1
+   },
+   "fav": 56
   },
   {
    "date": "2026-10-18",
@@ -1982,11 +4652,30 @@
    "league": "Eredivisie",
    "home": "PEC Zwolle",
    "away": "Go Ahead Eagles",
-   "lh": 1.538,
-   "la": 1.687,
+   "lh": 1.534,
+   "la": 1.7,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.538,
+   "laS": 1.687,
+   "lhM": 1.53,
+   "laM": 1.71,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 2.75,
+    "X": 3.8,
+    "2": 2.25
+   },
+   "mkt": {
+    "p1": 33.9,
+    "px": 24.6,
+    "p2": 41.5
+   },
+   "fav": 41,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -1994,11 +4683,30 @@
    "league": "Serie A",
    "home": "Udinese",
    "away": "Lecce",
-   "lh": 1.532,
-   "la": 1.02,
+   "lh": 1.557,
+   "la": 0.993,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.532,
+   "laS": 1.02,
+   "lhM": 1.59,
+   "laM": 0.96,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.44,
+   "odds": {
+    "1": 1.85,
+    "X": 3.4,
+    "2": 4.333
+   },
+   "mkt": {
+    "p1": 50.7,
+    "px": 27.6,
+    "p2": 21.7
+   },
+   "fav": 51,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2006,11 +4714,36 @@
    "league": "Süper Lig",
    "home": "Kasımpaşa",
    "away": "Samsunspor",
-   "lh": 1.569,
-   "la": 1.086,
+   "lh": 1.453,
+   "la": 1.17,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.569,
+   "laS": 1.086,
+   "lhM": 1.38,
+   "laM": 1.23,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.25,
+    "X": 3.25,
+    "2": 2.75,
+    "o15": 1.286,
+    "o25": 1.95,
+    "gg": 1.727
+   },
+   "mkt": {
+    "p1": 39.8,
+    "px": 27.6,
+    "p2": 32.6,
+    "o15": 73.1,
+    "o25": 48.7,
+    "htx": 42.3
+   },
+   "fav": 40
   },
   {
    "date": "2026-10-18",
@@ -2021,8 +4754,15 @@
    "lh": 1.691,
    "la": 1.177,
    "rel": "C",
-   "note": "Dati aggiornati al 6 settembre · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "note": "Dati aggiornati al 6 settembre · Modello v2 Claude (nessuna seconda analisi) Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.691,
+   "laS": 1.177,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 48,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
@@ -2030,11 +4770,30 @@
    "league": "Thai League 1",
    "home": "Bangkok United",
    "away": "Port FC",
-   "lh": 1.768,
-   "la": 1.351,
+   "lh": 1.769,
+   "la": 1.334,
    "rel": "C",
    "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.768,
+   "laS": 1.351,
+   "lhM": 1.77,
+   "laM": 1.32,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 1.909,
+    "X": 3.5,
+    "2": 3.25
+   },
+   "mkt": {
+    "p1": 46.9,
+    "px": 25.6,
+    "p2": 27.5
+   },
+   "fav": 47,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2042,11 +4801,30 @@
    "league": "Thai League 1",
    "home": "Sisaket United",
    "away": "BG Pathum",
-   "lh": 1.425,
-   "la": 1.315,
+   "lh": 1.182,
+   "la": 1.538,
    "rel": "C",
    "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.425,
+   "laS": 1.315,
+   "lhM": 1.02,
+   "laM": 1.74,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 4.25,
+    "X": 3.6,
+    "2": 1.667
+   },
+   "mkt": {
+    "p1": 21.1,
+    "px": 25.0,
+    "p2": 53.9
+   },
+   "fav": 54,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2054,11 +4832,36 @@
    "league": "2. Bundesliga",
    "home": "Arminia Bielefeld",
    "away": "Osnabrück",
-   "lh": 1.828,
-   "la": 1.463,
+   "lh": 1.9,
+   "la": 1.279,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.828,
+   "laS": 1.463,
+   "lhM": 1.95,
+   "laM": 1.17,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.7,
+    "X": 3.8,
+    "2": 4.2,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 54.0,
+    "px": 24.2,
+    "p2": 21.9,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 37.2
+   },
+   "fav": 54
   },
   {
    "date": "2026-10-18",
@@ -2066,11 +4869,36 @@
    "league": "2. Bundesliga",
    "home": "Dynamo Dresda",
    "away": "Magdeburgo",
-   "lh": 1.453,
-   "la": 1.871,
+   "lh": 1.551,
+   "la": 1.678,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.453,
+   "laS": 1.871,
+   "lhM": 1.62,
+   "laM": 1.56,
+   "htsM": 0.465,
+   "hts": 0.461,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.45,
+    "X": 3.6,
+    "2": 2.55,
+    "o15": 1.143,
+    "o25": 1.533,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 37.9,
+    "px": 25.8,
+    "p2": 36.4,
+    "o15": 82.8,
+    "o25": 61.0,
+    "htx": 37.0
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-18",
@@ -2078,11 +4906,36 @@
    "league": "2. Bundesliga",
    "home": "Karlsruhe",
    "away": "Darmstadt",
-   "lh": 1.553,
-   "la": 1.472,
+   "lh": 1.68,
+   "la": 1.524,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.553,
+   "laS": 1.472,
+   "lhM": 1.77,
+   "laM": 1.56,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.2,
+    "X": 3.75,
+    "2": 2.8,
+    "o15": 1.125,
+    "o25": 1.444,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 42.2,
+    "px": 24.7,
+    "p2": 33.1,
+    "o15": 84.2,
+    "o25": 65.2,
+    "htx": 37.2
+   },
+   "fav": 42
   },
   {
    "date": "2026-10-18",
@@ -2090,11 +4943,36 @@
    "league": "3. Liga",
    "home": "Hoffenheim II",
    "away": "SC Verl",
-   "lh": 2.071,
-   "la": 1.448,
+   "lh": 2.088,
+   "la": 1.461,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.071,
+   "laS": 1.448,
+   "lhM": 2.1,
+   "laM": 1.47,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.75,
+    "X": 3.9,
+    "2": 3.5,
+    "o15": 1.1,
+    "o25": 1.364,
+    "gg": 1.4
+   },
+   "mkt": {
+    "p1": 51.3,
+    "px": 23.0,
+    "p2": 25.7,
+    "o15": 86.4,
+    "o25": 69.4,
+    "htx": 34.9
+   },
+   "fav": 51
   },
   {
    "date": "2026-10-18",
@@ -2105,8 +4983,15 @@
    "lh": 1.003,
    "la": 1.839,
    "rel": "C",
-   "note": "Seconda giornata: basata sulla stagione 2025/26; Churchill Brothers neopromossa, stimata con i valori della retrocessa · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Seconda giornata: basata sulla stagione 2025/26; Churchill Brothers neopromossa, stimata con i valori della retrocessa · Ensemble: modello v2 Claude 50% + analisi GPT 50% Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.003,
+   "laS": 1.839,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 56,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
@@ -2117,8 +5002,15 @@
    "lh": 1.112,
    "la": 1.455,
    "rel": "C",
-   "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50% Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.112,
+   "laS": 1.455,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 44,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
@@ -2126,11 +5018,36 @@
    "league": "Allsvenskan",
    "home": "Sirius",
    "away": "Elfsborg",
-   "lh": 1.672,
-   "la": 1.201,
+   "lh": 1.676,
+   "la": 1.217,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.672,
+   "laS": 1.201,
+   "lhM": 1.68,
+   "laM": 1.23,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.96,
+    "X": 3.6,
+    "2": 3.4,
+    "o15": 1.2,
+    "o25": 1.7,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 47.1,
+    "px": 25.7,
+    "p2": 27.2,
+    "o15": 78.3,
+    "o25": 55.3,
+    "htx": 40.0
+   },
+   "fav": 47
   },
   {
    "date": "2026-10-18",
@@ -2138,11 +5055,36 @@
    "league": "Allsvenskan",
    "home": "Västerås",
    "away": "Mjällby",
-   "lh": 1.606,
-   "la": 1.227,
+   "lh": 1.547,
+   "la": 1.277,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.606,
+   "laS": 1.227,
+   "lhM": 1.5,
+   "laM": 1.32,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.3,
+    "X": 3.4,
+    "2": 2.82,
+    "o15": 1.222,
+    "o25": 1.75,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 40.1,
+    "px": 27.1,
+    "p2": 32.7,
+    "o15": 76.6,
+    "o25": 53.9,
+    "htx": 40.4
+   },
+   "fav": 40
   },
   {
    "date": "2026-10-18",
@@ -2153,8 +5095,15 @@
    "lh": 1.429,
    "la": 1.515,
    "rel": "C",
-   "note": "Dati aggiornati al 6 settembre · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "note": "Dati aggiornati al 6 settembre · Modello v2 Claude (nessuna seconda analisi) Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.429,
+   "laS": 1.515,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 39,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
@@ -2162,11 +5111,30 @@
    "league": "La Liga",
    "home": "Osasuna",
    "away": "Racing Santander",
-   "lh": 1.625,
-   "la": 1.25,
+   "lh": 1.675,
+   "la": 1.2,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.625,
+   "laS": 1.25,
+   "lhM": 1.74,
+   "laM": 1.14,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.44,
+   "odds": {
+    "1": 1.85,
+    "X": 3.5,
+    "2": 4.0
+   },
+   "mkt": {
+    "p1": 50.2,
+    "px": 26.5,
+    "p2": 23.2
+   },
+   "fav": 50,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2174,11 +5142,36 @@
    "league": "Superliga DK",
    "home": "Lyngby",
    "away": "Nordsjælland",
-   "lh": 1.361,
-   "la": 1.666,
+   "lh": 1.318,
+   "la": 1.831,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.361,
+   "laS": 1.666,
+   "lhM": 1.29,
+   "laM": 1.95,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 3.9,
+    "X": 3.75,
+    "2": 1.81,
+    "o15": 1.143,
+    "o25": 1.5,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 23.8,
+    "px": 24.8,
+    "p2": 51.4,
+    "o15": 82.8,
+    "o25": 62.5,
+    "htx": 37.3
+   },
+   "fav": 51
   },
   {
    "date": "2026-10-18",
@@ -2186,11 +5179,36 @@
    "league": "Superliga DK",
    "home": "Sønderjyske",
    "away": "Silkeborg",
-   "lh": 1.567,
-   "la": 1.596,
+   "lh": 1.581,
+   "la": 1.556,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.567,
+   "laS": 1.596,
+   "lhM": 1.59,
+   "laM": 1.53,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.35,
+    "X": 3.5,
+    "2": 2.55,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 38.6,
+    "px": 25.9,
+    "p2": 35.5,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 38.3
+   },
+   "fav": 39
   },
   {
    "date": "2026-10-18",
@@ -2198,11 +5216,30 @@
    "league": "Superliga SRB",
    "home": "Novi Pazar",
    "away": "IMT Novi Beograd",
-   "lh": 1.039,
-   "la": 1.091,
+   "lh": 1.072,
+   "la": 1.071,
    "rel": "B",
    "note": "Orario da verificare (fonte con fuso non indicato) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.039,
+   "laS": 1.091,
+   "lhM": 1.11,
+   "laM": 1.05,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 2.5,
+    "X": 3.2,
+    "2": 2.7
+   },
+   "mkt": {
+    "p1": 36.9,
+    "px": 28.9,
+    "p2": 34.2
+   },
+   "fav": 37,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2210,11 +5247,30 @@
    "league": "Thai League 1",
    "home": "Pattani",
    "away": "Buriram United",
-   "lh": 1.254,
-   "la": 1.631,
+   "lh": 0.94,
+   "la": 1.909,
    "rel": "C",
    "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.254,
+   "laS": 1.631,
+   "lhM": 0.75,
+   "laM": 2.16,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 7.0,
+    "X": 5.0,
+    "2": 1.3
+   },
+   "mkt": {
+    "p1": 12.8,
+    "px": 18.0,
+    "p2": 69.2
+   },
+   "fav": 69,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2222,11 +5278,36 @@
    "league": "Bundesliga AUT",
    "home": "Salzburg",
    "away": "Altach",
-   "lh": 2.014,
-   "la": 0.909,
+   "lh": 2.187,
+   "la": 0.922,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.014,
+   "laS": 0.909,
+   "lhM": 2.31,
+   "laM": 0.93,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.37,
+    "X": 4.75,
+    "2": 7.0,
+    "o15": 1.143,
+    "o25": 1.5,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 67.4,
+    "px": 19.4,
+    "p2": 13.2,
+    "o15": 82.8,
+    "o25": 62.5,
+    "htx": 34.8
+   },
+   "fav": 67
   },
   {
    "date": "2026-10-18",
@@ -2234,11 +5315,36 @@
    "league": "Bundesliga AUT",
    "home": "Wolfsberger AC",
    "away": "WSG Tirol",
-   "lh": 1.499,
-   "la": 1.408,
+   "lh": 1.553,
+   "la": 1.462,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.499,
+   "laS": 1.408,
+   "lhM": 1.59,
+   "laM": 1.5,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.35,
+    "X": 3.7,
+    "2": 2.57,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 39.2,
+    "px": 24.9,
+    "p2": 35.9,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 38.6
+   },
+   "fav": 39
   },
   {
    "date": "2026-10-18",
@@ -2246,11 +5352,36 @@
    "league": "Eliteserien",
    "home": "Sarpsborg 08",
    "away": "Rosenborg",
-   "lh": 1.403,
-   "la": 1.509,
+   "lh": 1.534,
+   "la": 1.553,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.403,
+   "laS": 1.509,
+   "lhM": 1.65,
+   "laM": 1.59,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.35,
+    "X": 3.7,
+    "2": 2.6,
+    "o15": 1.143,
+    "o25": 1.5,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 39.4,
+    "px": 25.0,
+    "p2": 35.6,
+    "o15": 82.8,
+    "o25": 62.5,
+    "htx": 37.4
+   },
+   "fav": 39
   },
   {
    "date": "2026-10-18",
@@ -2258,11 +5389,30 @@
    "league": "Eredivisie",
    "home": "Cambuur",
    "away": "AZ Alkmaar",
-   "lh": 1.401,
-   "la": 1.756,
+   "lh": 1.093,
+   "la": 2.033,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.401,
+   "laS": 1.756,
+   "lhM": 0.9,
+   "laM": 2.28,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 7.0,
+    "X": 5.0,
+    "2": 1.36
+   },
+   "mkt": {
+    "p1": 13.3,
+    "px": 18.6,
+    "p2": 68.2
+   },
+   "fav": 68,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2270,11 +5420,36 @@
    "league": "Ekstraklasa",
    "home": "Zagłębie Lubin",
    "away": "Jagiellonia",
-   "lh": 1.595,
-   "la": 1.291,
+   "lh": 1.481,
+   "la": 1.378,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.595,
+   "laS": 1.291,
+   "lhM": 1.41,
+   "laM": 1.44,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.55,
+    "X": 3.5,
+    "2": 2.4,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 35.8,
+    "px": 26.1,
+    "p2": 38.1,
+    "o15": 76.6,
+    "o25": 54.6,
+    "htx": 40.2
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-18",
@@ -2283,10 +5458,35 @@
    "home": "Angers",
    "away": "Marsiglia",
    "lh": 1.29,
-   "la": 1.575,
+   "la": 1.664,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.29,
+   "laS": 1.575,
+   "lhM": 1.29,
+   "laM": 1.74,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 3.4,
+    "X": 3.8,
+    "2": 2.0,
+    "o15": 1.2,
+    "o25": 1.615,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 27.8,
+    "px": 24.9,
+    "p2": 47.3,
+    "o15": 78.9,
+    "o25": 58.7,
+    "htx": 38.5
+   },
+   "fav": 47
   },
   {
    "date": "2026-10-18",
@@ -2294,11 +5494,36 @@
    "league": "Premier League",
    "home": "Bournemouth",
    "away": "Sunderland",
-   "lh": 1.623,
-   "la": 1.188,
+   "lh": 1.588,
+   "la": 1.161,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.623,
+   "laS": 1.188,
+   "lhM": 1.56,
+   "laM": 1.14,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.1,
+    "X": 3.4,
+    "2": 3.6,
+    "o15": 1.25,
+    "o25": 1.909,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 45.4,
+    "px": 28.1,
+    "p2": 26.5,
+    "o15": 76.2,
+    "o25": 50.0,
+    "htx": 41.3
+   },
+   "fav": 45
   },
   {
    "date": "2026-10-18",
@@ -2306,11 +5531,36 @@
    "league": "Premier League",
    "home": "Brighton",
    "away": "Crystal Palace",
-   "lh": 1.905,
-   "la": 1.132,
+   "lh": 2.01,
+   "la": 1.069,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.905,
+   "laS": 1.132,
+   "lhM": 2.1,
+   "laM": 1.02,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.53,
+    "X": 4.5,
+    "2": 5.5,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 61.8,
+    "px": 21.0,
+    "p2": 17.2,
+    "o15": 81.1,
+    "o25": 60.2,
+    "htx": 37.0
+   },
+   "fav": 62
   },
   {
    "date": "2026-10-18",
@@ -2318,11 +5568,36 @@
    "league": "Premier League",
    "home": "Leeds",
    "away": "Manchester United",
-   "lh": 1.483,
-   "la": 1.388,
+   "lh": 1.509,
+   "la": 1.433,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.483,
+   "laS": 1.388,
+   "lhM": 1.53,
+   "laM": 1.47,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.4,
+    "X": 3.5,
+    "2": 2.63,
+    "o15": 1.2,
+    "o25": 1.615,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 38.5,
+    "px": 26.4,
+    "p2": 35.1,
+    "o15": 78.9,
+    "o25": 58.7,
+    "htx": 38.9
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-18",
@@ -2330,11 +5605,30 @@
    "league": "Serie A",
    "home": "Fiorentina",
    "away": "Como",
-   "lh": 1.18,
-   "la": 1.484,
+   "lh": 1.149,
+   "la": 1.504,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.18,
+   "laS": 1.484,
+   "lhM": 1.11,
+   "laM": 1.53,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.44,
+   "odds": {
+    "1": 3.5,
+    "X": 3.4,
+    "2": 2.05
+   },
+   "mkt": {
+    "p1": 26.8,
+    "px": 27.5,
+    "p2": 45.7
+   },
+   "fav": 46,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2342,11 +5636,30 @@
    "league": "Serie B",
    "home": "Juve Stabia",
    "away": "Südtirol",
-   "lh": 0.956,
-   "la": 1.361,
+   "lh": 1.116,
+   "la": 1.168,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 0.956,
+   "laS": 1.361,
+   "lhM": 1.32,
+   "laM": 0.99,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 2.1,
+    "X": 3.1,
+    "2": 3.4
+   },
+   "mkt": {
+    "p1": 43.6,
+    "px": 29.5,
+    "p2": 26.9
+   },
+   "fav": 44,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2354,11 +5667,36 @@
    "league": "SuperSport HNL",
    "home": "Hajduk Spalato",
    "away": "Varaždin",
-   "lh": 1.545,
-   "la": 1.121,
+   "lh": 1.642,
+   "la": 1.078,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.545,
+   "laS": 1.121,
+   "lhM": 1.71,
+   "laM": 1.05,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.75,
+    "X": 3.5,
+    "2": 4.0,
+    "o15": 1.25,
+    "o25": 1.8,
+    "gg": 1.727
+   },
+   "mkt": {
+    "p1": 51.6,
+    "px": 25.8,
+    "p2": 22.6,
+    "o15": 75.0,
+    "o25": 52.6,
+    "htx": 40.3
+   },
+   "fav": 52
   },
   {
    "date": "2026-10-18",
@@ -2366,11 +5704,36 @@
    "league": "Süper Lig",
    "home": "Kocaelispor",
    "away": "Göztepe",
-   "lh": 1.495,
-   "la": 1.286,
+   "lh": 1.349,
+   "la": 1.324,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.495,
+   "laS": 1.286,
+   "lhM": 1.26,
+   "laM": 1.35,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.7,
+    "X": 3.3,
+    "2": 2.35,
+    "o15": 1.286,
+    "o25": 1.95,
+    "gg": 1.727
+   },
+   "mkt": {
+    "p1": 33.7,
+    "px": 27.6,
+    "p2": 38.7,
+    "o15": 73.1,
+    "o25": 48.7,
+    "htx": 42.4
+   },
+   "fav": 39
   },
   {
    "date": "2026-10-18",
@@ -2378,11 +5741,30 @@
    "league": "UAE Pro League",
    "home": "Ittihad Kalba",
    "away": "Al Jazira",
-   "lh": 1.161,
-   "la": 1.923,
+   "lh": 1.08,
+   "la": 2.004,
    "rel": "C",
    "note": "Inizio stagione: 5 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.161,
+   "laS": 1.923,
+   "lhM": 1.02,
+   "laM": 2.07,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 5.0,
+    "X": 4.2,
+    "2": 1.45
+   },
+   "mkt": {
+    "p1": 17.7,
+    "px": 21.1,
+    "p2": 61.2
+   },
+   "fav": 61,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2390,11 +5772,30 @@
    "league": "UAE Pro League",
    "home": "Khor Fakkan",
    "away": "Al Wahda",
-   "lh": 1.285,
-   "la": 1.653,
+   "lh": 1.129,
+   "la": 1.813,
    "rel": "C",
    "note": "Inizio stagione: 5 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.285,
+   "laS": 1.653,
+   "lhM": 1.02,
+   "laM": 1.95,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 4.75,
+    "X": 3.8,
+    "2": 1.533
+   },
+   "mkt": {
+    "p1": 18.7,
+    "px": 23.4,
+    "p2": 57.9
+   },
+   "fav": 58,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2402,11 +5803,36 @@
    "league": "Bundesliga",
    "home": "Leverkusen",
    "away": "Friburgo",
-   "lh": 1.932,
-   "la": 1.21,
+   "lh": 2.007,
+   "la": 1.221,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.932,
+   "laS": 1.21,
+   "lhM": 2.07,
+   "laM": 1.23,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.7,
+    "X": 4.2,
+    "2": 4.333,
+    "o15": 1.143,
+    "o25": 1.5,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 55.6,
+    "px": 22.5,
+    "p2": 21.8,
+    "o15": 82.8,
+    "o25": 63.6,
+    "htx": 35.9
+   },
+   "fav": 56
   },
   {
    "date": "2026-10-18",
@@ -2417,8 +5843,15 @@
    "lh": 1.38,
    "la": 1.246,
    "rel": "C",
-   "note": "Seconda giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Seconda giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50% Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.38,
+   "laS": 1.246,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 39,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
@@ -2429,8 +5862,15 @@
    "lh": 1.431,
    "la": 1.49,
    "rel": "B",
-   "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50% Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.431,
+   "laS": 1.49,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 38,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
@@ -2438,11 +5878,36 @@
    "league": "La Liga",
    "home": "Celta Vigo",
    "away": "Alavés",
-   "lh": 1.408,
-   "la": 1.087,
+   "lh": 1.376,
+   "la": 1.05,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.408,
+   "laS": 1.087,
+   "lhM": 1.35,
+   "laM": 1.02,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.2,
+    "X": 3.4,
+    "2": 3.4,
+    "o15": 1.4,
+    "o25": 2.2,
+    "gg": 1.95
+   },
+   "mkt": {
+    "p1": 43.6,
+    "px": 28.2,
+    "p2": 28.2,
+    "o15": 68.2,
+    "o25": 43.1,
+    "htx": 44.9
+   },
+   "fav": 44
   },
   {
    "date": "2026-10-18",
@@ -2450,11 +5915,36 @@
    "league": "3. Liga",
    "home": "MSV Duisburg",
    "away": "Viktoria Colonia",
-   "lh": 2.182,
-   "la": 1.753,
+   "lh": 1.944,
+   "la": 1.596,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.182,
+   "laS": 1.753,
+   "lhM": 1.8,
+   "laM": 1.5,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.05,
+    "X": 3.6,
+    "2": 2.9,
+    "o15": 1.143,
+    "o25": 1.475,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 43.9,
+    "px": 25.0,
+    "p2": 31.1,
+    "o15": 82.8,
+    "o25": 63.8,
+    "htx": 37.1
+   },
+   "fav": 44
   },
   {
    "date": "2026-10-18",
@@ -2462,11 +5952,36 @@
    "league": "Allsvenskan",
    "home": "Halmstad",
    "away": "Hammarby",
-   "lh": 0.858,
-   "la": 2.006,
+   "lh": 0.814,
+   "la": 2.333,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 0.858,
+   "laS": 2.006,
+   "lhM": 0.78,
+   "laM": 2.64,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 10.0,
+    "X": 6.0,
+    "2": 1.22,
+    "o15": 1.125,
+    "o25": 1.4,
+    "gg": 1.909
+   },
+   "mkt": {
+    "p1": 9.2,
+    "px": 15.3,
+    "p2": 75.5,
+    "o15": 84.2,
+    "o25": 67.3,
+    "htx": 32.1
+   },
+   "fav": 75
   },
   {
    "date": "2026-10-18",
@@ -2474,11 +5989,36 @@
    "league": "Allsvenskan",
    "home": "Malmö",
    "away": "Häcken",
-   "lh": 1.584,
-   "la": 1.446,
+   "lh": 1.554,
+   "la": 1.508,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.584,
+   "laS": 1.446,
+   "lhM": 1.53,
+   "laM": 1.56,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.5,
+    "X": 3.6,
+    "2": 2.45,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 36.8,
+    "px": 25.6,
+    "p2": 37.6,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 38.5
+   },
+   "fav": 38
   },
   {
    "date": "2026-10-18",
@@ -2486,11 +6026,36 @@
    "league": "Allsvenskan",
    "home": "Örgryte",
    "away": "GAIS",
-   "lh": 1.044,
-   "la": 1.662,
+   "lh": 1.031,
+   "la": 1.83,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.044,
+   "laS": 1.662,
+   "lhM": 1.02,
+   "laM": 1.98,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 5.0,
+    "X": 4.0,
+    "2": 1.57,
+    "o15": 1.182,
+    "o25": 1.615,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 18.4,
+    "px": 23.0,
+    "p2": 58.6,
+    "o15": 79.2,
+    "o25": 58.2,
+    "htx": 38.1
+   },
+   "fav": 59
   },
   {
    "date": "2026-10-18",
@@ -2501,8 +6066,15 @@
    "lh": 1.824,
    "la": 1.559,
    "rel": "C",
-   "note": "Solo 2-3 partite per squadra · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Solo 2-3 partite per squadra · Ensemble: modello v2 Claude 50% + analisi GPT 50% Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.824,
+   "laS": 1.559,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 43,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
@@ -2510,11 +6082,36 @@
    "league": "Eerste Divisie",
    "home": "MVV Maastricht",
    "away": "Heracles",
-   "lh": 1.282,
-   "la": 2.244,
+   "lh": 1.157,
+   "la": 2.336,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.282,
+   "laS": 2.244,
+   "lhM": 1.08,
+   "laM": 2.4,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 6.5,
+    "X": 4.5,
+    "2": 1.41,
+    "o15": 1.111,
+    "o25": 1.4,
+    "gg": 1.533
+   },
+   "mkt": {
+    "p1": 14.2,
+    "px": 20.5,
+    "p2": 65.3,
+    "o15": 85.4,
+    "o25": 67.3,
+    "htx": 33.3
+   },
+   "fav": 65
   },
   {
    "date": "2026-10-18",
@@ -2522,11 +6119,30 @@
    "league": "Eredivisie",
    "home": "Groningen",
    "away": "Ajax",
-   "lh": 1.52,
-   "la": 1.594,
+   "lh": 1.332,
+   "la": 1.784,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.52,
+   "laS": 1.594,
+   "lhM": 1.2,
+   "laM": 1.95,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 4.1,
+    "X": 4.2,
+    "2": 1.7
+   },
+   "mkt": {
+    "p1": 22.8,
+    "px": 22.2,
+    "p2": 55.0
+   },
+   "fav": 55,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2534,11 +6150,36 @@
    "league": "Bundesliga AUT",
    "home": "Sturm Graz",
    "away": "GAK",
-   "lh": 1.851,
-   "la": 0.996,
+   "lh": 1.874,
+   "la": 1.028,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.851,
+   "laS": 0.996,
+   "lhM": 1.89,
+   "laM": 1.05,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.62,
+    "X": 3.8,
+    "2": 4.5,
+    "o15": 1.2,
+    "o25": 1.667,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 56.0,
+    "px": 23.9,
+    "p2": 20.2,
+    "o15": 78.3,
+    "o25": 56.3,
+    "htx": 38.8
+   },
+   "fav": 56
   },
   {
    "date": "2026-10-18",
@@ -2546,11 +6187,36 @@
    "league": "Eliteserien",
    "home": "Molde",
    "away": "Start",
-   "lh": 2.593,
-   "la": 1.129,
+   "lh": 2.569,
+   "la": 1.068,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.593,
+   "laS": 1.129,
+   "lhM": 2.55,
+   "laM": 1.02,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.33,
+    "X": 5.25,
+    "2": 7.0,
+    "o15": 1.1,
+    "o25": 1.364,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 69.3,
+    "px": 17.6,
+    "p2": 13.2,
+    "o15": 86.4,
+    "o25": 69.4,
+    "htx": 32.2
+   },
+   "fav": 69
   },
   {
    "date": "2026-10-18",
@@ -2558,11 +6224,36 @@
    "league": "Eliteserien",
    "home": "Sandefjord",
    "away": "Lillestrøm",
-   "lh": 1.258,
-   "la": 1.211,
+   "lh": 1.386,
+   "la": 1.407,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.258,
+   "laS": 1.211,
+   "lhM": 1.5,
+   "laM": 1.59,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.6,
+    "X": 3.6,
+    "2": 2.38,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.5
+   },
+   "mkt": {
+    "p1": 35.5,
+    "px": 25.7,
+    "p2": 38.8,
+    "o15": 81.1,
+    "o25": 59.9,
+    "htx": 38.3
+   },
+   "fav": 39
   },
   {
    "date": "2026-10-18",
@@ -2570,11 +6261,36 @@
    "league": "Eliteserien",
    "home": "Vålerenga",
    "away": "Brann",
-   "lh": 1.68,
-   "la": 1.862,
+   "lh": 1.729,
+   "la": 1.794,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.68,
+   "laS": 1.862,
+   "lhM": 1.77,
+   "laM": 1.74,
+   "htsM": 0.45,
+   "hts": 0.45,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.38,
+    "X": 3.9,
+    "2": 2.5,
+    "o15": 1.111,
+    "o25": 1.4,
+    "gg": 1.364
+   },
+   "mkt": {
+    "p1": 39.0,
+    "px": 23.8,
+    "p2": 37.2,
+    "o15": 85.4,
+    "o25": 67.3,
+    "htx": 35.6
+   },
+   "fav": 39
   },
   {
    "date": "2026-10-18",
@@ -2582,11 +6298,30 @@
    "league": "Ligue 1",
    "home": "Le Havre",
    "away": "Auxerre",
-   "lh": 1.478,
-   "la": 1.189,
+   "lh": 1.434,
+   "la": 1.232,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.478,
+   "laS": 1.189,
+   "lhM": 1.38,
+   "laM": 1.29,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.44,
+   "odds": {
+    "1": 2.45,
+    "X": 3.3,
+    "2": 2.8
+   },
+   "mkt": {
+    "p1": 38.2,
+    "px": 28.4,
+    "p2": 33.4
+   },
+   "fav": 38,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2594,11 +6329,30 @@
    "league": "Ligue 1",
    "home": "Lorient",
    "away": "Monaco",
-   "lh": 1.249,
-   "la": 1.407,
+   "lh": 1.214,
+   "la": 1.46,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.249,
+   "laS": 1.407,
+   "lhM": 1.17,
+   "laM": 1.53,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.44,
+   "odds": {
+    "1": 3.3,
+    "X": 3.6,
+    "2": 2.05
+   },
+   "mkt": {
+    "p1": 28.4,
+    "px": 26.0,
+    "p2": 45.6
+   },
+   "fav": 46,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2606,11 +6360,36 @@
    "league": "Ligue 1",
    "home": "Paris FC",
    "away": "Rennes",
-   "lh": 1.572,
-   "la": 1.271,
+   "lh": 1.582,
+   "la": 1.314,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.572,
+   "laS": 1.271,
+   "lhM": 1.59,
+   "laM": 1.35,
+   "htsM": 0.435,
+   "hts": 0.44,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 2.25,
+    "X": 3.6,
+    "2": 3.0,
+    "o15": 1.2,
+    "o25": 1.667,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 42.1,
+    "px": 26.3,
+    "p2": 31.6,
+    "o15": 78.9,
+    "o25": 56.9,
+    "htx": 40.4
+   },
+   "fav": 42
   },
   {
    "date": "2026-10-18",
@@ -2618,11 +6397,30 @@
    "league": "Serie B",
    "home": "Cesena",
    "away": "Avellino",
-   "lh": 1.302,
-   "la": 1.418,
+   "lh": 1.394,
+   "la": 1.309,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.302,
+   "laS": 1.418,
+   "lhM": 1.5,
+   "laM": 1.2,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 2.2,
+    "X": 3.2,
+    "2": 3.2
+   },
+   "mkt": {
+    "p1": 42.1,
+    "px": 28.9,
+    "p2": 28.9
+   },
+   "fav": 42,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2630,11 +6428,36 @@
    "league": "Superliga ROU",
    "home": "UTA Arad",
    "away": "CFR Cluj",
-   "lh": 1.361,
-   "la": 1.321,
+   "lh": 1.436,
+   "la": 1.192,
    "rel": "C",
    "note": "Gol fatti/subiti di UTA Arad, CFR Cluj stimati dai punti in classifica · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.361,
+   "laS": 1.321,
+   "lhM": 1.47,
+   "laM": 1.14,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.7,
+   "odds": {
+    "1": 2.05,
+    "X": 3.25,
+    "2": 3.1,
+    "o15": 1.286,
+    "o25": 1.95,
+    "gg": 1.727
+   },
+   "mkt": {
+    "p1": 43.6,
+    "px": 27.5,
+    "p2": 28.9,
+    "o15": 73.1,
+    "o25": 48.7,
+    "htx": 41.9
+   },
+   "fav": 44
   },
   {
    "date": "2026-10-18",
@@ -2642,11 +6465,30 @@
    "league": "Bundesliga",
    "home": "Gladbach",
    "away": "Hoffenheim",
-   "lh": 1.545,
-   "la": 1.629,
+   "lh": 1.47,
+   "la": 1.715,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.545,
+   "laS": 1.629,
+   "lhM": 1.38,
+   "laM": 1.83,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.44,
+   "odds": {
+    "1": 3.3,
+    "X": 4.0,
+    "2": 1.95
+   },
+   "mkt": {
+    "p1": 28.4,
+    "px": 23.5,
+    "p2": 48.1
+   },
+   "fav": 48,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2654,11 +6496,36 @@
    "league": "Ekstraklasa",
    "home": "Lech Poznań",
    "away": "Korona Kielce",
-   "lh": 1.857,
-   "la": 1.029,
+   "lh": 2.016,
+   "la": 1.024,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.857,
+   "laS": 1.029,
+   "lhM": 2.13,
+   "laM": 1.02,
+   "htsM": 0.46,
+   "hts": 0.457,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.48,
+    "X": 4.2,
+    "2": 5.75,
+    "o15": 1.167,
+    "o25": 1.533,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 62.1,
+    "px": 21.9,
+    "p2": 16.0,
+    "o15": 81.1,
+    "o25": 61.0,
+    "htx": 35.7
+   },
+   "fav": 62
   },
   {
    "date": "2026-10-18",
@@ -2666,11 +6533,36 @@
    "league": "Premier League",
    "home": "Nottingham Forest",
    "away": "Arsenal",
-   "lh": 0.993,
-   "la": 1.697,
+   "lh": 0.906,
+   "la": 1.753,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 0.993,
+   "laS": 1.697,
+   "lhM": 0.84,
+   "laM": 1.8,
+   "htsM": 0.465,
+   "hts": 0.461,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 5.75,
+    "X": 3.9,
+    "2": 1.62,
+    "o15": 1.286,
+    "o25": 1.909,
+    "gg": 1.95
+   },
+   "mkt": {
+    "p1": 16.6,
+    "px": 24.5,
+    "p2": 58.9,
+    "o15": 74.5,
+    "o25": 50.0,
+    "htx": 39.8
+   },
+   "fav": 59
   },
   {
    "date": "2026-10-18",
@@ -2678,11 +6570,30 @@
    "league": "UAE Pro League",
    "home": "Ajman",
    "away": "Sharjah",
-   "lh": 1.5,
-   "la": 1.669,
+   "lh": 1.432,
+   "la": 1.725,
    "rel": "C",
    "note": "Inizio stagione: 5 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.5,
+   "laS": 1.669,
+   "lhM": 1.38,
+   "laM": 1.77,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 3.1,
+    "X": 3.5,
+    "2": 2.0
+   },
+   "mkt": {
+    "p1": 29.1,
+    "px": 25.8,
+    "p2": 45.1
+   },
+   "fav": 45,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2690,11 +6601,36 @@
    "league": "Serie A",
    "home": "Milan",
    "away": "Atalanta",
-   "lh": 1.568,
-   "la": 1.108,
+   "lh": 1.66,
+   "la": 1.076,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.568,
+   "laS": 1.108,
+   "lhM": 1.74,
+   "laM": 1.05,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.8,
+    "X": 3.75,
+    "2": 4.333,
+    "o15": 1.25,
+    "o25": 1.8,
+    "gg": 1.7
+   },
+   "mkt": {
+    "p1": 52.8,
+    "px": 25.3,
+    "p2": 21.9,
+    "o15": 76.2,
+    "o25": 52.6,
+    "htx": 40.3
+   },
+   "fav": 53
   },
   {
    "date": "2026-10-18",
@@ -2702,11 +6638,36 @@
    "league": "SuperSport HNL",
    "home": "Slaven Belupo",
    "away": "Dinamo Zagabria",
-   "lh": 1.21,
-   "la": 1.89,
+   "lh": 1.092,
+   "la": 2.198,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.21,
+   "laS": 1.89,
+   "lhM": 1.02,
+   "laM": 2.43,
+   "htsM": 0.47,
+   "hts": 0.464,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 7.0,
+    "X": 4.75,
+    "2": 1.33,
+    "o15": 1.111,
+    "o25": 1.4,
+    "gg": 1.571
+   },
+   "mkt": {
+    "p1": 12.9,
+    "px": 19.0,
+    "p2": 68.0,
+    "o15": 85.4,
+    "o25": 67.3,
+    "htx": 32.2
+   },
+   "fav": 68
   },
   {
    "date": "2026-10-18",
@@ -2714,11 +6675,30 @@
    "league": "Superliga DK",
    "home": "FC Copenhagen",
    "away": "AGF",
-   "lh": 2.009,
-   "la": 1.23,
+   "lh": 2.038,
+   "la": 1.216,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.009,
+   "laS": 1.23,
+   "lhM": 2.07,
+   "laM": 1.2,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.61,
+    "X": 4.0,
+    "2": 4.333
+   },
+   "mkt": {
+    "p1": 56.4,
+    "px": 22.7,
+    "p2": 20.9
+   },
+   "fav": 56,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2726,11 +6706,36 @@
    "league": "Süper Lig",
    "home": "Başakşehir",
    "away": "Gaziantep",
-   "lh": 1.75,
-   "la": 1.131,
+   "lh": 1.867,
+   "la": 1.1,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.75,
+   "laS": 1.131,
+   "lhM": 1.95,
+   "laM": 1.08,
+   "htsM": 0.455,
+   "hts": 0.454,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.61,
+    "X": 3.9,
+    "2": 4.5,
+    "o15": 1.182,
+    "o25": 1.6,
+    "gg": 1.615
+   },
+   "mkt": {
+    "p1": 56.5,
+    "px": 23.3,
+    "p2": 20.2,
+    "o15": 79.2,
+    "o25": 59.0,
+    "htx": 37.6
+   },
+   "fav": 56
   },
   {
    "date": "2026-10-18",
@@ -2738,11 +6743,30 @@
    "league": "La Liga",
    "home": "Malaga",
    "away": "Real Sociedad",
-   "lh": 1.34,
-   "la": 1.343,
+   "lh": 1.276,
+   "la": 1.397,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.34,
+   "laS": 1.343,
+   "lhM": 1.2,
+   "laM": 1.47,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.44,
+   "odds": {
+    "1": 3.1,
+    "X": 3.5,
+    "2": 2.2
+   },
+   "mkt": {
+    "p1": 30.4,
+    "px": 26.9,
+    "p2": 42.8
+   },
+   "fav": 43,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2753,8 +6777,15 @@
    "lh": 1.332,
    "la": 1.886,
    "rel": "C",
-   "note": "Solo 2-3 partite per squadra; fonte ambigua su chi gioca in casa · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "note": "Solo 2-3 partite per squadra; fonte ambigua su chi gioca in casa · Modello v2 Claude (nessuna seconda analisi) Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "review": "model_v3",
+   "lhS": 1.332,
+   "laS": 1.886,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 50,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
@@ -2762,11 +6793,36 @@
    "league": "Eliteserien",
    "home": "Tromsø",
    "away": "KFUM Oslo",
-   "lh": 1.987,
-   "la": 1.135,
+   "lh": 2.0,
+   "la": 1.017,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.987,
+   "laS": 1.135,
+   "lhM": 2.01,
+   "laM": 0.93,
+   "htsM": 0.465,
+   "hts": 0.461,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.5,
+    "X": 4.1,
+    "2": 5.75,
+    "o15": 1.2,
+    "o25": 1.667,
+    "gg": 1.75
+   },
+   "mkt": {
+    "p1": 61.5,
+    "px": 22.5,
+    "p2": 16.0,
+    "o15": 78.3,
+    "o25": 56.3,
+    "htx": 37.0
+   },
+   "fav": 61
   },
   {
    "date": "2026-10-18",
@@ -2774,11 +6830,36 @@
    "league": "3. Liga",
    "home": "SV Meppen",
    "away": "TSV Havelse",
-   "lh": 1.906,
-   "la": 1.45,
+   "lh": 2.003,
+   "la": 1.371,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.906,
+   "laS": 1.45,
+   "lhM": 2.07,
+   "laM": 1.32,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.65,
+    "X": 3.8,
+    "2": 4.0,
+    "o15": 1.125,
+    "o25": 1.444,
+    "gg": 1.444
+   },
+   "mkt": {
+    "p1": 54.2,
+    "px": 23.5,
+    "p2": 22.3,
+    "o15": 84.2,
+    "o25": 65.2,
+    "htx": 35.7
+   },
+   "fav": 54
   },
   {
    "date": "2026-10-18",
@@ -2786,11 +6867,30 @@
    "league": "Serie B",
    "home": "Sampdoria",
    "away": "Arezzo",
-   "lh": 1.579,
-   "la": 1.362,
+   "lh": 1.695,
+   "la": 1.218,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.579,
+   "laS": 1.362,
+   "lhM": 1.83,
+   "laM": 1.08,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.71,
+    "X": 3.4,
+    "2": 4.75
+   },
+   "mkt": {
+    "p1": 53.7,
+    "px": 27.0,
+    "p2": 19.3
+   },
+   "fav": 54,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2798,11 +6898,30 @@
    "league": "Eredivisie",
    "home": "NEC Nijmegen",
    "away": "Fortuna Sittard",
-   "lh": 2.092,
-   "la": 1.313,
+   "lh": 2.243,
+   "la": 1.177,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.092,
+   "laS": 1.313,
+   "lhM": 2.37,
+   "laM": 1.08,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 1.42,
+    "X": 4.75,
+    "2": 6.0
+   },
+   "mkt": {
+    "p1": 65.1,
+    "px": 19.5,
+    "p2": 15.4
+   },
+   "fav": 65,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2810,11 +6929,36 @@
    "league": "Saudi Pro League",
    "home": "Al Fateh",
    "away": "Al Khaleej",
-   "lh": 1.314,
-   "la": 1.248,
+   "lh": 1.405,
+   "la": 1.273,
    "rel": "B",
    "note": "Calendario saudita da verificare (fonti in parziale conflitto) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.314,
+   "laS": 1.248,
+   "lhM": 1.47,
+   "laM": 1.29,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.2,
+    "X": 3.3,
+    "2": 2.8,
+    "o15": 1.25,
+    "o25": 1.8,
+    "gg": 1.667
+   },
+   "mkt": {
+    "p1": 40.8,
+    "px": 27.2,
+    "p2": 32.0,
+    "o15": 75.0,
+    "o25": 52.6,
+    "htx": 41.2
+   },
+   "fav": 41
   },
   {
    "date": "2026-10-18",
@@ -2822,11 +6966,30 @@
    "league": "Ligue 1",
    "home": "Lione",
    "away": "Nizza",
-   "lh": 1.824,
-   "la": 1.065,
+   "lh": 1.84,
+   "la": 1.031,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.824,
+   "laS": 1.065,
+   "lhM": 1.86,
+   "laM": 0.99,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.44,
+   "odds": {
+    "1": 1.65,
+    "X": 3.75,
+    "2": 5.25
+   },
+   "mkt": {
+    "p1": 57.0,
+    "px": 25.1,
+    "p2": 17.9
+   },
+   "fav": 57,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
@@ -2834,11 +6997,36 @@
    "league": "Serie A",
    "home": "Juventus",
    "away": "Lazio",
-   "lh": 1.625,
-   "la": 0.917,
+   "lh": 1.687,
+   "la": 0.908,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.625,
+   "laS": 0.917,
+   "lhM": 1.74,
+   "laM": 0.9,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.67,
+    "X": 3.7,
+    "2": 5.0,
+    "o15": 1.286,
+    "o25": 1.909,
+    "gg": 1.909
+   },
+   "mkt": {
+    "p1": 56.0,
+    "px": 25.3,
+    "p2": 18.7,
+    "o15": 74.5,
+    "o25": 50.0,
+    "htx": 41.1
+   },
+   "fav": 56
   },
   {
    "date": "2026-10-18",
@@ -2846,11 +7034,36 @@
    "league": "La Liga",
    "home": "Real Madrid",
    "away": "Siviglia",
-   "lh": 2.226,
-   "la": 0.863,
+   "lh": 2.49,
+   "la": 0.799,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 2.226,
+   "laS": 0.863,
+   "lhM": 2.73,
+   "laM": 0.75,
+   "htsM": 0.44,
+   "hts": 0.443,
+   "src": "quote+modello",
+   "wMkt": 0.55,
+   "odds": {
+    "1": 1.22,
+    "X": 7.0,
+    "2": 10.0,
+    "o15": 1.125,
+    "o25": 1.4,
+    "gg": 1.95
+   },
+   "mkt": {
+    "p1": 77.1,
+    "px": 13.4,
+    "p2": 9.4,
+    "o15": 84.2,
+    "o25": 68.2,
+    "htx": 31.0
+   },
+   "fav": 77
   },
   {
    "date": "2026-10-18",
@@ -2858,59 +7071,166 @@
    "league": "MLS",
    "home": "Cincinnati",
    "away": "Columbus",
-   "lh": 1.92,
-   "la": 1.774,
+   "lh": 1.865,
+   "la": 1.772,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
-   "review": "model_v2"
+   "review": "model_v3",
+   "lhS": 1.92,
+   "laS": 1.774,
+   "lhM": 1.83,
+   "laM": 1.77,
+   "htsM": 0.445,
+   "hts": 0.447,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 2.35,
+    "X": 3.9,
+    "2": 2.57,
+    "o15": 1.1,
+    "o25": 1.364,
+    "gg": 1.333
+   },
+   "mkt": {
+    "p1": 39.7,
+    "px": 23.9,
+    "p2": 36.3,
+    "o15": 86.4,
+    "o25": 69.4,
+    "htx": 35.3
+   },
+   "fav": 40
   },
   {
    "date": "2026-10-18",
-   "time": "n.d.",
+   "time": "20:00",
    "league": "Eredivisie",
    "home": "Twente",
    "away": "Utrecht",
-   "lh": 1.795,
-   "la": 1.249,
+   "lh": 2.052,
+   "la": 0.96,
    "rel": "C",
-   "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
-   "review": "model_v2"
+   "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50% Orario da Sofascore.",
+   "review": "model_v3",
+   "lhS": 1.795,
+   "laS": 1.249,
+   "lhM": 2.28,
+   "laM": 0.78,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.56,
+   "odds": {
+    "1": 1.3,
+    "X": 5.75,
+    "2": 7.5
+   },
+   "mkt": {
+    "p1": 71.5,
+    "px": 16.2,
+    "p2": 12.4
+   },
+   "fav": 71,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
-   "time": "n.d.",
+   "time": "20:00",
    "league": "Superliga ROU",
    "home": "Universitatea Craiova",
    "away": "Farul",
-   "lh": 1.731,
-   "la": 0.906,
+   "lh": 1.893,
+   "la": 0.866,
    "rel": "B",
-   "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita. · Modello v2 sulla stima GPT",
-   "review": "model_v2"
+   "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita. · Modello v2 sulla stima GPT Orario da Sofascore.",
+   "review": "model_v3",
+   "lhS": 1.731,
+   "laS": 0.906,
+   "lhM": 2.01,
+   "laM": 0.84,
+   "htsM": 0.46,
+   "hts": 0.457,
+   "src": "quote+modello",
+   "wMkt": 0.6,
+   "odds": {
+    "1": 1.4,
+    "X": 3.9,
+    "2": 6.5,
+    "o15": 1.222,
+    "o25": 1.727,
+    "gg": 1.909
+   },
+   "mkt": {
+    "p1": 63.5,
+    "px": 22.8,
+    "p2": 13.7,
+    "o15": 76.6,
+    "o25": 54.6,
+    "htx": 37.5
+   },
+   "fav": 64
   },
   {
    "date": "2026-10-18",
-   "time": "n.d.",
+   "time": "16:00",
    "league": "Superliga SRB",
    "home": "Stella Rossa",
    "away": "Mladost Lucani",
-   "lh": 2.119,
-   "la": 0.688,
+   "lh": 2.303,
+   "la": 0.484,
    "rel": "B",
-   "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita. · Modello v2 sulla stima GPT",
-   "review": "model_v2"
+   "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita. · Modello v2 sulla stima GPT Orario da Sofascore.",
+   "review": "model_v3",
+   "lhS": 2.119,
+   "laS": 0.688,
+   "lhM": 2.52,
+   "laM": 0.33,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 1.091,
+    "X": 9.5,
+    "2": 17.0
+   },
+   "mkt": {
+    "p1": 84.8,
+    "px": 9.7,
+    "p2": 5.4
+   },
+   "fav": 85,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-18",
-   "time": "n.d.",
+   "time": "18:30",
    "league": "Superliga SRB",
    "home": "Zeleznicar",
    "away": "Partizan",
-   "lh": 1.529,
-   "la": 1.128,
+   "lh": 1.5,
+   "la": 1.176,
    "rel": "B",
-   "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita. · Modello v2 sulla stima GPT",
-   "review": "model_v2"
+   "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita. · Modello v2 sulla stima GPT Orario da Sofascore.",
+   "review": "model_v3",
+   "lhS": 1.529,
+   "laS": 1.128,
+   "lhM": 1.47,
+   "laM": 1.23,
+   "hts": 0.45,
+   "src": "1X2+modello",
+   "wMkt": 0.48,
+   "odds": {
+    "1": 2.15,
+    "X": 3.6,
+    "2": 2.9
+   },
+   "mkt": {
+    "p1": 42.8,
+    "px": 25.5,
+    "p2": 31.7
+   },
+   "fav": 43,
+   "topSkip": "quote Over non ancora aperte"
   },
   {
    "date": "2026-10-17",
@@ -2921,104 +7241,471 @@
    "lh": 1.442,
    "la": 1.608,
    "rel": "C",
-   "review": "model_v2",
-   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare."
+   "review": "model_v3",
+   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare. Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "lhS": 1.442,
+   "laS": 1.608,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 41,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
-   "time": "n.d.",
+   "time": "11:00",
    "league": "Primavera 1",
    "home": "Lecce U20",
    "away": "Cesena U20",
    "lh": 1.52,
    "la": 1.53,
    "rel": "C",
-   "review": "model_v2",
-   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare."
+   "review": "model_v3",
+   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare. Orario da Sofascore. Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "lhS": 1.52,
+   "laS": 1.53,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 37,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
-   "time": "n.d.",
+   "time": "11:00",
    "league": "Primavera 1",
    "home": "Milan U20",
    "away": "Cagliari U20",
    "lh": 1.559,
    "la": 1.491,
    "rel": "C",
-   "review": "model_v2",
-   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare."
+   "review": "model_v3",
+   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare. Orario da Sofascore. Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "lhS": 1.559,
+   "laS": 1.491,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 39,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
-   "time": "n.d.",
+   "time": "15:00",
    "league": "Primavera 1",
    "home": "Albinoleffe U20",
    "away": "Fiorentina U20",
    "lh": 1.597,
    "la": 1.453,
    "rel": "C",
-   "review": "model_v2",
-   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare."
+   "review": "model_v3",
+   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare. Orario da Sofascore. Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "lhS": 1.597,
+   "laS": 1.453,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 40,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-17",
-   "time": "n.d.",
+   "time": "15:00",
    "league": "Primavera 1",
    "home": "Torino U20",
    "away": "Roma U20",
    "lh": 1.326,
    "la": 1.724,
    "rel": "C",
-   "review": "model_v2",
-   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare."
+   "review": "model_v3",
+   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare. Orario da Sofascore. Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "lhS": 1.326,
+   "laS": 1.724,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 46,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
-   "time": "n.d.",
+   "time": "11:00",
    "league": "Primavera 1",
    "home": "Monza U20",
    "away": "Juventus U20",
    "lh": 1.675,
    "la": 1.375,
    "rel": "C",
-   "review": "model_v2",
-   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare."
+   "review": "model_v3",
+   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare. Orario da Sofascore. Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "lhS": 1.675,
+   "laS": 1.375,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 44,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
-   "time": "n.d.",
+   "time": "13:00",
    "league": "Primavera 1",
    "home": "Como U20",
    "away": "Hellas Verona U20",
    "lh": 1.559,
    "la": 1.491,
    "rel": "C",
-   "review": "model_v2",
-   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare."
+   "review": "model_v3",
+   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare. Orario da Sofascore. Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "lhS": 1.559,
+   "laS": 1.491,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 39,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
-   "time": "n.d.",
+   "time": "13:00",
    "league": "Primavera 1",
    "home": "Empoli U20",
    "away": "Atalanta U20",
    "lh": 1.827,
    "la": 1.223,
    "rel": "C",
-   "review": "model_v2",
-   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare."
+   "review": "model_v3",
+   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare. Orario da Sofascore. Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "lhS": 1.827,
+   "laS": 1.223,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 51,
+   "topSkip": "senza quote"
   },
   {
    "date": "2026-10-18",
-   "time": "n.d.",
+   "time": "15:00",
    "league": "Primavera 1",
    "home": "Genoa U20",
    "away": "Sassuolo U20",
    "lh": 1.713,
    "la": 1.337,
    "rel": "C",
-   "review": "model_v2",
-   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare."
+   "review": "model_v3",
+   "note": "Primavera 1 dopo 6 giornate: forza stimata dai punti (gol fatti/subiti non disponibili), media gol del campionato 3,05. Orario da verificare. Orario da Sofascore. Quote non disponibili: solo modello statistico, esclusa dalle Top.",
+   "lhS": 1.713,
+   "laS": 1.337,
+   "hts": 0.45,
+   "src": "modello",
+   "wMkt": 0,
+   "fav": 45,
+   "topSkip": "senza quote"
+  },
+  {
+   "date": "2026-10-17",
+   "time": "13:30",
+   "league": "Singapore Premier League",
+   "home": "Balestier Khalsa",
+   "away": "Geylang",
+   "lh": 2.009,
+   "la": 1.964,
+   "rel": "C",
+   "review": "model_v3",
+   "note": "Campionato nuovo: statistiche dalla classifica (gol fatti/subiti, soccerstats) + quote Sofascore. Classifica della stagione precedente: dati poco affidabili.",
+   "lhS": 2.498,
+   "laS": 1.523,
+   "lhM": 1.83,
+   "laM": 2.19,
+   "wMkt": 0.7,
+   "src": "quote+modello",
+   "fav": 46,
+   "mkt": {
+    "p1": 32.8,
+    "px": 20.8,
+    "p2": 46.3,
+    "o15": 90.4,
+    "o25": 76.2
+   },
+   "htsM": 0.46,
+   "hts": 0.457,
+   "odds": {
+    "1": 2.75,
+    "X": 4.333,
+    "2": 1.95,
+    "o15": 1.062,
+    "o25": 1.25,
+    "gg": 1.286
+   }
+  },
+  {
+   "date": "2026-10-17",
+   "time": "11:00",
+   "league": "Malaysia Super League",
+   "home": "Negeri Sembilan",
+   "away": "Sabah",
+   "lh": 1.614,
+   "la": 1.412,
+   "rel": "C",
+   "review": "model_v3",
+   "note": "Campionato nuovo: statistiche dalla classifica (gol fatti/subiti, soccerstats) + quote Sofascore.",
+   "lhS": 1.57,
+   "laS": 1.454,
+   "lhM": 1.65,
+   "laM": 1.38,
+   "wMkt": 0.56,
+   "src": "1X2+modello",
+   "fav": 43,
+   "mkt": {
+    "p1": 43.4,
+    "px": 24.7,
+    "p2": 31.8
+   },
+   "hts": 0.45,
+   "odds": {
+    "1": 2.05,
+    "X": 3.6,
+    "2": 2.8
+   },
+   "topSkip": "quote Over non ancora aperte"
+  },
+  {
+   "date": "2026-10-17",
+   "time": "14:15",
+   "league": "Malaysia Super League",
+   "home": "Selangor",
+   "away": "Penang",
+   "lh": 2.48,
+   "la": 0.742,
+   "rel": "C",
+   "review": "model_v3",
+   "note": "Campionato nuovo: statistiche dalla classifica (gol fatti/subiti, soccerstats) + quote Sofascore.",
+   "lhS": 2.394,
+   "laS": 0.813,
+   "lhM": 2.55,
+   "laM": 0.69,
+   "wMkt": 0.56,
+   "src": "1X2+modello",
+   "fav": 77,
+   "mkt": {
+    "p1": 76.9,
+    "px": 14.0,
+    "p2": 9.1
+   },
+   "hts": 0.45,
+   "odds": {
+    "1": 1.182,
+    "X": 6.5,
+    "2": 10.0
+   },
+   "topSkip": "quote Over non ancora aperte"
+  },
+  {
+   "date": "2026-10-17",
+   "time": "15:00",
+   "league": "Malaysia Super League",
+   "home": "Melaka",
+   "away": "Kuala Lumpur City",
+   "lh": 1.807,
+   "la": 1.52,
+   "rel": "C",
+   "review": "model_v3",
+   "note": "Campionato nuovo: statistiche dalla classifica (gol fatti/subiti, soccerstats) + quote Sofascore.",
+   "lhS": 2.128,
+   "laS": 1.252,
+   "lhM": 1.59,
+   "laM": 1.77,
+   "wMkt": 0.56,
+   "src": "1X2+modello",
+   "fav": 41,
+   "mkt": {
+    "p1": 33.3,
+    "px": 25.7,
+    "p2": 40.9
+   },
+   "hts": 0.45,
+   "odds": {
+    "1": 2.7,
+    "X": 3.5,
+    "2": 2.2
+   },
+   "topSkip": "quote Over non ancora aperte"
+  },
+  {
+   "date": "2026-10-17",
+   "time": "06:00",
+   "league": "J1 League",
+   "home": "Shimizu S-Pulse",
+   "away": "Gamba Osaka",
+   "lh": 1.42,
+   "la": 1.04,
+   "rel": "C",
+   "review": "model_v3",
+   "note": "Campionato nuovo: statistiche dalla classifica (gol fatti/subiti, soccerstats) + quote Sofascore.",
+   "lhS": 1.374,
+   "laS": 0.744,
+   "lhM": 1.44,
+   "laM": 1.2,
+   "wMkt": 0.7,
+   "src": "quote+modello",
+   "fav": 41,
+   "mkt": {
+    "p1": 41.5,
+    "px": 28.1,
+    "p2": 30.4,
+    "o15": 73.1,
+    "o25": 50.0
+   },
+   "htsM": 0.455,
+   "hts": 0.454,
+   "odds": {
+    "1": 2.2,
+    "X": 3.25,
+    "2": 3.0,
+    "o15": 1.286,
+    "o25": 1.9,
+    "gg": 1.7
+   }
+  },
+  {
+   "date": "2026-10-17",
+   "time": "08:00",
+   "league": "J1 League",
+   "home": "Kashima Antlers",
+   "away": "V-Varen Nagasaki",
+   "lh": 2.16,
+   "la": 1.012,
+   "rel": "C",
+   "review": "model_v3",
+   "note": "Campionato nuovo: statistiche dalla classifica (gol fatti/subiti, soccerstats) + quote Sofascore.",
+   "lhS": 2.467,
+   "laS": 1.333,
+   "lhM": 2.04,
+   "laM": 0.9,
+   "wMkt": 0.7,
+   "src": "quote+modello",
+   "fav": 62,
+   "mkt": {
+    "p1": 62.3,
+    "px": 22.0,
+    "p2": 15.7,
+    "o15": 78.3,
+    "o25": 56.3
+   },
+   "htsM": 0.45,
+   "hts": 0.45,
+   "odds": {
+    "1": 1.45,
+    "X": 4.1,
+    "2": 5.75,
+    "o15": 1.2,
+    "o25": 1.667,
+    "gg": 1.8
+   }
+  },
+  {
+   "date": "2026-10-17",
+   "time": "09:00",
+   "league": "J1 League",
+   "home": "Mito Hollyhock",
+   "away": "Urawa Reds",
+   "lh": 1.359,
+   "la": 1.497,
+   "rel": "C",
+   "review": "model_v3",
+   "note": "Campionato nuovo: statistiche dalla classifica (gol fatti/subiti, soccerstats) + quote Sofascore.",
+   "lhS": 2.177,
+   "laS": 1.491,
+   "lhM": 1.11,
+   "laM": 1.5,
+   "wMkt": 0.7,
+   "src": "quote+modello",
+   "fav": 46,
+   "mkt": {
+    "p1": 27.6,
+    "px": 26.0,
+    "p2": 46.4,
+    "o15": 73.1,
+    "o25": 48.7
+   },
+   "htsM": 0.445,
+   "hts": 0.447,
+   "odds": {
+    "1": 3.3,
+    "X": 3.5,
+    "2": 1.96,
+    "o15": 1.286,
+    "o25": 1.95,
+    "gg": 1.8
+   }
+  },
+  {
+   "date": "2026-10-17",
+   "time": "12:00",
+   "league": "J1 League",
+   "home": "Cerezo Osaka",
+   "away": "Kawasaki Frontale",
+   "lh": 1.388,
+   "la": 1.576,
+   "rel": "C",
+   "review": "model_v3",
+   "note": "Campionato nuovo: statistiche dalla classifica (gol fatti/subiti, soccerstats) + quote Sofascore.",
+   "lhS": 1.157,
+   "laS": 1.477,
+   "lhM": 1.5,
+   "laM": 1.62,
+   "wMkt": 0.7,
+   "src": "quote+modello",
+   "fav": 40,
+   "mkt": {
+    "p1": 34.4,
+    "px": 26.0,
+    "p2": 39.6,
+    "o15": 81.1,
+    "o25": 59.9
+   },
+   "htsM": 0.45,
+   "hts": 0.45,
+   "odds": {
+    "1": 2.65,
+    "X": 3.5,
+    "2": 2.3,
+    "o15": 1.167,
+    "o25": 1.571,
+    "gg": 1.444
+   }
+  },
+  {
+   "date": "2026-10-17",
+   "time": "10:00",
+   "league": "Hong Kong Premier League",
+   "home": "Eastern District",
+   "away": "Eastern SC",
+   "lh": 2.0,
+   "la": 1.751,
+   "rel": "C",
+   "review": "model_v3",
+   "note": "Campionato nuovo: statistiche dalla classifica (gol fatti/subiti, soccerstats) + quote Sofascore.",
+   "lhS": 2.193,
+   "laS": 1.588,
+   "lhM": 1.86,
+   "laM": 1.89,
+   "wMkt": 0.56,
+   "src": "1X2+modello",
+   "fav": 39,
+   "mkt": {
+    "p1": 37.3,
+    "px": 23.8,
+    "p2": 38.9
+   },
+   "hts": 0.45,
+   "odds": {
+    "1": 2.4,
+    "X": 3.75,
+    "2": 2.3
+   },
+   "topSkip": "quote Over non ancora aperte"
   }
  ]
 }
