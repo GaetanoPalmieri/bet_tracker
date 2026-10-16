@@ -18,7 +18,6 @@ var TIP_FILE = 'pronostici.json';
 var TIP_DEFAULTS = { version: '1', threshold: 70, htShare: 0.45, drawBoost: 1, goalFactor: 1, leagueGoal: {} };
 var TIP_MARKETS = [
   ['1x2', '1X2'],
-  ['o05', 'Over/Under 0.5'],
   ['o15', 'Over/Under 1.5'],
   ['o25', 'Over/Under 2.5'],
   ['ht05', 'O/U 0.5 1° tempo'],
@@ -571,7 +570,7 @@ function tipChip(m, p) {
     st = TIP_ST[o.s],
     mark = { V: '✓', P: '✕', N: '–' }[o.s] || '';
   return (
-    '<span class="tip-pick ' + st + '">' + (mark ? '<em aria-hidden="true">' + mark + '</em>' : '') + '<b>' + U.esc(p.sel) + '</b><i>' + p.p + '%</i>' +
+    '<span class="tip-pick mk-' + p.m + ' ' + st + '">' + (mark ? '<em aria-hidden="true">' + mark + '</em>' : '') + '<b>' + U.esc(p.sel) + '</b><i>' + p.p + '%</i>' +
     (o.s ? '<span class="sr-only">' + { V: 'vinto', P: 'perso', N: 'annullato' }[o.s] + '</span>' : '') + '</span>'
   );
 }
@@ -682,35 +681,28 @@ function tipListPanel(list) {
     });
   }
 
-  var chip = function (attr, val, label, count, cur, tone) {
+  var sortName = (TIP_SORTS.find(function (o) { return o[0] === tipUI.sort; }) || TIP_SORTS[0])[1];
+  var stateName = { open: 'Prossime', live: 'In corso', check: 'Da verificare', done: 'Concluse', all: 'Tutte' }[tipUI.view];
+  var dayName = tipUI.day === 'all' ? 'Tutti i giorni' : tipCap(tipDayLabel(tipUI.day));
+  var fbtn = function (key, label, value, on, alert) {
     return (
-      '<button type="button" class="tip-chip' + (cur === val ? ' on' : '') + (tone ? ' c-' + tone : '') + '" ' + attr + '="' + val + '" aria-pressed="' + (cur === val) + '">' + label +
-      (count != null ? '<span class="tip-count">' + count + '</span>' : '') + '</button>'
+      '<button type="button" class="tip-fbtn' + (on ? ' on' : '') + '" data-tip-filter="' + key + '"><small>' + label + (alert ? '<i class="tip-alert">' + alert + '</i>' : '') + '</small><b>' + U.esc(value) + '</b>' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>'
     );
   };
-  var states =
-    chip('data-tip-view', 'open', 'Prossime', counts.open, tipUI.view) +
-    (counts.live ? chip('data-tip-view', 'live', 'In corso', counts.live, tipUI.view, 'live') : '') +
-    chip('data-tip-view', 'check', 'Da verificare', counts.check, tipUI.view, counts.check ? 'check' : '') +
-    chip('data-tip-view', 'done', 'Concluse', counts.done, tipUI.view) +
-    chip('data-tip-view', 'all', 'Tutte', list.length, tipUI.view);
-  var dayChips =
-    days.length > 1
-      ? chip('data-tip-day', 'all', 'Tutti i giorni', null, tipUI.day) +
-        days.map(function (d) { var l = tipDayLabel(d); return chip('data-tip-day', d, l.charAt(0).toUpperCase() + l.slice(1), null, tipUI.day); }).join('')
-      : '';
+  var active = tipUI.view !== 'open' || tipUI.day !== 'all' || tipUI.league || tipUI.q || byProb;
   var filters =
     '<section class="tip-filters" aria-label="Filtri">' +
-    '<div class="tip-filter-label">Stato</div><div class="tip-chips" role="group" aria-label="Stato">' + states + '</div>' +
-    (dayChips ? '<div class="tip-filter-label">Giorno</div><div class="tip-chips" role="group" aria-label="Giorno">' + dayChips + '</div>' : '') +
-    '<div class="tip-fields"><label class="tip-field"><span>Campionato</span><select id="tip-league"><option value="">Tutti</option>' +
-    leagues.map(function (l) { return '<option value="' + U.esc(l) + '"' + (tipUI.league === l ? ' selected' : '') + '>' + U.esc(l) + '</option>'; }).join('') +
-    '</select></label><label class="tip-field"><span>Squadra</span><span class="tip-search">' + TIP_IC.search + '<input id="tip-q" type="search" placeholder="Cerca" value="' + U.esc(tipUI.q) + '"></span></label></div>' +
-    '<label class="tip-field tip-sort"><span>Ordina per</span><select id="tip-sort">' +
-    TIP_SORTS.map(function (o) { return '<option value="' + o[0] + '"' + (tipUI.sort === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
-    '</select></label>' +
-    ((tipUI.view !== 'open' || tipUI.day !== 'all' || tipUI.league || tipUI.q || byProb) ? '<button type="button" class="tip-reset" data-tip-reset>Azzera filtri</button>' : '') +
+    '<div class="tip-fgrid">' +
+    fbtn('view', 'Stato', stateName + ' · ' + (tipUI.view === 'all' ? list.length : counts[tipUI.view]), tipUI.view !== 'open', counts.check ? counts.check : '') +
+    fbtn('day', 'Giorno', dayName, tipUI.day !== 'all') +
+    fbtn('league', 'Campionato', tipUI.league || 'Tutti', !!tipUI.league) +
+    fbtn('sort', 'Ordina per', sortName, byProb) +
+    '</div>' +
+    '<div class="tip-srow"><span class="tip-search">' + TIP_IC.search + '<input id="tip-q" type="search" placeholder="Cerca squadra" value="' + U.esc(tipUI.q) + '" aria-label="Cerca squadra"></span>' +
+    (active ? '<button type="button" class="tip-reset" data-tip-reset>Azzera</button>' : '') + '</div>' +
     '</section>';
+  tipUI._opts = { days: days, leagues: leagues, counts: counts, total: list.length };
 
   var body = '',
     lastDay = '';
@@ -793,12 +785,11 @@ function tipStatsPanel(list) {
 /* 3.4.1 — Ordinamento: ora oppure probabilità (pronostico migliore o un mercato). */
 try {
   var _ts = localStorage.getItem('bet_tip_sort');
-  if (_ts) tipUI.sort = _ts;
+  if (_ts && ['time', 'best', 'o15', 'o25', 'ht05', 'gg', '1x2'].indexOf(_ts) >= 0) tipUI.sort = _ts;
 } catch (e) {}
 var TIP_SORTS = [
   ['time', 'Ora di inizio'],
   ['best', 'Pronostico più probabile'],
-  ['o05', 'Over 0.5'],
   ['o15', 'Over 1.5'],
   ['o25', 'Over 2.5'],
   ['ht05', 'Over 0.5 1° tempo'],
@@ -827,6 +818,65 @@ function tipSortLabel(m, key) {
   }
   return { o05: 'Over 0.5', o15: 'Over 1.5', o25: 'Over 2.5', ht05: 'Over 0.5 1T', gg: 'Goal' }[key];
 }
+function tipCap(t) {
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+/* 3.5.0 — Un pulsante per tipo di filtro: apre un pannello con le scelte. */
+function tipFilterSheet(key) {
+  var o = tipUI._opts || { days: [], leagues: [], counts: {}, total: 0 },
+    items = [],
+    title = '',
+    cur = '';
+  if (key === 'view') {
+    title = 'Stato';
+    cur = tipUI.view;
+    items = [
+      ['open', 'Prossime', o.counts.open],
+      ['live', 'In corso', o.counts.live],
+      ['check', 'Da verificare', o.counts.check],
+      ['done', 'Concluse', o.counts.done],
+      ['all', 'Tutte', o.total],
+    ];
+  } else if (key === 'day') {
+    title = 'Giorno';
+    cur = tipUI.day;
+    items = [['all', 'Tutti i giorni', null]].concat(o.days.map(function (d) { return [d, tipCap(tipDayLabel(d, true)), null]; }));
+  } else if (key === 'league') {
+    title = 'Campionato';
+    cur = tipUI.league;
+    items = [['', 'Tutti i campionati', null]].concat(o.leagues.map(function (l) { return [l, l, null]; }));
+  } else {
+    title = 'Ordina per';
+    cur = tipUI.sort;
+    items = TIP_SORTS.map(function (x) { return [x[0], x[1], null]; });
+  }
+  var html =
+    sheetHead(title) +
+    '<div class="tip-opts">' +
+    items
+      .map(function (it, i) {
+        return '<button type="button" class="tip-opt' + (it[0] === cur ? ' on' : '') + '" data-i="' + i + '"><span>' + U.esc(it[1]) + '</span>' + (it[2] != null ? '<i>' + it[2] + '</i>' : '') + (it[0] === cur ? '<b aria-hidden="true">✓</b>' : '') + '</button>';
+      })
+      .join('') +
+    '</div>';
+  var d = sheetModal(html);
+  d.classList.add('tip-dlg');
+  d.querySelectorAll('.tip-opt').forEach(function (b) {
+    b.onclick = function () {
+      var v = items[Number(b.dataset.i)][0];
+      if (key === 'view') tipUI.view = v;
+      else if (key === 'day') tipUI.day = v;
+      else if (key === 'league') tipUI.league = v;
+      else {
+        tipUI.sort = v;
+        try { localStorage.setItem('bet_tip_sort', v); } catch (e) {}
+      }
+      d.close();
+      render();
+      window.scrollTo(0, 0);
+    };
+  });
+}
 /* Pannello File: aggiorna dal sito, importa JSON/CSV, esporta lo storico. */
 function tipFileSheet() {
   var P = tipParams(),
@@ -842,6 +892,7 @@ function tipFileSheet() {
     '<button type="button" class="tip-sheet-btn" data-s="export"><b>Esporta storico</b><small>Risultati ed esiti in JSON, da dare a Claude o GPT per ricalibrare</small></button>' +
     '</div>';
   var d = sheetModal(html);
+  d.classList.add('tip-dlg');
   d.querySelector('[data-s="fetch"]').onclick = function () {
     d.close();
     tipFetch({ manual: true });
@@ -893,13 +944,14 @@ function tipDetail(id) {
     };
   var T = tipParams().threshold;
   var prob = function (label, v, both) {
+    if (typeof v === 'string') return '<div class="tip-prob"><small>' + label + '</small><b>' + v + '</b></div>';
     return '<div class="tip-prob' + (v > T || (both && 100 - v > T) ? ' hot' : '') + '"><small>' + label + '</small><b>' + v + '%</b></div>';
   };
   var picks = (m.picks || [])
     .map(function (p) {
       var o = tipOutcome(m, p);
       return (
-        '<button type="button" class="tip-pick-row ' + ({ V: 'won', P: 'lost', N: 'void', '': 'wait' }[o.s]) + '" data-tip-ov="' + p.m + '"><span><b>' + U.esc(p.sel) + '</b><small>' + TIP_SHORT[p.m] + ' · ' + p.p + '%' + (o.man ? ' · segnato a mano' : '') + '</small></span><strong>' + ({ V: 'Vinto', P: 'Perso', N: 'Annullato', '': 'In attesa' }[o.s]) + '</strong></button>'
+        '<button type="button" class="tip-pick-row ' + ({ V: 'won', P: 'lost', N: 'void', '': 'wait' }[o.s]) + '" style="--mk:var(--mk-' + p.m + ')" data-tip-ov="' + p.m + '"><span><b>' + U.esc(p.sel) + '</b><small>' + TIP_SHORT[p.m] + ' · ' + p.p + '%' + (o.man ? ' · segnato a mano' : '') + '</small></span><strong>' + ({ V: 'Vinto', P: 'Perso', N: 'Annullato', '': 'In attesa' }[o.s]) + '</strong></button>'
       );
     })
     .join('');
@@ -908,16 +960,19 @@ function tipDetail(id) {
     '<form id="tip-form" class="tip-form">' +
     '<div class="tip-res"><label>Risultato finale' + sc('tip-ft', m.ft) + '</label><label>1° tempo' + sc('tip-ht', m.ht) + '</label></div>' +
     '<label class="toggle-line"><input type="checkbox" id="tip-cancel"' + (m.cancelled ? ' checked' : '') + '> Partita annullata o rinviata</label>' +
-    '<h3 class="tip-sub">Pronostici oltre la soglia</h3><p class="muted tip-hint">Si segnano da soli dal risultato. Tocca per cambiarli a mano: vinto → perso → annullato → automatico.</p>' +
+    '<h3 class="tip-sub">Pronostici <small>tocca per cambiare l’esito a mano</small></h3>' +
     '<div class="tip-pick-list">' + (picks || '<p class="muted">Nessun pronostico.</p>') + '</div>' +
-    '<h3 class="tip-sub">Probabilità del modello</h3>' +
-    '<div class="tip-probs">' + prob('1', c.p1) + prob('X', c.px) + prob('2', c.p2) + prob('Over 0.5', c.o05, 1) + prob('Over 1.5', c.o15, 1) + prob('Over 2.5', c.o25, 1) + prob('Over 0.5 1T', c.ht05, 1) + prob('Goal', c.gg, 1) + '</div>' +
-    '<p class="muted tip-hint">Gol attesi ' + c.lh.toFixed(2) + ' – ' + c.la.toFixed(2) + ' · risultati più probabili ' + c.cs.map(function (x) { return x.s + ' (' + x.p + '%)'; }).join(', ') + '</p>' +
-    '<p class="muted tip-hint"><b>Origine analisi:</b> ' + U.esc(tipReviewLabel(m)) + ' · Batch ' + U.esc(m.batch || 'non identificato') + '</p>' +
-    (m.review === 'not_revised' ? '<p class="muted tip-hint"><b>Non aggiornata:</b> questa partita era già iniziata o non faceva parte della revisione. Il pronostico originale è conservato per confrontarlo con il risultato senza modifiche a posteriori.</p>' : '') +
-    '<p class="muted tip-hint">Affidabilità dati ' + m.rel + (m.note ? ' · ' + U.esc(m.note) : '') + '</p>' +
+    '<h3 class="tip-sub">Probabilità</h3>' +
+    '<div class="tip-probs">' + prob('1', c.p1) + prob('X', c.px) + prob('2', c.p2) + prob('Over 1.5', c.o15, 1) + prob('Over 2.5', c.o25, 1) + prob('Over 0.5 1T', c.ht05, 1) + prob('Goal', c.gg, 1) + prob('Gol attesi', c.lh.toFixed(1) + '–' + c.la.toFixed(1)) + '</div>' +
+    '<details class="tip-more"><summary>Dettagli dell’analisi</summary>' +
+    '<p class="muted tip-hint">Risultati più probabili ' + c.cs.map(function (x) { return x.s + ' (' + x.p + '%)'; }).join(', ') + '</p>' +
+    '<p class="muted tip-hint">' + U.esc(tipReviewLabel(m)) + ' · affidabilità dati ' + m.rel + ' · ' + U.esc(m.batch || 'batch non identificato') + '</p>' +
+    (m.review === 'not_revised' ? '<p class="muted tip-hint">Partita già iniziata o fuori dalla revisione: resta il pronostico originale.</p>' : '') +
+    (m.note ? '<p class="muted tip-hint">' + U.esc(m.note) + '</p>' : '') +
+    '</details>' +
     '</form>';
   var d = sheetModal(html);
+  d.classList.add('tip-dlg');
   var ovState = Object.assign({}, m.ov || {});
   d.querySelectorAll('[data-tip-ov]').forEach(function (b) {
     b.onclick = function () {
@@ -973,7 +1028,26 @@ function tipDetail(id) {
 }
 
 /* ---------- Collegamenti della pagina ---------- */
+/* 3.5.0 — Over 0.5 nella partita tolto dai pronostici (quasi sempre sicuro, non informa).
+   Le partite che erano entrate solo per quello escono, a meno che abbiano dati segnati a mano. */
+function tipDropO05() {
+  var has = (db.predictions || []).some(function (m) {
+    return (m.picks || []).some(function (p) { return p.m === 'o05'; });
+  });
+  if (!has) return;
+  mutate(function (n) {
+    n.predictions = n.predictions.filter(function (m) {
+      m.picks = (m.picks || []).filter(function (p) { return p.m !== 'o05'; });
+      if (m.ov) delete m.ov.o05;
+      return m.picks.length || (m.ov && Object.keys(m.ov).length);
+    });
+  });
+}
 function bindTips() {
+  if (!tipUI.dropped) {
+    tipUI.dropped = true;
+    tipDropO05();
+  }
   main.querySelectorAll('[data-tip-fetch]').forEach(function (b) {
     b.onclick = function () {
       tipFetch({ manual: true });
@@ -1013,6 +1087,11 @@ function bindTips() {
     b.onclick = function () {
       tipUI.day = b.dataset.tipDay;
       render();
+    };
+  });
+  main.querySelectorAll('[data-tip-filter]').forEach(function (b) {
+    b.onclick = function () {
+      tipFilterSheet(b.dataset.tipFilter);
     };
   });
   var so = document.getElementById('tip-sort');

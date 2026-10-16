@@ -217,3 +217,78 @@
 .t-won .tip-rank { background: rgba(47, 165, 127, .18); }
 .t-lost .tip-rank { background: rgba(208, 87, 79, .16); }
 .tip-day.no-cap { text-transform: none; }
+
+/* =====================================================================
+   3.5.0 — Filtri a pulsanti, colori per mercato, pannelli sotto la Dynamic Island
+   ===================================================================== */
+:root {
+  --mk-ht05: #1f9d6b;   /* Over 0.5 1° tempo: verde */
+  --mk-o15: #2f7fe0;    /* Over 1.5: blu */
+  --mk-o25: #8457e6;    /* Over 2.5: viola */
+  --mk-gg: #e0812a;     /* Goal / No goal: arancio */
+  --mk-1x2: #d24d8a;    /* Segno 1X2: magenta */
+}
+.tip-filters { gap: 10px; padding: 12px; }
+.tip-fgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tip-fbtn {
+  position: relative; display: grid !important; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto;
+  align-items: center; column-gap: 6px; row-gap: 1px; text-align: left; width: 100%; min-width: 0;
+  min-height: 54px !important; padding: 8px 10px 8px 12px !important; border-radius: 13px !important;
+  font: inherit; color: var(--suite-text) !important;
+  background: color-mix(in srgb, var(--suite-text) 6%, transparent) !important;
+  border: 1px solid var(--suite-glass-edge) !important; box-shadow: none !important;
+}
+.tip-fbtn small { grid-column: 1; display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--suite-text-soft); }
+.tip-fbtn b { grid-column: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 750; }
+.tip-fbtn svg { grid-column: 2; grid-row: 1 / span 2; width: 16px; height: 16px; fill: none; stroke: var(--suite-text-soft); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.tip-fbtn.on { border-color: rgba(58, 166, 132, .7) !important; background: rgba(58, 166, 132, .14) !important; }
+.tip-fbtn.on small { color: var(--bt-up-text); }
+.tip-alert { font-style: normal; min-width: 18px; padding: 0 5px; border-radius: 99px; background: var(--tip-check); color: #241800; letter-spacing: 0; text-align: center; }
+.tip-srow { display: flex; gap: 8px; align-items: center; }
+.tip-srow .tip-search { flex: 1 1 auto; min-width: 0; }
+.tip-srow input { width: 100%; margin: 0 !important; min-height: 42px; font-size: 14px !important; }
+.tip-srow .tip-reset { flex: 0 0 auto; min-height: 42px !important; }
+
+/* Etichette dei pronostici: un colore per mercato; l'esito è il simbolo (✓ verde, ✕ rosso). */
+.tip-pick { --mk: var(--suite-text-soft); background: color-mix(in srgb, var(--mk) 20%, transparent); border-color: color-mix(in srgb, var(--mk) 55%, transparent); color: var(--suite-text); }
+.tip-pick.mk-ht05 { --mk: var(--mk-ht05); }
+.tip-pick.mk-o15 { --mk: var(--mk-o15); }
+.tip-pick.mk-o25 { --mk: var(--mk-o25); }
+.tip-pick.mk-gg { --mk: var(--mk-gg); }
+.tip-pick.mk-1x2 { --mk: var(--mk-1x2); }
+.tip-pick i { color: color-mix(in srgb, var(--mk) 75%, var(--suite-text)); font-weight: 700; }
+.tip-pick.won, .tip-pick.lost { background: var(--mk); border-color: transparent; color: #fff; }
+.tip-pick.won i, .tip-pick.lost i { color: rgba(255, 255, 255, .85); }
+.tip-pick.won em { background: #fff; color: var(--tip-won); }
+.tip-pick.lost em { background: #fff; color: var(--tip-lost); }
+.tip-pick.lost { filter: saturate(.35); opacity: .8; }
+.tip-pick.lost b { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+
+/* Pannelli: sempre sotto la Dynamic Island e sopra la barra in basso */
+dialog#editor.sheet.tip-dlg {
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px) !important;
+  margin-top: max(16px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+  margin-bottom: auto !important;
+}
+.tip-dlg .tip-form { gap: 8px; }
+.tip-dlg .tip-sub { margin: 4px 0 0; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.tip-dlg .tip-sub small { text-transform: none; letter-spacing: 0; font-size: 11px; font-weight: 600; }
+.tip-dlg .tip-score-in input { min-height: 42px; font-size: 18px !important; }
+.tip-dlg .tip-pick-row { padding: 8px 12px !important; }
+.tip-dlg .tip-prob { padding: 6px; }
+.tip-more { margin-top: 2px; }
+.tip-more summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--suite-text-soft); padding: 4px 0; }
+.tip-more .tip-hint { margin-top: 4px; }
+.tip-pick-row { border-left: 4px solid var(--mk, transparent) !important; }
+
+/* Pannello delle scelte di un filtro */
+.tip-opts { display: grid; gap: 6px; }
+.tip-opt {
+  display: flex !important; align-items: center; gap: 10px; width: 100%; text-align: left; min-height: 46px !important;
+  padding: 0 14px !important; border-radius: 12px !important; font: 600 15px var(--suite-font-body) !important; color: var(--suite-text) !important;
+  background: color-mix(in srgb, var(--suite-text) 5%, transparent) !important; border: 1px solid var(--suite-glass-edge) !important;
+}
+.tip-opt span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tip-opt i { font-style: normal; font-size: 12.5px; font-weight: 800; color: var(--suite-text-soft); font-variant-numeric: tabular-nums; }
+.tip-opt b { color: var(--bt-up-text); }
+.tip-opt.on { background: rgba(58, 166, 132, .16) !important; border-color: rgba(58, 166, 132, .6) !important; }
