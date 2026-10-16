@@ -1,57 +1,142 @@
-/* 3.1.0 — Scheda Pronostici (stesse superfici e colori del resto dell'app) */
-.tip-hero .big { font-size: 34px; }
-.tip-hero .hero-flow-btns .flow-btn:not(.in) { color: var(--suite-text) !important; }
-.tip-filters { display: grid; gap: 8px; padding: 10px !important; }
-.tip-filters .diary-seg { margin: 0; }
-.tip-filters .diary-seg button { font-size: 12.5px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px 2px !important; }
-.tip-filters .diary-seg button small { margin-left: 4px; font-size: 11px; font-weight: 600; opacity: .75; font-variant-numeric: tabular-nums; }
-.tip-filter-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-.tip-filter-row select, .tip-filter-row input { min-width: 0; width: 100%; margin: 0 !important; }
+/* 3.4.0 — Scheda Pronostici
+   Lista in primo piano; Statistiche e File su pulsanti dedicati in alto.
+   Colori della partita (striscia, fondo e badge): verde tutto vinto, rosso tutto perso,
+   blu misto, arancio da verificare, azzurro in corso, grigio annullata. */
+:root {
+  --tip-won: #2fa57f;
+  --tip-won-text: var(--bt-up-text);
+  --tip-lost: #d0574f;
+  --tip-lost-text: var(--bt-down-text);
+  --tip-mixed: #6b8fd6;
+  --tip-check: #e8a33d;
+  --tip-live: #4f9fe8;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-h2.section.tip-day { text-transform: capitalize; margin: 16px 4px 8px; }
+/* ---------- Barra in alto ---------- */
+.tip-toolbar { display: flex; align-items: center; gap: 8px; margin: 2px 0 14px; }
+.tip-toolbar-title { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+.tip-toolbar-title b { font-size: 17px; font-family: var(--suite-font-display); letter-spacing: -.01em; }
+.tip-toolbar-title small { font-size: 12px; color: var(--suite-text-soft); }
+.tip-tool {
+  position: relative; flex: 0 0 auto; display: inline-flex !important; align-items: center; gap: 6px;
+  min-height: 40px !important; padding: 0 12px !important; border-radius: 12px !important;
+  font: 700 13px var(--suite-font-body) !important; color: var(--suite-text) !important;
+  background: var(--suite-glass-card) !important; border: 1px solid var(--suite-glass-edge) !important;
+}
+.tip-tool svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tip-tool.on { background: var(--suite-teal-grad) !important; color: #fff !important; border-color: transparent !important; }
+.tip-spin { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--tip-check); animation: tipPulse 1s ease-in-out infinite; }
+
+/* ---------- Filtri ---------- */
+.tip-filters {
+  display: grid; gap: 7px; margin: 0 0 18px; padding: 12px 14px 14px;
+  border-radius: var(--suite-radius-lg); background: var(--suite-glass-card); border: 1px solid var(--suite-glass-edge);
+}
+.tip-filter-label { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--suite-text-soft); margin-top: 2px; }
+.tip-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tip-chips::-webkit-scrollbar { display: none; }
+.tip-chip {
+  flex: 0 0 auto; display: inline-flex !important; align-items: center; gap: 7px;
+  min-height: 32px !important; padding: 0 12px !important; border-radius: 999px !important;
+  font: 650 13px var(--suite-font-body) !important; white-space: nowrap;
+  color: var(--suite-text) !important; background: color-mix(in srgb, var(--suite-text) 6%, transparent) !important;
+  border: 1px solid var(--suite-glass-edge) !important; box-shadow: none !important;
+}
+.tip-chip.on { background: var(--suite-teal-grad) !important; color: #fff !important; border-color: transparent !important; box-shadow: 0 6px 14px -8px rgba(58,166,132,.8) !important; }
+.tip-count { min-width: 20px; padding: 1px 6px; border-radius: 999px; font-size: 11.5px; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; background: color-mix(in srgb, var(--suite-text) 10%, transparent); }
+.tip-chip.on .tip-count { background: rgba(255,255,255,.24); }
+.tip-chip.c-check:not(.on) .tip-count { background: var(--tip-check); color: #241800; }
+.tip-chip.c-live:not(.on) .tip-count { background: var(--tip-live); color: #fff; }
+.tip-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-top: 4px; }
+.tip-field { display: grid; gap: 5px; min-width: 0; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--suite-text-soft); }
+.tip-field select, .tip-field input { width: 100%; min-width: 0; margin: 0 !important; min-height: 42px; font-size: 14px !important; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.tip-search { position: relative; display: block; }
+.tip-search svg { position: absolute; left: 11px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); fill: none; stroke: var(--suite-text-soft); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.tip-search input { padding-left: 34px !important; }
+.tip-reset { justify-self: start; min-height: 30px !important; padding: 0 12px !important; border-radius: 999px !important; font-size: 12.5px !important; font-weight: 700; color: var(--suite-text-soft) !important; background: transparent !important; border: 1px dashed var(--suite-glass-edge) !important; }
+
+/* ---------- Lista ---------- */
+.tip-day { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 20px 4px 10px; font-size: 17px; text-transform: capitalize; }
+.tip-day:first-child { margin-top: 0; }
+.tip-day small { font-size: 12px; font-weight: 600; color: var(--suite-text-soft); text-transform: none; }
+.tip-list { display: grid; }
 
 .tip-card {
-  display: grid; gap: 8px; width: 100%; text-align: left;
-  padding: 12px 14px !important; margin: 0 0 8px !important;
-  font: inherit; color: var(--suite-text) !important;
-  background: var(--suite-glass-card) !important;
-  border: 1px solid var(--suite-glass-edge) !important;
-  border-radius: var(--suite-radius-lg) !important;
-  min-height: 0 !important; cursor: pointer;
+  --tone: color-mix(in srgb, var(--suite-text) 18%, transparent);
+  --tint: transparent;
+  position: relative; display: grid; gap: 10px; width: 100%; text-align: left;
+  margin: 0 0 10px !important; padding: 13px 14px 12px 18px !important; min-height: 0 !important; overflow: hidden;
+  font: inherit; color: var(--suite-text) !important; cursor: pointer;
+  border-radius: var(--suite-radius-lg) !important; border: 1px solid var(--suite-glass-edge) !important;
+  background: linear-gradient(100deg, var(--tint), transparent 70%), var(--suite-glass-card) !important;
+  box-shadow: var(--suite-glass-shadow) !important;
 }
-.tip-card.cancelled { opacity: .55; }
-.tip-card.cancelled .tip-teams { text-decoration: line-through; }
-.tip-meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; color: var(--suite-text-soft); }
-.tip-time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--suite-text); }
-.tip-league { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tip-rel { flex: 0 0 auto; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor; }
-.tip-rel.rA { color: var(--bt-up-text); }
-.tip-rel.rB { color: #6b8fd6; }
-.tip-rel.rC { color: var(--bt-e8c17f); }
-.tip-status { flex: 0 0 auto; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
-.tip-status.todo { background: rgba(232, 163, 61, .18); color: var(--bt-e8c17f); }
-.tip-status.ok { background: rgba(58, 166, 132, .18); color: var(--bt-up-text); }
-.tip-status.ko { background: rgba(200, 71, 63, .16); color: var(--bt-down-text); }
-.tip-status.mix { background: rgba(107, 143, 214, .16); color: #6b8fd6; }
-.tip-status.void { background: color-mix(in srgb, var(--suite-text) 8%, transparent); color: var(--suite-text-soft); }
-.tip-teams { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; font-size: 15px; font-weight: 700; }
-.tip-teams > span:first-child { text-align: right; }
-.tip-teams > span:first-child, .tip-teams > span:last-child { overflow-wrap: anywhere; }
-.tip-score { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--suite-text-soft); min-width: 34px; text-align: center; }
+.tip-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--tone); }
+.tip-card.t-won { --tone: var(--tip-won); --tint: rgba(47, 165, 127, .16); border-color: rgba(47, 165, 127, .35) !important; }
+.tip-card.t-lost { --tone: var(--tip-lost); --tint: rgba(208, 87, 79, .15); border-color: rgba(208, 87, 79, .32) !important; }
+.tip-card.t-mixed { --tone: var(--tip-mixed); --tint: rgba(107, 143, 214, .14); }
+.tip-card.t-check { --tone: var(--tip-check); --tint: rgba(232, 163, 61, .13); }
+.tip-card.t-live { --tone: var(--tip-live); --tint: rgba(79, 159, 232, .14); }
+.tip-card.t-void { opacity: .6; }
+.tip-card.t-void .tip-teams { text-decoration: line-through; }
+
+.tip-meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12.5px; color: var(--suite-text-soft); }
+.tip-time { flex: 0 0 auto; font-variant-numeric: tabular-nums; font-weight: 800; color: var(--suite-text); padding: 2px 7px; border-radius: 7px; background: color-mix(in srgb, var(--suite-text) 8%, transparent); }
+.tip-league { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.tip-status { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; color: #fff; }
+.tip-status.won { background: var(--tip-won); }
+.tip-status.lost { background: var(--tip-lost); }
+.tip-status.mixed { background: var(--tip-mixed); }
+.tip-status.check { background: var(--tip-check); color: #241800; }
+.tip-status.live { background: var(--tip-live); }
+.tip-status.void { background: color-mix(in srgb, var(--suite-text) 14%, transparent); color: var(--suite-text-soft); }
+.tip-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: tipPulse 1.2s ease-in-out infinite; }
+@keyframes tipPulse { 50% { opacity: .3; } }
+
+.tip-teams { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; font-size: 15.5px; font-weight: 750; line-height: 1.2; }
+.tip-home { text-align: right; overflow-wrap: anywhere; }
+.tip-away { overflow-wrap: anywhere; }
+.tip-score { display: inline-grid; grid-auto-flow: column; align-items: center; gap: 4px; justify-content: center; min-width: 40px; color: var(--suite-text-soft); }
+.tip-score small { font-size: 12px; font-weight: 700; }
+.tip-score.has { position: relative; padding: 4px 10px 15px; border-radius: 10px; color: var(--suite-text); background: color-mix(in srgb, var(--suite-text) 9%, transparent); }
+.tip-score.has b { font-size: 19px; font-variant-numeric: tabular-nums; }
+.tip-score.has small { position: absolute; left: 0; right: 0; bottom: 2px; text-align: center; font-size: 10px; color: var(--suite-text-soft); }
+.t-won .tip-score.has { background: var(--tip-won); color: #fff; }
+.t-lost .tip-score.has { background: var(--tip-lost); color: #fff; }
+.t-mixed .tip-score.has { background: var(--tip-mixed); color: #fff; }
+.t-won .tip-score.has small, .t-lost .tip-score.has small, .t-mixed .tip-score.has small { color: rgba(255,255,255,.85); }
+
 .tip-picks { display: flex; flex-wrap: wrap; gap: 6px; }
 .tip-pick {
-  display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px;
-  font-size: 12px; background: color-mix(in srgb, var(--suite-text) 7%, transparent);
-  border: 1px solid transparent;
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 12.5px;
+  border: 1px solid var(--suite-glass-edge); background: color-mix(in srgb, var(--suite-text) 6%, transparent);
 }
+.tip-pick b { font-weight: 750; }
 .tip-pick i { font-style: normal; font-variant-numeric: tabular-nums; color: var(--suite-text-soft); }
-.tip-pick em { font-style: normal; font-weight: 800; }
-.tip-pick.won { background: rgba(58, 166, 132, .16); border-color: rgba(58, 166, 132, .45); }
-.tip-pick.won em, .tip-pick.won i { color: var(--bt-up-text); }
-.tip-pick.lost { background: rgba(200, 71, 63, .13); border-color: rgba(200, 71, 63, .4); }
-.tip-pick.lost em, .tip-pick.lost i { color: var(--bt-down-text); }
-.tip-pick.void { opacity: .6; text-decoration: line-through; }
+.tip-pick em { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; font-style: normal; font-weight: 900; font-size: 11px; }
+.tip-pick.won { background: var(--tip-won); border-color: transparent; color: #fff; }
+.tip-pick.won em { background: rgba(255,255,255,.25); }
+.tip-pick.won i { color: rgba(255,255,255,.85); }
+.tip-pick.lost { background: var(--tip-lost); border-color: transparent; color: #fff; }
+.tip-pick.lost em { background: rgba(255,255,255,.25); }
+.tip-pick.lost i { color: rgba(255,255,255,.85); }
+.tip-pick.void { opacity: .55; text-decoration: line-through; }
+.tip-pick.void em { background: color-mix(in srgb, var(--suite-text) 14%, transparent); }
 
+.tip-foot { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--suite-text-soft); }
+.tip-rel { font-weight: 800; letter-spacing: .02em; }
+.tip-rel.rA { color: var(--bt-up-text); }
+.tip-rel.rB { color: var(--tip-mixed); }
+.tip-rel.rC { color: var(--bt-e8c17f); }
+.tip-origin { font-weight: 600; }
+.tip-origin::before { content: "·"; margin-right: 8px; color: var(--suite-text-soft); }
+.tip-origin.stale { color: var(--bt-e8c17f); }
+
+.tip-empty { display: grid; gap: 8px; }
+.tip-empty b { font-size: 20px; }
+
+/* ---------- Statistiche ---------- */
 .tip-mrow { display: grid; gap: 5px; padding: 8px 0; border-top: 1px solid var(--suite-glass-edge); }
 .tip-mrow:first-of-type { border-top: 0; }
 .tip-mhead { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
@@ -60,13 +145,31 @@ h2.section.tip-day { text-transform: capitalize; margin: 16px 4px 8px; }
 .tip-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--suite-teal-grad); }
 .tip-bar i.low { background: linear-gradient(90deg, #e48d24, #c8473f); }
 .tip-bar em { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--suite-text); opacity: .55; }
-
 .tip-cal-grid b { font-variant-numeric: tabular-nums; }
 .tip-leagues { list-style: none; margin: 12px 0 4px; padding: 0; display: grid; gap: 6px; }
 .tip-leagues li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: baseline; font-size: 13px; }
 .tip-leagues li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tip-leagues li small, .tip-leagues li i { color: var(--suite-text-soft); font-style: normal; font-size: 12px; }
 .tip-leagues li b { font-variant-numeric: tabular-nums; }
+
+/* ---------- Pannello File ---------- */
+.tip-sheet { display: grid; gap: 10px; }
+.tip-sheet-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+.tip-sheet-info > div { display: grid; gap: 2px; padding: 9px 11px; border-radius: 12px; background: color-mix(in srgb, var(--suite-text) 6%, transparent); min-width: 0; }
+.tip-sheet-info > div.wide { grid-column: 1 / -1; }
+.tip-sheet-info small { font-size: 11px; color: var(--suite-text-soft); font-weight: 650; }
+.tip-sheet-info b { font-size: 14px; overflow-wrap: anywhere; }
+.tip-sheet-btn {
+  display: grid !important; gap: 2px; text-align: left; width: 100%; min-height: 0 !important;
+  padding: 12px 14px !important; border-radius: 14px !important; font: inherit; color: var(--suite-text) !important;
+  background: color-mix(in srgb, var(--suite-text) 6%, transparent) !important; border: 1px solid var(--suite-glass-edge) !important;
+}
+.tip-sheet-btn b { font-size: 15px; }
+.tip-sheet-btn small { font-size: 12px; color: var(--suite-text-soft); }
+.tip-sheet-btn.primary { background: var(--suite-teal-grad) !important; color: #fff !important; border-color: transparent !important; }
+.tip-sheet-btn.primary small { color: rgba(255,255,255,.85); }
+
+@media (prefers-reduced-motion: reduce) { .tip-dot, .tip-spin { animation: none; } }
 
 /* Pannello della partita */
 .tip-form { display: grid; gap: 10px; }
@@ -99,9 +202,18 @@ h2.section.tip-day { text-transform: capitalize; margin: 16px 4px 8px; }
 .tip-prob.hot { background: rgba(232, 163, 61, .18); }
 @media (max-width: 360px) { .tip-probs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-/* 3.3.1: indicatori trasparenti sull'origine dei pronostici. */
-.tip-status.live { background: rgba(85,156,236,.19); color:#79b9fc; }
-.tip-origin { display:block; width:fit-content; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:999px; color:var(--suite-text-soft); border:1px solid var(--suite-glass-edge); }
-.tip-origin.stale { color:var(--bt-e8c17f); border-color:rgba(232,163,61,.38); }
-.tip-filters .diary-seg button { font-size:11.5px !important; }
-@media(max-width:380px){.tip-filters .diary-seg button {font-size:10px !important;} .tip-filters .diary-seg button small {font-size:9px; margin-left:2px;} }
+
+/* 3.4.1 — Ordinamento per probabilità */
+.tip-sort { grid-column: 1 / -1; }
+.tip-fields .tip-sort { margin-top: 2px; }
+.tip-rank {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: -2px 0 0; padding: 7px 10px; border-radius: 10px;
+  background: color-mix(in srgb, var(--tip-check) 16%, transparent);
+}
+.tip-rank > span { display: grid; gap: 1px; min-width: 0; font-size: 13px; font-weight: 750; }
+.tip-rank small { font-size: 11px; font-weight: 600; color: var(--suite-text-soft); text-transform: capitalize; }
+.tip-rank b { font-size: 20px; font-variant-numeric: tabular-nums; font-family: var(--suite-font-display); }
+.t-won .tip-rank { background: rgba(47, 165, 127, .18); }
+.t-lost .tip-rank { background: rgba(208, 87, 79, .16); }
+.tip-day.no-cap { text-transform: none; }

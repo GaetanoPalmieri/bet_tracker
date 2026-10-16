@@ -25,7 +25,7 @@ var TIP_MARKETS = [
   ['gg', 'Goal / No goal'],
 ];
 var TIP_SHORT = { '1x2': '1X2', o05: 'O/U 0.5', o15: 'O/U 1.5', o25: 'O/U 2.5', ht05: '1° tempo', gg: 'GG/NG' };
-var tipUI = { view: 'open', day: 'all', league: '', q: '', loading: false, fileInfo: '' };
+var tipUI = { view: 'open', day: 'all', league: '', q: '', loading: false, fileInfo: '', panel: 'list', sort: 'time' };
 
 /* ---------- Modello ---------- */
 function tipParams() {
@@ -542,20 +542,20 @@ function tipLearn() {
   };
 }
 
-/* ---------- Pagina ---------- */
+
+/* ---------- Pagina (3.4.0: lista in primo piano, statistiche e file su pulsanti dedicati) ---------- */
+var TIP_IC = {
+  stats: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>',
+  file: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>',
+  list: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>',
+  search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>',
+};
 function tipDayLabel(iso, long) {
   var d = new Date(iso + 'T12:00:00');
   return d.toLocaleDateString('it-IT', long ? { weekday: 'long', day: 'numeric', month: 'long' } : { weekday: 'short', day: 'numeric' });
 }
 function tipPct(v) {
   return v == null ? '—' : Math.round(v) + '%';
-}
-function tipChip(m, p) {
-  var o = tipOutcome(m, p),
-    st = { V: 'won', P: 'lost', N: 'void', '': 'wait' }[o.s];
-  return (
-    '<span class="tip-pick ' + st + '"><b>' + U.esc(p.sel) + '</b><i>' + p.p + '%</i>' + (o.s ? '<em>' + { V: '✓', P: '✕', N: '–' }[o.s] + '</em>' : '') + '</span>'
-  );
 }
 function tipReviewLabel(m) {
   return {
@@ -565,57 +565,98 @@ function tipReviewLabel(m) {
     not_revised: 'Non rivista',
   }[m.review] || 'Analisi precedente';
 }
-function tipCard(m) {
-  var st = tipState(m),
-    score = tipNum(m.ft) ? m.ft[0] + ' – ' + m.ft[1] : '',
-    wins = (m.picks || []).filter(function (p) {
-      return tipOutcome(m, p).s === 'V';
-    }).length,
-    closed = (m.picks || []).filter(function (p) {
-      var s = tipOutcome(m, p).s;
-      return s === 'V' || s === 'P';
-    }).length;
-  var badge = m.cancelled
-    ? '<span class="tip-status void">Annullata</span>'
-    : st === 'live'
-      ? '<span class="tip-status live">In corso</span>'
-      : st === 'check'
-      ? '<span class="tip-status todo">Da verificare</span>'
-      : st === 'done'
-        ? '<span class="tip-status ' + (wins === closed ? 'ok' : wins ? 'mix' : 'ko') + '">' + wins + '/' + closed + ' vinti</span>'
-        : '';
+var TIP_ST = { V: 'won', P: 'lost', N: 'void', '': 'wait' };
+function tipChip(m, p) {
+  var o = tipOutcome(m, p),
+    st = TIP_ST[o.s],
+    mark = { V: '✓', P: '✕', N: '–' }[o.s] || '';
   return (
-    '<button type="button" class="card tip-card' + (m.cancelled ? ' cancelled' : '') + '" data-tip-open="' + U.esc(m.id) + '">' +
-    '<span class="tip-meta"><span class="tip-time">' + U.esc(m.time) + '</span><span class="tip-league">' + U.esc(m.league) + '</span><span class="tip-rel r' + m.rel + '" title="Affidabilità dei dati">' + m.rel + '</span>' + badge + '</span>' +
-    '<span class="tip-teams"><span>' + U.esc(m.home) + '</span><span class="tip-score">' + (score || 'vs') + '</span><span>' + U.esc(m.away) + '</span></span>' +
-    '<span class="tip-origin' + (m.review === 'not_revised' ? ' stale' : '') + '">' + U.esc(tipReviewLabel(m)) + '</span>' +
-    '<span class="tip-picks">' + (m.picks || []).map(function (p) { return tipChip(m, p); }).join('') + '</span></button>'
+    '<span class="tip-pick ' + st + '">' + (mark ? '<em aria-hidden="true">' + mark + '</em>' : '') + '<b>' + U.esc(p.sel) + '</b><i>' + p.p + '%</i>' +
+    (o.s ? '<span class="sr-only">' + { V: 'vinto', P: 'perso', N: 'annullato' }[o.s] + '</span>' : '') + '</span>'
+  );
+}
+/* Colore della partita: tutto vinto, tutto perso, misto, in corso, da verificare, in programma. */
+function tipTone(m) {
+  if (m.cancelled) return 'void';
+  var st = tipState(m);
+  if (st === 'live') return 'live';
+  var won = 0,
+    lost = 0;
+  (m.picks || []).forEach(function (p) {
+    var s = tipOutcome(m, p).s;
+    if (s === 'V') won++;
+    if (s === 'P') lost++;
+  });
+  if (won && !lost) return 'won';
+  if (lost && !won) return 'lost';
+  if (won && lost) return 'mixed';
+  return st === 'check' ? 'check' : 'open';
+}
+function tipCard(m, sortKey) {
+  var tone = tipTone(m),
+    won = 0,
+    closed = 0;
+  (m.picks || []).forEach(function (p) {
+    var s = tipOutcome(m, p).s;
+    if (s === 'V' || s === 'P') closed++;
+    if (s === 'V') won++;
+  });
+  var badge = {
+    void: '<span class="tip-status void">Annullata</span>',
+    live: '<span class="tip-status live"><i class="tip-dot"></i>In corso</span>',
+    check: '<span class="tip-status check">Da verificare</span>',
+    won: '<span class="tip-status won">' + won + '/' + closed + ' vinti</span>',
+    lost: '<span class="tip-status lost">' + won + '/' + closed + ' vinti</span>',
+    mixed: '<span class="tip-status mixed">' + won + '/' + closed + ' vinti</span>',
+    open: '',
+  }[tone];
+  var mid = tipNum(m.ft)
+    ? '<span class="tip-score has"><b>' + m.ft[0] + '</b><span>–</span><b>' + m.ft[1] + '</b>' + (tipNum(m.ht) ? '<small>1T ' + m.ht[0] + '-' + m.ht[1] + '</small>' : '') + '</span>'
+    : '<span class="tip-score"><small>vs</small></span>';
+  return (
+    '<button type="button" class="tip-card t-' + tone + '" data-tip-open="' + U.esc(m.id) + '">' +
+    (sortKey
+      ? '<span class="tip-rank"><span><small>' + U.esc(tipDayLabel(m.date)) + '</small>' + U.esc(tipSortLabel(m, sortKey)) + '</span><b>' + Math.round(m._sv != null ? m._sv : tipSortValue(m, sortKey)) + '%</b></span>'
+      : '') +
+    '<span class="tip-meta"><span class="tip-time">' + U.esc(m.time) + '</span><span class="tip-league">' + U.esc(m.league) + '</span>' + badge + '</span>' +
+    '<span class="tip-teams"><span class="tip-home">' + U.esc(m.home) + '</span>' + mid + '<span class="tip-away">' + U.esc(m.away) + '</span></span>' +
+    '<span class="tip-picks">' + (m.picks || []).map(function (p) { return tipChip(m, p); }).join('') + '</span>' +
+    '<span class="tip-foot"><span class="tip-rel r' + m.rel + '">Dati ' + m.rel + '</span><span class="tip-origin' + (m.review === 'not_revised' ? ' stale' : '') + '">' + U.esc(tipReviewLabel(m)) + '</span></span>' +
+    '</button>'
+  );
+}
+function tipToolbar(list) {
+  var stats = tipUI.panel === 'stats';
+  return (
+    '<div class="tip-toolbar">' +
+    '<div class="tip-toolbar-title"><b>' + (stats ? 'Statistiche' : list.length + ' partite') + '</b><small>' + (stats ? 'Vinti, attese e correzioni' : 'Pronostici oltre il ' + tipParams().threshold + '%') + '</small></div>' +
+    '<button type="button" class="tip-tool' + (stats ? ' on' : '') + '" data-tip-panel="' + (stats ? 'list' : 'stats') + '" aria-label="' + (stats ? 'Torna alle partite' : 'Statistiche') + '">' + (stats ? TIP_IC.list : TIP_IC.stats) + '<span>' + (stats ? 'Partite' : 'Statistiche') + '</span></button>' +
+    '<button type="button" class="tip-tool" data-tip-sheet aria-label="Aggiorna, importa ed esporta">' + TIP_IC.file + '<span>File</span>' + (tipUI.loading ? '<i class="tip-spin"></i>' : '') + '</button>' +
+    '</div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden>'
   );
 }
 function tipsPage() {
-  var list = (db.predictions || []).slice(),
-    P = tipParams();
+  var list = (db.predictions || []).slice();
   if (!list.length) {
     return (
-      '<section class="card hero tip-hero"><small>PRONOSTICI</small><div class="big">Nessuna partita</div><p class="muted">I pronostici arrivano dal file che prepara Claude. Chiedigli “prevedi le prossime partite”, poi pubblica l’app oppure importa il file qui.</p>' +
-      '<div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tip-fetch>↻ Cerca aggiornamenti</button><button type="button" class="flow-btn" data-tip-import>Importa file</button></div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden></section>'
+      '<section class="card tip-empty"><b>Nessuna partita</b><p class="muted">I pronostici arrivano dal file che prepara Claude. Chiedigli “prevedi le prossime partite”, poi pubblica l’app oppure importa il file qui.</p>' +
+      '<div class="actions"><button type="button" class="primary" data-tip-fetch>↻ Cerca aggiornamenti</button><button type="button" data-tip-import>Importa file</button></div></section><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden>'
     );
   }
-  var days = [];
+  return tipToolbar(list) + (tipUI.panel === 'stats' ? tipStatsPanel(list) : tipListPanel(list));
+}
+function tipListPanel(list) {
+  var days = [],
+    leagues = [],
+    counts = { open: 0, live: 0, check: 0, done: 0 };
   list.forEach(function (m) {
     if (days.indexOf(m.date) < 0) days.push(m.date);
+    if (leagues.indexOf(m.league) < 0) leagues.push(m.league);
+    counts[tipState(m)]++;
   });
   days.sort();
-  var leagues = [];
-  list.forEach(function (m) {
-    if (leagues.indexOf(m.league) < 0) leagues.push(m.league);
-  });
   leagues.sort(function (a, b) {
     return a.localeCompare(b, 'it');
-  });
-  var counts = { open: 0, live: 0, check: 0, done: 0 };
-  list.forEach(function (m) {
-    counts[tipState(m)]++;
   });
   var q = tipUI.q.trim().toLowerCase();
   var shown = list
@@ -630,19 +671,74 @@ function tipsPage() {
     .sort(function (a, b) {
       return tipKickoff(a) - tipKickoff(b) || a.league.localeCompare(b.league);
     });
-  if (tipUI.view === 'done')
-    shown.reverse();
-  var sum = tipSummary(tipClosed()),
-    first = days[0],
-    lastD = days[days.length - 1];
+  if (tipUI.view === 'done') shown.reverse();
+  var byProb = tipUI.sort !== 'time';
+  if (byProb) {
+    shown.forEach(function (m) {
+      m._sv = tipSortValue(m, tipUI.sort);
+    });
+    shown.sort(function (a, b) {
+      return b._sv - a._sv || tipKickoff(a) - tipKickoff(b);
+    });
+  }
 
-  var batchLabel = (db.predModel || {}).lastLabel || (db.predModel || {}).lastBatch || '—';
-  var hero =
-    '<section class="card hero tip-hero"><div class="row"><small>PRONOSTICI</small><span class="diary-chip ' + (counts.check ? 'todo' : 'ok') + '">' + (counts.check ? counts.check + ' da verificare' : '✓ Tutto in ordine') + '</span></div>' +
-    '<div class="big">' + list.length + ' partite</div>' +
-    '<div class="diary-hero-sub"><span>Dal <b>' + tipDayLabel(first) + '</b> al <b>' + tipDayLabel(lastD) + '</b> · soglia oltre il ' + P.threshold + '%</span><span>Modello v' + U.esc(P.version) + ((db.predModel || {}).learned ? ' + correzioni imparate' : '') + ' · ' + U.esc(batchLabel) + '</span></div>' +
-    '<div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tip-fetch>' + (tipUI.loading ? 'Controllo…' : '↻ Aggiorna') + '</button><button type="button" class="flow-btn" data-tip-import>Importa file</button></div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden></section>';
+  var chip = function (attr, val, label, count, cur, tone) {
+    return (
+      '<button type="button" class="tip-chip' + (cur === val ? ' on' : '') + (tone ? ' c-' + tone : '') + '" ' + attr + '="' + val + '" aria-pressed="' + (cur === val) + '">' + label +
+      (count != null ? '<span class="tip-count">' + count + '</span>' : '') + '</button>'
+    );
+  };
+  var states =
+    chip('data-tip-view', 'open', 'Prossime', counts.open, tipUI.view) +
+    (counts.live ? chip('data-tip-view', 'live', 'In corso', counts.live, tipUI.view, 'live') : '') +
+    chip('data-tip-view', 'check', 'Da verificare', counts.check, tipUI.view, counts.check ? 'check' : '') +
+    chip('data-tip-view', 'done', 'Concluse', counts.done, tipUI.view) +
+    chip('data-tip-view', 'all', 'Tutte', list.length, tipUI.view);
+  var dayChips =
+    days.length > 1
+      ? chip('data-tip-day', 'all', 'Tutti i giorni', null, tipUI.day) +
+        days.map(function (d) { var l = tipDayLabel(d); return chip('data-tip-day', d, l.charAt(0).toUpperCase() + l.slice(1), null, tipUI.day); }).join('')
+      : '';
+  var filters =
+    '<section class="tip-filters" aria-label="Filtri">' +
+    '<div class="tip-filter-label">Stato</div><div class="tip-chips" role="group" aria-label="Stato">' + states + '</div>' +
+    (dayChips ? '<div class="tip-filter-label">Giorno</div><div class="tip-chips" role="group" aria-label="Giorno">' + dayChips + '</div>' : '') +
+    '<div class="tip-fields"><label class="tip-field"><span>Campionato</span><select id="tip-league"><option value="">Tutti</option>' +
+    leagues.map(function (l) { return '<option value="' + U.esc(l) + '"' + (tipUI.league === l ? ' selected' : '') + '>' + U.esc(l) + '</option>'; }).join('') +
+    '</select></label><label class="tip-field"><span>Squadra</span><span class="tip-search">' + TIP_IC.search + '<input id="tip-q" type="search" placeholder="Cerca" value="' + U.esc(tipUI.q) + '"></span></label></div>' +
+    '<label class="tip-field tip-sort"><span>Ordina per</span><select id="tip-sort">' +
+    TIP_SORTS.map(function (o) { return '<option value="' + o[0] + '"' + (tipUI.sort === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+    '</select></label>' +
+    ((tipUI.view !== 'open' || tipUI.day !== 'all' || tipUI.league || tipUI.q || byProb) ? '<button type="button" class="tip-reset" data-tip-reset>Azzera filtri</button>' : '') +
+    '</section>';
 
+  var body = '',
+    lastDay = '';
+  if (byProb && shown.length)
+    body += '<h2 class="tip-day no-cap"><span>' + U.esc(TIP_SORTS.find(function (o) { return o[0] === tipUI.sort; })[1]) + '</span><small>dal più probabile · ' + shown.length + ' partite</small></h2>';
+  shown.forEach(function (m) {
+    if (byProb) {
+      body += tipCard(m, tipUI.sort);
+      return;
+    }
+    if (m.date !== lastDay) {
+      var n = shown.filter(function (x) { return x.date === m.date; }).length;
+      body += '<h2 class="tip-day"><span>' + tipDayLabel(m.date, true) + '</span><small>' + n + (n === 1 ? ' partita' : ' partite') + '</small></h2>';
+      lastDay = m.date;
+    }
+    body += tipCard(m);
+  });
+  if (!shown.length)
+    body = '<div class="card empty">' + (tipUI.view === 'check' ? 'Nessuna partita da verificare.' : tipUI.view === 'live' ? 'Nessuna partita in corso.' : 'Nessuna partita con questi filtri.') + '</div>';
+  return filters + '<div class="tip-list">' + body + '</div>';
+}
+function tipStatsPanel(list) {
+  var P = tipParams(),
+    sum = tipSummary(tipClosed()),
+    counts = { open: 0, live: 0, check: 0, done: 0 };
+  list.forEach(function (m) {
+    counts[tipState(m)]++;
+  });
   var kpi = function (label, val, sub, cls) {
     return '<div class="card diary-kpi"><small>' + label + '</small><b class="' + (cls || '') + '">' + val + '</b><span>' + sub + '</span></div>';
   };
@@ -650,45 +746,12 @@ function tipsPage() {
     '<div class="diary-kpis">' +
     kpi('Vinti', tipPct(sum.rate), sum.n ? sum.w + ' su ' + sum.n + ' pronostici' : 'nessun esito ancora', sum.rate == null ? '' : sum.rate >= sum.exp ? 'positive' : 'negative') +
     kpi('Atteso dal modello', sum.n ? tipPct(sum.exp) : '—', 'media delle probabilità') +
-    kpi('Da giocare', String(counts.open), 'partite in programma') +
+    kpi('Da giocare', String(counts.open), counts.check ? counts.check + ' da verificare' : 'partite in programma') +
     kpi('Precisione', sum.brier == null ? '—' : sum.brier.toFixed(3), 'Brier: più basso è meglio') +
     '</div>';
-
-  var seg = function (items, cur, attr) {
-    return (
-      '<div class="diary-seg tip-seg" style="grid-template-columns:repeat(' + items.length + ',minmax(0,1fr))" role="group">' +
-      items
-        .map(function (it) {
-          return '<button type="button" ' + attr + '="' + it[0] + '" class="' + (cur === it[0] ? 'active' : '') + '" aria-pressed="' + (cur === it[0]) + '">' + it[1] + '</button>';
-        })
-        .join('') +
-      '</div>'
-    );
-  };
-  var filters =
-    '<section class="card tip-filters">' +
-    seg([['open', 'Prossime<small>' + counts.open + '</small>'], ['live', 'Live<small>' + counts.live + '</small>'], ['check', 'Verifica<small>' + counts.check + '</small>'], ['done', 'Concluse<small>' + counts.done + '</small>'], ['all', 'Tutte<small>' + list.length + '</small>']], tipUI.view, 'data-tip-view') +
-    (days.length > 1 ? seg([['all', 'Tutti']].concat(days.slice(-4).map(function (d) { return [d, tipDayLabel(d)]; })), tipUI.day, 'data-tip-day') : '') +
-    '<div class="tip-filter-row"><select id="tip-league" aria-label="Campionato"><option value="">Tutti i campionati</option>' +
-    leagues.map(function (l) { return '<option value="' + U.esc(l) + '"' + (tipUI.league === l ? ' selected' : '') + '>' + U.esc(l) + '</option>'; }).join('') +
-    '</select><input id="tip-q" type="search" placeholder="Cerca squadra" value="' + U.esc(tipUI.q) + '" aria-label="Cerca squadra"></div></section>';
-
-  var body = '',
-    lastDay = '';
-  shown.forEach(function (m) {
-    if (m.date !== lastDay) {
-      body += '<h2 class="section tip-day">' + tipDayLabel(m.date, true) + '</h2>';
-      lastDay = m.date;
-    }
-    body += tipCard(m);
-  });
-  if (!shown.length)
-    body = '<div class="card empty">' + (tipUI.view === 'check' ? 'Nessuna partita da verificare.' : 'Nessuna partita con questi filtri.') + '</div>';
-
-  /* Andamento per mercato */
   var rows = tipClosed();
   var mk =
-    '<section class="card diary-card tip-markets"><h2>Andamento per mercato</h2><p class="muted">Solo i pronostici oltre il ' + P.threshold + '%. “Atteso” è la media delle probabilità date dal modello: se i vinti restano sotto, il modello è troppo ottimista su quel mercato.</p>' +
+    '<section class="card diary-card tip-markets"><h2>Andamento per mercato</h2><p class="muted">Solo i pronostici oltre il ' + P.threshold + '%. La tacca è quanto si aspettava il modello: se la barra resta sotto, il modello è troppo ottimista su quel mercato.</p>' +
     TIP_MARKETS.map(function (k) {
       var s = tipSummary(rows.filter(function (r) { return r.p.m === k[0]; }));
       var w = s.rate == null ? 0 : Math.max(2, s.rate);
@@ -698,8 +761,6 @@ function tipsPage() {
       );
     }).join('') +
     '</section>';
-
-  /* Calibrazione: cosa ha imparato il modello */
   var L = tipLearn(),
     learned = (db.predModel || {}).learned;
   var cal = '<section class="card diary-card money-card tip-cal"><h2>Il modello impara</h2>';
@@ -727,11 +788,95 @@ function tipsPage() {
       '<div class="actions"><button type="button" class="primary" data-tip-learn>Applica correzioni</button>' + (learned ? '<button type="button" data-tip-unlearn>Torna al modello di base</button>' : '') + '</div>';
   }
   cal += '</section>';
-
-  var exp =
-    '<section class="card diary-card"><h2>Per Claude e GPT</h2><p class="muted">Lo stesso JSON storico funziona con entrambi: include partite, gol attesi, probabilità, pronostici, risultati ed esiti. Allegalo a Claude o GPT per analisi e ricalibrazione. Non addestra automaticamente il modello.</p><div class="actions"><button type="button" data-tip-export>Esporta storico (Claude / GPT)</button></div></section>';
-
-  return hero + kpis + filters + body + mk + cal + exp;
+  return kpis + mk + cal;
+}
+/* 3.4.1 — Ordinamento: ora oppure probabilità (pronostico migliore o un mercato). */
+try {
+  var _ts = localStorage.getItem('bet_tip_sort');
+  if (_ts) tipUI.sort = _ts;
+} catch (e) {}
+var TIP_SORTS = [
+  ['time', 'Ora di inizio'],
+  ['best', 'Pronostico più probabile'],
+  ['o05', 'Over 0.5'],
+  ['o15', 'Over 1.5'],
+  ['o25', 'Over 2.5'],
+  ['ht05', 'Over 0.5 1° tempo'],
+  ['gg', 'Goal'],
+  ['1x2', 'Segno 1X2'],
+];
+function tipSortValue(m, key) {
+  if (key === 'best')
+    return (m.picks || []).reduce(function (mx, p) {
+      return Math.max(mx, p.p);
+    }, 0);
+  var c = tipCalc(m);
+  if (key === '1x2') return Math.max(c.p1, c.px, c.p2);
+  return c[key];
+}
+function tipSortLabel(m, key) {
+  if (key === 'best') {
+    var b = (m.picks || []).slice().sort(function (a, z) {
+      return z.p - a.p;
+    })[0];
+    return b ? b.sel : '';
+  }
+  if (key === '1x2') {
+    var c = tipCalc(m);
+    return 'Segno ' + (c.p1 >= c.px && c.p1 >= c.p2 ? '1' : c.p2 >= c.px ? '2' : 'X');
+  }
+  return { o05: 'Over 0.5', o15: 'Over 1.5', o25: 'Over 2.5', ht05: 'Over 0.5 1T', gg: 'Goal' }[key];
+}
+/* Pannello File: aggiorna dal sito, importa JSON/CSV, esporta lo storico. */
+function tipFileSheet() {
+  var P = tipParams(),
+    pm = db.predModel || {},
+    list = db.predictions || [],
+    days = list.map(function (m) { return m.date; }).sort();
+  var html =
+    sheetHead('Pronostici', { sub: list.length ? 'Dal ' + U.esc(tipDayLabel(days[0])) + ' al ' + U.esc(tipDayLabel(days[days.length - 1])) : 'Nessuna partita' }) +
+    '<div class="tip-sheet">' +
+    '<div class="tip-sheet-info"><div><small>Modello</small><b>v' + U.esc(P.version) + (pm.learned ? ' + correzioni' : '') + '</b></div><div><small>Soglia</small><b>oltre il ' + P.threshold + '%</b></div><div class="wide"><small>Ultimo file</small><b>' + U.esc(pm.lastLabel || pm.lastBatch || '—') + '</b></div><div class="wide"><small>Ultimo controllo</small><b>' + (pm.lastCheck ? U.esc(U.date(pm.lastCheck)) : 'mai') + '</b></div></div>' +
+    '<button type="button" class="tip-sheet-btn primary" data-s="fetch"><b>↻ Aggiorna dal sito</b><small>Scarica il pronostici.json pubblicato con l’app</small></button>' +
+    '<button type="button" class="tip-sheet-btn" data-s="import"><b>Importa file</b><small>pronostici.json o pronostici.csv preparati da Claude</small></button>' +
+    '<button type="button" class="tip-sheet-btn" data-s="export"><b>Esporta storico</b><small>Risultati ed esiti in JSON, da dare a Claude o GPT per ricalibrare</small></button>' +
+    '</div>';
+  var d = sheetModal(html);
+  d.querySelector('[data-s="fetch"]').onclick = function () {
+    d.close();
+    tipFetch({ manual: true });
+    render();
+  };
+  d.querySelector('[data-s="import"]').onclick = function () {
+    d.close();
+    var f = document.getElementById('tip-file');
+    if (f) f.click();
+  };
+  d.querySelector('[data-s="export"]').onclick = function () {
+    d.close();
+    tipExport();
+  };
+}
+function tipExport() {
+  var P = tipParams();
+  U.download('pronostici-storico-' + U.local().slice(0, 10) + '.json', {
+    app: 'bet_tracker',
+    kind: 'pronostici-storico',
+    exportedAt: new Date().toISOString(),
+    compatibleWith: ['Claude', 'GPT'],
+    schemaVersion: '1',
+    model: (db.predModel || {}).base || TIP_DEFAULTS,
+    learned: (db.predModel || {}).learned || null,
+    matches: (db.predictions || []).map(function (m) {
+      var c = tipCalc(m, P);
+      return Object.assign({}, m, {
+        prob: { p1: c.p1, px: c.px, p2: c.p2, o05: c.o05, o15: c.o15, o25: c.o25, ht05: c.ht05, gg: c.gg },
+        outcomes: (m.picks || []).map(function (p) {
+          return { m: p.m, sel: p.sel, p: p.p, esito: tipOutcome(m, p).s || null };
+        }),
+      });
+    }),
+  });
 }
 
 /* ---------- Dettaglio partita ---------- */
@@ -870,6 +1015,14 @@ function bindTips() {
       render();
     };
   });
+  var so = document.getElementById('tip-sort');
+  if (so)
+    so.onchange = function () {
+      tipUI.sort = so.value;
+      try { localStorage.setItem('bet_tip_sort', so.value); } catch (e) {}
+      render();
+      window.scrollTo(0, 0);
+    };
   var lg = document.getElementById('tip-league');
   if (lg)
     lg.onchange = function () {
@@ -922,26 +1075,27 @@ function bindTips() {
     };
   });
   main.querySelectorAll('[data-tip-export]').forEach(function (b) {
+    b.onclick = tipExport;
+  });
+  main.querySelectorAll('[data-tip-panel]').forEach(function (b) {
     b.onclick = function () {
-      var P = tipParams();
-      U.download('pronostici-storico-' + U.local().slice(0, 10) + '.json', {
-        app: 'bet_tracker',
-        kind: 'pronostici-storico',
-        exportedAt: new Date().toISOString(),
-        compatibleWith: ['Claude', 'GPT'],
-        schemaVersion: '1',
-        model: (db.predModel || {}).base || TIP_DEFAULTS,
-        learned: (db.predModel || {}).learned || null,
-        matches: (db.predictions || []).map(function (m) {
-          var c = tipCalc(m, P);
-          return Object.assign({}, m, {
-            prob: { p1: c.p1, px: c.px, p2: c.p2, o05: c.o05, o15: c.o15, o25: c.o25, ht05: c.ht05, gg: c.gg },
-            outcomes: (m.picks || []).map(function (p) {
-              return { m: p.m, sel: p.sel, p: p.p, esito: tipOutcome(m, p).s || null };
-            }),
-          });
-        }),
-      });
+      tipUI.panel = b.dataset.tipPanel;
+      render();
+      window.scrollTo(0, 0);
+    };
+  });
+  main.querySelectorAll('[data-tip-sheet]').forEach(function (b) {
+    b.onclick = tipFileSheet;
+  });
+  main.querySelectorAll('[data-tip-reset]').forEach(function (b) {
+    b.onclick = function () {
+      tipUI.view = 'open';
+      tipUI.day = 'all';
+      tipUI.league = '';
+      tipUI.q = '';
+      tipUI.sort = 'time';
+      try { localStorage.removeItem('bet_tip_sort'); } catch (e) {}
+      render();
     };
   });
   /* Controllo automatico del file all'apertura della scheda, al massimo ogni 30 minuti. */

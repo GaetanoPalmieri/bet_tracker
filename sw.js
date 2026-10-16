@@ -3,29 +3,29 @@
    - Pagina: rete con timeout di 3 secondi, poi la copia salvata (funziona anche offline).
    - File con ?v= e icone: prima la cache; un nuovo rilascio cambia ?v= e quindi l'indirizzo.
    - Il nuovo worker resta in attesa finché l'app non chiede di attivarlo (avviso "Aggiorna"). */
-const VERSION = '3.3.1';
+const VERSION = '3.4.1';
 const PREFIX = 'bet-tracker-';
 const CACHE = PREFIX + VERSION;
 const SHELL = [
   './',
   './index.html',
-  './suite.js?v=3.3.1',
-  './colors.css?v=3.3.1',
-  './base.css?v=3.3.1',
-  './shared.css?v=3.3.1',
-  './app.css?v=3.3.1',
-  './suite.css?v=3.3.1',
-  './suite-tokens.css?v=3.3.1',
-  './shared.js?v=3.3.1',
-  './app.js?v=3.3.1',
-  './pronostici.js?v=3.3.1',
-  './pronostici.css?v=3.3.1',
-  './manifest.webmanifest?v=3.3.1',
-  './favicon.ico?v=3.3.1',
-  './favicon-32.png?v=3.3.1',
-  './apple-touch-icon.png?v=3.3.1',
-  './bet-icon-192.png?v=3.3.1',
-  './bet-icon-512.png?v=3.3.1'
+  './suite.js?v=3.4.1',
+  './colors.css?v=3.4.1',
+  './base.css?v=3.4.1',
+  './shared.css?v=3.4.1',
+  './app.css?v=3.4.1',
+  './suite.css?v=3.4.1',
+  './suite-tokens.css?v=3.4.1',
+  './shared.js?v=3.4.1',
+  './app.js?v=3.4.1',
+  './pronostici.js?v=3.4.1',
+  './pronostici.css?v=3.4.1',
+  './manifest.webmanifest?v=3.4.1',
+  './favicon.ico?v=3.4.1',
+  './favicon-32.png?v=3.4.1',
+  './apple-touch-icon.png?v=3.4.1',
+  './bet-icon-192.png?v=3.4.1',
+  './bet-icon-512.png?v=3.4.1'
 ];
 const NETWORK_TIMEOUT_MS = 3000;
 
@@ -64,7 +64,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // TheSportsDB e Supabase: sempre dalla rete
-  if (url.pathname.endsWith('/pronostici.json')) return; // 3.3.1 — file dei pronostici: sempre dalla rete
+  if (url.pathname.endsWith('/pronostici.json')) return; // 3.4.1 — file dei pronostici: sempre dalla rete
 
   if (req.mode === 'navigate') {
     const network = fromNetworkAndStore(req, './index.html');
