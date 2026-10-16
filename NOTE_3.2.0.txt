@@ -1,0 +1,20 @@
+VERSIONE 3.2.0 - Pronostici: Over 0.5 e import CSV
+
+Novita' rispetto alla 3.1.0 (scheda Pronostici)
+- Nuovo mercato Over/Under 0.5 gol nella partita: probabilita' nel dettaglio, pronostico
+  quando supera la soglia, vinto/perso automatico dal risultato finale.
+- Le partite gia' importate ricevono il pronostico Over 0.5 al prossimo aggiornamento
+  del file (solo quelle non ancora giocate).
+- "Importa file" accetta anche il CSV (pronostici.csv): separatore ; o , e decimali con
+  virgola o punto. Colonne lette: data, ora, campionato, casa, trasferta, lambda_casa,
+  lambda_trasferta, affidabilita, nota e, se presenti, finale (es. 2-1), primo_tempo,
+  annullata. Le colonne con le probabilita' servono solo da leggere.
+
+Novita' della 3.1.0 (inclusa)
+- Scheda Pronostici con il modello di Poisson dentro l'app, solo pronostici oltre il 70%,
+  risultati con vinto/perso automatico, andamento per mercato, correzioni imparate dai
+  risultati ed esportazione dello storico. Dettagli in strumenti/pronostici/LEGGIMI.txt.
+
+Pubblicazione
+- Carica tutta la cartella bet_tracker (nuovi file: pronostici.js, pronostici.css,
+  pronostici.json).

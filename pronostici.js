@@ -1,6 +1,6 @@
 /* =====================================================================
-   3.1.0 — PRONOSTICI
-   Modello di Poisson dentro l'app. Claude prepara il file pronostici.json
+   3.3.0 — PRONOSTICI
+   Modello di Poisson dentro l'app. Claude o GPT preparano il file pronostici.json
    (partite, gol attesi λ di casa e trasferta, parametri del modello);
    l'app calcola le probabilità, tiene solo i pronostici oltre la soglia,
    segna vinto/perso dai risultati e impara dai propri errori
@@ -18,12 +18,13 @@ var TIP_FILE = 'pronostici.json';
 var TIP_DEFAULTS = { version: '1', threshold: 70, htShare: 0.45, drawBoost: 1, goalFactor: 1, leagueGoal: {} };
 var TIP_MARKETS = [
   ['1x2', '1X2'],
+  ['o05', 'Over/Under 0.5'],
   ['o15', 'Over/Under 1.5'],
   ['o25', 'Over/Under 2.5'],
   ['ht05', 'O/U 0.5 1° tempo'],
   ['gg', 'Goal / No goal'],
 ];
-var TIP_SHORT = { '1x2': '1X2', o15: 'O/U 1.5', o25: 'O/U 2.5', ht05: '1° tempo', gg: 'GG/NG' };
+var TIP_SHORT = { '1x2': '1X2', o05: 'O/U 0.5', o15: 'O/U 1.5', o25: 'O/U 2.5', ht05: '1° tempo', gg: 'GG/NG' };
 var tipUI = { view: 'open', day: 'all', league: '', q: '', loading: false, fileInfo: '' };
 
 /* ---------- Modello ---------- */
@@ -70,6 +71,7 @@ function tipCalc(m, P) {
   var p1 = 0,
     px = 0,
     p2 = 0,
+    u05 = 0,
     u15 = 0,
     u25 = 0,
     gg = 0,
@@ -80,6 +82,7 @@ function tipCalc(m, P) {
       if (i > j) p1 += q;
       else if (i === j) px += q;
       else p2 += q;
+      if (i + j === 0) u05 += q;
       if (i + j <= 1) u15 += q;
       if (i + j <= 2) u25 += q;
       if (i > 0 && j > 0) gg += q;
@@ -103,6 +106,7 @@ function tipCalc(m, P) {
     p1: pc(p1),
     px: pc(px),
     p2: pc(p2),
+    o05: pc(1 - u05),
     o15: pc(1 - u15),
     o25: pc(1 - u25),
     ht05: pc(1 - Math.exp(-(P.htShare || 0.45) * (lh + la))),
@@ -120,6 +124,9 @@ function tipChoices(c) {
   };
   return {
     '1x2': { sel: 'Segno ' + one[0], p: one[1] },
+    o05: (function (x) {
+      return { sel: x[0], p: x[1] };
+    })(two(c.o05, 'Over 0.5', 'Under 0.5')),
     o15: (function (x) {
       return { sel: x[0], p: x[1] };
     })(two(c.o15, 'Over 1.5', 'Under 1.5')),
@@ -168,6 +175,7 @@ function tipAutoOutcome(m, pick) {
     var r = h > a ? '1' : h < a ? '2' : 'X';
     return pick.sel === 'Segno ' + r ? 'V' : 'P';
   }
+  if (pick.m === 'o05') return (pick.sel.indexOf('Over') === 0) === t >= 1 ? 'V' : 'P';
   if (pick.m === 'o15') return (pick.sel.indexOf('Over') === 0) === t >= 2 ? 'V' : 'P';
   if (pick.m === 'o25') return (pick.sel.indexOf('Over') === 0) === t >= 3 ? 'V' : 'P';
   if (pick.m === 'gg') return (pick.sel === 'Goal') === (h > 0 && a > 0) ? 'V' : 'P';
@@ -219,35 +227,49 @@ function tipSlug(s) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
+/* 3.3.0 — Rispetto dei pronostici già giocati: solo le partite future senza
+   risultati/esiti manuali ricevono nuovi lambda, note e picks. Il batch non
+   rappresenta un retraining: le correzioni già apprese restano attive. */
 function tipMerge(file, { manual = false } = {}) {
   if (!tipValidFile(file)) {
     U.toast('File dei pronostici non valido. Nessun dato modificato.');
     return false;
   }
-  var res = { added: 0, results: 0, updated: 0 };
+  var res = { added: 0, results: 0, updated: 0, retired: 0 };
   var ok = mutate(function (n) {
     n.predictions = n.predictions || [];
     n.predModel = n.predModel || {};
     var fp = Object.assign({}, TIP_DEFAULTS, file.model || {});
     var oldV = n.predModel.base && n.predModel.base.version;
-    /* Un modello nuovo (retraining di Claude) assorbe le correzioni imparate: si riparte da zero. */
-    if (oldV !== fp.version) n.predModel.learned = null;
+    /* Azzerare l'apprendimento soltanto se cambia DAVVERO la versione del modello,
+       non quando cambia il batch delle previsioni. */
+    if (oldV != null && oldV !== fp.version) n.predModel.learned = null;
     n.predModel.base = fp;
     var P = (function () {
       var keep = db;
       db = n;
-      var p = tipParams();
-      db = keep;
-      return p;
+      try { return tipParams(); } finally { db = keep; }
     })();
-    var byId = {};
-    n.predictions.forEach(function (m) {
-      byId[m.id] = m;
+    /* Ritiri documentati: elimina esclusivamente eventuali pronostici non
+       ancora conclusi e senza interventi manuali, mai lo storico. */
+    (file.retiredMatches || []).forEach(function (rm) {
+      n.predictions = n.predictions.filter(function (m) {
+        var same = m.date === rm.date && tipSlug(m.home) === tipSlug(rm.home) && tipSlug(m.away) === tipSlug(rm.away);
+        if (!same) return true;
+        if (tipNum(m.ft) || tipNum(m.ht) || (m.ov && Object.keys(m.ov).length)) return true;
+        res.retired++;
+        return false;
+      });
     });
+    var byId = {};
+    n.predictions.forEach(function (m) { byId[m.id] = m; });
     file.matches.forEach(function (fm) {
       var id = fm.id || fm.date + '_' + tipSlug(fm.home) + '_' + tipSlug(fm.away);
       var cur = byId[id];
       if (!cur) {
+        /* Evita di pubblicare come nuovi pronostici partite gia' iniziate
+           nel momento in cui il dispositivo importa il file. */
+        if (!tipNum(fm.ft) && !tipNum(fm.ht) && !fm.cancelled && tipKickoff(fm).getTime() <= Date.now()) return;
         var m = {
           id: id,
           date: fm.date,
@@ -267,25 +289,37 @@ function tipMerge(file, { manual = false } = {}) {
         if (Array.isArray(fm.p1x2) && fm.p1x2.length === 3) m.p1x2 = fm.p1x2.map(Number);
         if (fm.cancelled) m.cancelled = true;
         m.picks = tipPicksFor(m, P);
-        if (!m.picks.length) return; // sotto soglia: non entra
+        if (!m.picks.length) return;
         n.predictions.push(m);
         byId[id] = m;
         res.added++;
       } else {
-        /* Partita già presente: il file porta solo risultati, orario e annullamenti. */
-        if (!tipNum(cur.ft) && tipNum(fm.ft)) {
-          cur.ft = fm.ft;
-          res.results++;
-        }
-        if (!tipNum(cur.ht) && tipNum(fm.ht)) cur.ht = fm.ht;
-        if (fm.cancelled && !cur.cancelled) {
-          cur.cancelled = true;
-          res.updated++;
-        }
-        if (fm.time && cur.time !== String(fm.time) && !tipNum(cur.ft)) {
+        var noScores = !tipNum(cur.ft) && !tipNum(cur.ht);
+        var manualOutcomes = cur.ov && Object.keys(cur.ov).length > 0;
+        var nextKickoff = new Date(fm.date + 'T' + (/^\d{2}:\d{2}$/.test(fm.time || '') ? fm.time : '23:59') + ':00');
+        var future = nextKickoff.getTime() > Date.now() && tipKickoff(cur).getTime() > Date.now();
+        if (future && noScores && !cur.cancelled && !manualOutcomes) {
+          /* Versione 3.2.0: le partite esistenti non potevano essere aggiornate.
+             Da 3.3.0 si sostituiscono anche mercati/pesi oltre la soglia. */
+          var oldSnapshot = JSON.stringify([cur.lh, cur.la, cur.p1x2, cur.picks, cur.rel, cur.note, cur.time, cur.league]);
+          cur.lh = Math.round(fm.lh * 1000) / 1000;
+          cur.la = Math.round(fm.la * 1000) / 1000;
+          cur.rel = ['A', 'B', 'C'].indexOf(fm.rel) >= 0 ? fm.rel : 'B';
+          cur.note = fm.note ? String(fm.note) : '';
+          cur.league = String(fm.league || cur.league || '');
+          cur.time = String(fm.time || cur.time);
+          if (Array.isArray(fm.p1x2) && fm.p1x2.length === 3) cur.p1x2 = fm.p1x2.map(Number);
+          else delete cur.p1x2;
+          cur.batch = String(file.batch || fm.date);
+          cur.picks = tipPicksFor(cur, P);
+          if (JSON.stringify([cur.lh, cur.la, cur.p1x2, cur.picks, cur.rel, cur.note, cur.time, cur.league]) !== oldSnapshot) res.updated++;
+        } else if (fm.time && cur.time !== String(fm.time) && noScores && future) {
           cur.time = String(fm.time);
           res.updated++;
         }
+        if (!tipNum(cur.ft) && tipNum(fm.ft)) { cur.ft = fm.ft; res.results++; }
+        if (!tipNum(cur.ht) && tipNum(fm.ht)) cur.ht = fm.ht;
+        if (fm.cancelled && !cur.cancelled) { cur.cancelled = true; res.updated++; }
       }
     });
     n.predModel.lastBatch = String(file.batch || '');
@@ -295,10 +329,92 @@ function tipMerge(file, { manual = false } = {}) {
     var msg = [];
     if (res.added) msg.push(res.added + ' nuove partite');
     if (res.results) msg.push(res.results + ' risultati');
-    if (res.updated) msg.push(res.updated + ' aggiornamenti');
+    if (res.updated) msg.push(res.updated + ' previsioni aggiornate');
+    if (res.retired) msg.push(res.retired + ' partite ritirate');
     if (msg.length || manual) U.toast(msg.length ? 'Pronostici: ' + msg.join(', ') : 'Pronostici già aggiornati');
   }
   return ok;
+}
+/* 3.2.0 — Import da CSV (separatore ; o , e decimali con virgola o punto).
+   Colonne lette: data, ora, campionato, casa, trasferta, lambda_casa, lambda_trasferta,
+   affidabilita, nota, finale (es. 2-1), primo_tempo, annullata. Le altre (probabilità) si ignorano. */
+function tipParseCsv(text) {
+  text = text.replace(/^\uFEFF/, '');
+  var first = text.split(/\r?\n/)[0] || '',
+    sep = (first.match(/;/g) || []).length >= (first.match(/,/g) || []).length ? ';' : ',';
+  var rows = [],
+    row = [],
+    cell = '',
+    q = false;
+  for (var i = 0; i < text.length; i++) {
+    var ch = text[i];
+    if (q) {
+      if (ch === '"' && text[i + 1] === '"') {
+        cell += '"';
+        i++;
+      } else if (ch === '"') q = false;
+      else cell += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === sep) {
+      row.push(cell);
+      cell = '';
+    } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell);
+      cell = '';
+      if (row.some(function (c) { return c.trim() !== ''; })) rows.push(row);
+      row = [];
+    } else cell += ch;
+  }
+  row.push(cell);
+  if (row.some(function (c) { return c.trim() !== ''; })) rows.push(row);
+  if (rows.length < 2) return null;
+  var head = rows[0].map(function (h) {
+    return tipSlug(h).replace(/-/g, '_');
+  });
+  var col = function (r, names) {
+    for (var k = 0; k < names.length; k++) {
+      var ix = head.indexOf(names[k]);
+      if (ix >= 0) return (r[ix] || '').trim();
+    }
+    return '';
+  };
+  var num = function (v) {
+    return v === '' ? NaN : Number(String(v).replace(',', '.'));
+  };
+  var score = function (v) {
+    var m = /^(\d{1,2})\s*[-:]\s*(\d{1,2})$/.exec(v || '');
+    return m ? [Number(m[1]), Number(m[2])] : null;
+  };
+  var toIso = function (v) {
+    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(v);
+    return m ? m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2) : v;
+  };
+  var matches = rows.slice(1).map(function (r) {
+    var m = {
+      date: toIso(col(r, ['data', 'date'])),
+      time: col(r, ['ora', 'time']) || 'n.d.',
+      league: col(r, ['campionato', 'league']),
+      home: col(r, ['casa', 'home']),
+      away: col(r, ['trasferta', 'away']),
+      lh: num(col(r, ['lambda_casa', 'gol_attesi_casa', 'lh'])),
+      la: num(col(r, ['lambda_trasferta', 'gol_attesi_trasferta', 'la'])),
+      rel: col(r, ['affidabilita', 'rel']) || 'B',
+      note: col(r, ['nota', 'note']),
+    };
+    var ft = score(col(r, ['finale', 'ft'])),
+      ht = score(col(r, ['primo_tempo', 'ht'])),
+      an = col(r, ['annullata', 'cancelled']).toLowerCase();
+    if (ft) m.ft = ft;
+    if (ht) m.ht = ht;
+    if (an === 'si' || an === 'sì' || an === '1' || an === 'true' || an === 'x') m.cancelled = true;
+    return m;
+  });
+  return {
+    batch: 'csv-' + new Date().toISOString().slice(0, 16),
+    model: (db.predModel || {}).base || TIP_DEFAULTS,
+    matches: matches,
+  };
 }
 async function tipFetch({ manual = false } = {}) {
   if (tipUI.loading) return;
@@ -449,7 +565,7 @@ function tipsPage() {
   if (!list.length) {
     return (
       '<section class="card hero tip-hero"><small>PRONOSTICI</small><div class="big">Nessuna partita</div><p class="muted">I pronostici arrivano dal file che prepara Claude. Chiedigli “prevedi le prossime partite”, poi pubblica l’app oppure importa il file qui.</p>' +
-      '<div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tip-fetch>↻ Cerca aggiornamenti</button><button type="button" class="flow-btn" data-tip-import>Importa file</button></div><input type="file" accept=".json,application/json" id="tip-file" hidden></section>'
+      '<div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tip-fetch>↻ Cerca aggiornamenti</button><button type="button" class="flow-btn" data-tip-import>Importa file</button></div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden></section>'
     );
   }
   var days = [];
@@ -491,7 +607,7 @@ function tipsPage() {
     '<section class="card hero tip-hero"><div class="row"><small>PRONOSTICI</small><span class="diary-chip ' + (counts.check ? 'todo' : 'ok') + '">' + (counts.check ? counts.check + ' da verificare' : '✓ Tutto in ordine') + '</span></div>' +
     '<div class="big">' + list.length + ' partite</div>' +
     '<div class="diary-hero-sub"><span>Dal <b>' + tipDayLabel(first) + '</b> al <b>' + tipDayLabel(lastD) + '</b> · soglia oltre il ' + P.threshold + '%</span><span>Modello v' + U.esc(P.version) + ((db.predModel || {}).learned ? ' + correzioni imparate' : '') + (tipUI.fileInfo ? ' · ' + U.esc(tipUI.fileInfo) : '') + '</span></div>' +
-    '<div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tip-fetch>' + (tipUI.loading ? 'Controllo…' : '↻ Aggiorna') + '</button><button type="button" class="flow-btn" data-tip-import>Importa file</button></div><input type="file" accept=".json,application/json" id="tip-file" hidden></section>';
+    '<div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tip-fetch>' + (tipUI.loading ? 'Controllo…' : '↻ Aggiorna') + '</button><button type="button" class="flow-btn" data-tip-import>Importa file</button></div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden></section>';
 
   var kpi = function (label, val, sub, cls) {
     return '<div class="card diary-kpi"><small>' + label + '</small><b class="' + (cls || '') + '">' + val + '</b><span>' + sub + '</span></div>';
@@ -579,7 +695,7 @@ function tipsPage() {
   cal += '</section>';
 
   var exp =
-    '<section class="card diary-card"><h2>Per Claude</h2><p class="muted">Ogni qualche giorno chiedi a Claude “prevedi le prossime partite”: prepara il nuovo file, aggiunge i risultati che trova e riaddestra il modello sullo storico. Se hai segnato risultati a mano, esporta lo storico e allegalo.</p><div class="actions"><button type="button" data-tip-export>Esporta storico</button></div></section>';
+    '<section class="card diary-card"><h2>Per Claude e GPT</h2><p class="muted">Lo stesso JSON storico funziona con entrambi: include partite, gol attesi, probabilità, pronostici, risultati ed esiti. Allegalo a Claude o GPT per analisi e ricalibrazione. Non addestra automaticamente il modello.</p><div class="actions"><button type="button" data-tip-export>Esporta storico (Claude / GPT)</button></div></section>';
 
   return hero + kpis + filters + body + mk + cal + exp;
 }
@@ -616,7 +732,7 @@ function tipDetail(id) {
     '<h3 class="tip-sub">Pronostici oltre la soglia</h3><p class="muted tip-hint">Si segnano da soli dal risultato. Tocca per cambiarli a mano: vinto → perso → annullato → automatico.</p>' +
     '<div class="tip-pick-list">' + (picks || '<p class="muted">Nessun pronostico.</p>') + '</div>' +
     '<h3 class="tip-sub">Probabilità del modello</h3>' +
-    '<div class="tip-probs">' + prob('1', c.p1) + prob('X', c.px) + prob('2', c.p2) + prob('Over 1.5', c.o15, 1) + prob('Over 2.5', c.o25, 1) + prob('Over 0.5 1T', c.ht05, 1) + prob('Goal', c.gg, 1) + '</div>' +
+    '<div class="tip-probs">' + prob('1', c.p1) + prob('X', c.px) + prob('2', c.p2) + prob('Over 0.5', c.o05, 1) + prob('Over 1.5', c.o15, 1) + prob('Over 2.5', c.o25, 1) + prob('Over 0.5 1T', c.ht05, 1) + prob('Goal', c.gg, 1) + '</div>' +
     '<p class="muted tip-hint">Gol attesi ' + c.lh.toFixed(2) + ' – ' + c.la.toFixed(2) + ' · risultati più probabili ' + c.cs.map(function (x) { return x.s + ' (' + x.p + '%)'; }).join(', ') + '</p>' +
     '<p class="muted tip-hint">Affidabilità dati ' + m.rel + (m.note ? ' · ' + U.esc(m.note) : '') + '</p>' +
     '</form>';
@@ -693,7 +809,13 @@ function bindTips() {
     file.onchange = async function (e) {
       try {
         var f = e.target.files[0];
-        if (f) tipMerge(JSON.parse(await f.text()), { manual: true });
+        if (f) {
+          var txt = await f.text();
+          var isCsv = /\.csv$/i.test(f.name) || !/^\s*[{[]/.test(txt);
+          var parsed = isCsv ? tipParseCsv(txt) : JSON.parse(txt);
+          if (!parsed) throw Error('vuoto');
+          tipMerge(parsed, { manual: true });
+        }
       } catch (err) {
         U.toast('File non leggibile. Nessun dato modificato.');
       } finally {
@@ -770,12 +892,14 @@ function bindTips() {
         app: 'bet_tracker',
         kind: 'pronostici-storico',
         exportedAt: new Date().toISOString(),
+        compatibleWith: ['Claude', 'GPT'],
+        schemaVersion: '1',
         model: (db.predModel || {}).base || TIP_DEFAULTS,
         learned: (db.predModel || {}).learned || null,
         matches: (db.predictions || []).map(function (m) {
           var c = tipCalc(m, P);
           return Object.assign({}, m, {
-            prob: { p1: c.p1, px: c.px, p2: c.p2, o15: c.o15, o25: c.o25, ht05: c.ht05, gg: c.gg },
+            prob: { p1: c.p1, px: c.px, p2: c.p2, o05: c.o05, o15: c.o15, o25: c.o25, ht05: c.ht05, gg: c.gg },
             outcomes: (m.picks || []).map(function (p) {
               return { m: p.m, sel: p.sel, p: p.p, esito: tipOutcome(m, p).s || null };
             }),
