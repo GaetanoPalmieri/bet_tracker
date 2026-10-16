@@ -15,7 +15,7 @@
    NB: var (non let/const) per lo stato del modulo, come nel resto di app.js.
    ===================================================================== */
 var TIP_FILE = 'pronostici.json';
-var TIP_DEFAULTS = { version: '1', threshold: 70, htShare: 0.45, drawBoost: 1, goalFactor: 1, leagueGoal: {} };
+var TIP_DEFAULTS = { version: '1', threshold: 70, htShare: 0.45, drawBoost: 1, goalFactor: 1, leagueGoal: {}, rho: 0 };
 var TIP_MARKETS = [
   ['1x2', '1X2'],
   ['o15', 'Over/Under 1.5'],
@@ -62,6 +62,15 @@ function tipCalc(m, P) {
     g.push([]);
     for (j = 0; j < N; j++) {
       var v = tipPois(i, lh) * tipPois(j, la);
+      /* 3.7.0 — correzione Dixon-Coles sui punteggi bassi (0-0, 1-0, 0-1, 1-1) */
+      var rho = P.rho || 0;
+      if (rho) {
+        if (i === 0 && j === 0) v *= 1 - lh * la * rho;
+        else if (i === 0 && j === 1) v *= 1 + lh * rho;
+        else if (i === 1 && j === 0) v *= 1 + la * rho;
+        else if (i === 1 && j === 1) v *= 1 - rho;
+        if (v < 0) v = 0;
+      }
       if (i === j) v *= P.drawBoost || 1;
       g[i].push(v);
       s += v;
@@ -562,6 +571,7 @@ function tipReviewLabel(m) {
     claude_only: 'Solo Claude',
     poisson_only: 'Solo Poisson',
     not_revised: 'Non rivista',
+    model_v2: 'Modello v2',
   }[m.review] || 'Analisi precedente';
 }
 var TIP_ST = { V: 'won', P: 'lost', N: 'void', '': 'wait' };
