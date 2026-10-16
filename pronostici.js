@@ -584,6 +584,18 @@ function tipChip(m, p) {
     (o.s ? '<span class="sr-only">' + { V: 'vinto', P: 'perso', N: 'annullato' }[o.s] + '</span>' : '') + '</span>'
   );
 }
+/* 3.8.0 — Gli altri mercati della partita (sotto soglia), in grigio. */
+function tipOthers(m) {
+  var have = {}, ch;
+  (m.picks || []).forEach(function (p) { have[p.m] = 1; });
+  try { ch = tipChoices(tipCalc(m, tipParams())); } catch (e) { return ''; }
+  var out = TIP_MARKETS.filter(function (k) { return !have[k[0]] && ch[k[0]]; }).map(function (k) {
+    var x = ch[k[0]], s = m.cancelled ? '' : tipAutoOutcome(m, { m: k[0], sel: x.sel, p: x.p }),
+      mark = { V: '✓', P: '✕' }[s] || '';
+    return '<span class="tip-other' + (s === 'V' ? ' ok' : s === 'P' ? ' ko' : '') + '">' + U.esc(x.sel) + ' <i>' + Math.round(x.p) + '%</i>' + (mark ? ' <em aria-hidden="true">' + mark + '</em>' : '') + '</span>';
+  });
+  return out.length ? '<span class="tip-others">' + out.join('') + '</span>' : '';
+}
 /* Colore della partita: tutto vinto, tutto perso, misto, in corso, da verificare, in programma. */
 function tipTone(m) {
   if (m.cancelled) return 'void';
@@ -630,6 +642,7 @@ function tipCard(m, sortKey) {
     '<span class="tip-meta"><span class="tip-time">' + U.esc(m.time) + '</span><span class="tip-league">' + U.esc(m.league) + '</span>' + badge + '</span>' +
     '<span class="tip-teams"><span class="tip-home">' + U.esc(m.home) + '</span>' + mid + '<span class="tip-away">' + U.esc(m.away) + '</span></span>' +
     '<span class="tip-picks">' + (m.picks || []).map(function (p) { return tipChip(m, p); }).join('') + '</span>' +
+    tipOthers(m) +
     '<span class="tip-foot"><span class="tip-rel r' + m.rel + '">Dati ' + m.rel + '</span><span class="tip-origin' + (m.review === 'not_revised' ? ' stale' : '') + '">' + U.esc(tipReviewLabel(m)) + '</span></span>' +
     '</button>'
   );
