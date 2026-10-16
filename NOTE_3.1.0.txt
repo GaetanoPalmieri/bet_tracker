@@ -1,0 +1,21 @@
+VERSIONE 3.1.0 - Pronostici
+
+Nuova scheda Pronostici (tra Statistiche e Altro, anche con lo swipe)
+- Il modello e' dentro l'app: dai gol attesi di ogni partita calcola 1X2, Over/Under 1.5 e 2.5,
+  Over/Under 0.5 nel 1° tempo, Goal/No goal e i risultati esatti piu' probabili.
+- Entrano solo le partite con almeno un pronostico oltre il 70%.
+- Le partite arrivano dal file pronostici.json preparato da Claude: l'app lo cerca da sola
+  all'apertura della scheda (o con "Aggiorna"); in alternativa "Importa file".
+- Filtri: Prossime / Verifica / Concluse / Tutte, giorno, campionato, ricerca squadra.
+- Tocca una partita: risultato finale e del 1° tempo, partita annullata, probabilita' complete.
+  Vinto/perso si segna da solo; ogni pronostico si puo' cambiare a mano.
+- Andamento per mercato: vinti contro quanto si aspettava il modello.
+- Il modello impara: con almeno 10 risultati stima correzioni (gol, pareggi, gol nel 1° tempo,
+  singoli campionati) e le applica con un tocco. "Esporta storico" per darle a Claude.
+- I pronostici si sincronizzano con il resto dei dati (stesso accesso di prima).
+
+Pubblicazione
+- Nuovi file: pronostici.js, pronostici.css, pronostici.json. Carica tutta la cartella.
+- Per i pronostici dei giorni successivi basta caricare il nuovo pronostici.json:
+  non serve cambiare versione.
+- Il funzionamento completo e' spiegato in strumenti/pronostici/LEGGIMI.txt.

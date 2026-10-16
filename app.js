@@ -1,4 +1,4 @@
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.1.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -9,6 +9,8 @@ const emptyDB = () => ({
   bets: [],
   transactions: [],
   diary: [],
+  predictions: [],
+  predModel: {},
   settings: { monthlyLimit: 0, favorites: [], recent: [], lastExport: null },
 });
 let db = emptyDB(),
@@ -27,7 +29,7 @@ let db = emptyDB(),
   },
   chartPoints = [];
 function validDB(d) {
-  return validDBCore(d) && validDiary(d);
+  return validDBCore(d) && validDiary(d) && (d.predictions == null || Array.isArray(d.predictions));
 }
 function validDiary(d) {
   if (d.diary == null) return true;
@@ -101,6 +103,9 @@ function normalize(d) {
       }))
     : [];
   if (d.updatedAt) out.updatedAt = d.updatedAt;
+  /* 3.1.0 — pronostici */
+  out.predictions = Array.isArray(d.predictions) ? d.predictions.filter((m) => m && typeof m.id === 'string') : [];
+  out.predModel = d.predModel && typeof d.predModel === 'object' ? d.predModel : {};
   return out;
 }
 function normalizeCore(d) {
@@ -536,10 +541,11 @@ function limitCard() {
     : '';
 }
 function render() {
-  if (!['home', 'stats', 'accounts'].includes(tab)) tab = 'home';
+  if (!['home', 'stats', 'tips', 'accounts'].includes(tab)) tab = 'home';
   document.getElementById('title').textContent = {
     home: 'Home',
     stats: 'Statistiche',
+    tips: 'Pronostici',
     accounts: 'Altro',
   }[tab];
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
@@ -550,6 +556,7 @@ function render() {
   chartPoints = [];
   if (tab === 'home') html = diaryPage('home');
   if (tab === 'stats') html = diaryPage('stats');
+  if (tab === 'tips') html = tipsPage();
   if (tab === 'accounts') {
     const s = startDate();
     html = `${window.SuiteTheme ? SuiteTheme.card({ cls: 'card' }) : ''}${window.SuiteSync && typeof syncBet !== 'undefined' && syncBet ? SuiteSync.cardHtml('bet', { cls: 'card' }) + '<div class="card suite-sync-card push-card" id="pushCard"></div>' : ''}<div class="card hero acc-hero"><small>SALDO ATTUALE</small><div class="big">${U.money(balance())}</div><div class="acc-initial"><span>Saldo iniziale <b>${U.money(db.accounts[0].initial)}</b>${s ? ' · dal ' + U.esc(dLabel(s)) : ''}</span><button type="button" id="initial">Modifica</button></div><div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tx="deposit"><span aria-hidden="true">↓</span>Deposito</button><button type="button" class="flow-btn out" data-tx="withdraw"><span aria-hidden="true">↑</span>Prelievo</button></div></div><h2 class="section">Depositi e prelievi</h2>${
@@ -567,6 +574,7 @@ function render() {
   bind();
   U.bindChart(main, chartPoints);
   if (tab === 'home' || tab === 'stats') bindDiary();
+  if (tab === 'tips') bindTips();
   if (tab === 'accounts' && typeof renderPushCard === 'function') renderPushCard();
 }
 function sportsCard() {
@@ -1875,7 +1883,7 @@ async function importData(e) {
 // 3.0.0 — niente più inserimento scommesse
 
 // 1.1.8 — navigazione bidirezionale con transizione coerente con il verso dello swipe.
-const TAB_ORDER = ['home', 'stats', 'accounts'];
+const TAB_ORDER = ['home', 'stats', 'tips', 'accounts'];
 let swipeStart = null,
   tabTransitioning = false;
 function prefersReducedMotion() {
@@ -3820,7 +3828,11 @@ var syncBet = window.SuiteSync
       },
       hasLocalData: function () {
         return (
-          db.bets.length > 0 || db.transactions.length > 0 || (db.diary || []).length > 0 || db.accounts[0].initial > 0
+          db.bets.length > 0 ||
+          db.transactions.length > 0 ||
+          (db.diary || []).length > 0 ||
+          (db.predictions || []).length > 0 ||
+          db.accounts[0].initial > 0
         );
       },
       onStatus: function () {

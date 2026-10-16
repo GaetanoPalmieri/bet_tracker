@@ -1,0 +1,100 @@
+/* 3.1.0 — Scheda Pronostici (stesse superfici e colori del resto dell'app) */
+.tip-hero .big { font-size: 34px; }
+.tip-hero .hero-flow-btns .flow-btn:not(.in) { color: var(--suite-text) !important; }
+.tip-filters { display: grid; gap: 8px; padding: 10px !important; }
+.tip-filters .diary-seg { margin: 0; }
+.tip-filters .diary-seg button { font-size: 12.5px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px 2px !important; }
+.tip-filters .diary-seg button small { margin-left: 4px; font-size: 11px; font-weight: 600; opacity: .75; font-variant-numeric: tabular-nums; }
+.tip-filter-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.tip-filter-row select, .tip-filter-row input { min-width: 0; width: 100%; margin: 0 !important; }
+
+h2.section.tip-day { text-transform: capitalize; margin: 16px 4px 8px; }
+
+.tip-card {
+  display: grid; gap: 8px; width: 100%; text-align: left;
+  padding: 12px 14px !important; margin: 0 0 8px !important;
+  font: inherit; color: var(--suite-text) !important;
+  background: var(--suite-glass-card) !important;
+  border: 1px solid var(--suite-glass-edge) !important;
+  border-radius: var(--suite-radius-lg) !important;
+  min-height: 0 !important; cursor: pointer;
+}
+.tip-card.cancelled { opacity: .55; }
+.tip-card.cancelled .tip-teams { text-decoration: line-through; }
+.tip-meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; color: var(--suite-text-soft); }
+.tip-time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--suite-text); }
+.tip-league { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tip-rel { flex: 0 0 auto; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor; }
+.tip-rel.rA { color: var(--bt-up-text); }
+.tip-rel.rB { color: #6b8fd6; }
+.tip-rel.rC { color: var(--bt-e8c17f); }
+.tip-status { flex: 0 0 auto; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.tip-status.todo { background: rgba(232, 163, 61, .18); color: var(--bt-e8c17f); }
+.tip-status.ok { background: rgba(58, 166, 132, .18); color: var(--bt-up-text); }
+.tip-status.ko { background: rgba(200, 71, 63, .16); color: var(--bt-down-text); }
+.tip-status.mix { background: rgba(107, 143, 214, .16); color: #6b8fd6; }
+.tip-status.void { background: color-mix(in srgb, var(--suite-text) 8%, transparent); color: var(--suite-text-soft); }
+.tip-teams { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; font-size: 15px; font-weight: 700; }
+.tip-teams > span:first-child { text-align: right; }
+.tip-teams > span:first-child, .tip-teams > span:last-child { overflow-wrap: anywhere; }
+.tip-score { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--suite-text-soft); min-width: 34px; text-align: center; }
+.tip-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.tip-pick {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px;
+  font-size: 12px; background: color-mix(in srgb, var(--suite-text) 7%, transparent);
+  border: 1px solid transparent;
+}
+.tip-pick i { font-style: normal; font-variant-numeric: tabular-nums; color: var(--suite-text-soft); }
+.tip-pick em { font-style: normal; font-weight: 800; }
+.tip-pick.won { background: rgba(58, 166, 132, .16); border-color: rgba(58, 166, 132, .45); }
+.tip-pick.won em, .tip-pick.won i { color: var(--bt-up-text); }
+.tip-pick.lost { background: rgba(200, 71, 63, .13); border-color: rgba(200, 71, 63, .4); }
+.tip-pick.lost em, .tip-pick.lost i { color: var(--bt-down-text); }
+.tip-pick.void { opacity: .6; text-decoration: line-through; }
+
+.tip-mrow { display: grid; gap: 5px; padding: 8px 0; border-top: 1px solid var(--suite-glass-edge); }
+.tip-mrow:first-of-type { border-top: 0; }
+.tip-mhead { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+.tip-mhead span { color: var(--suite-text-soft); font-variant-numeric: tabular-nums; text-align: right; }
+.tip-bar { position: relative; height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--suite-text) 8%, transparent); }
+.tip-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--suite-teal-grad); }
+.tip-bar i.low { background: linear-gradient(90deg, #e48d24, #c8473f); }
+.tip-bar em { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--suite-text); opacity: .55; }
+
+.tip-cal-grid b { font-variant-numeric: tabular-nums; }
+.tip-leagues { list-style: none; margin: 12px 0 4px; padding: 0; display: grid; gap: 6px; }
+.tip-leagues li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: baseline; font-size: 13px; }
+.tip-leagues li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tip-leagues li small, .tip-leagues li i { color: var(--suite-text-soft); font-style: normal; font-size: 12px; }
+.tip-leagues li b { font-variant-numeric: tabular-nums; }
+
+/* Pannello della partita */
+.tip-form { display: grid; gap: 10px; }
+.tip-res { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tip-res label { display: grid; gap: 6px; font-size: 12.5px; color: var(--suite-text-soft); font-weight: 600; }
+.tip-score-in { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; }
+.tip-score-in input { text-align: center; font-size: 20px !important; font-weight: 700; min-height: 46px; width: 100%; margin: 0 !important; font-variant-numeric: tabular-nums; }
+.tip-score-in span { color: var(--suite-text-soft); font-weight: 700; }
+.tip-sub { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--suite-text-soft); }
+.tip-hint { margin: 0; font-size: 12px; }
+.tip-pick-list { display: grid; gap: 6px; }
+.tip-pick-row {
+  display: flex !important; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; text-align: left; padding: 10px 12px !important; min-height: 0 !important;
+  border-radius: 12px !important; font: inherit; color: var(--suite-text) !important;
+  background: color-mix(in srgb, var(--suite-text) 6%, transparent) !important;
+}
+.tip-pick-row span { display: grid; gap: 2px; min-width: 0; }
+.tip-pick-row small { color: var(--suite-text-soft); font-size: 11.5px; }
+.tip-pick-row strong { font-size: 13px; }
+.tip-pick-row.won { background: rgba(58, 166, 132, .16) !important; }
+.tip-pick-row.won strong { color: var(--bt-up-text); }
+.tip-pick-row.lost { background: rgba(200, 71, 63, .14) !important; }
+.tip-pick-row.lost strong { color: var(--bt-down-text); }
+.tip-pick-row.void strong { color: var(--suite-text-soft); }
+.tip-probs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.tip-prob { display: grid; gap: 2px; padding: 8px; border-radius: 12px; background: color-mix(in srgb, var(--suite-text) 6%, transparent); text-align: center; }
+.tip-prob small { font-size: 11px; color: var(--suite-text-soft); }
+.tip-prob b { font-variant-numeric: tabular-nums; font-size: 15px; }
+.tip-prob.hot { background: rgba(232, 163, 61, .18); }
+@media (max-width: 360px) { .tip-probs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
