@@ -1,5 +1,5 @@
 /* =====================================================================
-   3.3.0 — PRONOSTICI
+   3.3.1 — PRONOSTICI
    Modello di Poisson dentro l'app. Claude o GPT preparano il file pronostici.json
    (partite, gol attesi λ di casa e trasferta, parametri del modello);
    l'app calcola le probabilità, tiene solo i pronostici oltre la soglia,
@@ -195,7 +195,9 @@ function tipState(m) {
     return tipOutcome(m, p).s;
   });
   if ((m.picks || []).length && all) return 'done';
-  return tipKickoff(m).getTime() + 2 * 3600e3 < Date.now() ? 'check' : 'open';
+  var kickoff = tipKickoff(m).getTime(), now = Date.now();
+  if (now < kickoff) return 'open';
+  return now < kickoff + 2 * 3600e3 ? 'live' : 'check';
 }
 
 /* ---------- Import dal file di Claude ---------- */
@@ -235,7 +237,7 @@ function tipMerge(file, { manual = false } = {}) {
     U.toast('File dei pronostici non valido. Nessun dato modificato.');
     return false;
   }
-  var res = { added: 0, results: 0, updated: 0, retired: 0 };
+  var res = { added: 0, results: 0, updated: 0, retired: 0, archived: 0 };
   var ok = mutate(function (n) {
     n.predictions = n.predictions || [];
     n.predModel = n.predModel || {};
@@ -245,6 +247,7 @@ function tipMerge(file, { manual = false } = {}) {
        non quando cambia il batch delle previsioni. */
     if (oldV != null && oldV !== fp.version) n.predModel.learned = null;
     n.predModel.base = fp;
+    if (file.label) n.predModel.lastLabel = String(file.label);
     var P = (function () {
       var keep = db;
       db = n;
@@ -281,6 +284,7 @@ function tipMerge(file, { manual = false } = {}) {
           la: Math.round(fm.la * 1000) / 1000,
           rel: ['A', 'B', 'C'].indexOf(fm.rel) >= 0 ? fm.rel : 'B',
           note: fm.note ? String(fm.note) : '',
+          review: String(fm.review || 'unknown'),
           batch: String(file.batch || fm.date),
           ft: tipNum(fm.ft) ? fm.ft : null,
           ht: tipNum(fm.ht) ? fm.ht : null,
@@ -301,18 +305,19 @@ function tipMerge(file, { manual = false } = {}) {
         if (future && noScores && !cur.cancelled && !manualOutcomes) {
           /* Versione 3.2.0: le partite esistenti non potevano essere aggiornate.
              Da 3.3.0 si sostituiscono anche mercati/pesi oltre la soglia. */
-          var oldSnapshot = JSON.stringify([cur.lh, cur.la, cur.p1x2, cur.picks, cur.rel, cur.note, cur.time, cur.league]);
+          var oldSnapshot = JSON.stringify([cur.lh, cur.la, cur.p1x2, cur.picks, cur.rel, cur.note, cur.time, cur.league, cur.review]);
           cur.lh = Math.round(fm.lh * 1000) / 1000;
           cur.la = Math.round(fm.la * 1000) / 1000;
           cur.rel = ['A', 'B', 'C'].indexOf(fm.rel) >= 0 ? fm.rel : 'B';
           cur.note = fm.note ? String(fm.note) : '';
+          cur.review = String(fm.review || 'unknown');
           cur.league = String(fm.league || cur.league || '');
           cur.time = String(fm.time || cur.time);
           if (Array.isArray(fm.p1x2) && fm.p1x2.length === 3) cur.p1x2 = fm.p1x2.map(Number);
           else delete cur.p1x2;
           cur.batch = String(file.batch || fm.date);
           cur.picks = tipPicksFor(cur, P);
-          if (JSON.stringify([cur.lh, cur.la, cur.p1x2, cur.picks, cur.rel, cur.note, cur.time, cur.league]) !== oldSnapshot) res.updated++;
+          if (JSON.stringify([cur.lh, cur.la, cur.p1x2, cur.picks, cur.rel, cur.note, cur.time, cur.league, cur.review]) !== oldSnapshot) res.updated++;
         } else if (fm.time && cur.time !== String(fm.time) && noScores && future) {
           cur.time = String(fm.time);
           res.updated++;
@@ -322,6 +327,22 @@ function tipMerge(file, { manual = false } = {}) {
         if (fm.cancelled && !cur.cancelled) { cur.cancelled = true; res.updated++; }
       }
     });
+    /* 3.3.1: gli incontri precedenti non contenuti nel nuovo batch erano
+       mostrati come pronostici ancora aggiornati. Conserviamo pronostici
+       originali e risultati (utile per audit/retraining), ma li marchiamo. */
+    if (file.coverage && file.coverage.from && file.coverage.to) {
+      var present = new Set(file.matches.map(function (m) {
+        return String(m.id || m.date + '_' + tipSlug(m.home) + '_' + tipSlug(m.away));
+      }));
+      n.predictions.forEach(function (m) {
+        if (m.date < file.coverage.from || m.date > file.coverage.to || present.has(m.id)) return;
+        if (m.batch === String(file.batch || '')) return;
+        if (m.review !== 'not_revised') {
+          m.review = 'not_revised';
+          res.archived++;
+        }
+      });
+    }
     n.predModel.lastBatch = String(file.batch || '');
     n.predModel.lastCheck = new Date().toISOString();
   });
@@ -331,6 +352,7 @@ function tipMerge(file, { manual = false } = {}) {
     if (res.results) msg.push(res.results + ' risultati');
     if (res.updated) msg.push(res.updated + ' previsioni aggiornate');
     if (res.retired) msg.push(res.retired + ' partite ritirate');
+    if (res.archived) msg.push(res.archived + ' partite segnate come non riviste');
     if (msg.length || manual) U.toast(msg.length ? 'Pronostici: ' + msg.join(', ') : 'Pronostici già aggiornati');
   }
   return ok;
@@ -535,6 +557,14 @@ function tipChip(m, p) {
     '<span class="tip-pick ' + st + '"><b>' + U.esc(p.sel) + '</b><i>' + p.p + '%</i>' + (o.s ? '<em>' + { V: '✓', P: '✕', N: '–' }[o.s] + '</em>' : '') + '</span>'
   );
 }
+function tipReviewLabel(m) {
+  return {
+    blend: 'Claude + Poisson',
+    claude_only: 'Solo Claude',
+    poisson_only: 'Solo Poisson',
+    not_revised: 'Non rivista',
+  }[m.review] || 'Analisi precedente';
+}
 function tipCard(m) {
   var st = tipState(m),
     score = tipNum(m.ft) ? m.ft[0] + ' – ' + m.ft[1] : '',
@@ -547,7 +577,9 @@ function tipCard(m) {
     }).length;
   var badge = m.cancelled
     ? '<span class="tip-status void">Annullata</span>'
-    : st === 'check'
+    : st === 'live'
+      ? '<span class="tip-status live">In corso</span>'
+      : st === 'check'
       ? '<span class="tip-status todo">Da verificare</span>'
       : st === 'done'
         ? '<span class="tip-status ' + (wins === closed ? 'ok' : wins ? 'mix' : 'ko') + '">' + wins + '/' + closed + ' vinti</span>'
@@ -556,6 +588,7 @@ function tipCard(m) {
     '<button type="button" class="card tip-card' + (m.cancelled ? ' cancelled' : '') + '" data-tip-open="' + U.esc(m.id) + '">' +
     '<span class="tip-meta"><span class="tip-time">' + U.esc(m.time) + '</span><span class="tip-league">' + U.esc(m.league) + '</span><span class="tip-rel r' + m.rel + '" title="Affidabilità dei dati">' + m.rel + '</span>' + badge + '</span>' +
     '<span class="tip-teams"><span>' + U.esc(m.home) + '</span><span class="tip-score">' + (score || 'vs') + '</span><span>' + U.esc(m.away) + '</span></span>' +
+    '<span class="tip-origin' + (m.review === 'not_revised' ? ' stale' : '') + '">' + U.esc(tipReviewLabel(m)) + '</span>' +
     '<span class="tip-picks">' + (m.picks || []).map(function (p) { return tipChip(m, p); }).join('') + '</span></button>'
   );
 }
@@ -580,7 +613,7 @@ function tipsPage() {
   leagues.sort(function (a, b) {
     return a.localeCompare(b, 'it');
   });
-  var counts = { open: 0, check: 0, done: 0 };
+  var counts = { open: 0, live: 0, check: 0, done: 0 };
   list.forEach(function (m) {
     counts[tipState(m)]++;
   });
@@ -603,10 +636,11 @@ function tipsPage() {
     first = days[0],
     lastD = days[days.length - 1];
 
+  var batchLabel = (db.predModel || {}).lastLabel || (db.predModel || {}).lastBatch || '—';
   var hero =
     '<section class="card hero tip-hero"><div class="row"><small>PRONOSTICI</small><span class="diary-chip ' + (counts.check ? 'todo' : 'ok') + '">' + (counts.check ? counts.check + ' da verificare' : '✓ Tutto in ordine') + '</span></div>' +
     '<div class="big">' + list.length + ' partite</div>' +
-    '<div class="diary-hero-sub"><span>Dal <b>' + tipDayLabel(first) + '</b> al <b>' + tipDayLabel(lastD) + '</b> · soglia oltre il ' + P.threshold + '%</span><span>Modello v' + U.esc(P.version) + ((db.predModel || {}).learned ? ' + correzioni imparate' : '') + (tipUI.fileInfo ? ' · ' + U.esc(tipUI.fileInfo) : '') + '</span></div>' +
+    '<div class="diary-hero-sub"><span>Dal <b>' + tipDayLabel(first) + '</b> al <b>' + tipDayLabel(lastD) + '</b> · soglia oltre il ' + P.threshold + '%</span><span>Modello v' + U.esc(P.version) + ((db.predModel || {}).learned ? ' + correzioni imparate' : '') + ' · ' + U.esc(batchLabel) + '</span></div>' +
     '<div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tip-fetch>' + (tipUI.loading ? 'Controllo…' : '↻ Aggiorna') + '</button><button type="button" class="flow-btn" data-tip-import>Importa file</button></div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden></section>';
 
   var kpi = function (label, val, sub, cls) {
@@ -633,7 +667,7 @@ function tipsPage() {
   };
   var filters =
     '<section class="card tip-filters">' +
-    seg([['open', 'Prossime<small>' + counts.open + '</small>'], ['check', 'Verifica<small>' + counts.check + '</small>'], ['done', 'Concluse<small>' + counts.done + '</small>'], ['all', 'Tutte<small>' + list.length + '</small>']], tipUI.view, 'data-tip-view') +
+    seg([['open', 'Prossime<small>' + counts.open + '</small>'], ['live', 'Live<small>' + counts.live + '</small>'], ['check', 'Verifica<small>' + counts.check + '</small>'], ['done', 'Concluse<small>' + counts.done + '</small>'], ['all', 'Tutte<small>' + list.length + '</small>']], tipUI.view, 'data-tip-view') +
     (days.length > 1 ? seg([['all', 'Tutti']].concat(days.slice(-4).map(function (d) { return [d, tipDayLabel(d)]; })), tipUI.day, 'data-tip-day') : '') +
     '<div class="tip-filter-row"><select id="tip-league" aria-label="Campionato"><option value="">Tutti i campionati</option>' +
     leagues.map(function (l) { return '<option value="' + U.esc(l) + '"' + (tipUI.league === l ? ' selected' : '') + '>' + U.esc(l) + '</option>'; }).join('') +
@@ -734,6 +768,8 @@ function tipDetail(id) {
     '<h3 class="tip-sub">Probabilità del modello</h3>' +
     '<div class="tip-probs">' + prob('1', c.p1) + prob('X', c.px) + prob('2', c.p2) + prob('Over 0.5', c.o05, 1) + prob('Over 1.5', c.o15, 1) + prob('Over 2.5', c.o25, 1) + prob('Over 0.5 1T', c.ht05, 1) + prob('Goal', c.gg, 1) + '</div>' +
     '<p class="muted tip-hint">Gol attesi ' + c.lh.toFixed(2) + ' – ' + c.la.toFixed(2) + ' · risultati più probabili ' + c.cs.map(function (x) { return x.s + ' (' + x.p + '%)'; }).join(', ') + '</p>' +
+    '<p class="muted tip-hint"><b>Origine analisi:</b> ' + U.esc(tipReviewLabel(m)) + ' · Batch ' + U.esc(m.batch || 'non identificato') + '</p>' +
+    (m.review === 'not_revised' ? '<p class="muted tip-hint"><b>Non aggiornata:</b> questa partita era già iniziata o non faceva parte della revisione. Il pronostico originale è conservato per confrontarlo con il risultato senza modifiche a posteriori.</p>' : '') +
     '<p class="muted tip-hint">Affidabilità dati ' + m.rel + (m.note ? ' · ' + U.esc(m.note) : '') + '</p>' +
     '</form>';
   var d = sheetModal(html);

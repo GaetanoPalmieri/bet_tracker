@@ -1,7 +1,7 @@
 {
   "app": "bet_tracker",
   "kind": "pronostici",
-  "batch": "2026-10-16-revisione-comparata-v1",
+  "batch": "2026-10-16-revisione-comparata-v2-etichettata",
   "generatedAt": "2026-10-16T14:21:00+02:00",
   "model": {
     "version": "1",
@@ -23,7 +23,8 @@
       "lh": 1.402,
       "la": 1.756,
       "rel": "C",
-      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 68%, dopo 61%."
+      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 68%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -34,7 +35,8 @@
       "lh": 2.51,
       "la": 0.82,
       "rel": "B",
-      "note": "Calendario saudita da verificare (fonti in parziale conflitto). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 68%, dopo 65%."
+      "note": "Calendario saudita da verificare (fonti in parziale conflitto). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 68%, dopo 65%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -45,7 +47,8 @@
       "lh": 0.961,
       "la": 1.61,
       "rel": "C",
-      "note": "Seconda giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 42%, dopo 47%."
+      "note": "Seconda giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 42%, dopo 47%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -56,7 +59,8 @@
       "lh": 1.878,
       "la": 1.445,
       "rel": "C",
-      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 72%, dopo 65%."
+      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 72%, dopo 65%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -68,7 +72,8 @@
       "la": 2.64,
       "rel": "B",
       "note": "Calendario saudita da verificare (fonti in parziale conflitto). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 76%, dopo 70%.",
-      "cancelled": true
+      "cancelled": true,
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -79,7 +84,8 @@
       "lh": 1.75,
       "la": 0.795,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 45%, dopo 47%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 45%, dopo 47%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -90,7 +96,8 @@
       "lh": 1.46,
       "la": 1.005,
       "rel": "B",
-      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 44%, dopo 45%."
+      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 44%, dopo 45%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -101,7 +108,8 @@
       "lh": 1.161,
       "la": 1.997,
       "rel": "C",
-      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 69%, dopo 61%."
+      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 69%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -112,7 +120,8 @@
       "lh": 2.125,
       "la": 1.41,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 73%, dopo 69%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 73%, dopo 69%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -123,7 +132,8 @@
       "lh": 1.22,
       "la": 2.025,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 71%, dopo 63%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 71%, dopo 63%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -134,7 +144,8 @@
       "lh": 1.96,
       "la": 2.54,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -145,7 +156,8 @@
       "lh": 1.19,
       "la": 1.98,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -156,7 +168,8 @@
       "lh": 2.19,
       "la": 1.11,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -167,7 +180,8 @@
       "lh": 1.66,
       "la": 0.95,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -178,7 +192,8 @@
       "lh": 1.33,
       "la": 1.89,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -189,7 +204,8 @@
       "lh": 1.441,
       "la": 1.389,
       "rel": "C",
-      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 51%, dopo 54%."
+      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 51%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -200,7 +216,8 @@
       "lh": 1.48,
       "la": 1.26,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -211,7 +228,8 @@
       "lh": 1.046,
       "la": 1.882,
       "rel": "A",
-      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 63%, dopo 56%."
+      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 63%, dopo 56%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -222,7 +240,8 @@
       "lh": 1.8,
       "la": 1.33,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 63%, dopo 61%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 63%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -233,7 +252,8 @@
       "lh": 1.85,
       "la": 1.215,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 61%, dopo 59%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 61%, dopo 59%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -244,7 +264,8 @@
       "lh": 2.48,
       "la": 1.075,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 78%, dopo 69%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 78%, dopo 69%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -255,7 +276,8 @@
       "lh": 1.665,
       "la": 1.365,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 58%, dopo 58%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 58%, dopo 58%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -266,7 +288,8 @@
       "lh": 1.53,
       "la": 1.635,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 64%, dopo 61%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 64%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -277,7 +300,8 @@
       "lh": 1.695,
       "la": 1.725,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 72%, dopo 66%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 72%, dopo 66%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -288,7 +312,8 @@
       "lh": 2.22,
       "la": 1.52,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 78%, dopo 72%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 78%, dopo 72%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -299,7 +324,8 @@
       "lh": 1.824,
       "la": 1.305,
       "rel": "C",
-      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 60%, dopo 61%."
+      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 60%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -310,7 +336,8 @@
       "lh": 1.14,
       "la": 1.01,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -321,7 +348,8 @@
       "lh": 0.94,
       "la": 0.88,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -332,7 +360,8 @@
       "lh": 1.21,
       "la": 1.25,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -343,7 +372,8 @@
       "lh": 1.29,
       "la": 1.22,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -354,7 +384,8 @@
       "lh": 1.95,
       "la": 1.31,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -366,7 +397,8 @@
       "la": 1.17,
       "rel": "B",
       "note": "Calendario saudita da verificare (fonti in parziale conflitto). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 52%, dopo 57%.",
-      "cancelled": true
+      "cancelled": true,
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -377,7 +409,8 @@
       "lh": 1.96,
       "la": 0.845,
       "rel": "C",
-      "note": "Gol fatti/subiti di Botoșani stimati dai punti in classifica. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 58%, dopo 53%."
+      "note": "Gol fatti/subiti di Botoșani stimati dai punti in classifica. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 58%, dopo 53%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -388,7 +421,8 @@
       "lh": 1.71,
       "la": 1.38,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -399,7 +433,8 @@
       "lh": 1.915,
       "la": 1.379,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 63%, dopo 64%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 63%, dopo 64%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -410,7 +445,8 @@
       "lh": 1.435,
       "la": 1.495,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 57%, dopo 56%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 57%, dopo 56%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -421,7 +457,8 @@
       "lh": 2.29,
       "la": 1.19,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -432,7 +469,8 @@
       "lh": 1.349,
       "la": 1.406,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 46%, dopo 52%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 46%, dopo 52%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -443,7 +481,8 @@
       "lh": 2.072,
       "la": 1.09,
       "rel": "A",
-      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 64%, dopo 61%."
+      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 64%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -454,7 +493,8 @@
       "lh": 1.243,
       "la": 1.401,
       "rel": "A",
-      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 51%, dopo 49%."
+      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 51%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -465,7 +505,8 @@
       "lh": 1.187,
       "la": 1.458,
       "rel": "A",
-      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 49%, dopo 49%."
+      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 49%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -476,7 +517,8 @@
       "lh": 1.5,
       "la": 1.402,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 55%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 55%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -487,7 +529,8 @@
       "lh": 1.7,
       "la": 1.78,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-16",
@@ -498,7 +541,8 @@
       "lh": 1.501,
       "la": 1.096,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 41%, dopo 48%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 41%, dopo 48%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-16",
@@ -509,7 +553,8 @@
       "lh": 1.686,
       "la": 0.891,
       "rel": "A",
-      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 47%, dopo 48%."
+      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 47%, dopo 48%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -520,7 +565,8 @@
       "lh": 1.25,
       "la": 1.14,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -531,7 +577,8 @@
       "lh": 1.547,
       "la": 1.251,
       "rel": "C",
-      "note": "Prima giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 48%, dopo 53%. Stagione iniziale: analisi sensibile a rose, mercato e assenze, non solo H2H."
+      "note": "Prima giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 48%, dopo 53%. Stagione iniziale: analisi sensibile a rose, mercato e assenze, non solo H2H.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -542,7 +589,8 @@
       "lh": 1.718,
       "la": 1.333,
       "rel": "C",
-      "note": "Prima giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 56%, dopo 59%. Stagione iniziale: analisi sensibile a rose, mercato e assenze, non solo H2H."
+      "note": "Prima giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 56%, dopo 59%. Stagione iniziale: analisi sensibile a rose, mercato e assenze, non solo H2H.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -553,7 +601,8 @@
       "lh": 1.488,
       "la": 1.889,
       "rel": "C",
-      "note": "Prima giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 66%, dopo 66%. Stagione iniziale: analisi sensibile a rose, mercato e assenze, non solo H2H."
+      "note": "Prima giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 66%, dopo 66%. Stagione iniziale: analisi sensibile a rose, mercato e assenze, non solo H2H.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -564,7 +613,8 @@
       "lh": 1.63,
       "la": 0.885,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 40%, dopo 46%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 40%, dopo 46%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -575,7 +625,8 @@
       "lh": 1.8,
       "la": 1.72,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -586,7 +637,8 @@
       "lh": 1.05,
       "la": 0.67,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -597,7 +649,8 @@
       "lh": 2.51,
       "la": 1.71,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -608,7 +661,8 @@
       "lh": 1.78,
       "la": 1.27,
       "rel": "C",
-      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -619,7 +673,8 @@
       "lh": 1.64,
       "la": 1.831,
       "rel": "C",
-      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 68%, dopo 67%."
+      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 68%, dopo 67%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -630,7 +685,8 @@
       "lh": 2.01,
       "la": 1.37,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -641,7 +697,8 @@
       "lh": 1.88,
       "la": 0.95,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -652,7 +709,8 @@
       "lh": 1.07,
       "la": 1.27,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -663,7 +721,8 @@
       "lh": 1.324,
       "la": 1.155,
       "rel": "C",
-      "note": "Seconda giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 44%, dopo 45%."
+      "note": "Seconda giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 44%, dopo 45%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -674,7 +733,8 @@
       "lh": 1.324,
       "la": 1.471,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 53%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 53%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -685,7 +745,8 @@
       "lh": 0.942,
       "la": 1.459,
       "rel": "C",
-      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 43%, dopo 43%."
+      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 43%, dopo 43%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -696,7 +757,8 @@
       "lh": 1.71,
       "la": 1.6,
       "rel": "C",
-      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -707,7 +769,8 @@
       "lh": 1.81,
       "la": 1.69,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -718,7 +781,8 @@
       "lh": 1.52,
       "la": 1.5,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -729,7 +793,8 @@
       "lh": 1.56,
       "la": 1.63,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -740,7 +805,8 @@
       "lh": 1.42,
       "la": 1.69,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -751,7 +817,8 @@
       "lh": 2.18,
       "la": 1.54,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -762,7 +829,8 @@
       "lh": 2.02,
       "la": 1.58,
       "rel": "C",
-      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -773,7 +841,8 @@
       "lh": 1.11,
       "la": 2.65,
       "rel": "A",
-      "note": "Campione ampio (22 giornate); dati Viking e Bodø identici nella fonte, da verificare. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Campione ampio (22 giornate); dati Viking e Bodø identici nella fonte, da verificare. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -784,7 +853,8 @@
       "lh": 1.06,
       "la": 1.593,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 47%, dopo 49%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 47%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -795,7 +865,8 @@
       "lh": 1.18,
       "la": 0.86,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -806,7 +877,8 @@
       "lh": 1.51,
       "la": 1.32,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -817,7 +889,8 @@
       "lh": 1.73,
       "la": 1.831,
       "rel": "C",
-      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 69%, dopo 69%."
+      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 69%, dopo 69%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -828,7 +901,8 @@
       "lh": 1.69,
       "la": 1.36,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 57%, dopo 59%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 57%, dopo 59%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -839,7 +913,8 @@
       "lh": 1.03,
       "la": 1.719,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 52%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 52%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -850,7 +925,8 @@
       "lh": 1.55,
       "la": 0.8,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -861,7 +937,8 @@
       "lh": 1.92,
       "la": 0.92,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -872,7 +949,8 @@
       "lh": 0.96,
       "la": 1.26,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -883,7 +961,8 @@
       "lh": 1.12,
       "la": 1.21,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -894,7 +973,8 @@
       "lh": 1.485,
       "la": 1.545,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 64%, dopo 58%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 64%, dopo 58%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -905,7 +985,8 @@
       "lh": 1.845,
       "la": 0.845,
       "rel": "B",
-      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 54%, dopo 50%."
+      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 54%, dopo 50%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -916,7 +997,8 @@
       "lh": 1.89,
       "la": 0.92,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 52%, dopo 53%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 52%, dopo 53%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -927,7 +1009,8 @@
       "lh": 1.765,
       "la": 1.163,
       "rel": "C",
-      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 57%, dopo 56%."
+      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 57%, dopo 56%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -938,7 +1021,8 @@
       "lh": 1.62,
       "la": 1.23,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -949,7 +1033,8 @@
       "lh": 1.56,
       "la": 1.61,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -960,7 +1045,8 @@
       "lh": 1.334,
       "la": 1.813,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 61%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -971,7 +1057,8 @@
       "lh": 1.639,
       "la": 1.403,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 59%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 59%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -982,7 +1069,8 @@
       "lh": 1.421,
       "la": 1.447,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 49%, dopo 55%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 49%, dopo 55%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -993,7 +1081,8 @@
       "lh": 1.141,
       "la": 1.894,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 58%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 58%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1004,7 +1093,8 @@
       "lh": 1.723,
       "la": 1.165,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 56%, dopo 55%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 56%, dopo 55%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1015,7 +1105,8 @@
       "lh": 1.35,
       "la": 1.14,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1026,7 +1117,8 @@
       "lh": 1.39,
       "la": 1.26,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1037,7 +1129,8 @@
       "lh": 1.29,
       "la": 1.74,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1048,7 +1141,8 @@
       "lh": 1.76,
       "la": 1.55,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1059,7 +1153,8 @@
       "lh": 2.34,
       "la": 1.08,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1070,7 +1165,8 @@
       "lh": 1.51,
       "la": 1.45,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1081,7 +1177,8 @@
       "lh": 1.33,
       "la": 1.08,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1092,7 +1189,8 @@
       "lh": 1.67,
       "la": 0.97,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1103,7 +1201,8 @@
       "lh": 1.66,
       "la": 1.71,
       "rel": "A",
-      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1114,7 +1213,8 @@
       "lh": 1.64,
       "la": 0.897,
       "rel": "C",
-      "note": "Seconda giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 44%, dopo 47%."
+      "note": "Seconda giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 44%, dopo 47%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1125,7 +1225,8 @@
       "lh": 1.481,
       "la": 1.377,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 51%, dopo 54%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 51%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1136,7 +1237,8 @@
       "lh": 1.683,
       "la": 1.047,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 49%, dopo 51%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 49%, dopo 51%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1147,7 +1249,8 @@
       "lh": 2.556,
       "la": 0.942,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 72%, dopo 68%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 72%, dopo 68%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1158,7 +1261,8 @@
       "lh": 2.205,
       "la": 1.006,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 64%, dopo 62%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 64%, dopo 62%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1169,7 +1273,8 @@
       "lh": 1.507,
       "la": 0.986,
       "rel": "C",
-      "note": "Gol fatti/subiti di Petrolul Ploiești, Sepsi stimati dai punti in classifica. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 55%, dopo 45%."
+      "note": "Gol fatti/subiti di Petrolul Ploiești, Sepsi stimati dai punti in classifica. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 55%, dopo 45%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1180,7 +1285,8 @@
       "lh": 1.61,
       "la": 1.82,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1191,7 +1297,8 @@
       "lh": 1.56,
       "la": 1.77,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 64%, dopo 65%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 64%, dopo 65%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1202,7 +1309,8 @@
       "lh": 1.304,
       "la": 2.265,
       "rel": "C",
-      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 73%, dopo 69%."
+      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 73%, dopo 69%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1213,7 +1321,8 @@
       "lh": 1.506,
       "la": 1.634,
       "rel": "C",
-      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 68%, dopo 61%."
+      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 68%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1224,7 +1333,8 @@
       "lh": 1.325,
       "la": 2.01,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 66%, dopo 65%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 66%, dopo 65%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1235,7 +1345,8 @@
       "lh": 1.805,
       "la": 1.145,
       "rel": "B",
-      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 62%, dopo 57%."
+      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 62%, dopo 57%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1246,7 +1357,8 @@
       "lh": 1.206,
       "la": 2.258,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 72%, dopo 67%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 72%, dopo 67%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1257,7 +1369,8 @@
       "lh": 1.8,
       "la": 1.46,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1268,7 +1381,8 @@
       "lh": 2.73,
       "la": 1.13,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1279,7 +1393,8 @@
       "lh": 1.778,
       "la": 1.425,
       "rel": "A",
-      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 67%, dopo 62%."
+      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 67%, dopo 62%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1290,7 +1405,8 @@
       "lh": 1.56,
       "la": 1.245,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 53%, dopo 53%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 53%, dopo 53%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1301,7 +1417,8 @@
       "lh": 1.83,
       "la": 1.04,
       "rel": "B",
-      "note": "Calendario saudita da verificare (fonti in parziale conflitto). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Calendario saudita da verificare (fonti in parziale conflitto). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1312,7 +1429,8 @@
       "lh": 1.516,
       "la": 1.464,
       "rel": "C",
-      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 61%, dopo 57%."
+      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 61%, dopo 57%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1323,7 +1441,8 @@
       "lh": 2.46,
       "la": 0.77,
       "rel": "A",
-      "note": "Campione ampio (22 giornate); dati Viking e Bodø identici nella fonte, da verificare. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Campione ampio (22 giornate); dati Viking e Bodø identici nella fonte, da verificare. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1334,7 +1453,8 @@
       "lh": 0.982,
       "la": 1.734,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 51%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 51%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1345,7 +1465,8 @@
       "lh": 1.73,
       "la": 0.995,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 56%, dopo 51%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 56%, dopo 51%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1356,7 +1477,8 @@
       "lh": 1.94,
       "la": 0.89,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 52%, dopo 54%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 52%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1367,7 +1489,8 @@
       "lh": 3.123,
       "la": 1.256,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 86%, dopo 81%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 86%, dopo 81%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1378,7 +1501,8 @@
       "lh": 1.32,
       "la": 2.347,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 75%, dopo 71%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 75%, dopo 71%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1389,7 +1513,8 @@
       "lh": 1.532,
       "la": 1.28,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 53%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 53%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1400,7 +1525,8 @@
       "lh": 1.624,
       "la": 1.206,
       "rel": "C",
-      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 54%, dopo 54%."
+      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 54%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1411,7 +1537,8 @@
       "lh": 1.255,
       "la": 1.36,
       "rel": "B",
-      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 50%, dopo 49%."
+      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 50%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1422,7 +1549,8 @@
       "lh": 1.855,
       "la": 1.155,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 59%, dopo 58%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 59%, dopo 58%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1433,7 +1561,8 @@
       "lh": 1.63,
       "la": 0.99,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1444,7 +1573,8 @@
       "lh": 1.323,
       "la": 1.928,
       "rel": "C",
-      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 62%, dopo 63%."
+      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 62%, dopo 63%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1455,7 +1585,8 @@
       "lh": 1.35,
       "la": 1.73,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1466,7 +1597,8 @@
       "lh": 1.51,
       "la": 0.895,
       "rel": "B",
-      "note": "Calendario saudita da verificare (fonti in parziale conflitto). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 34%, dopo 43%."
+      "note": "Calendario saudita da verificare (fonti in parziale conflitto). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 34%, dopo 43%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1477,7 +1609,8 @@
       "lh": 1.01,
       "la": 1.65,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 51%, dopo 50%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 51%, dopo 50%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1488,7 +1621,8 @@
       "lh": 1.19,
       "la": 1.42,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-17",
@@ -1499,7 +1633,8 @@
       "lh": 2.193,
       "la": 1.315,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 67%, dopo 68%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 67%, dopo 68%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1510,7 +1645,8 @@
       "lh": 1.586,
       "la": 0.989,
       "rel": "C",
-      "note": "Gol fatti/subiti di Corvinul stimati dai punti in classifica. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 49%, dopo 48%."
+      "note": "Gol fatti/subiti di Corvinul stimati dai punti in classifica. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 49%, dopo 48%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1521,7 +1657,8 @@
       "lh": 1.679,
       "la": 1.079,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 52%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 52%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1532,7 +1669,8 @@
       "lh": 1.302,
       "la": 1.673,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 53%, dopo 57%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 53%, dopo 57%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1543,7 +1681,8 @@
       "lh": 1.234,
       "la": 1.617,
       "rel": "A",
-      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 52%, dopo 54%."
+      "note": "Campione ampio (32-33 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 52%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1554,7 +1693,8 @@
       "lh": 1.904,
       "la": 0.863,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 52%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 52%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1565,7 +1705,8 @@
       "lh": 1.855,
       "la": 1.226,
       "rel": "C",
-      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 55%, dopo 59%."
+      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 55%, dopo 59%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1576,7 +1717,8 @@
       "lh": 1.123,
       "la": 1.248,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 38%, dopo 42%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 38%, dopo 42%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1587,7 +1729,8 @@
       "lh": 1.419,
       "la": 1.641,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 56%, dopo 59%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 56%, dopo 59%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-17",
@@ -1598,7 +1741,8 @@
       "lh": 1.245,
       "la": 2.04,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 69%, dopo 64%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 69%, dopo 64%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1609,7 +1753,8 @@
       "lh": 1.404,
       "la": 2.045,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 63%, dopo 67%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 63%, dopo 67%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1620,7 +1765,8 @@
       "lh": 1.708,
       "la": 1.456,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 59%, dopo 61%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 59%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1631,7 +1777,8 @@
       "lh": 1.122,
       "la": 1.258,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 46%, dopo 43%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 46%, dopo 43%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1642,7 +1789,8 @@
       "lh": 1.558,
       "la": 1.409,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 57%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 57%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1653,7 +1801,8 @@
       "lh": 2.044,
       "la": 1.433,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 62%, dopo 67%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 62%, dopo 67%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1664,7 +1813,8 @@
       "lh": 0.991,
       "la": 2.091,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 60%, dopo 59%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 60%, dopo 59%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1675,7 +1825,8 @@
       "lh": 1.349,
       "la": 1.164,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 45%, dopo 46%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 45%, dopo 46%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1686,7 +1837,8 @@
       "lh": 1.36,
       "la": 1.806,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 61%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1697,7 +1849,8 @@
       "lh": 1.287,
       "la": 1.541,
       "rel": "C",
-      "note": "Prima giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 61%, dopo 54%. Stagione iniziale: analisi sensibile a rose, mercato e assenze, non solo H2H."
+      "note": "Prima giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 61%, dopo 54%. Stagione iniziale: analisi sensibile a rose, mercato e assenze, non solo H2H.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1708,7 +1861,8 @@
       "lh": 1.626,
       "la": 1.671,
       "rel": "B",
-      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H."
+      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H.",
+      "review": "poisson_only"
     },
     {
       "date": "2026-10-18",
@@ -1719,7 +1873,8 @@
       "lh": 1.709,
       "la": 1.541,
       "rel": "B",
-      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H."
+      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H.",
+      "review": "poisson_only"
     },
     {
       "date": "2026-10-18",
@@ -1730,7 +1885,8 @@
       "lh": 0.885,
       "la": 1.736,
       "rel": "B",
-      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H."
+      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H.",
+      "review": "poisson_only"
     },
     {
       "date": "2026-10-18",
@@ -1741,7 +1897,8 @@
       "lh": 1.769,
       "la": 0.847,
       "rel": "B",
-      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H."
+      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H.",
+      "review": "poisson_only"
     },
     {
       "date": "2026-10-18",
@@ -1752,7 +1909,8 @@
       "lh": 2.47,
       "la": 1.65,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -1763,7 +1921,8 @@
       "lh": 1.89,
       "la": 1.88,
       "rel": "C",
-      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -1774,7 +1933,8 @@
       "lh": 1.91,
       "la": 1.56,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 71%, dopo 67%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 71%, dopo 67%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1785,7 +1945,8 @@
       "lh": 2.0,
       "la": 1.15,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -1796,7 +1957,8 @@
       "lh": 1.533,
       "la": 1.708,
       "rel": "C",
-      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 63%, dopo 63%."
+      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 63%, dopo 63%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1807,7 +1969,8 @@
       "lh": 1.494,
       "la": 0.955,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 40%, dopo 44%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 40%, dopo 44%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1818,7 +1981,8 @@
       "lh": 1.6,
       "la": 1.03,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 50%, dopo 49%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 50%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1829,7 +1993,8 @@
       "lh": 1.67,
       "la": 0.98,
       "rel": "C",
-      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -1840,7 +2005,8 @@
       "lh": 1.843,
       "la": 1.34,
       "rel": "C",
-      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 62%, dopo 62%."
+      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 62%, dopo 62%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1851,7 +2017,8 @@
       "lh": 1.401,
       "la": 1.275,
       "rel": "C",
-      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 50%, dopo 50%."
+      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 50%, dopo 50%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1862,7 +2029,8 @@
       "lh": 1.89,
       "la": 1.42,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -1873,7 +2041,8 @@
       "lh": 1.41,
       "la": 1.95,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -1884,7 +2053,8 @@
       "lh": 1.5,
       "la": 1.4,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -1895,7 +2065,8 @@
       "lh": 2.2,
       "la": 1.39,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -1906,7 +2077,8 @@
       "lh": 1.005,
       "la": 1.978,
       "rel": "C",
-      "note": "Seconda giornata: basata sulla stagione 2025/26; Churchill Brothers neopromossa, stimata con i valori della retrocessa. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 70%, dopo 57%."
+      "note": "Seconda giornata: basata sulla stagione 2025/26; Churchill Brothers neopromossa, stimata con i valori della retrocessa. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 70%, dopo 57%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1917,7 +2089,8 @@
       "lh": 1.03,
       "la": 1.421,
       "rel": "C",
-      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 45%, dopo 44%."
+      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 45%, dopo 44%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1928,7 +2101,8 @@
       "lh": 1.682,
       "la": 1.176,
       "rel": "A",
-      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 54%."
+      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 55%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1939,7 +2113,8 @@
       "lh": 1.654,
       "la": 1.205,
       "rel": "A",
-      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 54%."
+      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1950,7 +2125,8 @@
       "lh": 1.34,
       "la": 1.46,
       "rel": "C",
-      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Dati aggiornati al 6 settembre. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -1961,7 +2137,8 @@
       "lh": 1.615,
       "la": 1.212,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 46%, dopo 54%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 46%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1972,7 +2149,8 @@
       "lh": 1.315,
       "la": 1.66,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 52%, dopo 57%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 52%, dopo 57%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1983,7 +2161,8 @@
       "lh": 1.565,
       "la": 1.65,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 64%, dopo 62%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 64%, dopo 62%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -1994,7 +2173,8 @@
       "lh": 0.97,
       "la": 1.025,
       "rel": "B",
-      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 26%, dopo 32%."
+      "note": "Orario da verificare (fonte con fuso non indicato). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 26%, dopo 32%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2005,7 +2185,8 @@
       "lh": 1.211,
       "la": 1.659,
       "rel": "C",
-      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 55%, dopo 55%."
+      "note": "Inizio stagione: 4 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 55%, dopo 55%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2016,7 +2197,8 @@
       "lh": 2.04,
       "la": 0.825,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 53%, dopo 55%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 53%, dopo 55%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2027,7 +2209,8 @@
       "lh": 1.47,
       "la": 1.39,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 54%, dopo 54%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 54%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2038,7 +2221,8 @@
       "lh": 1.34,
       "la": 1.46,
       "rel": "A",
-      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2049,7 +2233,8 @@
       "lh": 1.365,
       "la": 1.782,
       "rel": "C",
-      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 58%, dopo 61%."
+      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 58%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2060,7 +2245,8 @@
       "lh": 1.6,
       "la": 1.22,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2071,7 +2257,8 @@
       "lh": 1.254,
       "la": 1.563,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 53%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 50%, dopo 53%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2082,7 +2269,8 @@
       "lh": 1.547,
       "la": 1.106,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 43%, dopo 49%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 43%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2093,7 +2281,8 @@
       "lh": 1.966,
       "la": 1.091,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 59%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 58%, dopo 59%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2104,7 +2293,8 @@
       "lh": 1.432,
       "la": 1.328,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 48%, dopo 52%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 48%, dopo 52%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2115,7 +2305,8 @@
       "lh": 1.154,
       "la": 1.49,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 48%, dopo 49%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 48%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2126,7 +2317,8 @@
       "lh": 0.82,
       "la": 1.29,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2137,7 +2329,8 @@
       "lh": 1.5,
       "la": 1.06,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 46%, dopo 47%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 46%, dopo 47%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2148,7 +2341,8 @@
       "lh": 1.55,
       "la": 1.275,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 59%, dopo 54%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 59%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2159,7 +2353,8 @@
       "lh": 1.076,
       "la": 1.946,
       "rel": "C",
-      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 63%, dopo 58%."
+      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 63%, dopo 58%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2170,7 +2365,8 @@
       "lh": 1.198,
       "la": 1.623,
       "rel": "C",
-      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 54%, dopo 54%."
+      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 54%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2181,7 +2377,8 @@
       "lh": 1.949,
       "la": 1.171,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 59%, dopo 60%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 59%, dopo 60%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2192,7 +2389,8 @@
       "lh": 1.384,
       "la": 1.222,
       "rel": "C",
-      "note": "Seconda giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 51%, dopo 48%."
+      "note": "Seconda giornata: basata sulla stagione 2025/26. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 51%, dopo 48%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2203,7 +2401,8 @@
       "lh": 1.39,
       "la": 1.46,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 50%, dopo 54%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 50%, dopo 54%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2214,7 +2413,8 @@
       "lh": 1.345,
       "la": 1.014,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 37%, dopo 42%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 37%, dopo 42%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2225,7 +2425,8 @@
       "lh": 2.41,
       "la": 1.82,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2236,7 +2437,8 @@
       "lh": 0.795,
       "la": 2.07,
       "rel": "A",
-      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 56%, dopo 55%."
+      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 56%, dopo 55%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2247,7 +2449,8 @@
       "lh": 1.598,
       "la": 1.466,
       "rel": "A",
-      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 62%, dopo 59%."
+      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 62%, dopo 59%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2258,7 +2461,8 @@
       "lh": 0.986,
       "la": 1.65,
       "rel": "A",
-      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 47%, dopo 49%."
+      "note": "Campione ampio (23 giornate). Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 47%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2269,7 +2473,8 @@
       "lh": 1.877,
       "la": 1.557,
       "rel": "C",
-      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 76%, dopo 67%."
+      "note": "Solo 2-3 partite per squadra. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 76%, dopo 67%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2280,7 +2485,8 @@
       "lh": 1.24,
       "la": 2.345,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 74%, dopo 69%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 74%, dopo 69%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2291,7 +2497,8 @@
       "lh": 1.497,
       "la": 1.592,
       "rel": "C",
-      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 53%, dopo 60%."
+      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 53%, dopo 60%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2302,7 +2509,8 @@
       "lh": 1.84,
       "la": 0.915,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 48%, dopo 52%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 48%, dopo 52%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2313,7 +2521,8 @@
       "lh": 2.82,
       "la": 1.06,
       "rel": "A",
-      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2324,7 +2533,8 @@
       "lh": 1.13,
       "la": 1.08,
       "rel": "A",
-      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2335,7 +2545,8 @@
       "lh": 1.71,
       "la": 1.93,
       "rel": "A",
-      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2346,7 +2557,8 @@
       "lh": 1.416,
       "la": 1.124,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 42%, dopo 47%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 42%, dopo 47%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2357,7 +2569,8 @@
       "lh": 1.172,
       "la": 1.356,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 41%, dopo 46%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 41%, dopo 46%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2368,7 +2581,8 @@
       "lh": 1.53,
       "la": 1.223,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 46%, dopo 52%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 46%, dopo 52%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2379,7 +2593,8 @@
       "lh": 1.29,
       "la": 1.44,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2390,7 +2605,8 @@
       "lh": 1.357,
       "la": 1.306,
       "rel": "C",
-      "note": "Gol fatti/subiti di UTA Arad, CFR Cluj stimati dai punti in classifica. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 53%, dopo 50%."
+      "note": "Gol fatti/subiti di UTA Arad, CFR Cluj stimati dai punti in classifica. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 53%, dopo 50%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2401,7 +2617,8 @@
       "lh": 1.52,
       "la": 1.649,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 60%, dopo 61%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 60%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2412,7 +2629,8 @@
       "lh": 1.92,
       "la": 0.9,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2423,7 +2641,8 @@
       "lh": 0.909,
       "la": 1.66,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 45%, dopo 47%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 45%, dopo 47%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2434,7 +2653,8 @@
       "lh": 1.495,
       "la": 1.688,
       "rel": "C",
-      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 75%, dopo 62%."
+      "note": "Inizio stagione: 5 giornate. Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 75%, dopo 62%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2445,7 +2665,8 @@
       "lh": 1.584,
       "la": 1.067,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 47%, dopo 49%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 47%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2456,7 +2677,8 @@
       "lh": 1.21,
       "la": 1.945,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 66%, dopo 61%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 66%, dopo 61%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2467,7 +2689,8 @@
       "lh": 2.135,
       "la": 1.185,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 68%, dopo 64%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 68%, dopo 64%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2478,7 +2701,8 @@
       "lh": 1.77,
       "la": 1.1,
       "rel": "B",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 51%, dopo 55%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 51%, dopo 55%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2489,7 +2713,8 @@
       "lh": 1.3,
       "la": 1.335,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 45%, dopo 49%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 45%, dopo 49%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2500,7 +2725,8 @@
       "lh": 1.17,
       "la": 1.95,
       "rel": "C",
-      "note": "Solo 2-3 partite per squadra; fonte ambigua su chi gioca in casa. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote. Casa e orario locale (19:45 Qatar, 18:45 Italia) confermati da qsl.qa; altra fonte federale discordante."
+      "note": "Solo 2-3 partite per squadra; fonte ambigua su chi gioca in casa. Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote. Casa e orario locale (19:45 Qatar, 18:45 Italia) confermati da qsl.qa; altra fonte federale discordante.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2511,7 +2737,8 @@
       "lh": 2.03,
       "la": 1.05,
       "rel": "A",
-      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Campione ampio (22 giornate). Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2522,7 +2749,8 @@
       "lh": 1.96,
       "la": 1.38,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2533,7 +2761,8 @@
       "lh": 1.68,
       "la": 1.39,
       "rel": "B",
-      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote."
+      "note": "Solo modello Claude: probabilità Poisson da gol attesi non validati indipendentemente; verifica formazioni e quote.",
+      "review": "claude_only"
     },
     {
       "date": "2026-10-18",
@@ -2544,7 +2773,8 @@
       "lh": 2.216,
       "la": 1.275,
       "rel": "C",
-      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 73%, dopo 68%."
+      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 73%, dopo 68%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2555,7 +2785,8 @@
       "lh": 1.25,
       "la": 1.175,
       "rel": "B",
-      "note": "Calendario saudita da verificare (fonti in parziale conflitto). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 30%, dopo 44%."
+      "note": "Calendario saudita da verificare (fonti in parziale conflitto). Revisione doppia fonte: Poisson condiviso, peso Claude 50% / altra analisi 50%; Over 2.5 prima 30%, dopo 44%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2566,7 +2797,8 @@
       "lh": 1.852,
       "la": 1.03,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 53%, dopo 55%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 53%, dopo 55%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2577,7 +2809,8 @@
       "lh": 1.621,
       "la": 0.864,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 44%, dopo 45%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 44%, dopo 45%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2588,7 +2821,8 @@
       "lh": 2.509,
       "la": 0.869,
       "rel": "A",
-      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 71%, dopo 66%."
+      "note": "Revisione doppia fonte: Poisson condiviso, peso Claude 55% / altra analisi 44%; Over 2.5 prima 71%, dopo 66%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2599,7 +2833,8 @@
       "lh": 2.305,
       "la": 2.083,
       "rel": "B",
-      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H."
+      "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H.",
+      "review": "poisson_only"
     },
     {
       "date": "2026-10-18",
@@ -2610,7 +2845,8 @@
       "lh": 1.84,
       "la": 1.171,
       "rel": "C",
-      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 53%, dopo 58%."
+      "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile). Revisione doppia fonte: Poisson condiviso, peso Claude 35% / altra analisi 65%; Over 2.5 prima 53%, dopo 58%.",
+      "review": "blend"
     },
     {
       "date": "2026-10-18",
@@ -2621,7 +2857,8 @@
       "lh": 1.79,
       "la": 0.78,
       "rel": "B",
-      "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita."
+      "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita.",
+      "review": "poisson_only"
     },
     {
       "date": "2026-10-18",
@@ -2632,7 +2869,8 @@
       "lh": 2.37,
       "la": 0.56,
       "rel": "B",
-      "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita."
+      "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita.",
+      "review": "poisson_only"
     },
     {
       "date": "2026-10-18",
@@ -2643,7 +2881,8 @@
       "lh": 1.61,
       "la": 1.09,
       "rel": "B",
-      "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita."
+      "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita.",
+      "review": "poisson_only"
     }
   ],
   "audit": {
@@ -2661,7 +2900,8 @@
       "Serie B": "https://www.legab.it/seriebkt/calendario/2026-2027/stagione-regolare/h-verona",
       "Qatar Stars League": "https://www.qsl.qa/en/al-gharafa",
       "A-League rinvio Adelaide": "https://brisbaneroar.com.au/news/fixture-update-26-27-isuzu-ute-a-league-men-round-one/"
-    }
+    },
+    "revisionScope": "Soltanto gli incontri prima del calcio di inizio sono stati ricalcolati. Una gara gia iniziata conserva la sua vecchia previsione per evitare hindsight bias. La revisione 3.3.1 distingue visivamente le provenienze."
   },
   "retiredMatches": [
     {
@@ -2676,5 +2916,10 @@
       "away": "Al Gharafa",
       "reason": "partita presente con casa errata; fare riferimento a Al Gharafa - Al Rayyan"
     }
-  ]
+  ],
+  "label": "Revisione 16/10: 154 confronti, 85 aggiunte",
+  "coverage": {
+    "from": "2026-10-16",
+    "to": "2026-10-18"
+  }
 }
