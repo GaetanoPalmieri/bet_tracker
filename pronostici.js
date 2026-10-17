@@ -766,7 +766,15 @@ function tipScanMatch(x) {
     gh = x.goals[0] || 0, ga = x.goals[1] || 0, G = gh + ga,
     R = tipRemain(min, half, TIP_LM.H1),
     lam = 2.7, src = 'media';
-  var ou = x.odds && x.odds.ou;
+  var ou = x.odds && x.odds.ou, pre = x.odds && x.odds.pre;
+  if (pre && pre.o25 > 1 && pre.u25 > 1) {
+    /* quote prepartita Over/Under 2.5 (Bzzoiro): gol attesi della partita intera */
+    var p25 = (1 / pre.o25) / (1 / pre.o25 + 1 / pre.u25), a = 0.3, z = 7;
+    for (var j = 0; j < 40; j++) { var md = (a + z) / 2; if (tipPoisAtLeast(3, md) < p25) a = md; else z = md; }
+    lam = Math.max(1, Math.min(5, (a + z) / 2));
+    src = 'quote';
+    ou = null;
+  }
   if (ou && R.all > 0.03) {
     var need = Math.ceil(ou.line - G);
     if (need >= 1) {
@@ -776,8 +784,8 @@ function tipScanMatch(x) {
       src = 'quote live';
     }
   }
-  var sh = 0.53, x12 = x.odds && x.odds.x12;
-  if (x12 && gh === ga) {
+  var sh = 0.53, x12 = (pre && pre.x12) || (x.odds && x.odds.x12);
+  if (x12 && (gh === ga || (pre && pre.x12))) {
     var ih = 1 / x12[0], ia = 1 / x12[2], sum = ih + 1 / x12[1] + ia;
     sh = Math.max(0.25, Math.min(0.75, 0.5 + 0.45 * (ih - ia) / sum));
   }
@@ -789,7 +797,13 @@ function tipScanMatch(x) {
     time: ko.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
     lh: lam * sh, la: lam * (1 - sh), rel: 'C',
   };
-  var r = tipInplay(m, { min: min, half: half, gh: gh, ga: ga }),
+  var inp = { min: min, half: half, gh: gh, ga: ga };
+  if (x.stats && x.stats.side) inp.side = x.stats.side;
+  if (x.lastGoal != null && min - x.lastGoal >= 0 && min - x.lastGoal <= 5) inp.rg = true;
+  /* i dati live arrivati con la scansione valgono come una sincronizzazione */
+  tipUI.liveData = tipUI.liveData || {};
+  if (x.stats) tipUI.liveData[m.id] = { afId: x.afId, status: st, elapsed: x.elapsed, goals: x.goals, stats: x.stats, lastGoal: x.lastGoal, at: (tipUI.scan && tipUI.scan.at) || Date.now() };
+  var r = tipInplay(m, inp),
     main = r.lines.find(function (y) { return y.k === (r.rem.ht > 0 ? 'h1' : 'n1'); }) || r.lines[0];
   return { m: m, x: x, min: min, half: half, main: main, r: r };
 }
@@ -804,11 +818,11 @@ function tipScanPanel() {
       .sort(function (a, b) { return b.main.p - a.main.p; }).slice(0, 40);
   tipUI.scanMap = {};
   all.forEach(function (y) { tipUI.scanMap[y.m.afId] = y.m; });
-  var withOdds = all.filter(function (y) { return y.m.scanSrc === 'quote live'; }).length;
+  var withOdds = all.filter(function (y) { return y.m.scanSrc !== 'media'; }).length;
   return head +
-    '<p class="muted tip-hint">' + all.length + ' partite in corso · ' + withOdds + ' con quote live' + (S.oddsNote ? ' (quote live non disponibili: ' + U.esc(S.oddsNote) + ')' : '') + '. In alto le più probabili per un altro gol nel tempo in corso. Le stime senza quote usano solo la media gol. Prima di giocare apri la partita e sincronizza.</p>' +
+    '<p class="muted tip-hint">' + all.length + ' partite in corso · ' + withOdds + ' con quote' + (S.oddsNote ? ' (quote live non disponibili: ' + U.esc(S.oddsNote) + ')' : '') + '. In alto le più probabili per un altro gol nel tempo in corso. Le stime senza quote usano solo la media gol. Prima di giocare apri la partita e sincronizza.</p>' +
     (rows.length ? '<div class="tip-tlist">' + rows.map(function (y) {
-      return '<button type="button" class="tip-trow" data-scan-open="' + y.m.afId + '"><span class="tip-tn tip-ln">' + (y.x.status === 'HT' ? 'HT' : y.min + '\'') + '</span><span class="tip-tmain"><b>' + U.esc(y.m.home) + ' – ' + U.esc(y.m.away) + '</b><small>' + U.esc(y.m.league) + (y.m.scanSrc === 'quote live' ? '' : ' · senza quote') + '</small></span><span class="tip-tpick"><b>' + y.x.goals[0] + '-' + y.x.goals[1] + ' · ' + Math.round(y.main.p * 100) + '%</b><small>' + (y.r.rem.ht > 0 ? 'gol 1T' : 'altro gol') + ' · min ' + y.main.fair.toFixed(2) + ' ›</small></span></button>';
+      return '<button type="button" class="tip-trow" data-scan-open="' + y.m.afId + '"><span class="tip-tn tip-ln">' + (y.x.status === 'HT' ? 'HT' : y.min + '\'') + '</span><span class="tip-tmain"><b>' + U.esc(y.m.home) + ' – ' + U.esc(y.m.away) + '</b><small>' + U.esc(y.m.league) + (y.m.scanSrc === 'media' ? ' · senza quote' : '') + (y.x.stats ? ' · statistiche' : '') + '</small></span><span class="tip-tpick"><b>' + y.x.goals[0] + '-' + y.x.goals[1] + ' · ' + Math.round(y.main.p * 100) + '%</b><small>' + (y.r.rem.ht > 0 ? 'gol 1T' : 'altro gol') + ' · min ' + y.main.fair.toFixed(2) + ' ›</small></span></button>';
     }).join('') + '</div>' : '<p class="muted tip-tnone">Nessuna partita sopra il 50% adesso.</p>') +
     '<button type="button" class="tip-ctx-btn" data-scan-all>' + (showAll ? 'Mostra solo le migliori' : 'Mostra tutte le partite') + '</button>' +
     '</section>';
@@ -924,7 +938,7 @@ function tipLiveSheet(id, obj) {
     sheetHead(m.home + ' – ' + m.away, { sub: U.esc(m.league) + ' · ' + U.esc(tipDayLabel(m.date)) + ' ' + U.esc(m.time) }) +
     '<div class="tip-form">' +
     '<button type="button" class="tip-live-get" data-ip-sync>📡 Sincronizza</button>' +
-    (m.scan ? '<p class="muted tip-hint">Partita dallo scanner: la forza delle squadre viene ' + (m.scanSrc === 'quote live' ? 'dalle quote live (Over/Under) al momento della scansione.' : 'dalla media dei gol, senza quote: stima più grezza.') + '</p>' : '<button type="button" class="tip-ctx-btn" data-ctx-open>🧭 Contesto squadre' + tipCtxBadge(m) + ' ›</button>') +
+    (m.scan ? '<p class="muted tip-hint">Partita dallo scanner: la forza delle squadre viene ' + (m.scanSrc === 'quote' ? 'dalle quote prepartita (Over/Under 2.5 e 1X2).' : m.scanSrc === 'quote live' ? 'dalle quote live (Over/Under) al momento della scansione.' : 'dalla media dei gol, senza quote: stima più grezza.') + '</p>' : '<button type="button" class="tip-ctx-btn" data-ctx-open>🧭 Contesto squadre' + tipCtxBadge(m) + ' ›</button>') +
     '<div id="tip-ip-out" class="tip-live-out"></div>' +
     '<details class="tip-ipdata"' + (d0.at ? '' : ' open') + '><summary>Dati live (correggili se serve)</summary>' +
     '<div class="tip-live">' +

@@ -6,8 +6,11 @@ Cosa fa
   minuto del primo gol (anche rinvii e annullamenti). Al massimo un controllo ogni 20 minuti.
 - Nel dettaglio di una partita in corso, "📡 Scarica statistiche live" riempie tiri, tiri in porta,
   angoli, xG ed espulsioni per il controllo live al 30'. Resta da scrivere solo la quota live.
-- Fonte: API-Football (piano gratuito, 100 richieste al giorno). Un weekend intero usa circa 10-20
-  richieste per i risultati, piu' 1-2 per ogni "Scarica statistiche live".
+- Fonte consigliata: Bzzoiro Sports (sports.bzzoiro.com), gratis, 7.500 richieste al giorno, con
+  statistiche live per squadra (anche xG) e scanner di tutte le partite in corso.
+  In alternativa API-Football (100 richieste al giorno). La funzione usa Bzzoiro se trova il segreto
+  BZZOIRO_KEY, altrimenti API-Football.
+- UN SOLO ACCOUNT per servizio: gli account multipli sono vietati e portano alla sospensione.
 
 Cosa serve prima
 - Accesso fatto in Altro › Sincronizzazione (lo stesso progetto Supabase delle altre app).
@@ -20,8 +23,9 @@ e tocca "Aggiorna" quando compare l'avviso.
 
 PASSO 2 — Segreto
 Supabase › Edge Functions › Secrets › Add new secret
-  Nome:   API_FOOTBALL_KEY
-  Valore: la tua chiave di API-Football
+  Nome:   BZZOIRO_KEY
+  Valore: la tua chiave di Bzzoiro (sports.bzzoiro.com › registrati › copia la chiave dal tuo account)
+  (in alternativa: Nome API_FOOTBALL_KEY, valore la chiave di API-Football)
 
 PASSO 3 — Funzione
 Supabase › Edge Functions › Deploy a new function › Via editor
