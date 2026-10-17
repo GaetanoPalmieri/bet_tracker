@@ -413,3 +413,22 @@ dialog#editor.sheet.tip-dlg {
 .tip-ipval-no{border-color:rgba(200,60,50,.45);background:rgba(200,60,50,.10)}
 .tip-ipval-no .tip-ipval-h b{color:#c0392b}
 @media (prefers-color-scheme:dark){.tip-ipval{background:rgba(30,30,34,.5);border-color:rgba(255,255,255,.12)}.tip-ipval-yes .tip-ipval-h b{color:#4cd27f}.tip-ipval-no .tip-ipval-h b{color:#ff6b5e}}
+/* 3.17.0 — dati live per squadra e "perché" */
+.tip-ipdata{margin:10px 0;border-radius:16px;padding:8px 12px;background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.5)}
+.tip-ipdata summary{cursor:pointer;font-weight:600;padding:4px 0}
+.tip-ipgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 8px;align-items:center;margin-top:8px}
+.tip-ipgrid b{font-size:.8rem;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tip-ipgrid span{font-size:.85rem;opacity:.8}
+.tip-ipgrid input{width:100%;min-width:0;box-sizing:border-box;text-align:center}
+.tip-live select{width:100%}
+.tip-ipwhy{margin:10px 0;padding:10px 14px;border-radius:16px;background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.5)}
+.tip-ipwhy>small{display:block;opacity:.7;margin-bottom:6px}
+.tip-ipwhy-t{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin:4px 0}
+.tip-ipwhy-t b{min-width:100%}
+.tip-ipwhy-t span{font-size:.85rem}
+.tip-ipwhy p{margin:6px 0 0;font-size:.8rem}
+@media (prefers-color-scheme:dark){.tip-ipdata,.tip-ipwhy{background:rgba(30,30,34,.5);border-color:rgba(255,255,255,.12)}}
+.tip-ctx-btn{display:block;width:100%;margin:8px 0;padding:10px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.35);font:inherit;font-weight:600;text-align:left;color:inherit;cursor:pointer}
+.tip-ctx-col{margin:10px 0;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.45)}
+.tip-ctx-col b{display:block;margin-bottom:4px}
+@media (prefers-color-scheme:dark){.tip-ctx-btn,.tip-ctx-col{background:rgba(30,30,34,.5);border-color:rgba(255,255,255,.12)}}

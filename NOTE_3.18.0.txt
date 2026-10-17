@@ -1,0 +1,18 @@
+Bet Tracker 3.18.0
+
+Scanner live (nuovo)
+- Sezione Live › "Scanner · tutte le partite live": con 1 richiesta scarica tutte le partite in corso nel mondo,
+  con 1 in piu' prova le quote live (Over/Under e 1X2) per capire quanto segnano le squadre.
+- Ordina le partite per probabilita' di un altro gol nel tempo in corso (1° tempo o finale) e mostra la quota minima.
+  Di base mostra solo quelle dal 50% in su e fino all'80'; "Mostra tutte" le elenca tutte.
+- Tocchi una partita e si apre "Live · sintonizza" con statistiche, modello, perche' e verdetto.
+- Senza quote live la stima usa solo la media gol: e' grezza, va sincronizzata prima di giocare.
+
+Modello live riallenato con piu' partite
+- 2.632 partite con eventi minuto per minuto (StatsBomb, prima 1.946) per le statistiche;
+- piu' 5.902 partite con il minuto di ogni gol (openfootball: Serie A, Premier, Liga, Bundesliga, Ligue 1 2025/26
+  con anche le espulsioni; Bundesliga 1-2-3 2020-2026) per la curva dei gol nel tempo, il punteggio e le espulsioni.
+- Totale 8.534 partite. Nuovo fattore: gol appena segnato (nei dati non cambia quasi nulla).
+- Validazione su partite mai viste: log-loss prossimo gol 0.487 (solo prepartita 0.489).
+
+Supabase: aggiornare la funzione pronostici-dati (nuove azioni "scan" e minuto dell'ultimo gol).
