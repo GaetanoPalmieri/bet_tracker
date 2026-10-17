@@ -1,0 +1,5 @@
+Bet Tracker 3.13.1
+
+Pronostici
+- Il file dei pronostici puo' contenere anche il minuto del primo gol: l'app lo importa (serve al piano 30' e all'apprendimento).
+- File 17/10 ore 10: risultati, 1° tempo e minuto del primo gol di 30 partite di venerdi'; Over 2.5 di Udinese-Lecce e Fiorentina-Como (DraftKings via ESPN); Top ricalcolate con la calibrazione sui 36 risultati disponibili.

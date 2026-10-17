@@ -352,3 +352,35 @@ dialog#editor.sheet.tip-dlg {
 .tip-prob i.tip-mv { font-size: 10.5px; }
 .tip-prob i.tip-mv.dn { color: var(--bt-up-text); }
 .tip-prob i.tip-mv.up { color: var(--bt-down-text); }
+/* 3.11.0 — controllo live al 30' */
+.tip-live { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tip-live label { display: grid; gap: 4px; min-width: 0; font-size: 11.5px; font-weight: 700; color: var(--suite-text-soft); }
+.tip-live label small { font-weight: 500; }
+.tip-live input[type="number"] { width: 100%; min-width: 0; margin: 0 !important; min-height: 40px; font-size: 15px !important; }
+.tip-live-red { grid-column: 1 / -1; display: flex !important; align-items: center; gap: 8px; font-size: 13px !important; color: var(--suite-text) !important; }
+.tip-live-out { margin-top: 10px; display: grid; gap: 8px; }
+.tip-live-verdict { margin: 0; font-size: 13.5px; line-height: 1.4; }
+.tip-live-verdict .positive { color: var(--bt-up-text); }
+.tip-live-verdict .negative { color: var(--bt-down-text); }
+.tip-live-red input[type="checkbox"] { width: 20px !important; height: 20px; min-height: 0 !important; margin: 0 !important; flex: 0 0 auto; }
+/* 3.12.0 — dati automatici */
+.tip-live-get { width: 100%; margin: 0 0 10px !important; min-height: 42px !important; border-radius: 12px !important; font-weight: 700 !important; }
+/* 3.13.0 — sezione Live e valutazione in qualsiasi minuto */
+.tip-livedot { width: 9px; height: 9px; border-radius: 50%; background: color-mix(in srgb, var(--suite-text) 30%, transparent); }
+.tip-livedot.on { background: #e5484d; animation: tipPulse 1.2s ease-in-out infinite; }
+.tip-tool.on .tip-livedot { background: #fff; }
+.tip-tn.tip-ln { width: auto; min-width: 34px; padding: 0 6px; border-radius: 999px; font-size: 11px; }
+.tip-live-more { background: transparent !important; border: 1px dashed var(--suite-glass-edge) !important; font-size: 13px !important; }
+.tip-iplines { display: grid; gap: 6px; }
+.tip-ipline { display: grid; grid-template-columns: minmax(0, 1fr) auto 76px; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--suite-text) 5%, transparent); border: 1px solid var(--suite-glass-edge); }
+.tip-ipline span { display: grid; gap: 2px; min-width: 0; }
+.tip-ipline b { font-size: 13.5px; }
+.tip-ipline small { font-size: 11.5px; color: var(--suite-text-soft); }
+.tip-ipline em { font-style: normal; font-size: 12px; font-weight: 800; }
+.tip-ipline em.positive { color: var(--bt-up-text); }
+.tip-ipline em.negative { color: var(--bt-down-text); }
+.tip-ipline strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+.tip-ipline input { width: 100%; min-width: 0; margin: 0 !important; min-height: 38px; font-size: 14px !important; text-align: center; }
+@media (max-width: 400px) { .tip-toolbar .tip-tool span { font-size: 12px; } .tip-toolbar-title small { display: none; } }
+.tip-tn.tip-ln { white-space: nowrap; min-width: 46px; height: 24px; font-variant-numeric: tabular-nums; }
+.tip-trow:has(.tip-ln) { grid-template-columns: 50px minmax(0, 1fr) auto auto; }

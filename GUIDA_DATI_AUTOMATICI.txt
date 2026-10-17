@@ -1,0 +1,45 @@
+BET TRACKER — RISULTATI E STATISTICHE LIVE AUTOMATICI
+(si fa una volta sola, tutto dal sito di Supabase, niente programmi da installare)
+
+Cosa fa
+- Quando apri la scheda Pronostici, le partite finite si aggiornano da sole: finale, 1° tempo e
+  minuto del primo gol (anche rinvii e annullamenti). Al massimo un controllo ogni 20 minuti.
+- Nel dettaglio di una partita in corso, "📡 Scarica statistiche live" riempie tiri, tiri in porta,
+  angoli, xG ed espulsioni per il controllo live al 30'. Resta da scrivere solo la quota live.
+- Fonte: API-Football (piano gratuito, 100 richieste al giorno). Un weekend intero usa circa 10-20
+  richieste per i risultati, piu' 1-2 per ogni "Scarica statistiche live".
+
+Cosa serve prima
+- Accesso fatto in Altro › Sincronizzazione (lo stesso progetto Supabase delle altre app).
+- La chiave di API-Football (dashboard.api-football.com › Account › My Access).
+  La chiave NON va mai scritta nei file dell'app: l'app e' pubblica su GitHub.
+
+PASSO 1 — Carica la nuova versione
+Carica i file di bet_tracker come sempre (comprese le cartelle supabase/...). Apri Bet Tracker
+e tocca "Aggiorna" quando compare l'avviso.
+
+PASSO 2 — Segreto
+Supabase › Edge Functions › Secrets › Add new secret
+  Nome:   API_FOOTBALL_KEY
+  Valore: la tua chiave di API-Football
+
+PASSO 3 — Funzione
+Supabase › Edge Functions › Deploy a new function › Via editor
+  Nome: pronostici-dati   (esattamente cosi': l'indirizzo deve finire per /pronostici-dati)
+  Contenuto: tutto il file supabase/functions/pronostici-dati/index.ts
+Pubblica (Deploy). Lascia ATTIVA la verifica JWT (e' l'impostazione predefinita): la funzione
+la puo' usare solo chi ha fatto l'accesso.
+
+PASSO 4 — Prova
+Bet Tracker › Pronostici › pulsante File (freccia circolare) › "↻ Risultati automatici".
+Deve comparire "Risultati automatici: N partite" oppure "Nessun nuovo risultato".
+Sotto il pulsante vedi anche quante richieste di API-Football restano oggi.
+
+Se qualcosa non va
+- "Fai l'accesso in Altro › Sincronizzazione": rifai l'accesso.
+- "Su Supabase manca la funzione pronostici-dati": controlla il nome (passo 3).
+- "Su Supabase manca il segreto API_FOOTBALL_KEY": controlla il passo 2 (nome esatto).
+- "Richieste giornaliere finite": il piano gratuito si azzera ogni giorno a mezzanotte (UTC).
+- Alcune partite non vengono trovate (nomi molto diversi o campionati non coperti): dopo 3 tentativi
+  l'app smette di cercarle e restano da segnare a mano. Dimmelo e aggiungo il nome alla lista.
+- Log della funzione: Supabase › Edge Functions › pronostici-dati › Logs.
