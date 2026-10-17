@@ -1,0 +1,12 @@
+Bet Tracker 3.16.0
+
+Live · sintonizza: "C'e' ancora valore su questa partita?"
+- In cima alla schermata live c'e' un verdetto: SI', c'e' valore / Valore minimo / NO, niente valore.
+- Come lo decide: confronta la stima del modello (gol attesi prepartita + statistiche live) con come
+  la prezza di solito il bookmaker (solo quote prepartita, minuto e punteggio, con il suo aggio ~7%).
+  Il valore nasce quando la partita va piu' forte di quanto dica il punteggio (tanti tiri, angoli, xG).
+- Indica il mercato migliore (Over del 1° tempo, Over finale, due gol in piu', Goal) e la quota minima.
+- Se scrivi la quota vera del book, il verdetto usa quella al posto della stima.
+- Ricorda le probabilita' prepartita (Over 0.5 1T e Over 1.5) e se la partita va piu' veloce o piu' lenta.
+- Sullo 0-0 tra il 25' e il 38' segnala che e' il momento del 2° step del piano.
+- Senza statistiche live il valore non si puo' stimare: l'app lo dice invece di inventare.
