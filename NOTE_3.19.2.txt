@@ -1,0 +1,7 @@
+Bet Tracker 3.19.2
+
+- Live: il riquadro in alto ora si chiama 'Conviene giocare ancora su questa partita?' e parte da se segnano:
+  gol prima dell'intervallo, un altro gol entro la fine, altri due gol, ognuno con PROBABILE / abbastanza probabile / incerto / IMPROBABILE e la percentuale.
+- Il verdetto spiega il motivo vero: 'NO: e'' improbabile che segnino', 'NO: troppo incerto',
+  'Probabile gol, ma quota troppo bassa' (vinceresti spesso ma poco), 'Segneranno probabilmente: controlla la quota', 'SI'', gioca'.
+- GIOCA solo dal 60% in su e con quota sopra la minima.
