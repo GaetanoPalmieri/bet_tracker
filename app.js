@@ -1,4 +1,4 @@
-const APP_VERSION = '3.13.1';
+const APP_VERSION = '3.14.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),

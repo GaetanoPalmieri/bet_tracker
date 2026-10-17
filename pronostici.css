@@ -384,3 +384,6 @@ dialog#editor.sheet.tip-dlg {
 @media (max-width: 400px) { .tip-toolbar .tip-tool span { font-size: 12px; } .tip-toolbar-title small { display: none; } }
 .tip-tn.tip-ln { white-space: nowrap; min-width: 46px; height: 24px; font-variant-numeric: tabular-nums; }
 .tip-trow:has(.tip-ln) { grid-template-columns: 50px minmax(0, 1fr) auto auto; }
+/* 3.14.0 — Top allargata */
+.tip-top-ext { border-style: dashed !important; }
+.tip-top-ext .tip-tn { background: color-mix(in srgb, var(--suite-text) 30%, transparent); }

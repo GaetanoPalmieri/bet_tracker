@@ -1,9 +1,9 @@
 {
  "app": "bet_tracker",
  "kind": "pronostici",
- "batch": "2026-10-17-modello-v3.3",
- "generatedAt": "2026-10-17T10:15:00+02:00",
- "label": "Modello v3 · 17/10 ore 10 · risultati di venerdì + quote",
+ "batch": "2026-10-17-modello-v3.4",
+ "generatedAt": "2026-10-17T23:30:00+02:00",
+ "label": "Modello v3.4 · 17/10 sera · risultati sabato + training",
  "model": {
   "version": "3",
   "threshold": 70,
@@ -24,14 +24,14 @@
    "o25": 75,
    "gg": 75
   },
-  "revision": "2026-10-17-v3",
-  "note": "v3: i gol attesi sono una media pesata (in log) tra modello statistico e gol attesi ricavati dalle quote del book (1X2, Over 1.5/2.5/3.5, Goal; peso quote 55% dati A, 60% B, 70% C; se ci sono solo le quote 1X2 il totale resta quello statistico). La quota di gol nel 1° tempo viene dalle quote 1X2 del primo tempo (70%) e dal valore storico 0,45 (30%). Le Top ordinano per probabilita' + bonus favorita (fino a +3 punti con favorita al 75%, -1,5 se la favorita e' sotto il 42%).",
+  "revision": "2026-10-17-v3.4-training",
+  "note": "v3: i gol attesi sono una media pesata (in log) tra modello statistico e gol attesi ricavati dalle quote del book (1X2, Over 1.5/2.5/3.5, Goal; peso quote 55% dati A, 60% B, 70% C; se ci sono solo le quote 1X2 il totale resta quello statistico). La quota di gol nel 1° tempo viene dalle quote 1X2 del primo tempo (70%) e dal valore storico 0,45 (30%). Le Top ordinano per probabilita' + bonus favorita (fino a +3 punti con favorita al 75%, -1,5 se la favorita e' sotto il 42%). Training 17/10 sera (130 partite): le sole quote sbagliano meno del mix e delle statistiche, quindi il peso delle quote sale a 70% (dati A), 75% (B), 80% (C); gol reali circa 6% sotto le attese anche per il mercato: lo corregge la calibrazione dell'app (non una seconda correzione dei gol, per non contarla due volte). Gol entro il 30': 66% dei gol del 1° tempo (imparato su 83 partite).",
   "plan": {
    "s1": 10,
    "s2": 20,
    "q1": 1.8,
    "q2": 1.8,
-   "early": 0.62
+   "early": 0.66
   }
  },
  "audit": {
@@ -916,7 +916,12 @@
     "o25": 48.0,
     "htx": 43.6
    },
-   "fav": 38
+   "fav": 38,
+   "ht": [
+    1,
+    1
+   ],
+   "fg": 35
   },
   {
    "date": "2026-10-17",
@@ -953,7 +958,16 @@
     "o25": 55.7,
     "htx": 39.3
    },
-   "fav": 50
+   "fav": 50,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    2,
+    1
+   ],
+   "fg": 59
   },
   {
    "date": "2026-10-17",
@@ -990,7 +1004,16 @@
     "o25": 66.3,
     "htx": 35.1
    },
-   "fav": 55
+   "fav": 55,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 11
   },
   {
    "date": "2026-10-17",
@@ -1027,7 +1050,16 @@
     "o25": 46.1,
     "htx": 42.3
    },
-   "fav": 58
+   "fav": 58,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 19
   },
   {
    "date": "2026-10-17",
@@ -1064,7 +1096,16 @@
     "o25": 61.0,
     "htx": 38.2
    },
-   "fav": 44
+   "fav": 44,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 32
   },
   {
    "date": "2026-10-17",
@@ -1101,7 +1142,16 @@
     "o25": 55.3,
     "htx": 40.1
    },
-   "fav": 43
+   "fav": 43,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 31
   },
   {
    "date": "2026-10-17",
@@ -1132,7 +1182,16 @@
     "p2": 22.1
    },
    "fav": 56,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    2,
+    1
+   ],
+   "ft": [
+    3,
+    1
+   ],
+   "fg": 1
   },
   {
    "date": "2026-10-17",
@@ -1169,7 +1228,16 @@
     "o25": 59.0,
     "htx": 37.6
    },
-   "fav": 56
+   "fav": 56,
+   "ht": [
+    2,
+    0
+   ],
+   "ft": [
+    3,
+    1
+   ],
+   "fg": 8
   },
   {
    "date": "2026-10-17",
@@ -1188,7 +1256,16 @@
    "src": "modello",
    "wMkt": 0,
    "fav": 41,
-   "topSkip": "senza quote"
+   "topSkip": "senza quote",
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    5,
+    1
+   ],
+   "fg": 19
   },
   {
    "date": "2026-10-17",
@@ -1219,7 +1296,16 @@
     "p2": 16.9
    },
    "fav": 62,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    0,
+    2
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 22
   },
   {
    "date": "2026-10-17",
@@ -1256,7 +1342,16 @@
     "o25": 52.6,
     "htx": 39.8
    },
-   "fav": 60
+   "fav": 60,
+   "ht": [
+    0,
+    2
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 1
   },
   {
    "date": "2026-10-17",
@@ -1293,7 +1388,16 @@
     "o25": 50.0,
     "htx": 42.3
    },
-   "fav": 36
+   "fav": 36,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 58
   },
   {
    "date": "2026-10-17",
@@ -1368,7 +1472,16 @@
    "src": "modello",
    "wMkt": 0,
    "fav": 47,
-   "topSkip": "senza quote"
+   "topSkip": "senza quote",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    1,
+    2
+   ],
+   "fg": 18
   },
   {
    "date": "2026-10-17",
@@ -1405,7 +1518,16 @@
     "o25": 63.8,
     "htx": 34.8
    },
-   "fav": 66
+   "fav": 66,
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    0,
+    4
+   ],
+   "fg": 7
   },
   {
    "date": "2026-10-17",
@@ -1442,7 +1564,16 @@
     "o25": 61.0,
     "htx": 38.5
    },
-   "fav": 38
+   "fav": 38,
+   "ht": [
+    2,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 8
   },
   {
    "date": "2026-10-17",
@@ -1479,7 +1610,16 @@
     "o25": 61.0,
     "htx": 38.2
    },
-   "fav": 44
+   "fav": 44,
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    1,
+    3
+   ],
+   "fg": 10
   },
   {
    "date": "2026-10-17",
@@ -1516,7 +1656,16 @@
     "o25": 59.9,
     "htx": 38.3
    },
-   "fav": 42
+   "fav": 42,
+   "ht": [
+    0,
+    2
+   ],
+   "ft": [
+    3,
+    2
+   ],
+   "fg": 16
   },
   {
    "date": "2026-10-17",
@@ -1553,7 +1702,16 @@
     "o25": 62.5,
     "htx": 36.9
    },
-   "fav": 47
+   "fav": 47,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    1,
+    0
+   ],
+   "fg": 47
   },
   {
    "date": "2026-10-17",
@@ -1590,7 +1748,15 @@
     "o25": 59.9,
     "htx": 38.3
    },
-   "fav": 39
+   "fav": 39,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    0
+   ]
   },
   {
    "date": "2026-10-17",
@@ -1627,7 +1793,16 @@
     "o25": 73.7,
     "htx": 34.0
    },
-   "fav": 55
+   "fav": 55,
+   "ht": [
+    3,
+    0
+   ],
+   "ft": [
+    5,
+    0
+   ],
+   "fg": 20
   },
   {
    "date": "2026-10-17",
@@ -1664,7 +1839,16 @@
     "o25": 69.4,
     "htx": 30.9
    },
-   "fav": 73
+   "fav": 73,
+   "ht": [
+    0,
+    2
+   ],
+   "ft": [
+    0,
+    2
+   ],
+   "fg": 19
   },
   {
    "date": "2026-10-17",
@@ -1738,7 +1922,16 @@
     "o25": 48.7,
     "htx": 42.0
    },
-   "fav": 51
+   "fav": 51,
+   "ht": [
+    2,
+    0
+   ],
+   "ft": [
+    3,
+    2
+   ],
+   "fg": 10
   },
   {
    "date": "2026-10-17",
@@ -1775,7 +1968,16 @@
     "o25": 53.9,
     "htx": 40.6
    },
-   "fav": 56
+   "fav": 56,
+   "ht": [
+    1,
+    2
+   ],
+   "ft": [
+    2,
+    3
+   ],
+   "fg": 29
   },
   {
    "date": "2026-10-17",
@@ -1806,7 +2008,16 @@
     "p2": 38.0
    },
    "fav": 38,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    1,
+    1
+   ],
+   "fg": 13
   },
   {
    "date": "2026-10-17",
@@ -1843,7 +2054,16 @@
     "o25": 59.0,
     "htx": 38.5
    },
-   "fav": 50
+   "fav": 50,
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    3,
+    2
+   ],
+   "fg": 11
   },
   {
    "date": "2026-10-17",
@@ -1911,7 +2131,16 @@
     "p2": 22.6
    },
    "fav": 50,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    1,
+    1
+   ],
+   "fg": 14
   },
   {
    "date": "2026-10-17",
@@ -1942,7 +2171,16 @@
     "p2": 24.6
    },
    "fav": 47,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    2,
+    0
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 22
   },
   {
    "date": "2026-10-17",
@@ -1979,7 +2217,16 @@
     "o25": 51.3,
     "htx": 41.3
    },
-   "fav": 52
+   "fav": 52,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    1
+   ],
+   "fg": 1
   },
   {
    "date": "2026-10-17",
@@ -2010,7 +2257,16 @@
     "p2": 30.3
    },
    "fav": 39,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    1,
+    2
+   ],
+   "fg": 28
   },
   {
    "date": "2026-10-17",
@@ -2047,7 +2303,16 @@
     "o25": 56.3,
     "htx": 39.9
    },
-   "fav": 40
+   "fav": 40,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 11
   },
   {
    "date": "2026-10-17",
@@ -2078,7 +2343,16 @@
     "p2": 14.2
    },
    "fav": 66,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    2,
+    0
+   ],
+   "ft": [
+    3,
+    0
+   ],
+   "fg": 16
   },
   {
    "date": "2026-10-17",
@@ -2115,7 +2389,16 @@
     "o25": 50.0,
     "htx": 41.0
    },
-   "fav": 51
+   "fav": 51,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    1,
+    0
+   ],
+   "fg": 86
   },
   {
    "date": "2026-10-17",
@@ -2146,7 +2429,16 @@
     "p2": 14.9
    },
    "fav": 64,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 22
   },
   {
    "date": "2026-10-17",
@@ -2177,7 +2469,16 @@
     "p2": 33.7
    },
    "fav": 40,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    2
+   ],
+   "fg": 61
   },
   {
    "date": "2026-10-17",
@@ -2208,7 +2509,15 @@
     "p2": 40.9
    },
    "fav": 41,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    0
+   ]
   },
   {
    "date": "2026-10-17",
@@ -2245,7 +2554,16 @@
     "o25": 70.1,
     "htx": 34.9
    },
-   "fav": 52
+   "fav": 52,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    1,
+    0
+   ],
+   "fg": 88
   },
   {
    "date": "2026-10-17",
@@ -2282,7 +2600,16 @@
     "o25": 65.6,
     "htx": 37.0
    },
-   "fav": 38
+   "fav": 38,
+   "ht": [
+    3,
+    1
+   ],
+   "ft": [
+    4,
+    3
+   ],
+   "fg": 6
   },
   {
    "date": "2026-10-17",
@@ -2319,7 +2646,16 @@
     "o25": 58.7,
     "htx": 38.7
    },
-   "fav": 40
+   "fav": 40,
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    0,
+    1
+   ],
+   "fg": 24
   },
   {
    "date": "2026-10-17",
@@ -2356,7 +2692,15 @@
     "o25": 63.6,
     "htx": 35.9
    },
-   "fav": 60
+   "fav": 60,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    0
+   ]
   },
   {
    "date": "2026-10-17",
@@ -2393,7 +2737,16 @@
     "o25": 62.0,
     "htx": 36.9
    },
-   "fav": 53
+   "fav": 53,
+   "ht": [
+    0,
+    2
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 18
   },
   {
    "date": "2026-10-17",
@@ -2412,7 +2765,16 @@
    "src": "modello",
    "wMkt": 0,
    "fav": 40,
-   "topSkip": "senza quote"
+   "topSkip": "senza quote",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    3,
+    0
+   ],
+   "fg": 27
   },
   {
    "date": "2026-10-17",
@@ -2449,7 +2811,16 @@
     "o25": 52.6,
     "htx": 41.2
    },
-   "fav": 48
+   "fav": 48,
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    0,
+    1
+   ],
+   "fg": 5
   },
   {
    "date": "2026-10-17",
@@ -2486,7 +2857,16 @@
     "o25": 50.0,
     "htx": 42.3
    },
-   "fav": 40
+   "fav": 40,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    1
+   ],
+   "fg": 49
   },
   {
    "date": "2026-10-17",
@@ -2523,7 +2903,16 @@
     "o25": 54.9,
     "htx": 39.2
    },
-   "fav": 53
+   "fav": 53,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    1
+   ],
+   "fg": 51
   },
   {
    "date": "2026-10-17",
@@ -2554,7 +2943,15 @@
     "p2": 15.6
    },
    "fav": 65,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    0
+   ]
   },
   {
    "date": "2026-10-17",
@@ -2591,7 +2988,16 @@
     "o25": 54.9,
     "htx": 40.7
    },
-   "fav": 43
+   "fav": 43,
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    0,
+    1
+   ],
+   "fg": 34
   },
   {
    "date": "2026-10-17",
@@ -2628,7 +3034,16 @@
     "o25": 47.4,
     "htx": 42.2
    },
-   "fav": 50
+   "fav": 50,
+   "ht": [
+    1,
+    2
+   ],
+   "ft": [
+    3,
+    2
+   ],
+   "fg": 6
   },
   {
    "date": "2026-10-17",
@@ -2665,7 +3080,16 @@
     "o25": 50.0,
     "htx": 39.9
    },
-   "fav": 57
+   "fav": 57,
+   "ht": [
+    2,
+    1
+   ],
+   "ft": [
+    4,
+    1
+   ],
+   "fg": 31
   },
   {
    "date": "2026-10-17",
@@ -2702,7 +3126,16 @@
     "o25": 61.0,
     "htx": 37.4
    },
-   "fav": 39
+   "fav": 39,
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    1,
+    4
+   ],
+   "fg": 27
   },
   {
    "date": "2026-10-17",
@@ -2758,7 +3191,16 @@
     "o25": 60.2,
     "htx": 38.7
    },
-   "fav": 40
+   "fav": 40,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    1,
+    2
+   ],
+   "fg": 44
   },
   {
    "date": "2026-10-17",
@@ -2795,7 +3237,16 @@
     "o25": 54.9,
     "htx": 38.9
    },
-   "fav": 56
+   "fav": 56,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    1,
+    0
+   ],
+   "fg": 33
   },
   {
    "date": "2026-10-17",
@@ -2832,7 +3283,16 @@
     "o25": 68.2,
     "htx": 31.1
    },
-   "fav": 76
+   "fav": 76,
+   "ht": [
+    2,
+    1
+   ],
+   "ft": [
+    3,
+    2
+   ],
+   "fg": 21
   },
   {
    "date": "2026-10-17",
@@ -2869,7 +3329,15 @@
     "o25": 63.6,
     "htx": 35.1
    },
-   "fav": 63
+   "fav": 63,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    0
+   ]
   },
   {
    "date": "2026-10-17",
@@ -2906,7 +3374,16 @@
     "o25": 47.4,
     "htx": 42.6
    },
-   "fav": 45
+   "fav": 45,
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    1,
+    1
+   ],
+   "fg": 26
   },
   {
    "date": "2026-10-17",
@@ -2943,7 +3420,16 @@
     "o25": 59.9,
     "htx": 38.5
    },
-   "fav": 48
+   "fav": 48,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 44
   },
   {
    "date": "2026-10-17",
@@ -2980,7 +3466,16 @@
     "o25": 63.8,
     "htx": 37.2
    },
-   "fav": 44
+   "fav": 44,
+   "ht": [
+    2,
+    0
+   ],
+   "ft": [
+    2,
+    1
+   ],
+   "fg": 7
   },
   {
    "date": "2026-10-17",
@@ -3017,7 +3512,16 @@
     "o25": 77.5,
     "htx": 28.3
    },
-   "fav": 75
+   "fav": 75,
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    2,
+    1
+   ],
+   "fg": 21
   },
   {
    "date": "2026-10-17",
@@ -3048,7 +3552,16 @@
     "p2": 49.8
    },
    "fav": 50,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 34
   },
   {
    "date": "2026-10-17",
@@ -3085,7 +3598,16 @@
     "o25": 65.2,
     "htx": 33.9
    },
-   "fav": 69
+   "fav": 69,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    4
+   ],
+   "fg": 56
   },
   {
    "date": "2026-10-17",
@@ -3116,7 +3638,16 @@
     "p2": 21.4
    },
    "fav": 56,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 13
   },
   {
    "date": "2026-10-17",
@@ -3151,7 +3682,12 @@
     "o15": 86.4,
     "o25": 71.8
    },
-   "fav": 68
+   "fav": 68,
+   "ht": [
+    1,
+    0
+   ],
+   "fg": 17
   },
   {
    "date": "2026-10-17",
@@ -3182,7 +3718,16 @@
     "p2": 43.8
    },
    "fav": 44,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    2
+   ],
+   "fg": 62
   },
   {
    "date": "2026-10-17",
@@ -3213,7 +3758,16 @@
     "p2": 16.4
    },
    "fav": 65,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    4,
+    1
+   ],
+   "fg": 26
   },
   {
    "date": "2026-10-17",
@@ -3250,7 +3804,16 @@
     "o25": 59.0,
     "htx": 38.7
    },
-   "fav": 38
+   "fav": 38,
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 27
   },
   {
    "date": "2026-10-17",
@@ -3287,7 +3850,16 @@
     "o25": 63.8,
     "htx": 36.5
    },
-   "fav": 48
+   "fav": 48,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    1
+   ],
+   "fg": 51
   },
   {
    "date": "2026-10-17",
@@ -3324,7 +3896,16 @@
     "o25": 58.2,
     "htx": 38.3
    },
-   "fav": 50
+   "fav": 50,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    1
+   ],
+   "fg": 82
   },
   {
    "date": "2026-10-17",
@@ -3355,7 +3936,16 @@
     "p2": 42.9
    },
    "fav": 43,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 46
   },
   {
    "date": "2026-10-17",
@@ -3392,7 +3982,16 @@
     "o25": 69.4,
     "htx": 30.7
    },
-   "fav": 73
+   "fav": 73,
+   "ht": [
+    1,
+    2
+   ],
+   "ft": [
+    3,
+    2
+   ],
+   "fg": 7
   },
   {
    "date": "2026-10-17",
@@ -3429,7 +4028,15 @@
     "o25": 56.9,
     "htx": 38.1
    },
-   "fav": 57
+   "fav": 57,
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    1,
+    3
+   ]
   },
   {
    "date": "2026-10-17",
@@ -3466,7 +4073,16 @@
     "o25": 53.9,
     "htx": 39.1
    },
-   "fav": 55
+   "fav": 55,
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    1,
+    1
+   ],
+   "fg": 23
   },
   {
    "date": "2026-10-17",
@@ -3503,7 +4119,16 @@
     "o25": 59.9,
     "htx": 33.6
    },
-   "fav": 73
+   "fav": 73,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    3,
+    0
+   ],
+   "fg": 40
   },
   {
    "date": "2026-10-17",
@@ -3540,7 +4165,16 @@
     "o25": 81.1,
     "htx": 26.4
    },
-   "fav": 77
+   "fav": 77,
+   "ht": [
+    3,
+    0
+   ],
+   "ft": [
+    6,
+    1
+   ],
+   "fg": 12
   },
   {
    "date": "2026-10-17",
@@ -3577,7 +4211,12 @@
     "o25": 76.2,
     "htx": 31.1
    },
-   "fav": 66
+   "fav": 66,
+   "ht": [
+    1,
+    2
+   ],
+   "fg": 10
   },
   {
    "date": "2026-10-17",
@@ -3614,7 +4253,12 @@
     "o25": 58.7,
     "htx": 39.0
    },
-   "fav": 42
+   "fav": 42,
+   "ht": [
+    0,
+    1
+   ],
+   "fg": 36
   },
   {
    "date": "2026-10-17",
@@ -3645,7 +4289,15 @@
     "p2": 50.5
    },
    "fav": 51,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    0
+   ]
   },
   {
    "date": "2026-10-17",
@@ -3676,7 +4328,16 @@
     "p2": 45.1
    },
    "fav": 45,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    1,
+    1
+   ],
+   "fg": 6
   },
   {
    "date": "2026-10-17",
@@ -3713,7 +4374,12 @@
     "o25": 53.9,
     "htx": 41.5
    },
-   "fav": 40
+   "fav": 40,
+   "ht": [
+    2,
+    1
+   ],
+   "fg": 18
   },
   {
    "date": "2026-10-17",
@@ -3750,7 +4416,16 @@
     "o25": 44.7,
     "htx": 43.7
    },
-   "fav": 45
+   "fav": 45,
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    3,
+    1
+   ],
+   "fg": 3
   },
   {
    "date": "2026-10-17",
@@ -3787,7 +4462,16 @@
     "o25": 71.8,
     "htx": 31.3
    },
-   "fav": 70
+   "fav": 70,
+   "ht": [
+    2,
+    3
+   ],
+   "ft": [
+    3,
+    4
+   ],
+   "fg": 1
   },
   {
    "date": "2026-10-17",
@@ -3824,7 +4508,16 @@
     "o25": 51.3,
     "htx": 41.5
    },
-   "fav": 42
+   "fav": 42,
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    0,
+    1
+   ],
+   "fg": 13
   },
   {
    "date": "2026-10-17",
@@ -3854,7 +4547,16 @@
     "o25": 54.6
    },
    "fav": 50,
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    1,
+    1
+   ],
+   "fg": 50
   },
   {
    "date": "2026-10-17",
@@ -3891,7 +4593,16 @@
     "o25": 51.3,
     "htx": 41.9
    },
-   "fav": 38
+   "fav": 38,
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    1,
+    1
+   ],
+   "fg": 26
   },
   {
    "date": "2026-10-17",
@@ -3965,7 +4676,16 @@
     "o25": 71.8,
     "htx": 33.4
    },
-   "fav": 64
+   "fav": 64,
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 24
   },
   {
    "date": "2026-10-17",
@@ -4002,7 +4722,16 @@
     "o25": 52.6,
     "htx": 39.0
    },
-   "fav": 60
+   "fav": 60,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 61
   },
   {
    "date": "2026-10-17",
@@ -4039,7 +4768,12 @@
     "o25": 54.9,
     "htx": 39.1
    },
-   "fav": 55
+   "fav": 55,
+   "ht": [
+    0,
+    1
+   ],
+   "fg": 6
   },
   {
    "date": "2026-10-17",
@@ -4076,7 +4810,12 @@
     "o25": 60.2,
     "htx": 37.8
    },
-   "fav": 52
+   "fav": 52,
+   "ht": [
+    1,
+    2
+   ],
+   "fg": 13
   },
   {
    "date": "2026-10-17",
@@ -4113,7 +4852,16 @@
     "o25": 59.9,
     "htx": 37.2
    },
-   "fav": 53
+   "fav": 53,
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    1,
+    1
+   ],
+   "fg": 46
   },
   {
    "date": "2026-10-17",
@@ -4187,7 +4935,16 @@
     "o25": 63.8,
     "htx": 35.9
    },
-   "fav": 58
+   "fav": 58,
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    3,
+    2
+   ],
+   "fg": 17
   },
   {
    "date": "2026-10-17",
@@ -4306,8 +5063,8 @@
    "league": "MLS",
    "home": "Atlanta United",
    "away": "Inter Miami",
-   "lh": 1.499,
-   "la": 2.068,
+   "lh": 1.529,
+   "la": 2.089,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4318,7 +5075,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 3.4,
     "X": 4.1,
@@ -4343,7 +5100,7 @@
    "league": "MLS",
    "home": "NY Red Bulls",
    "away": "Toronto",
-   "lh": 1.81,
+   "lh": 1.846,
    "la": 1.47,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
@@ -4355,7 +5112,7 @@
    "htsM": 0.455,
    "hts": 0.454,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.96,
     "X": 4.0,
@@ -4380,8 +5137,8 @@
    "league": "MLS",
    "home": "NYCFC",
    "away": "LAFC",
-   "lh": 1.279,
-   "la": 1.392,
+   "lh": 1.312,
+   "la": 1.418,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4392,7 +5149,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.7,
     "X": 3.5,
@@ -4417,8 +5174,8 @@
    "league": "MLS",
    "home": "New England",
    "away": "Chicago Fire",
-   "lh": 1.647,
-   "la": 1.515,
+   "lh": 1.668,
+   "la": 1.54,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4429,7 +5186,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.32,
     "X": 3.8,
@@ -4454,8 +5211,8 @@
    "league": "MLS",
    "home": "Orlando City",
    "away": "DC United",
-   "lh": 2.157,
-   "la": 1.392,
+   "lh": 2.207,
+   "la": 1.378,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4466,7 +5223,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.62,
     "X": 4.2,
@@ -4491,8 +5248,8 @@
    "league": "MLS",
    "home": "Austin",
    "away": "Vancouver",
-   "lh": 1.073,
-   "la": 2.09,
+   "lh": 1.095,
+   "la": 2.104,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4503,7 +5260,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 4.75,
     "X": 4.5,
@@ -4528,8 +5285,8 @@
    "league": "MLS",
    "home": "Houston Dynamo",
    "away": "Dallas",
-   "lh": 1.49,
-   "la": 1.269,
+   "lh": 1.513,
+   "la": 1.276,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4540,7 +5297,7 @@
    "htsM": 0.43,
    "hts": 0.436,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.2,
     "X": 3.5,
@@ -4565,8 +5322,8 @@
    "league": "MLS",
    "home": "Sporting KC",
    "away": "Real Salt Lake",
-   "lh": 1.465,
-   "la": 1.784,
+   "lh": 1.496,
+   "la": 1.78,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4577,7 +5334,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.82,
     "X": 3.8,
@@ -4602,8 +5359,8 @@
    "league": "A-League",
    "home": "Wellington Phoenix",
    "away": "Melbourne Victory",
-   "lh": 1.338,
-   "la": 1.673,
+   "lh": 1.342,
+   "la": 1.695,
    "rel": "C",
    "note": "Prima giornata: basata sulla stagione 2025/26 · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4614,7 +5371,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.7,
+   "wMkt": 0.8,
    "odds": {
     "1": 3.3,
     "X": 3.5,
@@ -4639,8 +5396,8 @@
    "league": "MLS",
    "home": "LA Galaxy",
    "away": "San Diego",
-   "lh": 1.799,
-   "la": 1.608,
+   "lh": 1.865,
+   "la": 1.613,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
    "review": "model_v3",
@@ -4651,7 +5408,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.1,
     "X": 3.8,
@@ -4676,8 +5433,8 @@
    "league": "MLS",
    "home": "Portland",
    "away": "Colorado",
-   "lh": 1.693,
-   "la": 1.408,
+   "lh": 1.711,
+   "la": 1.386,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
    "review": "model_v3",
@@ -4688,7 +5445,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.05,
     "X": 3.7,
@@ -4713,8 +5470,8 @@
    "league": "MLS",
    "home": "San Jose",
    "away": "Nashville",
-   "lh": 1.185,
-   "la": 1.839,
+   "lh": 1.224,
+   "la": 1.858,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
    "review": "model_v3",
@@ -4725,7 +5482,7 @@
    "htsM": 0.455,
    "hts": 0.454,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 3.6,
     "X": 3.9,
@@ -4750,8 +5507,8 @@
    "league": "MLS",
    "home": "Seattle",
    "away": "Montreal",
-   "lh": 2.105,
-   "la": 0.998,
+   "lh": 2.191,
+   "la": 0.995,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
    "review": "model_v3",
@@ -4762,7 +5519,7 @@
    "htsM": 0.455,
    "hts": 0.454,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.39,
     "X": 5.0,
@@ -4787,8 +5544,8 @@
    "league": "2. Liga AUT",
    "home": "Sturm Graz II",
    "away": "Kapfenberg",
-   "lh": 2.23,
-   "la": 1.588,
+   "lh": 2.234,
+   "la": 1.581,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -4798,7 +5555,7 @@
    "laM": 1.56,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.48,
+   "wMkt": 0.6,
    "odds": {
     "1": 1.75,
     "X": 3.9,
@@ -4837,8 +5594,8 @@
    "league": "Eerste Divisie",
    "home": "RKC Waalwijk",
    "away": "Volendam",
-   "lh": 1.941,
-   "la": 1.47,
+   "lh": 1.955,
+   "la": 1.447,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4849,7 +5606,7 @@
    "htsM": 0.455,
    "hts": 0.454,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.86,
     "X": 3.8,
@@ -4874,8 +5631,8 @@
    "league": "Ekstraklasa",
    "home": "Górnik Zabrze",
    "away": "Piast Gliwice",
-   "lh": 1.868,
-   "la": 1.077,
+   "lh": 1.865,
+   "la": 1.043,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -4886,7 +5643,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.62,
     "X": 3.75,
@@ -4911,8 +5668,8 @@
    "league": "Eredivisie",
    "home": "PEC Zwolle",
    "away": "Go Ahead Eagles",
-   "lh": 1.534,
-   "la": 1.7,
+   "lh": 1.533,
+   "la": 1.702,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4922,7 +5679,7 @@
    "laM": 1.71,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 2.75,
     "X": 3.8,
@@ -4942,8 +5699,8 @@
    "league": "Serie A",
    "home": "Udinese",
    "away": "Lecce",
-   "lh": 1.567,
-   "la": 0.984,
+   "lh": 1.572,
+   "la": 0.978,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50% Over 2.5 da DraftKings (ESPN), 17/10 mattina.",
    "review": "model_v3",
@@ -4953,7 +5710,7 @@
    "laM": 0.96,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.85,
     "X": 3.4,
@@ -4974,8 +5731,8 @@
    "league": "Süper Lig",
    "home": "Kasımpaşa",
    "away": "Samsunspor",
-   "lh": 1.453,
-   "la": 1.17,
+   "lh": 1.425,
+   "la": 1.192,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -4986,7 +5743,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.25,
     "X": 3.25,
@@ -5031,7 +5788,7 @@
    "home": "Bangkok United",
    "away": "Port FC",
    "lh": 1.769,
-   "la": 1.334,
+   "la": 1.331,
    "rel": "C",
    "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5041,7 +5798,7 @@
    "laM": 1.32,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 1.909,
     "X": 3.5,
@@ -5061,8 +5818,8 @@
    "league": "Thai League 1",
    "home": "Sisaket United",
    "away": "BG Pathum",
-   "lh": 1.182,
-   "la": 1.538,
+   "lh": 1.15,
+   "la": 1.573,
    "rel": "C",
    "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5072,7 +5829,7 @@
    "laM": 1.74,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 4.25,
     "X": 3.6,
@@ -5092,8 +5849,8 @@
    "league": "2. Bundesliga",
    "home": "Arminia Bielefeld",
    "away": "Osnabrück",
-   "lh": 1.9,
-   "la": 1.279,
+   "lh": 1.919,
+   "la": 1.237,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -5104,7 +5861,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.7,
     "X": 3.8,
@@ -5129,8 +5886,8 @@
    "league": "2. Bundesliga",
    "home": "Dynamo Dresda",
    "away": "Magdeburgo",
-   "lh": 1.551,
-   "la": 1.678,
+   "lh": 1.577,
+   "la": 1.633,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -5141,7 +5898,7 @@
    "htsM": 0.465,
    "hts": 0.461,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.45,
     "X": 3.6,
@@ -5166,8 +5923,8 @@
    "league": "2. Bundesliga",
    "home": "Karlsruhe",
    "away": "Darmstadt",
-   "lh": 1.68,
-   "la": 1.524,
+   "lh": 1.713,
+   "la": 1.538,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -5178,7 +5935,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.2,
     "X": 3.75,
@@ -5203,8 +5960,8 @@
    "league": "3. Liga",
    "home": "Hoffenheim II",
    "away": "SC Verl",
-   "lh": 2.088,
-   "la": 1.461,
+   "lh": 2.093,
+   "la": 1.464,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -5215,7 +5972,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.75,
     "X": 3.9,
@@ -5278,8 +6035,8 @@
    "league": "Allsvenskan",
    "home": "Sirius",
    "away": "Elfsborg",
-   "lh": 1.676,
-   "la": 1.217,
+   "lh": 1.678,
+   "la": 1.221,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5290,7 +6047,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.96,
     "X": 3.6,
@@ -5315,8 +6072,8 @@
    "league": "Allsvenskan",
    "home": "Västerås",
    "away": "Mjällby",
-   "lh": 1.547,
-   "la": 1.277,
+   "lh": 1.531,
+   "la": 1.291,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5327,7 +6084,7 @@
    "htsM": 0.455,
    "hts": 0.454,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.3,
     "X": 3.4,
@@ -5371,8 +6128,8 @@
    "league": "La Liga",
    "home": "Osasuna",
    "away": "Racing Santander",
-   "lh": 1.675,
-   "la": 1.2,
+   "lh": 1.688,
+   "la": 1.187,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5382,7 +6139,7 @@
    "laM": 1.14,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.44,
+   "wMkt": 0.56,
    "odds": {
     "1": 1.85,
     "X": 3.5,
@@ -5402,8 +6159,8 @@
    "league": "Superliga DK",
    "home": "Lyngby",
    "away": "Nordsjælland",
-   "lh": 1.318,
-   "la": 1.831,
+   "lh": 1.307,
+   "la": 1.875,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5414,7 +6171,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 3.9,
     "X": 3.75,
@@ -5439,8 +6196,8 @@
    "league": "Superliga DK",
    "home": "Sønderjyske",
    "away": "Silkeborg",
-   "lh": 1.581,
-   "la": 1.556,
+   "lh": 1.584,
+   "la": 1.546,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5451,7 +6208,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.35,
     "X": 3.5,
@@ -5476,8 +6233,8 @@
    "league": "Superliga SRB",
    "home": "Novi Pazar",
    "away": "IMT Novi Beograd",
-   "lh": 1.072,
-   "la": 1.071,
+   "lh": 1.081,
+   "la": 1.066,
    "rel": "B",
    "note": "Orario da verificare (fonte con fuso non indicato) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5487,7 +6244,7 @@
    "laM": 1.05,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.48,
+   "wMkt": 0.6,
    "odds": {
     "1": 2.5,
     "X": 3.2,
@@ -5507,8 +6264,8 @@
    "league": "Thai League 1",
    "home": "Pattani",
    "away": "Buriram United",
-   "lh": 0.94,
-   "la": 1.909,
+   "lh": 0.902,
+   "la": 1.952,
    "rel": "C",
    "note": "Inizio stagione: 4 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5518,7 +6275,7 @@
    "laM": 2.16,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 7.0,
     "X": 5.0,
@@ -5538,8 +6295,8 @@
    "league": "Bundesliga AUT",
    "home": "Salzburg",
    "away": "Altach",
-   "lh": 2.187,
-   "la": 0.922,
+   "lh": 2.232,
+   "la": 0.925,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5550,7 +6307,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.37,
     "X": 4.75,
@@ -5575,8 +6332,8 @@
    "league": "Bundesliga AUT",
    "home": "Wolfsberger AC",
    "away": "WSG Tirol",
-   "lh": 1.553,
-   "la": 1.462,
+   "lh": 1.567,
+   "la": 1.476,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5587,7 +6344,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.35,
     "X": 3.7,
@@ -5612,8 +6369,8 @@
    "league": "Eliteserien",
    "home": "Sarpsborg 08",
    "away": "Rosenborg",
-   "lh": 1.534,
-   "la": 1.553,
+   "lh": 1.572,
+   "la": 1.565,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -5624,7 +6381,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.35,
     "X": 3.7,
@@ -5649,8 +6406,8 @@
    "league": "Eredivisie",
    "home": "Cambuur",
    "away": "AZ Alkmaar",
-   "lh": 1.093,
-   "la": 2.033,
+   "lh": 1.055,
+   "la": 2.075,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile); neopromossa stimata con media delle retrocesse · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5660,7 +6417,7 @@
    "laM": 2.28,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 7.0,
     "X": 5.0,
@@ -5680,8 +6437,8 @@
    "league": "Ekstraklasa",
    "home": "Zagłębie Lubin",
    "away": "Jagiellonia",
-   "lh": 1.481,
-   "la": 1.378,
+   "lh": 1.454,
+   "la": 1.401,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -5692,7 +6449,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.55,
     "X": 3.5,
@@ -5718,7 +6475,7 @@
    "home": "Angers",
    "away": "Marsiglia",
    "lh": 1.29,
-   "la": 1.664,
+   "la": 1.689,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5729,7 +6486,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 3.4,
     "X": 3.8,
@@ -5754,8 +6511,8 @@
    "league": "Premier League",
    "home": "Bournemouth",
    "away": "Sunderland",
-   "lh": 1.588,
-   "la": 1.161,
+   "lh": 1.579,
+   "la": 1.154,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5766,7 +6523,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.1,
     "X": 3.4,
@@ -5791,8 +6548,8 @@
    "league": "Premier League",
    "home": "Brighton",
    "away": "Crystal Palace",
-   "lh": 2.01,
-   "la": 1.069,
+   "lh": 2.039,
+   "la": 1.052,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5803,7 +6560,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.53,
     "X": 4.5,
@@ -5828,8 +6585,8 @@
    "league": "Premier League",
    "home": "Leeds",
    "away": "Manchester United",
-   "lh": 1.509,
-   "la": 1.433,
+   "lh": 1.516,
+   "la": 1.445,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5840,7 +6597,7 @@
    "htsM": 0.455,
    "hts": 0.454,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.4,
     "X": 3.5,
@@ -5865,8 +6622,8 @@
    "league": "Serie A",
    "home": "Fiorentina",
    "away": "Como",
-   "lh": 1.227,
-   "la": 1.599,
+   "lh": 1.235,
+   "la": 1.619,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50% Over 2.5 da DraftKings (ESPN), 17/10 mattina.",
    "review": "model_v3",
@@ -5876,7 +6633,7 @@
    "laM": 1.68,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.7,
    "odds": {
     "1": 3.5,
     "X": 3.4,
@@ -5897,8 +6654,8 @@
    "league": "Serie B",
    "home": "Juve Stabia",
    "away": "Südtirol",
-   "lh": 1.116,
-   "la": 1.168,
+   "lh": 1.16,
+   "la": 1.124,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -5908,7 +6665,7 @@
    "laM": 0.99,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.48,
+   "wMkt": 0.6,
    "odds": {
     "1": 2.1,
     "X": 3.1,
@@ -5928,8 +6685,8 @@
    "league": "SuperSport HNL",
    "home": "Hajduk Spalato",
    "away": "Varaždin",
-   "lh": 1.642,
-   "la": 1.078,
+   "lh": 1.667,
+   "la": 1.067,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5940,7 +6697,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.75,
     "X": 3.5,
@@ -5965,8 +6722,8 @@
    "league": "Süper Lig",
    "home": "Kocaelispor",
    "away": "Göztepe",
-   "lh": 1.349,
-   "la": 1.324,
+   "lh": 1.315,
+   "la": 1.334,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -5977,7 +6734,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.7,
     "X": 3.3,
@@ -6002,8 +6759,8 @@
    "league": "UAE Pro League",
    "home": "Ittihad Kalba",
    "away": "Al Jazira",
-   "lh": 1.08,
-   "la": 2.004,
+   "lh": 1.069,
+   "la": 2.016,
    "rel": "C",
    "note": "Inizio stagione: 5 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6013,7 +6770,7 @@
    "laM": 2.07,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 5.0,
     "X": 4.2,
@@ -6033,8 +6790,8 @@
    "league": "UAE Pro League",
    "home": "Khor Fakkan",
    "away": "Al Wahda",
-   "lh": 1.129,
-   "la": 1.813,
+   "lh": 1.108,
+   "la": 1.837,
    "rel": "C",
    "note": "Inizio stagione: 5 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6044,7 +6801,7 @@
    "laM": 1.95,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 4.75,
     "X": 3.8,
@@ -6064,8 +6821,8 @@
    "league": "Bundesliga",
    "home": "Leverkusen",
    "away": "Friburgo",
-   "lh": 2.007,
-   "la": 1.221,
+   "lh": 2.028,
+   "la": 1.224,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6076,7 +6833,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.7,
     "X": 4.2,
@@ -6139,8 +6896,8 @@
    "league": "La Liga",
    "home": "Celta Vigo",
    "away": "Alavés",
-   "lh": 1.376,
-   "la": 1.05,
+   "lh": 1.367,
+   "la": 1.04,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6151,7 +6908,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.2,
     "X": 3.4,
@@ -6176,8 +6933,8 @@
    "league": "3. Liga",
    "home": "MSV Duisburg",
    "away": "Viktoria Colonia",
-   "lh": 1.944,
-   "la": 1.596,
+   "lh": 1.889,
+   "la": 1.56,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -6188,7 +6945,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.05,
     "X": 3.6,
@@ -6213,8 +6970,8 @@
    "league": "Allsvenskan",
    "home": "Halmstad",
    "away": "Hammarby",
-   "lh": 0.814,
-   "la": 2.333,
+   "lh": 0.803,
+   "la": 2.431,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6225,7 +6982,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 10.0,
     "X": 6.0,
@@ -6250,8 +7007,8 @@
    "league": "Allsvenskan",
    "home": "Malmö",
    "away": "Häcken",
-   "lh": 1.554,
-   "la": 1.508,
+   "lh": 1.546,
+   "la": 1.525,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6262,7 +7019,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.5,
     "X": 3.6,
@@ -6287,8 +7044,8 @@
    "league": "Allsvenskan",
    "home": "Örgryte",
    "away": "GAIS",
-   "lh": 1.031,
-   "la": 1.83,
+   "lh": 1.027,
+   "la": 1.879,
    "rel": "A",
    "note": "Campione ampio (23 giornate) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6299,7 +7056,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 5.0,
     "X": 4.0,
@@ -6343,8 +7100,8 @@
    "league": "Eerste Divisie",
    "home": "MVV Maastricht",
    "away": "Heracles",
-   "lh": 1.157,
-   "la": 2.336,
+   "lh": 1.127,
+   "la": 2.36,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6355,7 +7112,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 6.5,
     "X": 4.5,
@@ -6380,8 +7137,8 @@
    "league": "Eredivisie",
    "home": "Groningen",
    "away": "Ajax",
-   "lh": 1.332,
-   "la": 1.784,
+   "lh": 1.307,
+   "la": 1.814,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6391,7 +7148,7 @@
    "laM": 1.95,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 4.1,
     "X": 4.2,
@@ -6411,8 +7168,8 @@
    "league": "Bundesliga AUT",
    "home": "Sturm Graz",
    "away": "GAK",
-   "lh": 1.874,
-   "la": 1.028,
+   "lh": 1.88,
+   "la": 1.036,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6423,7 +7180,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.62,
     "X": 3.8,
@@ -6448,8 +7205,8 @@
    "league": "Eliteserien",
    "home": "Molde",
    "away": "Start",
-   "lh": 2.569,
-   "la": 1.068,
+   "lh": 2.563,
+   "la": 1.052,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -6460,7 +7217,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.33,
     "X": 5.25,
@@ -6485,8 +7242,8 @@
    "league": "Eliteserien",
    "home": "Sandefjord",
    "away": "Lillestrøm",
-   "lh": 1.386,
-   "la": 1.407,
+   "lh": 1.423,
+   "la": 1.465,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -6497,7 +7254,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.6,
     "X": 3.6,
@@ -6522,8 +7279,8 @@
    "league": "Eliteserien",
    "home": "Vålerenga",
    "away": "Brann",
-   "lh": 1.729,
-   "la": 1.794,
+   "lh": 1.743,
+   "la": 1.776,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -6534,7 +7291,7 @@
    "htsM": 0.45,
    "hts": 0.45,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.38,
     "X": 3.9,
@@ -6559,8 +7316,8 @@
    "league": "Ligue 1",
    "home": "Le Havre",
    "away": "Auxerre",
-   "lh": 1.434,
-   "la": 1.232,
+   "lh": 1.422,
+   "la": 1.245,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6570,7 +7327,7 @@
    "laM": 1.29,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.44,
+   "wMkt": 0.56,
    "odds": {
     "1": 2.45,
     "X": 3.3,
@@ -6590,8 +7347,8 @@
    "league": "Ligue 1",
    "home": "Lorient",
    "away": "Monaco",
-   "lh": 1.214,
-   "la": 1.46,
+   "lh": 1.204,
+   "la": 1.475,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6601,7 +7358,7 @@
    "laM": 1.53,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.44,
+   "wMkt": 0.56,
    "odds": {
     "1": 3.3,
     "X": 3.6,
@@ -6621,8 +7378,8 @@
    "league": "Ligue 1",
    "home": "Paris FC",
    "away": "Rennes",
-   "lh": 1.582,
-   "la": 1.314,
+   "lh": 1.585,
+   "la": 1.326,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6633,7 +7390,7 @@
    "htsM": 0.435,
    "hts": 0.44,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 2.25,
     "X": 3.6,
@@ -6658,8 +7415,8 @@
    "league": "Serie B",
    "home": "Cesena",
    "away": "Avellino",
-   "lh": 1.394,
-   "la": 1.309,
+   "lh": 1.417,
+   "la": 1.283,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -6669,7 +7426,7 @@
    "laM": 1.2,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.48,
+   "wMkt": 0.6,
    "odds": {
     "1": 2.2,
     "X": 3.2,
@@ -6689,8 +7446,8 @@
    "league": "Superliga ROU",
    "home": "UTA Arad",
    "away": "CFR Cluj",
-   "lh": 1.436,
-   "la": 1.192,
+   "lh": 1.448,
+   "la": 1.174,
    "rel": "C",
    "note": "Gol fatti/subiti di UTA Arad, CFR Cluj stimati dai punti in classifica · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6701,7 +7458,7 @@
    "htsM": 0.455,
    "hts": 0.454,
    "src": "quote+modello",
-   "wMkt": 0.7,
+   "wMkt": 0.8,
    "odds": {
     "1": 2.05,
     "X": 3.25,
@@ -6726,8 +7483,8 @@
    "league": "Bundesliga",
    "home": "Gladbach",
    "away": "Hoffenheim",
-   "lh": 1.47,
-   "la": 1.715,
+   "lh": 1.45,
+   "la": 1.739,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6737,7 +7494,7 @@
    "laM": 1.83,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.44,
+   "wMkt": 0.56,
    "odds": {
     "1": 3.3,
     "X": 4.0,
@@ -6757,8 +7514,8 @@
    "league": "Ekstraklasa",
    "home": "Lech Poznań",
    "away": "Korona Kielce",
-   "lh": 2.016,
-   "la": 1.024,
+   "lh": 2.058,
+   "la": 1.022,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -6769,7 +7526,7 @@
    "htsM": 0.46,
    "hts": 0.457,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.48,
     "X": 4.2,
@@ -6794,8 +7551,8 @@
    "league": "Premier League",
    "home": "Nottingham Forest",
    "away": "Arsenal",
-   "lh": 0.906,
-   "la": 1.753,
+   "lh": 0.883,
+   "la": 1.768,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6806,7 +7563,7 @@
    "htsM": 0.465,
    "hts": 0.461,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 5.75,
     "X": 3.9,
@@ -6831,8 +7588,8 @@
    "league": "UAE Pro League",
    "home": "Ajman",
    "away": "Sharjah",
-   "lh": 1.432,
-   "la": 1.725,
+   "lh": 1.422,
+   "la": 1.733,
    "rel": "C",
    "note": "Inizio stagione: 5 giornate · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6842,7 +7599,7 @@
    "laM": 1.77,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 3.1,
     "X": 3.5,
@@ -6862,8 +7619,8 @@
    "league": "Serie A",
    "home": "Milan",
    "away": "Atalanta",
-   "lh": 1.66,
-   "la": 1.076,
+   "lh": 1.687,
+   "la": 1.067,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6874,7 +7631,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.8,
     "X": 3.75,
@@ -6899,8 +7656,8 @@
    "league": "SuperSport HNL",
    "home": "Slaven Belupo",
    "away": "Dinamo Zagabria",
-   "lh": 1.092,
-   "la": 2.198,
+   "lh": 1.065,
+   "la": 2.282,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6911,7 +7668,7 @@
    "htsM": 0.47,
    "hts": 0.464,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 7.0,
     "X": 4.75,
@@ -6936,8 +7693,8 @@
    "league": "Superliga DK",
    "home": "FC Copenhagen",
    "away": "AGF",
-   "lh": 2.038,
-   "la": 1.216,
+   "lh": 2.045,
+   "la": 1.212,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6947,7 +7704,7 @@
    "laM": 1.2,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.48,
+   "wMkt": 0.6,
    "odds": {
     "1": 1.61,
     "X": 4.0,
@@ -6967,8 +7724,8 @@
    "league": "Süper Lig",
    "home": "Başakşehir",
    "away": "Gaziantep",
-   "lh": 1.867,
-   "la": 1.1,
+   "lh": 1.898,
+   "la": 1.093,
    "rel": "B",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -6979,7 +7736,7 @@
    "htsM": 0.455,
    "hts": 0.454,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.61,
     "X": 3.9,
@@ -7004,8 +7761,8 @@
    "league": "La Liga",
    "home": "Malaga",
    "away": "Real Sociedad",
-   "lh": 1.276,
-   "la": 1.397,
+   "lh": 1.26,
+   "la": 1.413,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -7015,7 +7772,7 @@
    "laM": 1.47,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.44,
+   "wMkt": 0.56,
    "odds": {
     "1": 3.1,
     "X": 3.5,
@@ -7054,8 +7811,8 @@
    "league": "Eliteserien",
    "home": "Tromsø",
    "away": "KFUM Oslo",
-   "lh": 2.0,
-   "la": 1.017,
+   "lh": 2.003,
+   "la": 0.987,
    "rel": "A",
    "note": "Campione ampio (22 giornate) · Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -7066,7 +7823,7 @@
    "htsM": 0.465,
    "hts": 0.461,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.5,
     "X": 4.1,
@@ -7091,8 +7848,8 @@
    "league": "3. Liga",
    "home": "SV Meppen",
    "away": "TSV Havelse",
-   "lh": 2.003,
-   "la": 1.371,
+   "lh": 2.028,
+   "la": 1.351,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -7103,7 +7860,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.65,
     "X": 3.8,
@@ -7128,8 +7885,8 @@
    "league": "Serie B",
    "home": "Sampdoria",
    "away": "Arezzo",
-   "lh": 1.695,
-   "la": 1.218,
+   "lh": 1.725,
+   "la": 1.185,
    "rel": "B",
    "note": "Modello v2 Claude (nessuna seconda analisi)",
    "review": "model_v3",
@@ -7139,7 +7896,7 @@
    "laM": 1.08,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.48,
+   "wMkt": 0.6,
    "odds": {
     "1": 1.71,
     "X": 3.4,
@@ -7159,8 +7916,8 @@
    "league": "Eredivisie",
    "home": "NEC Nijmegen",
    "away": "Fortuna Sittard",
-   "lh": 2.243,
-   "la": 1.177,
+   "lh": 2.266,
+   "la": 1.159,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -7170,7 +7927,7 @@
    "laM": 1.08,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 1.42,
     "X": 4.75,
@@ -7190,8 +7947,8 @@
    "league": "Saudi Pro League",
    "home": "Al Fateh",
    "away": "Al Khaleej",
-   "lh": 1.405,
-   "la": 1.273,
+   "lh": 1.429,
+   "la": 1.279,
    "rel": "B",
    "note": "Calendario saudita da verificare (fonti in parziale conflitto) · Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -7202,7 +7959,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.2,
     "X": 3.3,
@@ -7227,8 +7984,8 @@
    "league": "Ligue 1",
    "home": "Lione",
    "away": "Nizza",
-   "lh": 1.84,
-   "la": 1.031,
+   "lh": 1.844,
+   "la": 1.022,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -7238,7 +7995,7 @@
    "laM": 0.99,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.44,
+   "wMkt": 0.56,
    "odds": {
     "1": 1.65,
     "X": 3.75,
@@ -7258,8 +8015,8 @@
    "league": "Serie A",
    "home": "Juventus",
    "away": "Lazio",
-   "lh": 1.687,
-   "la": 0.908,
+   "lh": 1.705,
+   "la": 0.905,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -7270,7 +8027,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.67,
     "X": 3.7,
@@ -7295,8 +8052,8 @@
    "league": "La Liga",
    "home": "Real Madrid",
    "away": "Siviglia",
-   "lh": 2.49,
-   "la": 0.799,
+   "lh": 2.568,
+   "la": 0.782,
    "rel": "A",
    "note": "Ensemble: modello v2 Claude 50% + analisi GPT 50%",
    "review": "model_v3",
@@ -7307,7 +8064,7 @@
    "htsM": 0.44,
    "hts": 0.443,
    "src": "quote+modello",
-   "wMkt": 0.55,
+   "wMkt": 0.7,
    "odds": {
     "1": 1.22,
     "X": 7.0,
@@ -7332,8 +8089,8 @@
    "league": "MLS",
    "home": "Cincinnati",
    "away": "Columbus",
-   "lh": 1.865,
-   "la": 1.772,
+   "lh": 1.852,
+   "la": 1.771,
    "rel": "B",
    "note": "Solo seconda analisi: GF/GA stagione 2026 su circa 29 gare, fattori campo stimati e non splittati per casa/trasferta; verificare infortuni e H2H. · Modello v2 sulla stima GPT",
    "review": "model_v3",
@@ -7344,7 +8101,7 @@
    "htsM": 0.445,
    "hts": 0.447,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 2.35,
     "X": 3.9,
@@ -7369,8 +8126,8 @@
    "league": "Eredivisie",
    "home": "Twente",
    "away": "Utrecht",
-   "lh": 2.052,
-   "la": 0.96,
+   "lh": 2.092,
+   "la": 0.924,
    "rel": "C",
    "note": "Basata sulla stagione 2025/26 (classifica attuale non disponibile) · Ensemble: modello v2 Claude 50% + analisi GPT 50% Orario da Sofascore.",
    "review": "model_v3",
@@ -7380,7 +8137,7 @@
    "laM": 0.78,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.56,
+   "wMkt": 0.64,
    "odds": {
     "1": 1.3,
     "X": 5.75,
@@ -7400,8 +8157,8 @@
    "league": "Superliga ROU",
    "home": "Universitatea Craiova",
    "away": "Farul",
-   "lh": 1.893,
-   "la": 0.866,
+   "lh": 1.936,
+   "la": 0.856,
    "rel": "B",
    "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita. · Modello v2 sulla stima GPT Orario da Sofascore.",
    "review": "model_v3",
@@ -7412,7 +8169,7 @@
    "htsM": 0.46,
    "hts": 0.457,
    "src": "quote+modello",
-   "wMkt": 0.6,
+   "wMkt": 0.75,
    "odds": {
     "1": 1.4,
     "X": 3.9,
@@ -7437,8 +8194,8 @@
    "league": "Superliga SRB",
    "home": "Stella Rossa",
    "away": "Mladost Lucani",
-   "lh": 2.303,
-   "la": 0.484,
+   "lh": 2.351,
+   "la": 0.443,
    "rel": "B",
    "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita. · Modello v2 sulla stima GPT Orario da Sofascore.",
    "review": "model_v3",
@@ -7448,7 +8205,7 @@
    "laM": 0.33,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.48,
+   "wMkt": 0.6,
    "odds": {
     "1": 1.091,
     "X": 9.5,
@@ -7468,8 +8225,8 @@
    "league": "Superliga SRB",
    "home": "Zeleznicar",
    "away": "Partizan",
-   "lh": 1.5,
-   "la": 1.176,
+   "lh": 1.493,
+   "la": 1.188,
    "rel": "B",
    "note": "Solo seconda analisi: lambda esterni Poisson; forma, H2H e fattore campo non verificati partita per partita. · Modello v2 sulla stima GPT Orario da Sofascore.",
    "review": "model_v3",
@@ -7479,7 +8236,7 @@
    "laM": 1.23,
    "hts": 0.45,
    "src": "1X2+modello",
-   "wMkt": 0.48,
+   "wMkt": 0.6,
    "odds": {
     "1": 2.15,
     "X": 3.6,
@@ -7510,7 +8267,16 @@
    "src": "modello",
    "wMkt": 0,
    "fav": 41,
-   "topSkip": "senza quote"
+   "topSkip": "senza quote",
+   "ht": [
+    2,
+    2
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 6
   },
   {
    "date": "2026-10-17",
@@ -7548,7 +8314,16 @@
    "src": "modello",
    "wMkt": 0,
    "fav": 39,
-   "topSkip": "senza quote"
+   "topSkip": "senza quote",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 13
   },
   {
    "date": "2026-10-17",
@@ -7567,7 +8342,16 @@
    "src": "modello",
    "wMkt": 0,
    "fav": 40,
-   "topSkip": "senza quote"
+   "topSkip": "senza quote",
+   "ht": [
+    0,
+    2
+   ],
+   "ft": [
+    0,
+    2
+   ],
+   "fg": 19
   },
   {
    "date": "2026-10-17",
@@ -7586,7 +8370,16 @@
    "src": "modello",
    "wMkt": 0,
    "fav": 46,
-   "topSkip": "senza quote"
+   "topSkip": "senza quote",
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    2,
+    1
+   ],
+   "fg": 52
   },
   {
    "date": "2026-10-18",
@@ -7698,7 +8491,15 @@
     "o15": 1.062,
     "o25": 1.25,
     "gg": 1.286
-   }
+   },
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    0
+   ]
   },
   {
    "date": "2026-10-17",
@@ -7729,7 +8530,15 @@
     "X": 3.6,
     "2": 2.8
    },
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    0,
+    1
+   ],
+   "ft": [
+    1,
+    1
+   ]
   },
   {
    "date": "2026-10-17",
@@ -7760,7 +8569,16 @@
     "X": 6.5,
     "2": 10.0
    },
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    3,
+    1
+   ],
+   "fg": 11
   },
   {
    "date": "2026-10-17",
@@ -7791,7 +8609,16 @@
     "X": 3.5,
     "2": 2.2
    },
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    1
+   ],
+   "ft": [
+    3,
+    2
+   ],
+   "fg": 12
   },
   {
    "date": "2026-10-17",
@@ -7827,7 +8654,16 @@
     "o15": 1.286,
     "o25": 1.9,
     "gg": 1.7
-   }
+   },
+   "ht": [
+    2,
+    0
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 9
   },
   {
    "date": "2026-10-17",
@@ -7863,7 +8699,16 @@
     "o15": 1.2,
     "o25": 1.667,
     "gg": 1.8
-   }
+   },
+   "ht": [
+    2,
+    0
+   ],
+   "ft": [
+    2,
+    0
+   ],
+   "fg": 2
   },
   {
    "date": "2026-10-17",
@@ -7899,7 +8744,16 @@
     "o15": 1.286,
     "o25": 1.95,
     "gg": 1.8
-   }
+   },
+   "ht": [
+    0,
+    0
+   ],
+   "ft": [
+    0,
+    1
+   ],
+   "fg": 94
   },
   {
    "date": "2026-10-17",
@@ -7935,7 +8789,16 @@
     "o15": 1.167,
     "o25": 1.571,
     "gg": 1.444
-   }
+   },
+   "ht": [
+    1,
+    2
+   ],
+   "ft": [
+    2,
+    4
+   ],
+   "fg": 10
   },
   {
    "date": "2026-10-17",
@@ -7966,7 +8829,16 @@
     "X": 3.75,
     "2": 2.3
    },
-   "topSkip": "quote Over non ancora aperte"
+   "topSkip": "quote Over non ancora aperte",
+   "ht": [
+    1,
+    0
+   ],
+   "ft": [
+    2,
+    2
+   ],
+   "fg": 19
   }
  ]
 }

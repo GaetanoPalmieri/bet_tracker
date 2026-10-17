@@ -1224,8 +1224,12 @@ function tipStatsPanel(list) {
 function tipCalRows() {
   if (tipUI._cal) return tipUI._cal;
   var by = {};
+  /* 3.14.0 — solo i pronostici del modello attuale (con quote): quelli dei modelli
+     precedenti erano più ottimisti e falserebbero la correzione */
+  var cur = ((db.predModel || {}).base || {}).version;
   tipClosed().forEach(function (r) {
     if (/^(Under|No goal)/.test(r.p.sel)) return;
+    if (cur === '3' && !r.m.src) return;
     (by[r.p.m] = by[r.p.m] || []).push([r.p.p, r.won ? 1 : 0]);
   });
   tipUI._cal = by;
@@ -1238,7 +1242,9 @@ function tipCal(k, p) {
     w = rows.reduce(function (s, r) { return s + r[1]; }, 0),
     e = rows.reduce(function (s, r) { return s + r[0] / 100; }, 0);
   /* correzione = (vinti reali − attesi) diluita */
-  return Math.round(Math.max(1, Math.min(99, p + ((w - e) / (rows.length + K)) * 100)));
+  /* 3.14.0 — prudenza: verso il basso si corregge del tutto, verso l'alto al massimo +1 punto */
+  var d = ((w - e) / (rows.length + K)) * 100;
+  return Math.round(Math.max(1, Math.min(99, p + Math.min(d, 1))));
 }
 /* ---------- 3.9.0 — Liste Top ----------
    Per ogni giorno e per ogni mercato: si parte dalla partita più solida e si aggiungono
@@ -1290,7 +1296,14 @@ function tipTopFor(day, list, P) {
         sum += c.p.p;
       }
     });
-    res[k] = { items: pickd, avg: pickd.length ? sum / pickd.length : null, target: target, cand: cand.length, near: pickd.length ? [] : cand.slice(0, 3) };
+    /* 3.14.0 — Top allargata: fino a 3 punti sotto l'obiettivo, fuori dalla Top sicura.
+       Si giocano solo se la quota del book supera la quota minima indicata. */
+    var inTop = {};
+    pickd.forEach(function (c) { inTop[c.m.id] = 1; });
+    var ext = cand.filter(function (c) { return !inTop[c.m.id] && c.p.p >= target - 3; })
+      .sort(function (a, b) { return b.p.p - a.p.p || b.score - a.score; })
+      .slice(0, 10);
+    res[k] = { items: pickd, ext: ext, avg: pickd.length ? sum / pickd.length : null, target: target, cand: cand.length, near: pickd.length || ext.length ? [] : cand.slice(0, 3) };
   });
   /* Top assoluti: tutte le liste insieme, una riga per partita (il pronostico con più margine sull'obiettivo). */
   var best = {};
@@ -1351,7 +1364,7 @@ function tipTopRow(c, i) {
     '<span class="tip-tn">' + (i + 1) + '</span>' +
     '<span class="tip-tmain"><b>' + U.esc(m.home) + ' – ' + U.esc(m.away) + '</b><small>' + U.esc(m.time) + ' · ' + U.esc(m.league) + (m.fav ? ' · favorita ' + m.fav + '%' : '') + '</small></span>' +
     '<span class="tip-tpick"><b>' + U.esc(c.p.sel) + '</b><small>' + c.p.p + '%' + (c.p.raw != null && c.p.raw !== c.p.p ? ' (stima ' + c.p.raw + '%)' : '') + (odd ? ' · @' + odd.toFixed(2) : '') + '</small>' +
-    (c.p.m === 'ht05' ? (function (x) { return '<small class="tip-plan">30\' ≥' + x.fair1.toFixed(2) + ' · live ≥' + x.fair2.toFixed(2) + '</small>'; })(tipPlan(c.p.p)) : '') +
+    (c.p.m === 'ht05' ? (function (x) { return '<small class="tip-plan">30\' ≥' + x.fair1.toFixed(2) + ' · live ≥' + x.fair2.toFixed(2) + '</small>'; })(tipPlan(c.p.p)) : '<small class="tip-plan">quota min ' + (100 / c.p.p).toFixed(2) + (odd ? (odd >= 100 / c.p.p ? ' · conviene' : ' · sotto') : '') + '</small>') +
     '</span>' +
     (o.s ? '<em class="tip-tmark" aria-label="' + { V: 'vinto', P: 'perso', N: 'annullato' }[o.s] + '">' + { V: '✓', P: '✕', N: '–' }[o.s] + '</em>' : '') +
     '</button>'
@@ -1392,6 +1405,14 @@ function tipTopPanel(list) {
       }
       var near = r.near.length ? ' Le più vicine: ' + r.near.map(function (c) { return U.esc(c.m.home) + ' – ' + U.esc(c.m.away) + ' ' + c.p.p + '%'; }).join(', ') + '.' : '';
       html += sec('Top ' + mk[1], r.items, r.avg, r.target, r.cand ? 'Nessuna partita arriva al ' + r.target + '% di media.' + near : 'Nessuna candidata con quote complete.');
+      if ((mk[0] === 'ht05' || mk[0] === 'o15') && r.ext.length) {
+        html +=
+          '<section class="card tip-top tip-top-ext"><div class="tip-top-head"><b>Top allargata · ' + mk[1] + '</b><span>' + (r.target - 3) + '-' + (r.target - 1) + '%</span></div>' +
+          '<p class="muted tip-tnone">' + (mk[0] === 'ht05'
+            ? 'Da giocare solo se il book paga più delle quote minime: gol entro il 30\' sopra la prima, live al 30\' sullo 0-0 sopra la seconda. Altrimenti si salta.'
+            : 'Da giocare solo se la quota Over 1.5 del tuo book è sopra la quota minima. Altrimenti si salta.') + '</p>' +
+          '<div class="tip-tlist">' + r.ext.map(tipTopRow).join('') + '</div></section>';
+      }
     });
   });
   html += '<p class="muted tip-hint">Entrano solo partite con le quote Over del book. La percentuale è la stima di statistiche + quote; la quota @ è quella media del book.</p>';
