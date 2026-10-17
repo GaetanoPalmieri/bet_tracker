@@ -368,8 +368,16 @@ function tipMerge(file, { manual = false } = {}) {
           cur.time = String(fm.time);
           res.updated++;
         }
-        if (!tipNum(cur.ft) && tipNum(fm.ft)) { cur.ft = fm.ft; res.results++; }
-        if (!tipNum(cur.ht) && tipNum(fm.ht)) cur.ht = fm.ht;
+        /* 3.14.1 — i risultati del file prevalgono su quelli segnati a mano */
+        if (tipNum(fm.ft)) {
+          if (!tipNum(cur.ft) || cur.ft[0] !== fm.ft[0] || cur.ft[1] !== fm.ft[1]) res.results++;
+          cur.ft = fm.ft;
+          cur.ov = {};
+        }
+        if (tipNum(fm.ht)) {
+          cur.ht = fm.ht;
+          if (cur.ov) delete cur.ov.ht05;
+        }
         if (!Number.isInteger(cur.fg) && Number.isInteger(fm.fg)) cur.fg = fm.fg;
         if (fm.cancelled && !cur.cancelled) { cur.cancelled = true; res.updated++; }
       }
@@ -526,10 +534,15 @@ async function tipAutoResults(opts) {
     return;
   }
   var now = Date.now();
+  var hasHt = function (m) { return (m.picks || []).some(function (p) { return p.m === 'ht05'; }); };
   var todo = (db.predictions || []).filter(function (m) {
-    if (m.cancelled || tipNum(m.ft) || (m.afMiss || 0) >= 3) return false;
+    if (m.cancelled || (m.afMiss || 0) >= 3) return false;
     var ko = tipKickoff(m).getTime();
-    return ko + 125 * 60e3 < now && ko > now - 5 * 86400e3;
+    if (!(ko + 125 * 60e3 < now && ko > now - 5 * 86400e3)) return false;
+    if (!tipNum(m.ft)) return true;
+    if (m.ov && Object.keys(m.ov).length && !m.afId) return true; /* esiti a mano da sostituire */
+    /* 3.14.1 — partite già chiuse ma senza minuto del primo gol (serve al piano 30') */
+    return hasHt(m) && !Number.isInteger(m.fg) && tipNum(m.ht) && m.ht[0] + m.ht[1] > 0 && !m.fgTried;
   });
   if (!todo.length) {
     if (opts.manual) U.toast('Nessun risultato da cercare.');
@@ -539,7 +552,7 @@ async function tipAutoResults(opts) {
   try {
     var r = await SuiteSync.api(TIP_FN, {
       method: 'POST',
-      json: { action: 'results', matches: todo.slice(0, 80).map(function (m) { return { id: m.id, date: m.date, time: m.time, home: m.home, away: m.away, league: m.league, afId: m.afId || null }; }) },
+      json: { action: 'results', matches: todo.slice(0, 80).map(function (m) { return { id: m.id, date: m.date, time: m.time, home: m.home, away: m.away, league: m.league, afId: m.afId || null, needFg: hasHt(m) && !Number.isInteger(m.fg) }; }) },
     });
     var byId = {};
     (r.results || []).forEach(function (x) { byId[x.id] = x; });
@@ -550,10 +563,17 @@ async function tipAutoResults(opts) {
         var x = byId[m.id];
         if (!x) { m.afMiss = (m.afMiss || 0) + 1; return; }
         m.afId = x.afId;
-        if (x.cancelled && !m.cancelled) { m.cancelled = true; voids++; }
-        if (Array.isArray(x.ft) && !tipNum(m.ft)) { m.ft = x.ft; n++; }
-        if (Array.isArray(x.ht) && !tipNum(m.ht)) m.ht = x.ht;
+        if (x.cancelled && !m.cancelled) { m.cancelled = true; m.ov = {}; voids++; }
+        /* 3.14.1 — il risultato automatico prevale su quello segnato a mano:
+           si aggiornano punteggi e si tolgono gli esiti manuali */
+        if (Array.isArray(x.ft)) {
+          if (!tipNum(m.ft) || m.ft[0] !== x.ft[0] || m.ft[1] !== x.ft[1]) n++;
+          m.ft = x.ft;
+          m.ov = {};
+        }
+        if (Array.isArray(x.ht)) m.ht = x.ht;
         if (Number.isInteger(x.fg) && !Number.isInteger(m.fg)) m.fg = x.fg;
+        if (tipNum(m.ft) && !Number.isInteger(m.fg) && m.ht && m.ht[0] + m.ht[1] > 0) m.fgTried = true;
       });
       d.predModel = d.predModel || {};
       d.predModel.lastResults = new Date().toISOString();
@@ -1941,7 +1961,7 @@ function bindTips() {
     if (!last || Date.now() - Date.parse(last) > 30 * 60e3 || !(db.predictions || []).length) tipFetch();
   }
   /* 3.12.0 — risultati automatici all'apertura, al massimo ogni 20 minuti */
-  if (!tipUI.resBusy && (!tipUI.resAt || Date.now() - tipUI.resAt > 20 * 60e3) && navigator.onLine !== false && tipCanSync()) {
+  if (!tipUI.resBusy && (!tipUI.resAt || Date.now() - tipUI.resAt > 30 * 60e3) && navigator.onLine !== false && tipCanSync()) {
     tipUI.resAt = Date.now();
     setTimeout(function () { tipAutoResults(); }, 1500);
   }
