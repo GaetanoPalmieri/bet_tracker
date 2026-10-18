@@ -964,8 +964,7 @@ function tipStarPanel(list) {
 }
 function tipScanPanel() {
   var S = tipUI.scan;
-  var head = '<section class="card tip-top"><div class="tip-top-head"><b>Da giocare adesso</b><span>' + (S ? new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '1-2 richieste') + '</span></div>' +
-    '<button type="button" class="tip-live-get" data-scan>' + (S ? '🔎 Scansiona di nuovo' : '🔎 Scansiona le partite live') + '</button>';
+  var head = '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>Da giocare adesso</b><span>' + (S ? 'Aggiornate alle ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'In attesa della scansione') + '</span></div>';
   if (!S) return head + '<p class="muted tip-tnone">Partite live nel mondo, dalla più probabile per un gol.</p></section>';
   var all = S.list.map(tipScanMatch).filter(Boolean),
     showAll = !!tipUI.scanAll;
@@ -990,12 +989,13 @@ function tipScanPanel() {
   var withOdds = all.filter(function (y) { return y.m.scanSrc !== 'media'; }).length;
   var GRP = ['<b class="positive">spingono</b>', 'normale', '<b class="negative">bloccata</b>'];
   var rowH = function (y) {
-    var on = tipIsStar(y.m);
-    return '<div class="tip-srowx"><button type="button" class="tip-trow' + (y.act.k !== 'no' ? ' tip-hot' : '') + '" data-scan-open="' + y.x.afId + '"><span class="tip-tn tip-ln">' + (y.x.status === 'HT' ? 'HT' : y.min + '\'') + '</span><span class="tip-tmain"><b>' + U.esc(y.m.home) + ' – ' + U.esc(y.m.away) + '</b><small>' + (y.x.stats ? GRP[y.grp] + ' ' + (y.ritmo >= 1 ? '+' : '') + Math.round((y.ritmo - 1) * 100) + '%' : U.esc(y.m.league)) + (y.act.s ? ' · ' + y.act.s : '') + '</small></span><span class="tip-tpick"><b>' + y.x.goals[0] + '-' + y.x.goals[1] + ' <span class="' + y.act.c + '">' + y.act.t + '</span></b><small>gol ' + y.act.w + ' ' + Math.round(y.act.p * 100) + '% ›</small></span></button>' +
+    var on = tipIsStar(y.m), next = y.x.goals[0] + y.x.goals[1] + 1;
+    return '<div class="tip-srowx"><button type="button" class="tip-trow' + (y.act.k !== 'no' ? ' tip-hot' : '') + '" data-scan-open="' + y.x.afId + '"><span class="tip-tn tip-ln">' + (y.x.status === 'HT' ? 'HT' : y.min + '\'') + '</span><span class="tip-tmain"><b>' + U.esc(y.m.home) + ' – ' + U.esc(y.m.away) + '</b><small>' + (y.x.stats ? GRP[y.grp] + ' ' + (y.ritmo >= 1 ? '+' : '') + Math.round((y.ritmo - 1) * 100) + '%' : U.esc(y.m.league)) + (y.act.s ? ' · ' + y.act.s : '') + '</small><small class="tip-next-goal">⚽ Next gol: ' + next + '° della partita · ' + (y.act.k !== 'no' ? 'consiglio riferito al ' + y.x.goals[0] + '-' + y.x.goals[1] : 'nessun ingresso ottimo ora') + '</small></span><span class="tip-tpick"><b>' + y.x.goals[0] + '-' + y.x.goals[1] + ' <span class="' + y.act.c + '">' + y.act.t + '</span></b><small>gol ' + y.act.w + ' ' + Math.round(y.act.p * 100) + '% ›</small></span></button>' +
       '<button type="button" class="tip-star' + (on ? ' on' : '') + '" data-live-star="' + U.esc(y.x.afId) + '" aria-label="Preferita">' + (on ? '★' : '☆') + '</button></div>';
   };
   return head +
-    '<p class="muted tip-hint">' + all.length + ' partite live controllate · ' + rows.length + ' da giocare' + (showAll ? '' : ' · prima chi spinge') + '</p>' +
+    '<div class="tip-live-counts"><span><strong>' + S.list.length + '</strong> trovate</span><span><strong>' + all.length + '</strong> valutate</span><span><strong>' + rows.length + '</strong> ' + (showAll ? 'mostrate' : 'selezionate') + '</span></div>' +
+    '<p class="muted tip-hint">Ogni indicazione riguarda il prossimo gol rispetto al risultato dell’ultima scansione.</p>' +
     (rows.length ? '<div class="tip-tlist">' + rows.map(rowH).join('') + '</div>' : '<p class="muted tip-tnone">Niente da giocare adesso: nessuna partita da gol, non bloccata, con quota 1.50 raggiungibile. Riscansiona tra qualche minuto.</p>') +
     (early.length && !showAll ? '<p class="muted tip-hint">' + early.length + ' appena iniziate (sotto il 15’): rivaluta più avanti.</p>' : '') +
     '<button type="button" class="tip-ctx-btn" data-scan-all>' + (showAll ? 'Mostra solo le giocabili' : 'Mostra tutte le partite') + '</button>' +
@@ -1046,7 +1046,7 @@ function tipPlayLogAdd(m, ctx, plays) {
   tipUI._pl = tipUI._pl || {};
   var L0 = ((db.predModel || {}).playLog) || [];
   var news = green.filter(function (x) {
-    var key = m.id + '|' + x.k;
+    var key = m.id + '|' + x.k + '|' + (ctx.gh || 0) + '-' + (ctx.ga || 0) + '|' + ctx.half;
     if (tipUI._pl[key]) return false;
     if (L0.some(function (e) { return e.key === key; })) { tipUI._pl[key] = 1; return false; }
     return true;
@@ -1056,7 +1056,7 @@ function tipPlayLogAdd(m, ctx, plays) {
   /* si salva dopo il disegno della pagina (salvare ridisegna) */
   tipUI._plQ = tipUI._plQ || [];
   news.forEach(function (x) {
-      var key = m.id + '|' + x.k;
+      var key = m.id + '|' + x.k + '|' + (ctx.gh || 0) + '-' + (ctx.ga || 0) + '|' + ctx.half;
       tipUI._pl[key] = 1;
       tipUI._plQ.push({ key: key, id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
         k: x.k, min: ctx.min, half: ctx.half, gh: ctx.gh || 0, ga: ctx.ga || 0, p: Math.round(x.p * 1000) / 1000,
@@ -1252,6 +1252,18 @@ function tipLiveEval(m) {
   tipPlayLogAdd(m, { min: min, half: half, gh: inp.gh, ga: inp.ga }, y.plays);
   return { r: r, min: min, half: half, act: act };
 }
+/* 3.36.0 — Storico permanente delle opportunità ottime, distinto dalla raccomandazione corrente. */
+function tipExcellentArchive() {
+  var L = ((db.predModel || {}).playLog || []).slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
+  if (!L.length) return '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>★ Memoria delle ottime</b><span>0 salvate</span></div><p class="muted tip-tnone">Le giocate ottime individuate durante scansioni e sincronizzazioni saranno conservate qui.</p></section>';
+  var subset = L.slice(0, 30);
+  return '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>★ Memoria delle ottime</b><span>' + L.length + ' salvate · ultime ' + subset.length + '</span></div>' +
+    '<p class="muted tip-hint">Storico dei consigli emessi, non scommesse effettuate. Quando arriva un gol, la raccomandazione precedente non diventa automaticamente un nuovo ingresso.</p>' +
+    '<div class="tip-tlist">' + subset.map(function (e) {
+      var score = (e.gh || 0) + '-' + (e.ga || 0), target = (e.gh || 0) + (e.ga || 0) + 1;
+      return '<div class="tip-memory-row"><div><b>' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</b><small>' + U.esc(TIP_PLAY_SHORT[e.k] || e.k) + ' · ' + U.esc(e.date || '') + ' · ' + (e.min || 0) + '’ · dal ' + score + ' → gol n. ' + target + '</small></div><span class="tip-memory-state">' + (e.res === 1 ? '✓ Esito positivo' : e.res === 0 ? '✕ Esito negativo' : e.res === 'skip' ? 'Non giocata' : 'Registrata') + '</span></div>';
+    }).join('') + '</div></section>';
+}
 function tipLivePanel(list) {
   var scanHtml = tipScanPanel(); /* prima: collega le partite dei pronostici ai dati live della scansione */
   var evals = {};
@@ -1271,7 +1283,7 @@ function tipLivePanel(list) {
       var rec = tipPreValue(m, tipTopIds()[m.id])[0];
       return rec ? { act: { k: 'pre', t: 'PREMATCH', c: 'positive', p: rec.p, w: rec.k === 'g30' ? '1T' : 'fine', s: 'da prematch: ' + rec.label + ' da ' + rec.need.toFixed(2) } } : null;
     })(), go = ev && ev.act.k !== 'no';
-    return '<button type="button" class="tip-trow' + (go ? ' tip-hot' : '') + '" data-tip-live="' + U.esc(m.id) + '"><span class="tip-tn tip-ln">' + mn + '</span><span class="tip-tmain"><b>' + U.esc(m.home) + ' – ' + U.esc(m.away) + '</b><small>' + (go ? '<b class="positive">' + (ev.act.w === '1T' ? 'gol 1° tempo' : 'gol 2° tempo / fine') + '</b> · ' + ev.act.s : U.esc(m.league) + (d && d.at ? ' · ' + new Date(d.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '')) + '</small></span><span class="tip-tpick"><b>' + sc + (go ? ' <span class="' + ev.act.c + '">' + ev.act.t + '</span>' : '') + '</b><small>' + (go ? Math.round(ev.act.p * 100) + '% ›' : ev ? 'niente ›' : 'valuta ›') + '</small></span></button>';
+    return '<button type="button" class="tip-trow' + (go ? ' tip-hot' : '') + '" data-tip-live="' + U.esc(m.id) + '"><span class="tip-tn tip-ln">' + mn + '</span><span class="tip-tmain"><b>' + U.esc(m.home) + ' – ' + U.esc(m.away) + '</b><small>' + (go ? '<b class="positive">' + (ev.act.w === '1T' ? 'gol 1° tempo' : 'gol 2° tempo / fine') + '</b> · ' + ev.act.s : U.esc(m.league) + (d && d.at ? ' · ' + new Date(d.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '')) + '</small>' + (d && d.goals ? '<small class="tip-next-goal">⚽ Next gol: ' + (d.goals[0] + d.goals[1] + 1) + '° · risultato ' + sc + '</small>' : '<small class="tip-next-goal">In attesa di dati live aggiornati</small>') + '</span><span class="tip-tpick"><b>' + sc + (go ? ' <span class="' + ev.act.c + '">' + ev.act.t + '</span>' : '') + '</b><small>' + (go ? Math.round(ev.act.p * 100) + '% ›' : ev ? 'niente ›' : 'valuta ›') + '</small></span></button>';
   };
   /* 3.33.0 — giocate migliori adesso, per tipo: partite dei pronostici e dello scanner, in ordine di riuscita */
   var pool = {};
@@ -1283,20 +1295,21 @@ function tipLivePanel(list) {
     tipPlays(P2.r, P2.min, P2.half).forEach(function (pl) { (byType[pl.k] = byType[pl.k] || []).push({ P: P2, pl: pl }); });
   });
   var playsHtml = Object.keys(TIP_PLAY_NAME).filter(function (k) { return byType[k] && byType[k].length; }).map(function (k) {
+    var total = byType[k].length, found = byType[k].filter(function (x) { return x.pl.green; }).length;
     var L = byType[k].sort(function (a, b) { return b.pl.p - a.pl.p; }).slice(0, 8), ng = L.filter(function (x) { return x.pl.green; }).length;
-    return '<section class="card tip-top"><div class="tip-top-head"><b>' + U.esc(TIP_PLAY_NAME[k]) + '</b><span>' + (ng ? ng + ' ottime' : 'nessuna ottima') + '</span></div><div class="tip-tlist">' +
+    return '<section class="card tip-top"><div class="tip-top-head"><b>' + U.esc(TIP_PLAY_NAME[k]) + '</b><span>' + total + ' partite · ' + found + ' ottime</span></div><div class="tip-tlist">' +
       L.map(function (x) {
         var P2 = x.P;
         return '<button type="button" class="tip-trow' + (x.pl.green ? ' tip-hot' : '') + '" ' + P2.open + '><span class="tip-tn tip-ln">' + P2.min + '\'</span><span class="tip-tmain"><b>' + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b><small>' +
-          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : '') + '">' + Math.round(x.pl.p * 100) + '%</span></b><small>' + (x.pl.green ? 'ottima ›' : 'ottima da ' + Math.round(x.pl.thr * 100) + '% ›') + '</small></span></button>';
+          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small><small class="tip-next-goal">⚽ Next gol: ' + (P2.sc ? P2.sc[0] + P2.sc[1] + 1 : 'da verificare') + '° · base ' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : 'non disponibile') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : '') + '">' + Math.round(x.pl.p * 100) + '%</span></b><small>' + (x.pl.green ? 'ottima ›' : 'ottima da ' + Math.round(x.pl.thr * 100) + '% ›') + '</small></span></button>';
       }).join('') + '</div></section>';
   }).join('');
   return (
-    tipStarPanel(list) + playsHtml +
-    '<section class="card tip-top"><div class="tip-top-head"><b>In corso</b><span>' + live.length + ' partite · ' + live.filter(function (m) { return evals[m.id] && evals[m.id].act.k !== 'no'; }).length + ' da giocare</span></div>' +
+    '<div class="tip-live-sticky"><div class="tip-live-sticky-label"><b><i class="tip-livedot on"></i> Live scanner</b><small>' + (tipUI.scan ? 'Ultima scansione ' + new Date(tipUI.scan.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'Risultati aggiornati su richiesta') + '</small></div><button type="button" class="tip-live-get tip-scan-fixed" data-scan>🔎 ' + (tipUI.scan ? 'Riscansiona' : 'Scansiona') + '</button></div>' +
+    scanHtml + tipStarPanel(list) + playsHtml + tipExcellentArchive() +
+    '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>In corso</b><span>' + live.length + ' partite · ' + live.filter(function (m) { return evals[m.id] && evals[m.id].act.k !== 'no'; }).length + ' da giocare</span></div>' +
     (live.length ? '<div class="tip-tlist">' + live.map(row).join('') + '</div>' : '<p class="muted tip-tnone">Nessuna partita dei pronostici in corso adesso.</p>') +
     '</section>' +
-    scanHtml +
     (soon.length ? '<section class="card tip-top"><div class="tip-top-head"><b>Tra poco</b><span>prossime 3 ore</span></div><div class="tip-tlist">' + soon.map(row).join('') + '</div></section>' : '') +
     ''
   );
@@ -3025,7 +3038,7 @@ function bindTips() {
     scb.disabled = true;
     scb.textContent = 'Scansiono…';
     try { await tipScanFetch(); render(); }
-    catch (e) { U.toast(tipFnErr(e)); scb.disabled = false; scb.textContent = '🔎 Scansiona le partite live'; }
+    catch (e) { U.toast(tipFnErr(e)); scb.disabled = false; scb.textContent = '🔎 Riprova scansione'; }
   };
   main.querySelectorAll('[data-tip-star]').forEach(function (b) {
     b.onclick = function (e) { e.stopPropagation(); e.preventDefault(); tipToggleStar(b.dataset.tipStar); render(); };
