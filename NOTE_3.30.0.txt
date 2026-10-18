@@ -1,0 +1,7 @@
+Bet Tracker 3.30.0
+
+- Stessa partita, stesso consiglio ovunque: Da giocare adesso, In corso e Live · sintonizza usano gli stessi dati
+  (i piu' recenti tra scansione e sincronizzazione) e lo stesso calcolo (gol appena segnato e momento compresi).
+  Prima la lista poteva usare la scansione e la scheda una sincronizzazione piu' recente: STEP da una parte, ASPETTA dall'altra.
+- Sezioni a tendina: tocca il titolo di una sezione (In corso, Da giocare adesso, Tra poco, Preferite, Top,
+  statistiche...) per chiuderla o aprirla. L'app se lo ricorda.

@@ -536,3 +536,8 @@ dialog#editor.sheet.tip-dlg {
 .tip-trow.tip-hot{border:1.5px solid rgba(46,160,90,.75)!important;background:rgba(46,160,90,.14)!important}
 .tip-livechip.tip-hot{background:linear-gradient(135deg,#2fa57f,#1f8a4c)!important;color:#fff!important}
 .tip-do li.tip-rec{font-weight:650}
+/* 3.30.0 — sezioni a tendina */
+.tip-fold > .tip-top-head, .tip-fold > h2 { cursor: pointer; user-select: none; -webkit-user-select: none; position: relative; padding-right: 22px; }
+.tip-fold > .tip-top-head::after, .tip-fold > h2::after { content: '▾'; position: absolute; right: 2px; top: 50%; transform: translateY(-50%); font-size: 13px; opacity: .6; transition: transform .2s; }
+.tip-fold.folded > .tip-top-head::after, .tip-fold.folded > h2::after { transform: translateY(-50%) rotate(-90deg); }
+.tip-fold.folded > :not(.tip-top-head):not(h2) { display: none !important; }

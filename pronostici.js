@@ -877,15 +877,17 @@ function tipScanMatch(x) {
     tipUI.scanLink = tipUI.scanLink || {};
     tipUI.scanLink[am.id] = x.afId;
   }
-  var inp = { min: min, half: half, gh: gh, ga: ga };
-  if (x.stats && x.stats.side) inp.side = x.stats.side;
-  if (x.lastGoal != null && min - x.lastGoal >= 0 && min - x.lastGoal <= 5) inp.rg = true;
-  /* i dati live arrivati con la scansione valgono come una sincronizzazione */
+  /* i dati live della scansione valgono come una sincronizzazione, ma non sovrascrivono una sincronizzazione più recente */
   tipUI.liveData = tipUI.liveData || {};
-  if (x.stats) tipUI.liveData[m.id] = { afId: x.afId, status: st, elapsed: x.elapsed, goals: x.goals, stats: x.stats, lastGoal: x.lastGoal, at: (tipUI.scan && tipUI.scan.at) || Date.now() };
+  var scanAt = (tipUI.scan && tipUI.scan.at) || Date.now(), have = tipUI.liveData[m.id];
+  var dd = { afId: x.afId, status: st, elapsed: x.elapsed, goals: x.goals, stats: x.stats, lastGoal: x.lastGoal, at: scanAt };
+  if (have && have.at > scanAt && have.elapsed != null) dd = have;
+  else if (x.stats) tipUI.liveData[m.id] = dd;
+  var inp = tipLiveInput(m, dd);
+  min = inp.min; half = inp.half; gh = inp.gh; ga = inp.ga;
   var r = tipInplay(m, inp),
     main = r.lines.find(function (y) { return y.k === (r.rem.ht > 0 ? 'h1' : 'n1'); }) || r.lines[0];
-  return { m: m, x: x, min: min, half: half, main: main, r: r };
+  return { m: m, x: Object.assign({}, x, { goals: dd.goals || x.goals, elapsed: dd.elapsed, status: dd.status || x.status, stats: dd.stats || x.stats }), min: min, half: half, main: main, r: r };
 }
 /* ---------- 3.20.0 — Preferiti ---------- */
 function tipToggleStar(id) {
@@ -1002,6 +1004,17 @@ function tipQuickAction(y) {
   };
   return test(x, 45) || test(n1, 88) || { k: 'no', t: 'no', c: 'negative', p: n1 ? n1.p : 0, w: 'fine', s: '' };
 }
+/* 3.30.0 — un solo modo di costruire i dati live di una partita (scanner, In corso e Live · sintonizza danno lo stesso risultato) */
+function tipLiveInput(m, d) {
+  var half = d.status === '2H' || d.status === 'HT' || d.status === 'ET' || Number(d.elapsed) > 46 ? 2 : 1,
+    min = d.status === 'HT' ? 45 : Number(d.elapsed);
+  var inp = { min: min, half: half, gh: (d.goals && d.goals[0]) || 0, ga: (d.goals && d.goals[1]) || 0 };
+  if (d.stats && d.stats.side) inp.side = d.stats.side;
+  if (d.lastGoal != null && min - d.lastGoal >= 0 && min - d.lastGoal <= 5) inp.rg = true;
+  var pv = tipLivePrev(m.id, min, half);
+  if (pv) inp.prev = pv;
+  return inp;
+}
 /* 3.28.0 — valutazione veloce di una partita dei pronostici con i dati live già arrivati (scansione o sincronizzazione) */
 function tipLiveEval(m) {
   var d = (tipUI.liveData || {})[m.id];
@@ -1013,9 +1026,7 @@ function tipLiveEval(m) {
   };
   if (!d || d.elapsed == null || !d.goals) return tipKickoff(m).getTime() < Date.now() + 10 * 60e3 ? preAct() : null;
   if ((d.status !== '2H' && Number(d.elapsed) < 15)) { var pa = preAct(); if (pa) return pa; }
-  var half = d.status === '2H' || d.status === 'HT' || d.elapsed > 46 ? 2 : 1, min = d.status === 'HT' ? 45 : Number(d.elapsed);
-  var inp = { min: min, half: half, gh: d.goals[0] || 0, ga: d.goals[1] || 0 };
-  if (d.stats && d.stats.side) inp.side = d.stats.side;
+  var inp = tipLiveInput(m, d), min = inp.min, half = inp.half;
   var r = tipInplay(m, inp), y = { m: m, r: r, min: min, half: half, x: { stats: d.stats } };
   return { r: r, min: min, act: tipQuickAction(y) };
 }
@@ -2742,6 +2753,21 @@ function bindTips() {
       var id = b.dataset.liveStar, mm = (tipUI.scanMap || {})[id] || tipLiveStars().find(function (z) { return z.afId === id; }) || {};
       tipToggleLiveStar(id, { home: mm.home, away: mm.away, league: mm.league });
       render();
+    };
+  });
+  /* 3.30.0 — sezioni a tendina: tocca il titolo per chiudere/aprire (si ricorda) */
+  var closed = {};
+  try { closed = JSON.parse(localStorage.getItem('tipClosed') || '{}') || {}; } catch (e) { closed = {}; }
+  main.querySelectorAll('.tip-top > .tip-top-head, .tip-markets > h2').forEach(function (h) {
+    var sec = h.parentElement, key = (h.querySelector('b') || h).textContent.trim().slice(0, 40);
+    sec.classList.add('tip-fold');
+    if (closed[key]) sec.classList.add('folded');
+    h.setAttribute('role', 'button');
+    h.onclick = function (e) {
+      if (e.target.closest('input,select,button:not(.tip-top-head)')) return;
+      var f = sec.classList.toggle('folded');
+      if (f) closed[key] = 1; else delete closed[key];
+      try { localStorage.setItem('tipClosed', JSON.stringify(closed)); } catch (e2) { /* ok */ }
     };
   });
   var lex = main.querySelector('[data-live-export]');
