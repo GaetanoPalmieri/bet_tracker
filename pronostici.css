@@ -570,3 +570,10 @@ dialog#editor.sheet.tip-dlg {
 .tip-next-goal{display:block!important;margin-top:3px;color:#36bda5!important;font-size:11px!important;font-weight:750;white-space:normal!important;line-height:1.3}
 .tip-memory-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border:1px solid var(--suite-glass-edge);border-radius:12px;background:color-mix(in srgb,var(--suite-text) 4%,transparent)}.tip-memory-row>div{min-width:0;display:grid;gap:4px}.tip-memory-row b{font-size:12px;overflow-wrap:anywhere}.tip-memory-row small{font-size:10.5px;color:var(--suite-text-soft)}.tip-memory-state{flex-shrink:0;max-width:105px;text-align:right;font-size:10.5px;font-weight:750;color:#36bda5}
 @media(max-width:420px){.tip-live-sticky{top:5px;padding:9px}.tip-live-sticky .tip-scan-fixed{min-width:108px;font-size:12px!important}.tip-live-sticky-label small{font-size:9.5px}.tip-memory-row{align-items:flex-start;flex-direction:column}.tip-memory-state{text-align:left}}
+
+/* 3.38.0 · Conteggi visibili e informazioni di affidabilità */
+.tip-top-head span{display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:3px;padding:6px 10px;border-radius:999px;background:rgba(24,152,136,.16);border:1px solid rgba(24,152,136,.42);color:var(--suite-text)!important;font-size:12px!important;font-weight:850!important;line-height:1.2;font-variant-numeric:tabular-nums}
+.tip-live-counts span{background:rgba(24,152,136,.12);border-color:rgba(24,152,136,.45);font-weight:750;color:var(--suite-text)}
+.tip-live-counts strong{font-size:24px;color:#27bb9d}
+.tip-live-caution{padding:11px 12px;border:1px solid rgba(221,155,59,.48);border-radius:12px;background:rgba(221,155,59,.09);line-height:1.5;font-size:12px;margin:8px 0 12px}
+.tip-tpick small{white-space:normal!important;max-width:140px}
