@@ -1,0 +1,8 @@
+Versione 3.44.0 — Correzione filtro di pressione offensiva
+
+- Rimossa esclusione automatica F < 1.10: la pressione influenza gia il modello live.
+- Se ritmo F < 0.90, un segnale altrimenti valido viene al massimo DA VALUTARE, mai OTTIMA.
+- Restano i blocchi per dati mancanti, stime molto basse, finestra temporale e gol residui attesi insufficienti.
+- Vanno nello storico solo segnali OTTIMA e DA VALUTARE. I monitoraggi con step costoso o ingresso futuro restano senza esito scommessa.
+- Nessuna modifica alla Edge Function Supabase.
+- Validare sulle partite reali con dati/provider aggiornati: le probabilita non sono calibrate.

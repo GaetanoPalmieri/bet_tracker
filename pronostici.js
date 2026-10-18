@@ -995,7 +995,7 @@ function tipScanPanel() {
   };
   return head +
     '<p class="muted tip-hint">Copertura Live: tutte le competizioni restituite dal provider, incluse femminili e giovanili se presenti nel feed. Quelle non fornite non possono essere mostrate.</p><div class="tip-live-counts"><span><strong>' + S.list.length + '</strong> trovate</span><span><strong>' + all.length + '</strong> valutate</span><span><strong>' + rows.length + '</strong> ' + (showAll ? 'mostrate' : 'selezionate') + '</span></div>' +
-    '<p class="tip-live-caution">Le percentuali sono stime del modello, non frequenze di vincita verificate. <b>OTTIMA</b> richiede almeno 78% stimato, ritmo offensivo convincente, xG o dati recenti, tempo utile e superamento della soglia storica relativa. Controlla risultato, minuto e quota prima di qualsiasi decisione.</p><p class="muted tip-hint">Ogni indicazione riguarda il prossimo gol rispetto al risultato dell’ultima scansione.</p>' +
+    '<p class="tip-live-caution">Le percentuali sono stime del modello, non frequenze di vincita verificate. <b>OTTIMA</b> richiede almeno 78% stimato, dati live sufficienti, tempo utile e superamento della soglia storica relativa; ritmo sotto le attese limita il giudizio ad arancione. Controlla risultato, minuto e quota prima di qualsiasi decisione.</p><p class="muted tip-hint">Ogni indicazione riguarda il prossimo gol rispetto al risultato dell’ultima scansione.</p>' +
     (rows.length ? '<div class="tip-tlist">' + rows.map(rowH).join('') + '</div>' : '<p class="muted tip-tnone">Niente da giocare adesso: nessuna partita da gol, non bloccata, con quota 1.50 raggiungibile. Riscansiona tra qualche minuto.</p>') +
     (early.length && !showAll ? '<p class="muted tip-hint">' + early.length + ' appena iniziate (sotto il 15’): rivaluta più avanti.</p>' : '') +
     '<button type="button" class="tip-ctx-btn" data-scan-all>' + (showAll ? 'Mostra solo le giocabili' : 'Mostra tutte le partite') + '</button>' +
@@ -1146,12 +1146,13 @@ function tipReportPanel() {
     '<div class="actions"><button type="button" data-live-export>Esporta traccia per il retraining</button></div></section>';
 }
 function tipPlayThr(k, min) { var t = TIP_PLAY_THR[k]; return t ? tipLmInterp(t, min) / 100 : 1; }
-/* 3.39.0 — filtro prudenziale comune a scanner, elenco e dettaglio.
-   Non è una calibrazione empirica: in assenza di dati sufficienti NON si consiglia. */
+/* 3.44.0 — Controlli di qualita dei dati. Il ritmo F e gia incluso nella
+   previsione live tramite L: usarlo anche come veto F>=1.10 produrrebbe
+   una doppia penalizzazione e scarterebbe sistematicamente le partite. */
 function tipLiveSafety(r, min, half, x) {
   if (!r || !r.used) return 'statistiche live assenti';
   if (!r.xg && !r.recent) return 'mancano xG e un confronto recente dei tiri';
-  if (!U.finite(r.F) || r.F < 1.10) return 'pressione offensiva non convincente';
+  if (!U.finite(r.F)) return 'ritmo live non misurabile';
   if (half === 1 && (min < 20 || min >= 40)) return 'finestra del primo tempo troppo incerta';
   if (half === 2 && (min < 48 || min >= 78)) return 'tempo residuo non sufficientemente affidabile';
   if (!U.finite(r.L) || r.L < 0.9) return 'gol residui attesi troppo bassi';
@@ -1163,20 +1164,22 @@ function tipLiveSafetyReason(r, min, half, x) {
   if (!x || x.p < 0.78) return 'stima inferiore alla soglia prudenziale del 78%';
   return null;
 }
-/* 3.43.0 — Qualità statistica distinta da ingresso ed esposizione.
-   Le percentuali sono stime non calibrate. La fascia arancione NON e un invito a scommettere. */
+/* 3.44.0 — Il ritmo offensivo contribuisce gia alla stima numerica;
+   un ritmo sotto le attese limita la fiducia (verde->arancione), non
+   annulla indiscriminatamente i segnali sopra soglia. */
 function tipPlayTier(r, min, half, x) {
   if (!x || !Number.isFinite(x.p) || !Number.isFinite(x.thr)) return 'none';
   if (tipLiveSafety(r, min, half, x)) return 'none';
   if (x.p < 0.50 || x.p < x.thr - 0.04) return 'none';
   // Un segnale condizionale o a rischio non diventa mai una puntata verde immediata.
-  if (x.at || x.costly) return 'try';
+  if (x.at || x.costly || (r.used && r.F < 0.90)) return 'try';
   return x.p >= 0.78 && x.p >= x.thr ? 'excellent' : 'try';
 }
 function tipPlayDecision(r, min, half, x) {
   if (x.warm && x.at) return 'DA VALUTARE · ATTENDI: ingresso possibile al ' + x.at + '’ soltanto dopo nuova verifica; non giocare adesso';
   if (x.warm && x.costly) return 'DA VALUTARE · STEP COSTOSO: segnale interessante, ma progressione non consigliata';
   if (x.green) return 'OTTIMA: segnale sopra soglia e filtri statistici superati; stima non calibrata';
+  if (x.warm && r && r.used && U.finite(r.F) && r.F < 0.90) return 'DA VALUTARE: ritmo ' + Math.round((r.F - 1) * 100) + '% rispetto alle attese, gia incluso nella stima; segnale da monitorare';
   if (x.warm) return 'DA VALUTARE: segnale vicino o sopra soglia; non equivale a una giocata sicura';
   var blocker = tipLiveSafety(r, min, half, x);
   if (blocker) return 'Non consigliata: ' + blocker + (x.p >= x.thr ? ' (soglia storica superata)' : '');
