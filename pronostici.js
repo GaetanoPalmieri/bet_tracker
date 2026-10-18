@@ -1193,18 +1193,23 @@ function tipPlayTier(r, min, half, x) {
   if (p >= tipGreenFloor(x) && (r.xg || r.recent)) return 'excellent';
   return 'try';
 }
+/* 3.46.2: le tre soglie sono diverse: stima, minimo arancione e minimo verde. */
+function tipAmberFloor(x) { return Math.max(0.48, x.thr - 0.025); }
+function tipDecisionThresholds(x) {
+  return 'Per DA VALUTARE ≥' + Math.ceil(tipAmberFloor(x) * 1000) / 10 +
+    '% · per OTTIMA ≥' + Math.round(tipGreenFloor(x) * 100) + '%';
+}
 function tipPlayDecision(r, min, half, x) {
   var p = U.finite(x.evalP) ? x.evalP : x.p;
   if (x.warm && x.at) return 'DA VALUTARE · IN ATTESA: rivalutare al ' + x.at + '’; non entrare adesso';
   if (x.warm && x.costly) return 'DA VALUTARE · STEP COSTOSO: progressione non consigliata';
-  if (x.green) return 'OTTIMA rispetto alla soglia del modello (margine ≥5 punti); probabilita NON calibrata, quota reale da verificare';
-  if (x.warm) return 'DA VALUTARE: ' + Math.round(p * 100) + '% stimato, soglia ' + Math.round(x.thr * 100) + '%, per verde richiesto ' + Math.round(tipGreenFloor(x) * 100) + '%';
+  if (x.green) return 'OTTIMA rispetto alla soglia relativa; probabilità NON calibrata, quota reale da verificare';
+  if (x.warm) return 'DA VALUTARE · stima ' + Math.round(p * 100) + '% · ' + tipDecisionThresholds(x);
   var blocker = tipLiveSafety(r, min, half, x);
-  if (blocker) return 'Non consigliata: ' + blocker;
+  if (blocker) return 'Non consigliata: ' + blocker + ' · ' + tipDecisionThresholds(x);
   if (!U.finite(p) || !U.finite(x.thr)) return 'Non consigliata: stima non disponibile';
-  if (p < 0.48) return 'Non consigliata: probabilita stimata sotto il 48%';
-  if (p < x.thr - 0.025) return 'Non consigliata: stima troppo sotto la soglia relativa';
-  return 'Non consigliata: requisiti non raggiunti';
+  if (p < tipAmberFloor(x)) return 'Non consigliata: stima ' + Math.round(p * 100) + '% inferiore al minimo per DA VALUTARE (' + (Math.ceil(tipAmberFloor(x) * 1000) / 10) + '%)';
+  return 'Non consigliata: requisiti non raggiunti · ' + tipDecisionThresholds(x);
 }
 function tipCountSummary(total, excellent, maybe) {
   return '<div class="tip-count-summary" aria-label="' + excellent + ' ottime, ' + maybe + ' da valutare, ' + total + ' partite analizzate">' +
@@ -1396,7 +1401,7 @@ function tipLivePanel(list) {
       L.map(function (x) {
         var P2 = x.P;
         return '<button type="button" class="tip-trow' + (x.pl.green ? ' tip-hot' : x.pl.warm ? ' tip-warm' : '') + '" ' + P2.open + '><span class="tip-tn tip-ln">' + P2.min + '\'</span><span class="tip-tmain"><b>' + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b><small>' +
-          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small><small class="tip-next-goal">⚽ Next gol: ' + (P2.sc ? P2.sc[0] + P2.sc[1] + 1 : 'da verificare') + '° · base ' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : 'non disponibile') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : x.pl.warm ? 'tip-amber-text' : '') + '">' + Math.round((x.pl.evalP == null ? x.pl.p : x.pl.evalP) * 100) + '%</span></b><small>' + (x.pl.green ? 'OTTIMA ›' : x.pl.warm ? 'DA VALUTARE ›' : 'Soglia relativa ' + Math.round(x.pl.thr * 100) + '% · esclusa ›') + '</small><small class="tip-decision-reason">' + U.esc(tipPlayDecision(P2.r, P2.min, P2.half, x.pl)) + '</small></span></button>';
+          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small><small class="tip-next-goal">⚽ Next gol: ' + (P2.sc ? P2.sc[0] + P2.sc[1] + 1 : 'da verificare') + '° · base ' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : 'non disponibile') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : x.pl.warm ? 'tip-amber-text' : '') + '">' + Math.round((x.pl.evalP == null ? x.pl.p : x.pl.evalP) * 100) + '%</span></b><small>' + (x.pl.green ? 'OTTIMA ›' : x.pl.warm ? 'DA VALUTARE ›' : 'ESCLUSA · soglia relativa ' + Math.round(x.pl.thr * 100) + '% ›') + '</small><small class="tip-decision-reason">' + U.esc(tipPlayDecision(P2.r, P2.min, P2.half, x.pl)) + '</small></span></button>';
       }).join('') + '</div></section>';
   }).join('');
   return (
