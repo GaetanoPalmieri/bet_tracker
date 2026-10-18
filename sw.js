@@ -3,30 +3,30 @@
    - Pagina: rete con timeout di 3 secondi, poi la copia salvata (funziona anche offline).
    - File con ?v= e icone: prima la cache; un nuovo rilascio cambia ?v= e quindi l'indirizzo.
    - Il nuovo worker resta in attesa finché l'app non chiede di attivarlo (avviso "Aggiorna"). */
-const VERSION = '3.19.2';
+const VERSION = '3.20.0';
 const PREFIX = 'bet-tracker-';
 const CACHE = PREFIX + VERSION;
 const SHELL = [
   './',
   './index.html',
-  './suite.js?v=3.19.2',
-  './colors.css?v=3.19.2',
-  './base.css?v=3.19.2',
-  './shared.css?v=3.19.2',
-  './app.css?v=3.19.2',
-  './suite.css?v=3.19.2',
-  './suite-tokens.css?v=3.19.2',
-  './vetro.css?v=3.19.2',
-  './shared.js?v=3.19.2',
-  './app.js?v=3.19.2',
-  './pronostici.js?v=3.19.2',
-  './pronostici.css?v=3.19.2',
-  './manifest.webmanifest?v=3.19.2',
-  './favicon.ico?v=3.19.2',
-  './favicon-32.png?v=3.19.2',
-  './apple-touch-icon.png?v=3.19.2',
-  './bet-icon-192.png?v=3.19.2',
-  './bet-icon-512.png?v=3.19.2'
+  './suite.js?v=3.20.0',
+  './colors.css?v=3.20.0',
+  './base.css?v=3.20.0',
+  './shared.css?v=3.20.0',
+  './app.css?v=3.20.0',
+  './suite.css?v=3.20.0',
+  './suite-tokens.css?v=3.20.0',
+  './vetro.css?v=3.20.0',
+  './shared.js?v=3.20.0',
+  './app.js?v=3.20.0',
+  './pronostici.js?v=3.20.0',
+  './pronostici.css?v=3.20.0',
+  './manifest.webmanifest?v=3.20.0',
+  './favicon.ico?v=3.20.0',
+  './favicon-32.png?v=3.20.0',
+  './apple-touch-icon.png?v=3.20.0',
+  './bet-icon-192.png?v=3.20.0',
+  './bet-icon-512.png?v=3.20.0'
 ];
 const NETWORK_TIMEOUT_MS = 3000;
 
@@ -65,7 +65,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // TheSportsDB e Supabase: sempre dalla rete
-  if (url.pathname.endsWith('/pronostici.json')) return; // 3.19.2 — file dei pronostici: sempre dalla rete
+  if (url.pathname.endsWith('/pronostici.json')) return; // 3.20.0 — file dei pronostici: sempre dalla rete
 
   if (req.mode === 'navigate') {
     const network = fromNetworkAndStore(req, './index.html');

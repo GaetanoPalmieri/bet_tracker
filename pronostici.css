@@ -438,3 +438,12 @@ dialog#editor.sheet.tip-dlg {
 .tip-ipsum{list-style:none;margin:8px 0 4px;padding:0;display:grid;gap:4px}
 .tip-ipsum li{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
 .tip-ipsum li span{opacity:.85}
+/* 3.20.0 — preferiti */
+.tip-star{margin-left:auto;padding:2px 6px;font-size:1.15rem;line-height:1;color:var(--muted,#888);background:none;border:0;cursor:pointer;font-family:inherit}
+.tip-star.on{color:#f5b400}
+.tip-srowx{display:flex;align-items:center;gap:6px}
+.tip-srowx .tip-trow{flex:1;min-width:0}
+.tip-trow-off{opacity:.6}
+.tip-starf{border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.35);border-radius:12px;padding:6px 10px;font:inherit;font-size:.85rem;color:inherit;white-space:nowrap;cursor:pointer}
+.tip-starf.on{color:#b98700;border-color:#f5b400}
+@media (prefers-color-scheme:dark){.tip-starf{background:rgba(30,30,34,.5);border-color:rgba(255,255,255,.12)}.tip-starf.on{color:#f5b400}}

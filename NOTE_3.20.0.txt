@@ -1,0 +1,16 @@
+Bet Tracker 3.20.0
+
+Preferite
+- Pronostici: stella ☆ su ogni partita (e nel dettaglio) per metterla tra le preferite.
+  Accanto alla ricerca c'e' il filtro "☆ Preferite" per vedere solo quelle.
+- Live: stella sulle partite dello scanner e dentro "Live · sintonizza".
+  In cima alla sezione Live c'e' "★ Preferite" con le partite live scelte (dallo scanner e dai pronostici),
+  aggiornate a ogni scansione. Le preferite live si tolgono da sole dopo 14 ore.
+
+Live: sincronizzazione piu' robusta (funzione Supabase)
+- Se la partita non e' piu' nella lista live, la funzione la legge direttamente per id.
+- Se il nome non coincide, prova anche senza controllo dell'orario.
+- Se le statistiche mancano nella lista live, le chiede all'evento.
+- Se proprio non la trova, il messaggio elenca alcune partite live di quel campionato, per capire il problema.
+
+Supabase: incollare di nuovo la funzione (pronostici-dati.txt) e Deploy.
