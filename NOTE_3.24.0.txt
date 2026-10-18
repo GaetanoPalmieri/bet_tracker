@@ -1,0 +1,14 @@
+Bet Tracker 3.24.0
+
+Live: "Cosa fare" (in cima, senza scrivere quote)
+- Per il gol entro l'intervallo (fino al 40') e per un altro gol entro la fine, l'app dice:
+  - se segnano: PROBABILE / abbastanza probabile / incerto / IMPROBABILE con la percentuale;
+  - GIOCA ORA, se la quota giusta e' gia' 1.50 o piu';
+  - se la quota adesso e' troppo bassa: come arrivarci
+      A step: gol entro il minuto X, se no entro intervallo/fine, con la quota minima di ogni step;
+      Aspetta il minuto Y: se ancora nessun gol, con che probabilita' e a che quota;
+  - NO, se e' improbabile o se a 1.50 non si arriva ne' a step ne' aspettando.
+- Quando risincronizzi piu' tardi si ricalcola tutto.
+- I consigli finiscono nella traccia live (Statistiche › Live: consigli e risultati).
+
+(Contiene la 3.23.0. Funzione Supabase invariata rispetto alla 3.23.0.)
