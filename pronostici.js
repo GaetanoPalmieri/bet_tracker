@@ -748,6 +748,15 @@ function tipInplay(m, inp, book) {
     x = Math.max(-1.2, Math.min(1.2, x));
     return { all: lam[i] * R.all * Math.exp(x), ht: lam[i] * R.ht * Math.exp(x) * mod.c1, mult: Math.exp(x), parts: parts };
   });
+  /* 3.29.0 — correzione dalla simulazione (partite da gol, 60'-70'): il modello era ottimista
+     sul pareggio nel 2° tempo (68% contro 65% reale) e soprattutto subito dopo un gol che pareggia
+     (68% contro 61%); un po' anche dopo un gol con scarto 1 (69% contro 67%). */
+  if (!book && half === 2 && min >= 55) {
+    var dd = Math.abs(g[0] - g[1]), kf = 1;
+    if (dd === 0) kf = inp.rg ? 0.83 : 0.92;
+    else if (dd === 1 && inp.rg) kf = 0.94;
+    if (kf !== 1) out.forEach(function (o) { o.all *= kf; o.ht *= kf; o.mult *= kf; });
+  }
   var rh = out[0].all, ra = out[1].all, L = rh + ra, Lht = out[0].ht + out[1].ht, p0 = Math.exp(-L),
     G = g[0] + g[1], lines = [];
   lines.push({ k: 'n1', label: 'Over ' + (G + 0.5) + ' finale', sub: 'almeno un altro gol', p: 1 - p0 });
@@ -996,7 +1005,14 @@ function tipQuickAction(y) {
 /* 3.28.0 — valutazione veloce di una partita dei pronostici con i dati live già arrivati (scansione o sincronizzazione) */
 function tipLiveEval(m) {
   var d = (tipUI.liveData || {})[m.id];
-  if (!d || d.elapsed == null || !d.goals) return null;
+  /* 3.29.0 — partite da giocare per il prepartita (Top / consigli prepartita): verdi anche appena iniziate */
+  var preAct = function () {
+    var rec = tipPreValue(m, tipTopIds()[m.id])[0];
+    if (!rec) return null;
+    return { r: null, min: d && d.elapsed != null ? Number(d.elapsed) : 0, act: { k: 'pre', t: 'PREMATCH', c: 'positive', p: rec.p, w: rec.k === 'g30' ? '1T' : 'fine', s: 'da prematch: ' + rec.label + ' da ' + rec.need.toFixed(2) } };
+  };
+  if (!d || d.elapsed == null || !d.goals) return tipKickoff(m).getTime() < Date.now() + 10 * 60e3 ? preAct() : null;
+  if ((d.status !== '2H' && Number(d.elapsed) < 15)) { var pa = preAct(); if (pa) return pa; }
   var half = d.status === '2H' || d.status === 'HT' || d.elapsed > 46 ? 2 : 1, min = d.status === 'HT' ? 45 : Number(d.elapsed);
   var inp = { min: min, half: half, gh: d.goals[0] || 0, ga: d.goals[1] || 0 };
   if (d.stats && d.stats.side) inp.side = d.stats.side;
@@ -1018,7 +1034,10 @@ function tipLivePanel(list) {
     var d = (tipUI.liveData || {})[m.id],
       sc = d && d.goals && d.goals[0] != null ? d.goals[0] + '-' + d.goals[1] : 'vs',
       mn = d && d.elapsed != null ? d.elapsed + '\'' : U.esc(m.time);
-    var ev = evals[m.id], go = ev && ev.act.k !== 'no';
+    var ev = Object.prototype.hasOwnProperty.call(evals, m.id) ? evals[m.id] : (function () {
+      var rec = tipPreValue(m, tipTopIds()[m.id])[0];
+      return rec ? { act: { k: 'pre', t: 'PREMATCH', c: 'positive', p: rec.p, w: rec.k === 'g30' ? '1T' : 'fine', s: 'da prematch: ' + rec.label + ' da ' + rec.need.toFixed(2) } } : null;
+    })(), go = ev && ev.act.k !== 'no';
     return '<button type="button" class="tip-trow' + (go ? ' tip-hot' : '') + '" data-tip-live="' + U.esc(m.id) + '"><span class="tip-tn tip-ln">' + mn + '</span><span class="tip-tmain"><b>' + U.esc(m.home) + ' – ' + U.esc(m.away) + '</b><small>' + (go ? '<b class="positive">' + (ev.act.w === '1T' ? 'gol 1° tempo' : 'gol 2° tempo / fine') + '</b> · ' + ev.act.s : U.esc(m.league) + (d && d.at ? ' · ' + new Date(d.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '')) + '</small></span><span class="tip-tpick"><b>' + sc + (go ? ' <span class="' + ev.act.c + '">' + ev.act.t + '</span>' : '') + '</b><small>' + (go ? Math.round(ev.act.p * 100) + '% ›' : ev ? 'niente ›' : 'valuta ›') + '</small></span></button>';
   };
   return (
@@ -2161,9 +2180,12 @@ function tipPreValue(m, top) {
   out.sort(function (a, b) { return (b.ok - a.ok) || (b.ev - a.ev) || (b.p - a.p); });
   return out;
 }
-function tipPrePlayPanel(list) {
-  var now = Date.now(), P = tipParams(), inTop = {};
-  var days = [];
+/* partite nelle Top (1° tempo e Over 1.5), per giorno; calcolo tenuto per un minuto */
+function tipTopIds(list) {
+  list = list || db.predictions || [];
+  var key = list.length + '|' + Math.floor(Date.now() / 60e3);
+  if (tipUI._topIds && tipUI._topIds.key === key) return tipUI._topIds.map;
+  var P = tipParams(), inTop = {}, days = [];
   list.forEach(function (m) { if (days.indexOf(m.date) < 0) days.push(m.date); });
   days.forEach(function (d) {
     var T = tipTopFor(d, list, P);
@@ -2172,6 +2194,11 @@ function tipPrePlayPanel(list) {
       (T[k].items || []).concat(T[k].ext || []).forEach(function (c) { (inTop[c.m.id] = inTop[c.m.id] || {})[k] = true; });
     });
   });
+  tipUI._topIds = { key: key, map: inTop };
+  return inTop;
+}
+function tipPrePlayPanel(list) {
+  var now = Date.now(), inTop = tipTopIds(list);
   var items = list.filter(function (m) {
     var ko = tipKickoff(m).getTime();
     if (m.cancelled || tipNum(m.ft) || ko < now - 5 * 60e3 || ko > now + 36 * 3600e3) return false;

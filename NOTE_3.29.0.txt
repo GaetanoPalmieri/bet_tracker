@@ -1,0 +1,13 @@
+Bet Tracker 3.29.0
+
+Live meno ottimista dopo un gol
+- Controllato su 8.534 partite (partite da gol, 60'-70'):
+  pareggio nel 2° tempo: diceva 68%, reale 65% -> ora 65%;
+  gol che ha appena pareggiato: diceva 68%, reale 61% -> ora 62%;
+  gol appena segnato con scarto 1: diceva 69%, reale 67% -> ora 67%.
+- Meno "gioca" subito dopo un gol quando il margine era al limite.
+
+Partite da giocare per il prepartita in verde nel Live
+- In corso e Tra poco: le partite con un consiglio prepartita (Top 1° tempo -> gol entro il 30', Over 2.5 / Goal con valore)
+  sono bordate di verde con "PREMATCH" e il consiglio (es. "da prematch: Gol entro il 30' da 1.61"),
+  anche appena iniziate. Dal 15' in poi conta la valutazione live.
