@@ -577,3 +577,38 @@ dialog#editor.sheet.tip-dlg {
 .tip-live-counts strong{font-size:24px;color:#27bb9d}
 .tip-live-caution{padding:11px 12px;border:1px solid rgba(221,155,59,.48);border-radius:12px;background:rgba(221,155,59,.09);line-height:1.5;font-size:12px;margin:8px 0 12px}
 .tip-tpick small{white-space:normal!important;max-width:140px}
+
+/* 3.39.0 · contatori sintetici e fascia arancione */
+.tip-grade-section>.tip-top-head{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.tip-grade-section>.tip-top-head>b{flex:1 1 160px;line-height:1.35}
+.tip-top-head .tip-count-summary,.tip-scan-signal .tip-count-summary{display:inline-flex;gap:7px;align-items:center;padding:0;border:0;background:transparent;border-radius:0;flex-wrap:nowrap;color:inherit!important}
+.tip-count-strong{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:57px;padding:6px 8px;border-radius:12px;border:1px solid}
+.tip-count-strong b{font-size:20px!important;line-height:1.1;font-weight:900;letter-spacing:-.5px}
+.tip-count-strong small{font-size:9px!important;line-height:1.15;font-weight:850;white-space:nowrap}
+.tip-count-green{background:rgba(31,170,121,.17);border-color:rgba(31,170,121,.6);color:#46ddad!important}
+.tip-count-amber{background:rgba(244,162,51,.13);border-color:rgba(244,162,51,.55);color:#ffbf62!important}
+.tip-count-total{font-size:11px!important;color:var(--suite-text-soft)!important;white-space:nowrap;background:transparent!important;border:0!important;padding:0!important}
+.tip-trow.tip-warm,.tip-play.tip-warm{border-color:rgba(244,162,51,.72)!important;background:rgba(244,162,51,.10)!important}
+.tip-amber-text{color:#ffc16c!important;font-weight:800!important}
+.tip-grade-label{font-weight:750;line-height:1.2}
+.tip-scan-signal{display:flex;justify-content:center;padding:10px 0 8px;border-bottom:1px solid var(--suite-glass-edge);margin:0 0 7px}
+@media(max-width:440px){.tip-count-strong{min-width:48px;padding:5px 6px}.tip-count-strong b{font-size:18px!important}.tip-count-strong small{font-size:8px!important}.tip-count-total{font-size:10px!important}.tip-grade-section>.tip-top-head>b{font-size:13px}}
+
+/* 3.40.0 — stato visivo degli esiti dei consigli salvati */
+.tip-memory-summary{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.tip-memory-count{flex:1 1 72px;min-width:67px;border:1px solid var(--suite-glass-edge);border-radius:13px;padding:11px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;background:rgba(125,138,153,.08)}
+.tip-memory-count strong{font-size:23px;line-height:1;font-weight:850;font-variant-numeric:tabular-nums}
+.tip-memory-count small{font-size:11px;font-weight:700}
+.tip-memory-count-win{background:rgba(24,159,113,.14);border-color:rgba(39,195,131,.45);color:#51e2a4}
+.tip-memory-count-loss{background:rgba(216,59,71,.13);border-color:rgba(240,83,94,.42);color:#ff858b}
+.tip-memory-count-wait{color:var(--suite-text)}
+.tip-memory-row{border-left:4px solid rgba(150,165,180,.35);padding:12px;gap:10px}
+.tip-memory-row.tip-memory-win{border-left-color:#25b47c;background:rgba(21,144,91,.12)}
+.tip-memory-row.tip-memory-loss{border-left-color:#ee5963;background:rgba(190,43,54,.12)}
+.tip-memory-row.tip-memory-skip{border-left-color:#969daa}
+.tip-memory-state{max-width:none!important;border-radius:999px;padding:7px 10px;font-size:11px!important;white-space:nowrap}
+.tip-memory-state-win{color:#61f0b4!important;background:rgba(26,152,103,.2)}
+.tip-memory-state-loss{color:#ff9297!important;background:rgba(207,50,63,.2)}
+.tip-memory-state-wait{color:var(--suite-text-soft)!important;background:rgba(130,140,150,.14)}
+.tip-memory-state-skip{color:var(--suite-text-soft)!important;background:rgba(130,140,150,.14)}
+@media(max-width:420px){.tip-memory-row{flex-direction:row;align-items:center}.tip-memory-state{font-size:10px!important;padding:6px 8px}.tip-memory-info{flex:1;min-width:0}}

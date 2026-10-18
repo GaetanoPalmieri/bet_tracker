@@ -581,15 +581,15 @@ async function tipAutoResults(opts) {
   /* 3.23.0 — partite valutate nel live ancora senza esito */
   var logTodo = {};
   (((db.predModel || {}).liveLog) || []).forEach(function (x) {
-    if (x.res || (x.miss || 0) >= 3) return;
+    if (x.res || (x.miss || 0) >= 10) return;
     var ko = tipKickoff({ date: x.date, time: x.time }).getTime();
-    if (!(ko + 125 * 60e3 < now) || ko < now - 5 * 86400e3) return;
+    if (!(ko + 125 * 60e3 < now) || ko < now - 7 * 86400e3) return;
     if (!logTodo[x.id]) logTodo[x.id] = { id: 'log:' + x.id, date: x.date, time: x.time, home: x.home, away: x.away, league: x.league, afId: x.afId || null, needFg: true, needGoals: true };
   });
   (((db.predModel || {}).playLog) || []).forEach(function (x) {
-    if (x.res != null || (x.miss || 0) >= 3 || logTodo[x.id]) return;
+    if (x.res != null || (x.miss || 0) >= 10 || logTodo[x.id]) return;
     var ko = tipKickoff({ date: x.date, time: x.time }).getTime();
-    if (!(ko + 125 * 60e3 < now) || ko < now - 5 * 86400e3) return;
+    if (!(ko + 125 * 60e3 < now) || ko < now - 7 * 86400e3) return;
     logTodo[x.id] = { id: 'log:' + x.id, date: x.date, time: x.time, home: x.home, away: x.away, league: x.league, afId: x.afId || null, needFg: true, needGoals: true };
   });
   var logList = Object.keys(logTodo).map(function (k) { return logTodo[k]; });
@@ -1146,7 +1146,7 @@ function tipReportPanel() {
     '<div class="actions"><button type="button" data-live-export>Esporta traccia per il retraining</button></div></section>';
 }
 function tipPlayThr(k, min) { var t = TIP_PLAY_THR[k]; return t ? tipLmInterp(t, min) / 100 : 1; }
-/* 3.38.0 — filtro prudenziale comune a scanner, elenco e dettaglio.
+/* 3.39.0 — filtro prudenziale comune a scanner, elenco e dettaglio.
    Non è una calibrazione empirica: in assenza di dati sufficienti NON si consiglia. */
 function tipLiveSafety(r, min, half, x) {
   if (!r || !r.used) return 'statistiche live assenti';
@@ -1234,7 +1234,7 @@ function tipPlays(r, min, half) {
   });
   return out;
 }
-/* 3.38.0: etichette trasparenti e prudenza quando mancano statistiche live. */
+/* 3.39.0: etichette trasparenti e prudenza quando mancano statistiche live. */
 function tipSignalLabel(p, used) {
   if (!used) return 'Dati insufficienti';
   if (p >= 0.80) return 'Stima alta';
@@ -1287,13 +1287,25 @@ function tipLiveEval(m) {
 /* 3.36.0 — Storico permanente delle opportunità ottime, distinto dalla raccomandazione corrente. */
 function tipExcellentArchive() {
   var L = ((db.predModel || {}).playLog || []).slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
-  if (!L.length) return '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>★ Memoria delle ottime</b><span>0 salvate</span></div><p class="muted tip-tnone">Le giocate ottime individuate durante scansioni e sincronizzazioni saranno conservate qui.</p></section>';
-  var subset = L.slice(0, 30);
-  return '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>★ Memoria delle ottime</b><span>' + L.length + ' salvate · ultime ' + subset.length + '</span></div>' +
-    '<p class="muted tip-hint">Storico dei consigli emessi, non scommesse effettuate. Quando arriva un gol, la raccomandazione precedente non diventa automaticamente un nuovo ingresso.</p>' +
+  if (!L.length) return '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>★ Pronostici salvati</b><span>0 salvati</span></div><p class="muted tip-tnone">I consigli ottimi saranno registrati qui, con l’esito quando il risultato sarà disponibile.</p></section>';
+  var won = L.filter(function(e){return e.res === 1;}).length;
+  var lost = L.filter(function(e){return e.res === 0;}).length;
+  var waiting = L.filter(function(e){return e.res == null;}).length;
+  var skipped = L.filter(function(e){return e.res === 'skip';}).length;
+  var subset = L.slice(0, 40);
+  return '<section class="card tip-top tip-live-section tip-archive"><div class="tip-top-head"><b>★ Pronostici salvati</b><span>' + L.length + ' totali</span></div>' +
+    '<div class="tip-memory-summary" aria-label="Riepilogo esiti">' +
+      '<div class="tip-memory-count tip-memory-count-win"><strong>' + won + '</strong><small>Vinte</small></div>' +
+      '<div class="tip-memory-count tip-memory-count-loss"><strong>' + lost + '</strong><small>Perse</small></div>' +
+      '<div class="tip-memory-count tip-memory-count-wait"><strong>' + waiting + '</strong><small>In attesa</small></div>' +
+      (skipped ? '<div class="tip-memory-count tip-memory-count-skip"><strong>' + skipped + '</strong><small>Non giocate</small></div>' : '') + '</div>' +
+    '<p class="muted tip-hint">Esito del consiglio al minuto in cui è stato salvato, non dell’intera partita. Verde = vinta, rosso = persa. Le strategie di attesa senza ingresso sono neutre. I risultati vengono aggiornati da Risultati automatici.</p>' +
     '<div class="tip-tlist">' + subset.map(function (e) {
       var score = (e.gh || 0) + '-' + (e.ga || 0), target = (e.gh || 0) + (e.ga || 0) + 1;
-      return '<div class="tip-memory-row"><div><b>' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</b><small>' + U.esc(TIP_PLAY_SHORT[e.k] || e.k) + ' · ' + U.esc(e.date || '') + ' · ' + (e.min || 0) + '’ · dal ' + score + ' → gol n. ' + target + '</small></div><span class="tip-memory-state">' + (e.res === 1 ? '✓ Esito positivo' : e.res === 0 ? '✕ Esito negativo' : e.res === 'skip' ? 'Non giocata' : 'Registrata') + '</span></div>';
+      var state = e.res === 1 ? 'win' : e.res === 0 ? 'loss' : e.res === 'skip' ? 'skip' : 'wait';
+      var status = state === 'win' ? '✓ VINTA' : state === 'loss' ? '✕ PERSA' : state === 'skip' ? '— NON GIOCATA' : '◷ IN ATTESA';
+      var result = Array.isArray(e.ft) ? ' · finale ' + e.ft[0] + '-' + e.ft[1] : '';
+      return '<div class="tip-memory-row tip-memory-' + state + '"><div class="tip-memory-info"><b>' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</b><small>' + U.esc(TIP_PLAY_SHORT[e.k] || e.k) + ' · ' + U.esc(e.date || '') + ' · ' + (e.min || 0) + '’ · dal ' + score + ' → gol n. ' + target + result + '</small></div><span class="tip-memory-state tip-memory-state-' + state + '">' + status + '</span></div>';
     }).join('') + '</div></section>';
 }
 function tipLivePanel(list) {
