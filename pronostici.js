@@ -1172,8 +1172,20 @@ function tipPlayTier(r, min, half, x) {
   if (tipLiveSafety(r, min, half, x)) return 'none';
   if (!Number.isFinite(x.p) || !Number.isFinite(x.thr)) return 'none';
   if (x.p >= 0.78 && x.p >= x.thr) return 'excellent';
-  if (x.p >= 0.55 && x.p >= x.thr - 0.04) return 'try';
+  if (x.p >= 0.50 && x.p >= x.thr - 0.04) return 'try';
   return 'none';
+}
+/* 3.42.0 — diagnostica trasparente: la soglia relativa non bypassa i controlli di affidabilita. */
+function tipPlayDecision(r, min, half, x) {
+  if (x.green) return 'OTTIMA: verificati soglia relativa e controlli prudenziali';
+  if (x.warm) return 'DA VALUTARE: vicino o sopra la soglia storica; non e una probabilita validata';
+  if (x.at) return 'Esclusa: ingresso futuro da rivalutare al minuto previsto';
+  if (x.costly) return 'Esclusa: costo della progressione a step troppo elevato';
+  var blocker = tipLiveSafety(r, min, half, x);
+  if (blocker) return 'Non consigliata: ' + blocker + (x.p >= x.thr ? ' (soglia storica superata)' : '');
+  if (x.p < 0.50) return 'Non consigliata: stima inferiore al 50%';
+  if (x.p < x.thr - 0.04) return 'Non consigliata: sotto la soglia storica';
+  return 'Non consigliata: requisiti di affidabilita non raggiunti';
 }
 function tipCountSummary(total, excellent, maybe) {
   return '<div class="tip-count-summary" aria-label="' + excellent + ' ottime, ' + maybe + ' da valutare, ' + total + ' partite analizzate">' +
@@ -1359,12 +1371,12 @@ function tipLivePanel(list) {
   });
   var playsHtml = Object.keys(TIP_PLAY_NAME).filter(function (k) { return byType[k] && byType[k].length; }).map(function (k) {
     var total = byType[k].length, found = byType[k].filter(function (x) { return x.pl.green; }).length, possible = byType[k].filter(function (x) { return x.pl.warm; }).length;
-    var L = byType[k].sort(function (a, b) { return b.pl.p - a.pl.p; }).slice(0, 8), ng = L.filter(function (x) { return x.pl.green; }).length;
+    var L = byType[k].sort(function (a, b) { return (b.pl.green ? 2 : b.pl.warm ? 1 : 0) - (a.pl.green ? 2 : a.pl.warm ? 1 : 0) || b.pl.p - a.pl.p; }).slice(0, 8), ng = L.filter(function (x) { return x.pl.green; }).length;
     return '<section class="card tip-top tip-grade-section"><div class="tip-top-head"><b>' + U.esc(TIP_PLAY_NAME[k]) + '</b>' + tipCountSummary(total, found, possible) + '</div><div class="tip-tlist">' +
       L.map(function (x) {
         var P2 = x.P;
         return '<button type="button" class="tip-trow' + (x.pl.green ? ' tip-hot' : x.pl.warm ? ' tip-warm' : '') + '" ' + P2.open + '><span class="tip-tn tip-ln">' + P2.min + '\'</span><span class="tip-tmain"><b>' + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b><small>' +
-          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small><small class="tip-next-goal">⚽ Next gol: ' + (P2.sc ? P2.sc[0] + P2.sc[1] + 1 : 'da verificare') + '° · base ' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : 'non disponibile') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : x.pl.warm ? 'tip-amber-text' : '') + '">' + Math.round(x.pl.p * 100) + '%</span></b><small>' + (x.pl.green ? 'OTTIMA ›' : x.pl.warm ? 'DA VALUTARE ›' : 'soglia modello ' + Math.round(x.pl.thr * 100) + '% ›') + '</small></span></button>';
+          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small><small class="tip-next-goal">⚽ Next gol: ' + (P2.sc ? P2.sc[0] + P2.sc[1] + 1 : 'da verificare') + '° · base ' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : 'non disponibile') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : x.pl.warm ? 'tip-amber-text' : '') + '">' + Math.round(x.pl.p * 100) + '%</span></b><small>' + (x.pl.green ? 'OTTIMA ›' : x.pl.warm ? 'DA VALUTARE ›' : 'Soglia ' + Math.round(x.pl.thr * 100) + '% · esclusa ›') + '</small><small class="tip-decision-reason">' + U.esc(tipPlayDecision(P2.r, P2.min, P2.half, x.pl)) + '</small></span></button>';
       }).join('') + '</div></section>';
   }).join('');
   return (

@@ -631,3 +631,6 @@ dialog#editor.sheet.tip-dlg {
 .tip-history-tier{display:inline-block;font-size:10px;font-weight:850;letter-spacing:.5px;color:#67e3ad;margin-bottom:4px}
 .tip-history-try{color:#ffbd63}
 @media(max-width:420px){.tip-grade-section .tip-top-head>b{font-size:12px!important}.tip-count-strong{min-width:43px!important;padding:7px 4px!important}.tip-count-strong b{font-size:21px!important}.tip-count-summary{gap:3px!important}.tip-count-total{font-size:10px!important}.tip-archive-groups{gap:7px}.tip-archive-group{padding:9px}.tip-archive-stats{font-size:11px}}
+
+/* 3.42 — motivo della classificazione sempre leggibile */
+.tip-decision-reason{display:block;max-width:210px;font-size:.72rem;line-height:1.25;white-space:normal;opacity:.83;margin-top:4px;text-align:right}
