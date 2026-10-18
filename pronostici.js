@@ -988,16 +988,17 @@ function tipQuickAction(y) {
   var test = function (x2, tmax) {
     if (!x2 || x2.p < TIP_LIVE_MINP) return null;
     if (tipLiveGate(y.m, r, min, y.half, x2.k)) return null;
-    if (x2.fair >= MINQ) return { k: 'now', t: 'GIOCA', c: 'positive', p: x2.p, w: x2.k === 'h1' ? '1T' : 'fine', s: 'ora ≥' + x2.fair.toFixed(2) };
     var cond = function (t1) { return 1 - (1 - x2.p) / Math.max(1e-6, 1 - r.pWin(t1)); };
+    var pNext = min + 5 < tmax ? cond(min + 5) : 0;
+    if (x2.p >= TIP_LIVE_MINP + 0.04 && pNext >= TIP_LIVE_MINP && x2.fair >= MINQ * 1.05) return { k: 'now', t: 'GIOCA', c: 'positive', p: x2.p, w: x2.k === 'h1' ? '1T' : 'fine', s: 'ora ≥' + x2.fair.toFixed(2) };
     var stepA = null, waitA = null, bm = 0;
     for (var t1 = Math.ceil((min + 5) / 5) * 5; t1 <= tmax - 5; t1 += 5) {
       var pw = r.pWin(t1), c2 = cond(t1);
-      if (pw > 0.05 && c2 > 0.05 && 1 / pw >= MINQ && 1 / c2 >= MINQ && Math.min(1 / pw, 1 / c2) > bm) { bm = Math.min(1 / pw, 1 / c2); stepA = { k: 'step', t: 'STEP', c: '', p: x2.p, w: x2.k === 'h1' ? '1T' : 'fine', s: 'entro ' + t1 + '’ poi ' + (x2.k === 'h1' ? 'int.' : 'fine') }; }
+      if (pw >= 0.45 && c2 >= 0.45 && 1 / pw >= MINQ && 1 / c2 >= MINQ && Math.min(1 / pw, 1 / c2) > bm) { bm = Math.min(1 / pw, 1 / c2); stepA = { k: 'step', t: 'STEP', c: '', p: x2.p, w: x2.k === 'h1' ? '1T' : 'fine', s: 'entro ' + t1 + '’ poi ' + (x2.k === 'h1' ? 'int.' : 'fine') }; }
     }
-    for (var t2 = Math.ceil(min) + 2; t2 <= tmax - 3; t2++) {
-      var pc = cond(t2);
-      if (pc > 0 && 1 / pc >= MINQ) { if (pc >= TIP_LIVE_MINP) waitA = { k: 'wait', t: 'ASPETTA', c: '', p: pc, w: x2.k === 'h1' ? '1T' : 'fine', s: 'fino al ' + t2 + '’' }; break; }
+    for (var t2 = Math.ceil(min) + 2; t2 <= tmax - 8; t2++) {
+      var pc = cond(t2), pn2 = cond(t2 + 5);
+      if (pc > 0 && 1 / pc >= MINQ * 1.05) { if (pc >= TIP_LIVE_MINP + 0.04 && pn2 >= TIP_LIVE_MINP) waitA = { k: 'wait', t: 'ASPETTA', c: '', p: pc, w: x2.k === 'h1' ? '1T' : 'fine', s: 'fino al ' + t2 + '’' }; break; }
     }
     var push = r.used && r.F >= 1.08;
     return push ? (stepA || waitA) : (waitA || stepA);
@@ -1398,17 +1399,22 @@ function tipLiveSheet(id, obj) {
         head += '<p class="tip-do-cmp">Book ' + pct(pb) + ' · modello ' + pct(x.p) + ' · ' +
           (dlt >= 0.05 ? '<b class="positive">le statistiche vedono più gol del book: valore</b>' : dlt <= -0.05 ? '<b class="negative">il book vede più gol delle statistiche: niente valore</b>' : 'd’accordo') + '</p>';
       }
-      if (x.fair >= MINQ && (!bk || bk >= Math.max(MINQ, x.fair))) {
+      var cond = function (t1) { return 1 - (1 - x.p) / Math.max(1e-6, 1 - r.pWin(t1)); };
+      /* 3.31.0 — "gioca ora" solo se è solido: margine sulla soglia del 60% e sulla quota, e se fra 5 minuti
+         senza gol resterebbe ancora sopra il 60% (così non diventa "aspetta" tre minuti dopo) */
+      var pNext = v.min + 5 < tmax ? cond(v.min + 5) : 0;
+      var solid = x.p >= TIP_LIVE_MINP + 0.04 && pNext >= TIP_LIVE_MINP && (bk ? bk >= Math.max(MINQ, x.fair * 1.03) : x.fair >= MINQ * 1.05);
+      if (solid) {
         adv.push({ t: 'now', k: x.k, p: x.p, q: x.fair, book: bk || undefined });
         return head + '<p class="tip-do-v positive">GIOCA ORA · quota già buona (giusta ' + x.fair.toFixed(2) + ')' + (bk ? ' · book ' + bk.toFixed(2) + ' ✓' : '') + '</p>';
       }
-      if (x.fair >= MINQ && bk) head += '<p class="tip-do-v negative">Ora no: book ' + bk.toFixed(2) + ' sotto la minima ' + Math.max(MINQ, x.fair).toFixed(2) + '</p>';
-      var cond = function (t1) { return 1 - (1 - x.p) / Math.max(1e-6, 1 - r.pWin(t1)); };
+      if (x.fair >= MINQ && bk && bk < Math.max(MINQ, x.fair * 1.03)) head += '<p class="tip-do-v negative">Ora no: book ' + bk.toFixed(2) + ' sotto la minima ' + Math.max(MINQ, x.fair * 1.03).toFixed(2) + '</p>';
+      else if (x.fair >= MINQ) head += '<p class="tip-do-v">Ci sta, ma ora è al limite (giusta ' + x.fair.toFixed(2) + (pNext < TIP_LIVE_MINP ? ', fra 5 minuti senza gol scende al ' + pct(pNext) : '') + '): meglio prenderlo a quota più alta</p>';
       var lines = [], stepLi = null, waitLi = null;
       var st1 = null, bestMin = 0;
       for (var t1 = Math.ceil((v.min + 5) / 5) * 5; t1 <= tmax - 5; t1 += 5) {
         var pw = r.pWin(t1), pc2 = cond(t1);
-        if (pw < 0.05 || pc2 < 0.05) continue;
+        if (pw < 0.45 || pc2 < 0.45) continue; /* ogni step deve avere almeno il 45% */
         var lo = Math.min(1 / pw, 1 / pc2);
         if (lo >= MINQ && lo > bestMin) { bestMin = lo; st1 = { t: t1, p: pw, p2: pc2 }; }
       }
@@ -1418,13 +1424,17 @@ function tipLiveSheet(id, obj) {
         lines.push(stepLi);
       }
       var wt = null;
-      for (var t2 = Math.ceil(v.min) + 2; t2 <= tmax - 3; t2++) { var pc = cond(t2); if (pc > 0 && 1 / pc >= MINQ) { wt = { t: t2, p: pc }; break; } }
+      /* aspetta fino a quando il "gioca" sarà solido (stesso criterio di "gioca ora"), non solo fino a quota 1.50 */
+      for (var t2 = Math.ceil(v.min) + 2; t2 <= tmax - 8; t2++) {
+        var pc = cond(t2), pn2 = cond(t2 + 5);
+        if (pc > 0 && 1 / pc >= MINQ * 1.05) { if (pc >= TIP_LIVE_MINP + 0.04 && pn2 >= TIP_LIVE_MINP) wt = { t: t2, p: pc }; break; }
+      }
       if (wt && wt.p >= TIP_LIVE_MINP) {
         adv.push({ t: 'wait', k: x.k, t1: wt.t, p: wt.p, q: 1 / wt.p });
         waitLi = '<li><b>Aspetta il ' + wt.t + '’</b>: se ancora nessun gol, ' + pct(wt.p) + ' a quota ≥ ' + Math.max(MINQ, 1 / wt.p).toFixed(2) + ' · poi risincronizza</li>';
         lines.push(waitLi);
       }
-      if (!lines.length) return head + (x.fair >= MINQ ? '' : '<p class="tip-do-v negative">NO · quota giusta solo ' + x.fair.toFixed(2) + ' e non si arriva a ' + MINQ.toFixed(2) + ' né a step né aspettando</p>');
+      if (!lines.length) return head + (x.fair >= MINQ ? '<p class="tip-do-v">Se vuoi giocarlo ora: solo da quota ' + Math.max(MINQ, x.fair * 1.08).toFixed(2) + ' in su</p>' : '<p class="tip-do-v negative">NO · quota giusta solo ' + x.fair.toFixed(2) + ' e non si arriva a ' + MINQ.toFixed(2) + ' né a step né aspettando</p>');
       /* 3.28.0 — quale conviene per QUESTA partita: se spinge lo step (il gol può arrivare presto),
          altrimenti aspettare (se non segnano la quota sale e rivaluti con dati nuovi) */
       if (stepLi && waitLi) {
@@ -1432,7 +1442,7 @@ function tipLiveSheet(id, obj) {
         lines = push ? [stepLi.replace('<li>', '<li class="tip-rec">★ '), waitLi] : [waitLi.replace('<li>', '<li class="tip-rec">★ '), stepLi];
         lines.push('<li class="muted">' + (push ? 'Consigliato lo step: la partita spinge (ritmo +' + Math.round((r.F - 1) * 100) + '%), il gol può arrivare presto.' : 'Consigliato aspettare: ritmo ' + (r.used ? (r.F >= 1 ? '+' : '') + Math.round((r.F - 1) * 100) + '%' : 'non misurato') + ', se non segnano la quota sale e rivaluti con dati nuovi.') + '</li>');
       } else if (lines.length === 1) lines[0] = lines[0].replace('<li>', '<li class="tip-rec">★ ');
-      return head + (x.fair >= MINQ ? '<p class="tip-do-v">Puoi:</p>' : '<p class="tip-do-v">Ora quota troppo bassa (giusta ' + x.fair.toFixed(2) + bkTxt + '). Puoi:</p>') + '<ul>' + lines.join('') + '</ul>';
+      return head + (x.fair >= MINQ ? '<p class="tip-do-v">Meglio:</p>' : '<p class="tip-do-v">Ora quota troppo bassa (giusta ' + x.fair.toFixed(2) + bkTxt + '). Puoi:</p>') + '<ul>' + lines.join('') + '</ul>';
     };
     var blocks = [];
     var hOne = r.lines.find(function (x) { return x.k === 'h1'; }), nOne = r.lines.find(function (x) { return x.k === 'n1'; });
