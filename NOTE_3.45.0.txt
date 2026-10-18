@@ -1,4 +1,4 @@
-Bet Tracker 3.45.0 — Coerenza del motore statistico (senza AI)
+Bet Tracker 3.46.0 — Coerenza del motore statistico (senza AI)
 
 - Eliminati i secondi blocchi arbitrari L < 0.9 e F sotto soglia: il modello live incorpora gia tempo e ritmo.
 - Finestre temporali 1T 15–44 e 2T 45–89; controlli distinti per gli step in base al minuto.

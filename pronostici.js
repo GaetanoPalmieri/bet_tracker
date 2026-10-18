@@ -995,7 +995,7 @@ function tipScanPanel() {
   };
   return head +
     '<p class="muted tip-hint">Copertura Live: tutte le competizioni restituite dal provider, incluse femminili e giovanili se presenti nel feed. Quelle non fornite non possono essere mostrate.</p><div class="tip-live-counts"><span><strong>' + S.list.length + '</strong> trovate</span><span><strong>' + all.length + '</strong> valutate</span><span><strong>' + rows.length + '</strong> ' + (showAll ? 'mostrate' : 'selezionate') + '</span></div>' +
-    '<p class="tip-live-caution">Le percentuali sono stime prudenziali del modello, non frequenze di vincita verificate. OTTIMA richiede almeno 78% e dati adeguati; la soglia indicata e relativa e non garantisce successo. Gli ingressi futuri e gli step costosi restano solo DA VALUTARE. Verifica sempre risultato, minuto e quote.</p><p class="muted tip-hint">Ogni indicazione riguarda il prossimo gol rispetto al risultato dell’ultima scansione.</p>' +
+    '<p class="tip-live-caution">Le percentuali sono stime prudenziali del modello, non frequenze di vincita verificate. OTTIMA richiede almeno 5 punti oltre la soglia relativa e dati adeguati; la soglia indicata e relativa e non garantisce successo. Gli ingressi futuri e gli step costosi restano solo DA VALUTARE. Verifica sempre risultato, minuto e quote.</p><p class="muted tip-hint">Ogni indicazione riguarda il prossimo gol rispetto al risultato dell’ultima scansione.</p>' +
     (rows.length ? '<div class="tip-tlist">' + rows.map(rowH).join('') + '</div>' : '<p class="muted tip-tnone">Niente da giocare adesso: nessuna partita da gol, non bloccata, con quota 1.50 raggiungibile. Riscansiona tra qualche minuto.</p>') +
     (early.length && !showAll ? '<p class="muted tip-hint">' + early.length + ' appena iniziate (sotto il 15’): rivaluta più avanti.</p>' : '') +
     '<button type="button" class="tip-ctx-btn" data-scan-all>' + (showAll ? 'Mostra solo le giocabili' : 'Mostra tutte le partite') + '</button>' +
@@ -1146,10 +1146,13 @@ function tipReportPanel() {
     '<div class="actions"><button type="button" data-live-export>Esporta traccia per il retraining</button></div></section>';
 }
 function tipPlayThr(k, min) { var t = TIP_PLAY_THR[k]; return t ? tipLmInterp(t, min) / 100 : 1; }
-/* 3.45.0 — Una sola valutazione coerente: la stima del modello incorpora
-   gia ritmo, punteggio e tempo residuo. Nessun secondo veto su F o L.
-   La confidenza riguarda soltanto la completezza delle osservazioni.
-   Le soglie storiche sono relative, NON probabilita di riuscita validate. */
+/* 3.46.0 — Distinzione tra probabilita del mercato e ranking relativo.
+   Una quota teorica e ricavata come 1/p: con una quota minima 1.50,
+   p non puo superare ~66,7%; per 1.80 non supera ~55,6%.
+   La precedente soglia verde al 78% rendeva quindi impossibile
+   classificare come OTTIMA quasi tutte le giocate singole.
+   Le fasce seguenti sono euristiche di ranking, NON probabilita validate
+   e NON dimostrano che la quota reale sia conveniente. */
 function tipLiveSafety(r, min, half, x) {
   if (!r || !r.used) return 'statistiche live assenti';
   if (!r.xg && !r.recent) return 'mancano xG e andamento recente dei tiri';
@@ -1163,38 +1166,45 @@ function tipLiveSafety(r, min, half, x) {
 }
 function tipPlayEstimate(r, min, half, x) {
   if (!x || !U.finite(x.p)) return null;
-  /* Piccola riduzione prudenziale per evidenza parziale; non e una
-     calibrazione scientifica. Non si penalizza di nuovo il ritmo F. */
   var deduction = (r && !r.xg ? 0.02 : 0) + (r && !r.recent ? 0.02 : 0);
   return Math.max(0, Math.min(1, x.p - deduction));
+}
+/* Margine richiesto rispetto alla soglia relativa. Il 5% e un margine
+   euristico di ranking: non costituisce prova di un vantaggio atteso. */
+function tipGreenFloor(x) {
+  return Math.max(0.50, x.thr + 0.05);
 }
 function tipLiveSafetyReason(r, min, half, x) {
   var v = tipLiveSafety(r, min, half, x);
   if (v) return v;
-  if (!x || x.evalP < 0.78) return 'stima prudenziale inferiore al 78%';
+  if (!x || !U.finite(x.evalP)) return 'stima non disponibile';
+  if (x.costly || x.at) return 'ingresso condizionato o progressione costosa';
+  if (x.evalP < tipGreenFloor(x)) return 'margine rispetto alla soglia insufficiente';
   return null;
 }
 function tipPlayTier(r, min, half, x) {
   if (!x || !U.finite(x.p) || !U.finite(x.thr)) return 'none';
   if (tipLiveSafety(r, min, half, x)) return 'none';
   var p = U.finite(x.evalP) ? x.evalP : tipPlayEstimate(r, min, half, x);
-  if (!U.finite(p) || p < 0.50 || p < x.thr - 0.04) return 'none';
-  /* Ingresso futuro e step costoso non sono consigli di puntata immediati. */
+  if (!U.finite(p) || p < 0.48 || p < x.thr - 0.025) return 'none';
   if (x.at || x.costly) return 'try';
-  return p >= 0.78 && p >= x.thr ? 'excellent' : 'try';
+  /* Non usare una soglia assoluta irraggiungibile per mercati a quota minima.
+     Il verde richiede margine positivo + osservazioni live disponibili. */
+  if (p >= tipGreenFloor(x) && (r.xg || r.recent)) return 'excellent';
+  return 'try';
 }
 function tipPlayDecision(r, min, half, x) {
   var p = U.finite(x.evalP) ? x.evalP : x.p;
-  if (x.warm && x.at) return 'DA VALUTARE · IN ATTESA: verifica nuovamente al ' + x.at + '’; non entrare adesso';
-  if (x.warm && x.costly) return 'DA VALUTARE · STEP COSTOSO: segnale interessante, progressione non consigliata';
-  if (x.green) return 'OTTIMA nel modello: dati sufficienti e stima prudenziale sopra soglia; NON probabilita verificata';
-  if (x.warm) return 'DA VALUTARE: stima prudenziale ' + Math.round(p * 100) + '%; non e un invito a puntare';
+  if (x.warm && x.at) return 'DA VALUTARE · IN ATTESA: rivalutare al ' + x.at + '’; non entrare adesso';
+  if (x.warm && x.costly) return 'DA VALUTARE · STEP COSTOSO: progressione non consigliata';
+  if (x.green) return 'OTTIMA rispetto alla soglia del modello (margine ≥5 punti); probabilita NON calibrata, quota reale da verificare';
+  if (x.warm) return 'DA VALUTARE: ' + Math.round(p * 100) + '% stimato, soglia ' + Math.round(x.thr * 100) + '%, per verde richiesto ' + Math.round(tipGreenFloor(x) * 100) + '%';
   var blocker = tipLiveSafety(r, min, half, x);
-  if (blocker) return 'Non consigliata: ' + blocker + (x.p >= x.thr ? ' (soglia relativa superata)' : '');
+  if (blocker) return 'Non consigliata: ' + blocker;
   if (!U.finite(p) || !U.finite(x.thr)) return 'Non consigliata: stima non disponibile';
-  if (p < 0.50) return 'Non consigliata: probabilita prudenziale sotto il 50%';
-  if (p < x.thr - 0.04) return 'Non consigliata: stima prudenziale sotto la soglia relativa';
-  return 'Non consigliata: altri requisiti non raggiunti';
+  if (p < 0.48) return 'Non consigliata: probabilita stimata sotto il 48%';
+  if (p < x.thr - 0.025) return 'Non consigliata: stima troppo sotto la soglia relativa';
+  return 'Non consigliata: requisiti non raggiunti';
 }
 function tipCountSummary(total, excellent, maybe) {
   return '<div class="tip-count-summary" aria-label="' + excellent + ' ottime, ' + maybe + ' da valutare, ' + total + ' partite analizzate">' +
