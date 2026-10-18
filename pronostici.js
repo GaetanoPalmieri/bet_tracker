@@ -995,7 +995,7 @@ function tipScanPanel() {
   };
   return head +
     '<p class="muted tip-hint">Copertura Live: tutte le competizioni restituite dal provider, incluse femminili e giovanili se presenti nel feed. Quelle non fornite non possono essere mostrate.</p><div class="tip-live-counts"><span><strong>' + S.list.length + '</strong> trovate</span><span><strong>' + all.length + '</strong> valutate</span><span><strong>' + rows.length + '</strong> ' + (showAll ? 'mostrate' : 'selezionate') + '</span></div>' +
-    '<p class="tip-live-caution">Le percentuali sono stime del modello, non frequenze di vincita verificate. <b>OTTIMA</b> richiede almeno 78% stimato, dati live sufficienti, tempo utile e superamento della soglia storica relativa; ritmo sotto le attese limita il giudizio ad arancione. Controlla risultato, minuto e quota prima di qualsiasi decisione.</p><p class="muted tip-hint">Ogni indicazione riguarda il prossimo gol rispetto al risultato dell’ultima scansione.</p>' +
+    '<p class="tip-live-caution">Le percentuali sono stime prudenziali del modello, non frequenze di vincita verificate. OTTIMA richiede almeno 78% e dati adeguati; la soglia indicata e relativa e non garantisce successo. Gli ingressi futuri e gli step costosi restano solo DA VALUTARE. Verifica sempre risultato, minuto e quote.</p><p class="muted tip-hint">Ogni indicazione riguarda il prossimo gol rispetto al risultato dell’ultima scansione.</p>' +
     (rows.length ? '<div class="tip-tlist">' + rows.map(rowH).join('') + '</div>' : '<p class="muted tip-tnone">Niente da giocare adesso: nessuna partita da gol, non bloccata, con quota 1.50 raggiungibile. Riscansiona tra qualche minuto.</p>') +
     (early.length && !showAll ? '<p class="muted tip-hint">' + early.length + ' appena iniziate (sotto il 15’): rivaluta più avanti.</p>' : '') +
     '<button type="button" class="tip-ctx-btn" data-scan-all>' + (showAll ? 'Mostra solo le giocabili' : 'Mostra tutte le partite') + '</button>' +
@@ -1059,7 +1059,7 @@ function tipPlayLogAdd(m, ctx, plays) {
       var key = m.id + '|' + x.k + '|' + (ctx.gh || 0) + '-' + (ctx.ga || 0) + '|' + ctx.half;
       tipUI._pl[key] = 1;
       tipUI._plQ.push({ key: key, id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
-        k: x.k, tier: x.green ? 'excellent' : 'try', conditional: !!x.at, costly: !!x.costly, res: (x.at || x.costly) ? 'skip' : null, min: ctx.min, half: ctx.half, gh: ctx.gh || 0, ga: ctx.ga || 0, p: Math.round(x.p * 1000) / 1000,
+        k: x.k, tier: x.green ? 'excellent' : 'try', conditional: !!x.at, costly: !!x.costly, res: (x.at || x.costly) ? 'skip' : null, min: ctx.min, half: ctx.half, gh: ctx.gh || 0, ga: ctx.ga || 0, p: Math.round((x.evalP == null ? x.p : x.evalP) * 1000) / 1000, rawP: Math.round(x.p * 1000) / 1000,
         legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }), at: x.at, ts: x.ts,
         risk: Math.round(x.cost.risk * 100) / 100, win: Math.round(x.cost.win * 100) / 100, t: Date.now() });
   });
@@ -1146,47 +1146,55 @@ function tipReportPanel() {
     '<div class="actions"><button type="button" data-live-export>Esporta traccia per il retraining</button></div></section>';
 }
 function tipPlayThr(k, min) { var t = TIP_PLAY_THR[k]; return t ? tipLmInterp(t, min) / 100 : 1; }
-/* 3.44.0 — Controlli di qualita dei dati. Il ritmo F e gia incluso nella
-   previsione live tramite L: usarlo anche come veto F>=1.10 produrrebbe
-   una doppia penalizzazione e scarterebbe sistematicamente le partite. */
+/* 3.45.0 — Una sola valutazione coerente: la stima del modello incorpora
+   gia ritmo, punteggio e tempo residuo. Nessun secondo veto su F o L.
+   La confidenza riguarda soltanto la completezza delle osservazioni.
+   Le soglie storiche sono relative, NON probabilita di riuscita validate. */
 function tipLiveSafety(r, min, half, x) {
   if (!r || !r.used) return 'statistiche live assenti';
-  if (!r.xg && !r.recent) return 'mancano xG e un confronto recente dei tiri';
-  if (!U.finite(r.F)) return 'ritmo live non misurabile';
-  if (half === 1 && (min < 20 || min >= 40)) return 'finestra del primo tempo troppo incerta';
-  if (half === 2 && (min < 48 || min >= 78)) return 'tempo residuo non sufficientemente affidabile';
-  if (!U.finite(r.L) || r.L < 0.9) return 'gol residui attesi troppo bassi';
+  if (!r.xg && !r.recent) return 'mancano xG e andamento recente dei tiri';
+  if (!U.finite(r.L) || !U.finite(r.F)) return 'stima live non disponibile';
+  if (half === 1 && (min < 15 || min >= 45)) return 'finestra del primo tempo non attiva';
+  if (half === 2 && (min < 45 || min >= 90)) return 'finestra del secondo tempo non attiva';
+  if (x && x.k === 't2st3' && min > 55) return 'ingresso nello step 60–80–fine non piu disponibile';
+  if (x && x.k === 't2st2' && min > 75) return 'ingresso nello step 80–fine non piu disponibile';
+  if (x && x.at && x.at <= min) return 'orario di ingresso da rivalutare';
   return null;
+}
+function tipPlayEstimate(r, min, half, x) {
+  if (!x || !U.finite(x.p)) return null;
+  /* Piccola riduzione prudenziale per evidenza parziale; non e una
+     calibrazione scientifica. Non si penalizza di nuovo il ritmo F. */
+  var deduction = (r && !r.xg ? 0.02 : 0) + (r && !r.recent ? 0.02 : 0);
+  return Math.max(0, Math.min(1, x.p - deduction));
 }
 function tipLiveSafetyReason(r, min, half, x) {
   var v = tipLiveSafety(r, min, half, x);
   if (v) return v;
-  if (!x || x.p < 0.78) return 'stima inferiore alla soglia prudenziale del 78%';
+  if (!x || x.evalP < 0.78) return 'stima prudenziale inferiore al 78%';
   return null;
 }
-/* 3.44.0 — Il ritmo offensivo contribuisce gia alla stima numerica;
-   un ritmo sotto le attese limita la fiducia (verde->arancione), non
-   annulla indiscriminatamente i segnali sopra soglia. */
 function tipPlayTier(r, min, half, x) {
-  if (!x || !Number.isFinite(x.p) || !Number.isFinite(x.thr)) return 'none';
+  if (!x || !U.finite(x.p) || !U.finite(x.thr)) return 'none';
   if (tipLiveSafety(r, min, half, x)) return 'none';
-  if (x.p < 0.50 || x.p < x.thr - 0.04) return 'none';
-  // Un segnale condizionale o a rischio non diventa mai una puntata verde immediata.
-  if (x.at || x.costly || (r.used && r.F < 0.90)) return 'try';
-  return x.p >= 0.78 && x.p >= x.thr ? 'excellent' : 'try';
+  var p = U.finite(x.evalP) ? x.evalP : tipPlayEstimate(r, min, half, x);
+  if (!U.finite(p) || p < 0.50 || p < x.thr - 0.04) return 'none';
+  /* Ingresso futuro e step costoso non sono consigli di puntata immediati. */
+  if (x.at || x.costly) return 'try';
+  return p >= 0.78 && p >= x.thr ? 'excellent' : 'try';
 }
 function tipPlayDecision(r, min, half, x) {
-  if (x.warm && x.at) return 'DA VALUTARE · ATTENDI: ingresso possibile al ' + x.at + '’ soltanto dopo nuova verifica; non giocare adesso';
-  if (x.warm && x.costly) return 'DA VALUTARE · STEP COSTOSO: segnale interessante, ma progressione non consigliata';
-  if (x.green) return 'OTTIMA: segnale sopra soglia e filtri statistici superati; stima non calibrata';
-  if (x.warm && r && r.used && U.finite(r.F) && r.F < 0.90) return 'DA VALUTARE: ritmo ' + Math.round((r.F - 1) * 100) + '% rispetto alle attese, gia incluso nella stima; segnale da monitorare';
-  if (x.warm) return 'DA VALUTARE: segnale vicino o sopra soglia; non equivale a una giocata sicura';
+  var p = U.finite(x.evalP) ? x.evalP : x.p;
+  if (x.warm && x.at) return 'DA VALUTARE · IN ATTESA: verifica nuovamente al ' + x.at + '’; non entrare adesso';
+  if (x.warm && x.costly) return 'DA VALUTARE · STEP COSTOSO: segnale interessante, progressione non consigliata';
+  if (x.green) return 'OTTIMA nel modello: dati sufficienti e stima prudenziale sopra soglia; NON probabilita verificata';
+  if (x.warm) return 'DA VALUTARE: stima prudenziale ' + Math.round(p * 100) + '%; non e un invito a puntare';
   var blocker = tipLiveSafety(r, min, half, x);
-  if (blocker) return 'Non consigliata: ' + blocker + (x.p >= x.thr ? ' (soglia storica superata)' : '');
-  if (!Number.isFinite(x.p) || !Number.isFinite(x.thr)) return 'Non consigliata: stima non disponibile';
-  if (x.p < 0.50) return 'Non consigliata: stima inferiore al 50%';
-  if (x.p < x.thr - 0.04) return 'Non consigliata: sotto la soglia storica';
-  return 'Non consigliata: requisiti di affidabilita non raggiunti';
+  if (blocker) return 'Non consigliata: ' + blocker + (x.p >= x.thr ? ' (soglia relativa superata)' : '');
+  if (!U.finite(p) || !U.finite(x.thr)) return 'Non consigliata: stima non disponibile';
+  if (p < 0.50) return 'Non consigliata: probabilita prudenziale sotto il 50%';
+  if (p < x.thr - 0.04) return 'Non consigliata: stima prudenziale sotto la soglia relativa';
+  return 'Non consigliata: altri requisiti non raggiunti';
 }
 function tipCountSummary(total, excellent, maybe) {
   return '<div class="tip-count-summary" aria-label="' + excellent + ' ottime, ' + maybe + ' da valutare, ' + total + ' partite analizzate">' +
@@ -1207,7 +1215,7 @@ function tipPlays(r, min, half) {
   };
   var add = function (k, p, legs, note, thrK, thrMin) {
     var thr = tipPlayThr(thrK || k, thrMin || min), c = cost(legs);
-    var x = { k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, legs: legs, thr: thr, note: note || '', cost: c, costly: legs.length > 1 && c.ratio > 2.5 }; x.tier = tipPlayTier(r, min, half, x); x.green = x.tier === 'excellent'; x.warm = x.tier === 'try'; out.push(x);
+    var x = { k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, legs: legs, thr: thr, note: note || '', cost: c, costly: legs.length > 1 && c.ratio > 2.5 }; x.evalP = tipPlayEstimate(r, min, half, x); x.tier = tipPlayTier(r, min, half, x); x.green = x.tier === 'excellent'; x.warm = x.tier === 'try'; out.push(x);
   };
   if (half === 1 && h1 != null) {
     if (min >= 15 && min <= 40) {
@@ -1283,7 +1291,7 @@ function tipQuickAction(y) {
   y.plays = pl;
   var g = pl.filter(function (x) { return x.green || x.warm; })[0];
   if (!g) return { k: 'no', t: 'no', c: 'negative', p: pl[0] ? pl[0].p : 0, w: y.half === 1 ? '1T' : 'fine', s: tipLiveSafety(y.r, y.min, y.half) || 'nessun segnale sufficientemente solido' };
-  return { k: g.k, t: (g.green ? 'OTTIMA' : 'DA VALUTARE') + ' · ' + Math.round(g.p * 100) + '%', c: g.green ? 'positive' : 'tip-amber-text', p: g.p, w: g.k.indexOf('t1') === 0 ? '1T' : 'fine', s: g.short };
+  return { k: g.k, t: (g.green ? 'OTTIMA' : 'DA VALUTARE') + ' · ' + Math.round((g.evalP == null ? g.p : g.evalP) * 100) + '%', c: g.green ? 'positive' : 'tip-amber-text', p: g.p, w: g.k.indexOf('t1') === 0 ? '1T' : 'fine', s: g.short };
 }
 /* 3.30.0 — un solo modo di costruire i dati live di una partita (scanner, In corso e Live · sintonizza danno lo stesso risultato) */
 function tipLiveInput(m, d) {
@@ -1378,7 +1386,7 @@ function tipLivePanel(list) {
       L.map(function (x) {
         var P2 = x.P;
         return '<button type="button" class="tip-trow' + (x.pl.green ? ' tip-hot' : x.pl.warm ? ' tip-warm' : '') + '" ' + P2.open + '><span class="tip-tn tip-ln">' + P2.min + '\'</span><span class="tip-tmain"><b>' + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b><small>' +
-          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small><small class="tip-next-goal">⚽ Next gol: ' + (P2.sc ? P2.sc[0] + P2.sc[1] + 1 : 'da verificare') + '° · base ' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : 'non disponibile') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : x.pl.warm ? 'tip-amber-text' : '') + '">' + Math.round(x.pl.p * 100) + '%</span></b><small>' + (x.pl.green ? 'OTTIMA ›' : x.pl.warm ? 'DA VALUTARE ›' : 'Soglia ' + Math.round(x.pl.thr * 100) + '% · esclusa ›') + '</small><small class="tip-decision-reason">' + U.esc(tipPlayDecision(P2.r, P2.min, P2.half, x.pl)) + '</small></span></button>';
+          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small><small class="tip-next-goal">⚽ Next gol: ' + (P2.sc ? P2.sc[0] + P2.sc[1] + 1 : 'da verificare') + '° · base ' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : 'non disponibile') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : x.pl.warm ? 'tip-amber-text' : '') + '">' + Math.round((x.pl.evalP == null ? x.pl.p : x.pl.evalP) * 100) + '%</span></b><small>' + (x.pl.green ? 'OTTIMA ›' : x.pl.warm ? 'DA VALUTARE ›' : 'Soglia relativa ' + Math.round(x.pl.thr * 100) + '% · esclusa ›') + '</small><small class="tip-decision-reason">' + U.esc(tipPlayDecision(P2.r, P2.min, P2.half, x.pl)) + '</small></span></button>';
       }).join('') + '</div></section>';
   }).join('');
   return (
