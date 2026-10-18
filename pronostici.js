@@ -1041,7 +1041,7 @@ var TIP_PLAY_NAME = {
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80' };
 /* ---------- 3.35.0 — Traccia delle giocate consigliate (ottime) e resoconto giornaliero ---------- */
 function tipPlayLogAdd(m, ctx, plays) {
-  var green = (plays || []).filter(function (x) { return x.green; });
+  var green = (plays || []).filter(function (x) { return x.green || x.warm; });
   if (!green.length || !m || !m.id) return;
   tipUI._pl = tipUI._pl || {};
   var L0 = ((db.predModel || {}).playLog) || [];
@@ -1059,7 +1059,7 @@ function tipPlayLogAdd(m, ctx, plays) {
       var key = m.id + '|' + x.k + '|' + (ctx.gh || 0) + '-' + (ctx.ga || 0) + '|' + ctx.half;
       tipUI._pl[key] = 1;
       tipUI._plQ.push({ key: key, id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
-        k: x.k, min: ctx.min, half: ctx.half, gh: ctx.gh || 0, ga: ctx.ga || 0, p: Math.round(x.p * 1000) / 1000,
+        k: x.k, tier: x.green ? 'excellent' : 'try', min: ctx.min, half: ctx.half, gh: ctx.gh || 0, ga: ctx.ga || 0, p: Math.round(x.p * 1000) / 1000,
         legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }), at: x.at, ts: x.ts,
         risk: Math.round(x.cost.risk * 100) / 100, win: Math.round(x.cost.win * 100) / 100, t: Date.now() });
   });
@@ -1093,7 +1093,7 @@ function tipPlayOutcome(e, x) {
   return FT > G ? 1 : 0;
 }
 function tipReportFor(date) {
-  var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.date === date && e.res != null; });
+  var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.date === date && e.res != null && (!e.tier || e.tier === 'excellent'); });
   var by = {}, tot = { n: 0, w: 0, p: 0, pl: 0, risk: 0 };
   L.forEach(function (e) {
     if (e.res === 'skip') return;
@@ -1165,6 +1165,22 @@ function tipLiveSafetyReason(r, min, half, x) {
   if (!x || x.p < 0.78) return 'stima inferiore alla soglia prudenziale del 78%';
   return null;
 }
+/* 3.41.0 — Le soglie relative NON equivalgono a probabilità calibrate.
+   Lo stato arancione non supera i blocchi di sicurezza e non equivale a un invito a scommettere. */
+function tipPlayTier(r, min, half, x) {
+  if (!x || x.at || x.costly) return 'none';
+  if (tipLiveSafety(r, min, half, x)) return 'none';
+  if (!Number.isFinite(x.p) || !Number.isFinite(x.thr)) return 'none';
+  if (x.p >= 0.78 && x.p >= x.thr) return 'excellent';
+  if (x.p >= 0.55 && x.p >= x.thr - 0.04) return 'try';
+  return 'none';
+}
+function tipCountSummary(total, excellent, maybe) {
+  return '<div class="tip-count-summary" aria-label="' + excellent + ' ottime, ' + maybe + ' da valutare, ' + total + ' partite analizzate">' +
+    '<div class="tip-count-strong tip-count-green"><b>' + excellent + '</b><small>OTTIME</small></div>' +
+    '<div class="tip-count-strong tip-count-amber"><b>' + maybe + '</b><small>DA VALUTARE</small></div>' +
+    '<div class="tip-count-total">su ' + total + '</div></div>';
+}
 function tipPlays(r, min, half) {
   var out = [], Q = TIP_MIN_ODDS, ok = function (p) { return p > 0.02 && 1 / p >= Q; };
   var h1 = (r.lines.find(function (x) { return x.k === 'h1'; }) || {}).p, n1 = (r.lines.find(function (x) { return x.k === 'n1'; }) || {}).p;
@@ -1178,7 +1194,7 @@ function tipPlays(r, min, half) {
   };
   var add = function (k, p, legs, note, thrK, thrMin) {
     var thr = tipPlayThr(thrK || k, thrMin || min), c = cost(legs);
-    out.push({ k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, legs: legs, green: p >= thr && p >= 0.78 && !tipLiveSafety(r, min, half, { costly: legs.length > 1 && c.ratio > 2.5 }) && k !== 't2w' && k !== 't1w', thr: thr, note: note || '', cost: c, costly: legs.length > 1 && c.ratio > 2.5 });
+    var x = { k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, legs: legs, thr: thr, note: note || '', cost: c, costly: legs.length > 1 && c.ratio > 2.5 }; x.tier = tipPlayTier(r, min, half, x); x.green = x.tier === 'excellent'; x.warm = x.tier === 'try'; out.push(x);
   };
   if (half === 1 && h1 != null) {
     if (min >= 15 && min <= 40) {
@@ -1225,7 +1241,7 @@ function tipPlays(r, min, half) {
   }
   /* ordine: prima le ottime; tra queste conta anche il costo (gli step costosi scendono) */
   var score = function (x) { return (x.p - x.thr) - (x.costly ? 0.02 * (x.cost.ratio - 2) : 0); };
-  out.sort(function (a, b) { return (b.green - a.green) || score(b) - score(a) || b.p - a.p; });
+  out.sort(function (a, b) { return ((b.green ? 2 : b.warm ? 1 : 0) - (a.green ? 2 : a.warm ? 1 : 0)) || score(b) - score(a) || b.p - a.p; });
   /* se uno step ottimo costa troppo e c'è l'attesa per l'unico, consiglia l'attesa */
   out.forEach(function (x) {
     if (!x.costly) return;
@@ -1252,9 +1268,9 @@ function tipQuickAction(y) {
   /* 3.33.0 — la giocata migliore del momento tra i tipi di giocata (verde = ottima per quel minuto) */
   var pl = tipPlays(y.r, y.min, y.half);
   y.plays = pl;
-  var g = pl.filter(function (x) { return x.green; })[0];
+  var g = pl.filter(function (x) { return x.green || x.warm; })[0];
   if (!g) return { k: 'no', t: 'no', c: 'negative', p: pl[0] ? pl[0].p : 0, w: y.half === 1 ? '1T' : 'fine', s: tipLiveSafety(y.r, y.min, y.half) || 'nessun segnale sufficientemente solido' };
-  return { k: g.k, t: 'OTTIMA · ' + Math.round(g.p * 100) + '%', c: 'positive', p: g.p, w: g.k.indexOf('t1') === 0 ? '1T' : 'fine', s: g.short };
+  return { k: g.k, t: (g.green ? 'OTTIMA' : 'DA VALUTARE') + ' · ' + Math.round(g.p * 100) + '%', c: g.green ? 'positive' : 'tip-amber-text', p: g.p, w: g.k.indexOf('t1') === 0 ? '1T' : 'fine', s: g.short };
 }
 /* 3.30.0 — un solo modo di costruire i dati live di una partita (scanner, In corso e Live · sintonizza danno lo stesso risultato) */
 function tipLiveInput(m, d) {
@@ -1286,28 +1302,31 @@ function tipLiveEval(m) {
 }
 /* 3.36.0 — Storico permanente delle opportunità ottime, distinto dalla raccomandazione corrente. */
 function tipExcellentArchive() {
-  var L = ((db.predModel || {}).playLog || []).slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
-  if (!L.length) return '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>★ Pronostici salvati</b><span>0 salvati</span></div><p class="muted tip-tnone">I consigli ottimi saranno registrati qui, con l’esito quando il risultato sarà disponibile.</p></section>';
-  var won = L.filter(function(e){return e.res === 1;}).length;
-  var lost = L.filter(function(e){return e.res === 0;}).length;
-  var waiting = L.filter(function(e){return e.res == null;}).length;
-  var skipped = L.filter(function(e){return e.res === 'skip';}).length;
-  var subset = L.slice(0, 40);
-  return '<section class="card tip-top tip-live-section tip-archive"><div class="tip-top-head"><b>★ Pronostici salvati</b><span>' + L.length + ' totali</span></div>' +
-    '<div class="tip-memory-summary" aria-label="Riepilogo esiti">' +
-      '<div class="tip-memory-count tip-memory-count-win"><strong>' + won + '</strong><small>Vinte</small></div>' +
-      '<div class="tip-memory-count tip-memory-count-loss"><strong>' + lost + '</strong><small>Perse</small></div>' +
-      '<div class="tip-memory-count tip-memory-count-wait"><strong>' + waiting + '</strong><small>In attesa</small></div>' +
-      (skipped ? '<div class="tip-memory-count tip-memory-count-skip"><strong>' + skipped + '</strong><small>Non giocate</small></div>' : '') + '</div>' +
-    '<p class="muted tip-hint">Esito del consiglio al minuto in cui è stato salvato, non dell’intera partita. Verde = vinta, rosso = persa. Le strategie di attesa senza ingresso sono neutre. I risultati vengono aggiornati da Risultati automatici.</p>' +
-    '<div class="tip-tlist">' + subset.map(function (e) {
-      var score = (e.gh || 0) + '-' + (e.ga || 0), target = (e.gh || 0) + (e.ga || 0) + 1;
-      var state = e.res === 1 ? 'win' : e.res === 0 ? 'loss' : e.res === 'skip' ? 'skip' : 'wait';
-      var status = state === 'win' ? '✓ VINTA' : state === 'loss' ? '✕ PERSA' : state === 'skip' ? '— NON GIOCATA' : '◷ IN ATTESA';
-      var result = Array.isArray(e.ft) ? ' · finale ' + e.ft[0] + '-' + e.ft[1] : '';
-      return '<div class="tip-memory-row tip-memory-' + state + '"><div class="tip-memory-info"><b>' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</b><small>' + U.esc(TIP_PLAY_SHORT[e.k] || e.k) + ' · ' + U.esc(e.date || '') + ' · ' + (e.min || 0) + '’ · dal ' + score + ' → gol n. ' + target + result + '</small></div><span class="tip-memory-state tip-memory-state-' + state + '">' + status + '</span></div>';
-    }).join('') + '</div></section>';
+  /* I vecchi record senza tier provengono dal precedente registro delle Ottime. */
+  var L = ((db.predModel || {}).playLog || []).filter(function(e){return e.tier === 'excellent' || e.tier === 'try' || !e.tier;})
+    .slice().sort(function (a,b) {return (b.t||0)-(a.t||0);});
+  var groups = [{tier:'excellent',label:'OTTIME',cls:'excellent'}, {tier:'try',label:'DA VALUTARE',cls:'try'}];
+  var summary = groups.map(function(g){
+    var arr=L.filter(function(e){return (e.tier||'excellent')===g.tier;});
+    var wins=arr.filter(function(e){return e.res===1;}).length;
+    var losses=arr.filter(function(e){return e.res===0;}).length;
+    var waiting=arr.filter(function(e){return e.res==null;}).length;
+    return '<div class="tip-archive-group tip-archive-'+g.cls+'"><strong>'+g.label+'</strong><span>'+arr.length+' salvate</span>'+
+      '<div class="tip-archive-stats"><b class="positive">'+wins+' vinte</b><b class="negative">'+losses+' perse</b><small>'+waiting+' in attesa</small></div></div>';
+  }).join('');
+  var rows=L.slice(0,60).map(function(e){
+    var t=e.tier||'excellent', sc=(e.gh||0)+'-'+(e.ga||0), goal=(e.gh||0)+(e.ga||0)+1;
+    var state=e.res===1?'win':e.res===0?'loss':e.res==='skip'?'skip':'wait';
+    var status=state==='win'?'✓ VINTA':state==='loss'?'✕ PERSA':state==='skip'?'— NON GIOCATA':'◷ IN ATTESA';
+    var result=Array.isArray(e.ft)?' · finale '+e.ft[0]+'-'+e.ft[1]:'';
+    return '<div class="tip-memory-row tip-memory-'+state+'"><div class="tip-memory-info"><div class="tip-history-tier tip-history-'+t+'">'+(t==='try'?'DA VALUTARE':'OTTIMA')+'</div><b>'+U.esc(e.home||'')+' – '+U.esc(e.away||'')+'</b><small>'+U.esc(TIP_PLAY_SHORT[e.k]||e.k)+' · '+U.esc(e.date||'')+' · '+(e.min||0)+'’ · dal '+sc+' → gol n. '+goal+result+'</small></div><span class="tip-memory-state tip-memory-state-'+state+'">'+status+'</span></div>';
+  }).join('');
+  return '<section class="card tip-top tip-live-section tip-archive"><div class="tip-top-head"><b>★ Storico consigli</b><small class="tip-archive-total">'+L.length+' salvati</small></div>'+
+    '<div class="tip-archive-groups">'+summary+'</div>'+
+    '<p class="muted tip-hint">Si salvano soltanto i segnali OTTIMA e DA VALUTARE; le altre live sono escluse. Vinte e perse sono separate per livello. Il risultato viene recuperato da Risultati automatici: senza dati verificati resta in attesa. “Da valutare” non è un invito a puntare.</p>'+
+    (L.length?'<div class="tip-tlist">'+rows+'</div>':'<p class="muted tip-tnone">Nessun consiglio qualificato salvato.</p>')+'</section>';
 }
+
 function tipLivePanel(list) {
   var scanHtml = tipScanPanel(); /* prima: collega le partite dei pronostici ai dati live della scansione */
   var evals = {};
@@ -1339,13 +1358,13 @@ function tipLivePanel(list) {
     tipPlays(P2.r, P2.min, P2.half).forEach(function (pl) { (byType[pl.k] = byType[pl.k] || []).push({ P: P2, pl: pl }); });
   });
   var playsHtml = Object.keys(TIP_PLAY_NAME).filter(function (k) { return byType[k] && byType[k].length; }).map(function (k) {
-    var total = byType[k].length, found = byType[k].filter(function (x) { return x.pl.green; }).length;
+    var total = byType[k].length, found = byType[k].filter(function (x) { return x.pl.green; }).length, possible = byType[k].filter(function (x) { return x.pl.warm; }).length;
     var L = byType[k].sort(function (a, b) { return b.pl.p - a.pl.p; }).slice(0, 8), ng = L.filter(function (x) { return x.pl.green; }).length;
-    return '<section class="card tip-top"><div class="tip-top-head"><b>' + U.esc(TIP_PLAY_NAME[k]) + '</b><span>' + total + ' partite · ' + found + ' ottime</span></div><div class="tip-tlist">' +
+    return '<section class="card tip-top tip-grade-section"><div class="tip-top-head"><b>' + U.esc(TIP_PLAY_NAME[k]) + '</b>' + tipCountSummary(total, found, possible) + '</div><div class="tip-tlist">' +
       L.map(function (x) {
         var P2 = x.P;
-        return '<button type="button" class="tip-trow' + (x.pl.green ? ' tip-hot' : '') + '" ' + P2.open + '><span class="tip-tn tip-ln">' + P2.min + '\'</span><span class="tip-tmain"><b>' + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b><small>' +
-          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small><small class="tip-next-goal">⚽ Next gol: ' + (P2.sc ? P2.sc[0] + P2.sc[1] + 1 : 'da verificare') + '° · base ' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : 'non disponibile') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : '') + '">' + Math.round(x.pl.p * 100) + '%</span></b><small>' + (x.pl.green ? 'ottima ›' : 'ottima da ' + Math.round(x.pl.thr * 100) + '% ›') + '</small></span></button>';
+        return '<button type="button" class="tip-trow' + (x.pl.green ? ' tip-hot' : x.pl.warm ? ' tip-warm' : '') + '" ' + P2.open + '><span class="tip-tn tip-ln">' + P2.min + '\'</span><span class="tip-tmain"><b>' + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b><small>' +
+          x.pl.legs.map(function (l) { return 'q≥' + Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2); }).join(' → ') + '</small><small class="tip-next-goal">⚽ Next gol: ' + (P2.sc ? P2.sc[0] + P2.sc[1] + 1 : 'da verificare') + '° · base ' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : 'non disponibile') + '</small></span><span class="tip-tpick"><b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] + ' · ' : '') + '<span class="' + (x.pl.green ? 'positive' : x.pl.warm ? 'tip-amber-text' : '') + '">' + Math.round(x.pl.p * 100) + '%</span></b><small>' + (x.pl.green ? 'OTTIMA ›' : x.pl.warm ? 'DA VALUTARE ›' : 'soglia modello ' + Math.round(x.pl.thr * 100) + '% ›') + '</small></span></button>';
       }).join('') + '</div></section>';
   }).join('');
   return (

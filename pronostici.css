@@ -612,3 +612,22 @@ dialog#editor.sheet.tip-dlg {
 .tip-memory-state-wait{color:var(--suite-text-soft)!important;background:rgba(130,140,150,.14)}
 .tip-memory-state-skip{color:var(--suite-text-soft)!important;background:rgba(130,140,150,.14)}
 @media(max-width:420px){.tip-memory-row{flex-direction:row;align-items:center}.tip-memory-state{font-size:10px!important;padding:6px 8px}.tip-memory-info{flex:1;min-width:0}}
+
+/* 3.41.0 - indicatori essenziali, stati dei consigli e storico separato */
+.tip-grade-section .tip-top-head{align-items:center!important;flex-wrap:nowrap!important}
+.tip-grade-section .tip-top-head>b{flex:1 1 0;min-width:0}
+.tip-grade-section .tip-count-summary{flex:0 0 auto!important;gap:5px!important}
+.tip-count-strong{min-width:50px!important;padding:8px 6px!important;border-radius:14px!important}
+.tip-count-strong b{font-size:24px!important}
+.tip-count-strong small{font-size:8px!important;letter-spacing:.2px}
+.tip-count-total{align-self:end;margin-bottom:5px;font-size:11px!important}
+.tip-archive-total{font-size:12px;color:var(--suite-text-soft)}
+.tip-archive-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.tip-archive-group{border:1px solid rgba(23,165,114,.48);border-radius:15px;background:rgba(23,165,114,.11);padding:12px;display:flex;flex-direction:column;gap:5px}
+.tip-archive-try{border-color:rgba(242,160,50,.55);background:rgba(242,160,50,.10)}
+.tip-archive-group>strong{font-size:14px;color:#67e3ad}.tip-archive-try>strong{color:#ffbd63}
+.tip-archive-group>span{font-size:12px;color:var(--suite-text-soft)}
+.tip-archive-stats{display:flex;flex-wrap:wrap;gap:5px 9px;font-size:12px}.tip-archive-stats small{color:var(--suite-text-soft)}
+.tip-history-tier{display:inline-block;font-size:10px;font-weight:850;letter-spacing:.5px;color:#67e3ad;margin-bottom:4px}
+.tip-history-try{color:#ffbd63}
+@media(max-width:420px){.tip-grade-section .tip-top-head>b{font-size:12px!important}.tip-count-strong{min-width:43px!important;padding:7px 4px!important}.tip-count-strong b{font-size:21px!important}.tip-count-summary{gap:3px!important}.tip-count-total{font-size:10px!important}.tip-archive-groups{gap:7px}.tip-archive-group{padding:9px}.tip-archive-stats{font-size:11px}}
