@@ -923,25 +923,73 @@ function tipStarPanel(list) {
 }
 function tipScanPanel() {
   var S = tipUI.scan;
-  var head = '<section class="card tip-top"><div class="tip-top-head"><b>Scanner · tutte le partite live</b><span>' + (S ? new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '1-2 richieste') + '</span></div>' +
+  var head = '<section class="card tip-top"><div class="tip-top-head"><b>Da giocare adesso</b><span>' + (S ? new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '1-2 richieste') + '</span></div>' +
     '<button type="button" class="tip-live-get" data-scan>' + (S ? '🔎 Scansiona di nuovo' : '🔎 Scansiona le partite live') + '</button>';
   if (!S) return head + '<p class="muted tip-tnone">Partite live nel mondo, dalla più probabile per un gol.</p></section>';
   var all = S.list.map(tipScanMatch).filter(Boolean),
-    showAll = !!tipUI.scanAll,
-    rows = all.filter(function (y) { return showAll || (y.main.p >= TIP_SCAN_MINP && y.min <= 80 && y.m.scanSrc !== 'media'); })
-      .sort(function (a, b) { return (a.m.scanSrc === 'media') - (b.m.scanSrc === 'media') || b.main.p - a.main.p; }).slice(0, 40);
+    showAll = !!tipUI.scanAll;
   tipUI.scanMap = {};
-  all.forEach(function (y) { tipUI.scanMap[y.x.afId] = y.m; });
+  all.forEach(function (y) {
+    tipUI.scanMap[y.x.afId] = y.m;
+    y.tempo = y.r.L / Math.max(0.03, y.r.rem.all); /* gol attesi su 90' al ritmo di adesso */
+    y.ritmo = y.x.stats ? y.r.F : 1;
+    y.grp = !y.x.stats ? 1 : y.ritmo >= 1.08 ? 0 : y.ritmo <= 0.92 ? 2 : 1;
+    y.act = tipQuickAction(y);
+  });
+  /* 3.25.0 — non per probabilità grezza (premia le partite appena iniziate e quelle forti ma bloccate):
+     prima le partite che SPINGONO (statistiche sopra le attese), poi normali, poi bloccate;
+     dentro ogni gruppo per ritmo gol attuale. Le appena iniziate (sotto il 15') a parte. */
+  var early = all.filter(function (y) { return y.half === 1 && y.min < 15; }),
+    rows = all.filter(function (y) {
+      if (showAll) return true;
+      return !(y.half === 1 && y.min < 15) && y.min <= 80 && y.m.scanSrc !== 'media' && y.act.k !== 'no';
+    }).sort(function (a2, b2) { return a2.grp - b2.grp || b2.tempo - a2.tempo; }).slice(0, 40);
   var withOdds = all.filter(function (y) { return y.m.scanSrc !== 'media'; }).length;
+  var GRP = ['<b class="positive">spingono</b>', 'normale', '<b class="negative">bloccata</b>'];
+  var rowH = function (y) {
+    var on = tipLiveStars().some(function (z) { return z.afId === y.x.afId; });
+    return '<div class="tip-srowx"><button type="button" class="tip-trow" data-scan-open="' + y.x.afId + '"><span class="tip-tn tip-ln">' + (y.x.status === 'HT' ? 'HT' : y.min + '\'') + '</span><span class="tip-tmain"><b>' + U.esc(y.m.home) + ' – ' + U.esc(y.m.away) + '</b><small>' + (y.x.stats ? GRP[y.grp] + ' ' + (y.ritmo >= 1 ? '+' : '') + Math.round((y.ritmo - 1) * 100) + '%' : U.esc(y.m.league)) + (y.act.s ? ' · ' + y.act.s : '') + '</small></span><span class="tip-tpick"><b>' + y.x.goals[0] + '-' + y.x.goals[1] + ' <span class="' + y.act.c + '">' + y.act.t + '</span></b><small>gol ' + y.act.w + ' ' + Math.round(y.act.p * 100) + '% ›</small></span></button>' +
+      '<button type="button" class="tip-star' + (on ? ' on' : '') + '" data-live-star="' + U.esc(y.x.afId) + '" aria-label="Preferita">' + (on ? '★' : '☆') + '</button></div>';
+  };
   return head +
-    '<p class="muted tip-hint">' + all.length + ' in corso · ' + withOdds + ' con quote' + (S.oddsNote ? ' · quote live non disponibili' : '') + '</p>' +
-    (rows.length ? '<div class="tip-tlist">' + rows.map(function (y) {
-      var on = tipLiveStars().some(function (z) { return z.afId === y.x.afId; });
-      return '<div class="tip-srowx"><button type="button" class="tip-trow" data-scan-open="' + y.x.afId + '"><span class="tip-tn tip-ln">' + (y.x.status === 'HT' ? 'HT' : y.min + '\'') + '</span><span class="tip-tmain"><b>' + U.esc(y.m.home) + ' – ' + U.esc(y.m.away) + '</b><small>' + U.esc(y.m.league) + (!y.m.scan ? ' · dai pronostici' : y.m.scanSrc === 'media' ? ' · senza quote' : '') + (y.x.stats ? ' · statistiche' : '') + '</small></span><span class="tip-tpick"><b>' + y.x.goals[0] + '-' + y.x.goals[1] + ' · ' + Math.round(y.main.p * 100) + '%</b><small>' + (y.r.rem.ht > 0 ? 'gol 1T' : 'altro gol') + ' · min ' + y.main.fair.toFixed(2) + ' ›</small></span></button>' +
-        '<button type="button" class="tip-star' + (on ? ' on' : '') + '" data-live-star="' + U.esc(y.x.afId) + '" aria-label="Preferita">' + (on ? '★' : '☆') + '</button></div>';
-    }).join('') + '</div>' : '<p class="muted tip-tnone">Nessuna partita sopra il 50% adesso.</p>') +
-    '<button type="button" class="tip-ctx-btn" data-scan-all>' + (showAll ? 'Mostra solo le migliori' : 'Mostra tutte le partite') + '</button>' +
+    '<p class="muted tip-hint">' + all.length + ' partite live controllate · ' + rows.length + ' da giocare' + (showAll ? '' : ' · prima chi spinge') + '</p>' +
+    (rows.length ? '<div class="tip-tlist">' + rows.map(rowH).join('') + '</div>' : '<p class="muted tip-tnone">Niente da giocare adesso: nessuna partita da gol, non bloccata, con quota 1.50 raggiungibile. Riscansiona tra qualche minuto.</p>') +
+    (early.length && !showAll ? '<p class="muted tip-hint">' + early.length + ' appena iniziate (sotto il 15’): rivaluta più avanti.</p>' : '') +
+    '<button type="button" class="tip-ctx-btn" data-scan-all>' + (showAll ? 'Mostra solo le giocabili' : 'Mostra tutte le partite') + '</button>' +
     '</section>';
+}
+/* 3.25.1 — si consiglia solo su partite "da gol": prepartita sopra la soglia delle Top
+   (1T ≥ soglia Over 0.5 1T, fine partita ≥ soglia Over 1.5), non bloccate, e non prima del 15'.
+   Così un consiglio dato presto non diventa "non giocare" un quarto d'ora dopo solo perché passa il tempo. */
+function tipLiveGate(m, r, min, half, kind) {
+  var P = tipParams(), c = tipCalc(m, P);
+  if (half === 1 && min < 15) return 'rivaluta dal 15’, prima le statistiche non dicono niente';
+  if (r.used && r.F <= 0.92) return 'partita bloccata (ritmo ' + Math.round((r.F - 1) * 100) + '%)';
+  if (kind === 'h1' && c.ht05 < tipThr(P, 'ht05')) return 'non è una partita da gol nel 1° tempo (prepartita ' + Math.round(c.ht05) + '%)';
+  if (kind === 'n1' && c.o15 < tipThr(P, 'o15')) return 'non è una partita da gol (prepartita Over 1.5 ' + Math.round(c.o15) + '%)';
+  return null;
+}
+/* azione veloce per lo scanner: stessa logica di "Cosa fare" */
+function tipQuickAction(y) {
+  var r = y.r, min = y.min, MINQ = tipLiveMinQ();
+  var x = y.half === 1 && min <= 40 ? r.lines.find(function (l) { return l.k === 'h1'; }) : null;
+  var n1 = r.lines.find(function (l) { return l.k === 'n1'; });
+  var test = function (x2, tmax) {
+    if (!x2 || x2.p < TIP_LIVE_MINP) return null;
+    if (tipLiveGate(y.m, r, min, y.half, x2.k)) return null;
+    if (x2.fair >= MINQ) return { k: 'now', t: 'GIOCA', c: 'positive', p: x2.p, w: x2.k === 'h1' ? '1T' : 'fine', s: 'ora ≥' + x2.fair.toFixed(2) };
+    var cond = function (t1) { return 1 - (1 - x2.p) / Math.max(1e-6, 1 - r.pWin(t1)); };
+    for (var t1 = Math.ceil((min + 5) / 5) * 5; t1 <= tmax - 5; t1 += 5) {
+      var pw = r.pWin(t1), c2 = cond(t1);
+      if (pw > 0.05 && c2 > 0.05 && 1 / pw >= MINQ && 1 / c2 >= MINQ) return { k: 'step', t: 'STEP', c: '', p: x2.p, w: x2.k === 'h1' ? '1T' : 'fine', s: 'entro ' + t1 + '’ poi ' + (x2.k === 'h1' ? 'int.' : 'fine') };
+    }
+    for (var t2 = Math.ceil(min) + 2; t2 <= tmax - 3; t2++) {
+      var pc = cond(t2);
+      if (pc > 0 && 1 / pc >= MINQ) return pc >= TIP_LIVE_MINP ? { k: 'wait', t: 'ASPETTA', c: '', p: pc, w: x2.k === 'h1' ? '1T' : 'fine', s: 'fino al ' + t2 + '’' } : null;
+    }
+    return null;
+  };
+  return test(x, 45) || test(n1, 88) || { k: 'no', t: 'no', c: 'negative', p: n1 ? n1.p : 0, w: 'fine', s: '' };
 }
 function tipLivePanel(list) {
   var live = list.filter(tipIsLiveNow).sort(function (a, b) { return tipKickoff(a) - tipKickoff(b); }),
@@ -1059,6 +1107,15 @@ function tipLiveLogResolve(rec, x) {
   });
   res.adv = (rec.adv || []).map(function (a) {
     if (a.t === 'now') return res.y[a.k] != null ? res.y[a.k] : null;
+    if (a.t === '2h' || a.t === 'step2h') {
+      if (!Array.isArray(ht)) return null;
+      var HT = ht[0] + ht[1];
+      if (HT > G) return 'skip'; /* il punteggio è cambiato prima dell'intervallo: il piano 2° tempo non si gioca */
+      if (FT === HT) return 0;
+      if (a.t === '2h') return 1;
+      var e2 = mins ? mins.filter(function (mm) { return mm > 45 && mm <= a.t1; }).length : null;
+      return e2 == null ? 1 : e2 > 0 ? 1 : 2;
+    }
     if (FT === G) return a.t === 'wait' ? 0 : 0;
     var early = after(a.t1);
     if (early == null) return a.t === 'step' ? 1 : null; /* step: almeno un gol = uno dei due step vinto */
@@ -1088,6 +1145,7 @@ function tipLiveLogPanel() {
     row('Consiglio: gioca ora', pick(function (a) { return a.t === 'now'; })) +
     row('Consiglio: a step', pick(function (a) { return a.t === 'step'; })) +
     row('Consiglio: aspetta', pick(function (a) { return a.t === 'wait'; })) +
+    row('Piano 2° tempo', pick(function (a) { return a.t === '2h' || a.t === 'step2h'; })) +
     row('Gol 1° tempo (tutte)', mk('h1')) + row('Altro gol finale (tutte)', mk('n1')) + row('Gol entro il 70’', mk('w70')) +
     '</table><div class="actions"><button type="button" data-live-export>Esporta traccia live</button></div></section>';
 }
@@ -1182,8 +1240,11 @@ function tipLiveSheet(id, obj) {
       qm = q[main.k], vText;
     var lik = main.p >= 0.75 ? ['PROBABILE', 'positive'] : main.p >= TIP_LIVE_MINP ? ['ABBASTANZA PROBABILE', 'positive'] : main.p >= 0.45 ? ['INCERTO', ''] : ['IMPROBABILE', 'negative'];
     var likHtml = '<div class="tip-iplik"><b class="' + lik[1] + '">' + lik[0] + '</b></div>';
+    var gateM = tipLiveGate(m, r, v.min, v.half || (v.min > 46 ? 2 : 1), main.k);
     if (main.p < TIP_LIVE_MINP) {
       vText = '<b class="negative">NON GIOCARE</b><small>serve almeno il ' + Math.round(TIP_LIVE_MINP * 100) + '%</small>';
+    } else if (gateM) {
+      vText = '<b class="negative">NON GIOCARE</b><small>' + gateM + '</small>';
     } else if (U.finite(qm) && qm > 1) {
       var evm = (qm * main.p - 1) * 100;
       vText = qm >= tipNeedQ(main.fair)
@@ -1269,14 +1330,31 @@ function tipLiveSheet(id, obj) {
        Niente quote da scrivere: l'app dice se la quota giusta è già ≥ 1.50 (gioca ora)
        oppure come arrivarci (a step o aspettando), o se lasciar stare. */
     var MINQ = tipLiveMinQ(), adv = [];
+    /* 3.27.0 — quota del book per "altro gol entro la fine" (Over punteggio+0.5), se la funzione la trova */
+    var ldat = (tipUI.liveData || {})[m.id] || {}, Gn = (v.gh || 0) + (v.ga || 0), bookN1 = null, bookSure = false;
+    if (ldat.ou && Number(ldat.elapsed) === v.min) {
+      var ln = (Gn + 0.5).toFixed(1), prevL = Gn > 0 ? ldat.ou[(Gn - 0.5).toFixed(1)] : null;
+      var stale = prevL && prevL.o > 1.01; /* una linea già vinta ancora quotata = quote prepartita, non live */
+      if (!stale && ldat.ou[ln] && ldat.ou[ln].o > 1) { bookN1 = ldat.ou[ln].o; bookSure = Gn > 0; }
+    }
     var planFor = function (x, endName, tmax, kind) {
       var lik = x.p >= 0.75 ? 'PROBABILE' : x.p >= TIP_LIVE_MINP ? 'abbastanza probabile' : x.p >= 0.45 ? 'incerto' : 'IMPROBABILE';
       var head = '<div class="tip-do-h"><b>' + endName + '</b><span class="' + (x.p >= TIP_LIVE_MINP ? 'positive' : x.p < 0.45 ? 'negative' : '') + '">' + lik + ' · ' + pct(x.p) + '</span></div>';
       if (x.p < TIP_LIVE_MINP) return head + '<p class="tip-do-v negative">NO · ' + (x.p < 0.45 ? 'è più facile che non segnino' : 'troppo incerto') + '</p>';
-      if (x.fair >= MINQ) {
-        adv.push({ t: 'now', k: x.k, p: x.p, q: x.fair });
-        return head + '<p class="tip-do-v positive">GIOCA ORA · quota già buona (giusta ' + x.fair.toFixed(2) + ')</p>';
+      var gate = tipLiveGate(m, r, v.min, v.half || (v.min > 46 ? 2 : 1), kind);
+      if (gate) return head + '<p class="tip-do-v negative">NO · ' + gate + '</p>';
+      var bk = kind === 'n1' ? bookN1 : null, bkTxt = bk ? ' · book ' + bk.toFixed(2) + (bookSure ? '' : ' (verifica che sia live)') : '';
+      if (bk) {
+        /* confronto: cosa pensa il book (quota, tolto l'aggio) e cosa dicono statistiche + prepartita */
+        var pb = Math.min(0.99, 1 / (bk * 1.05)), dlt = x.p - pb;
+        head += '<p class="tip-do-cmp">Book ' + pct(pb) + ' · modello ' + pct(x.p) + ' · ' +
+          (dlt >= 0.05 ? '<b class="positive">le statistiche vedono più gol del book: valore</b>' : dlt <= -0.05 ? '<b class="negative">il book vede più gol delle statistiche: niente valore</b>' : 'd’accordo') + '</p>';
       }
+      if (x.fair >= MINQ && (!bk || bk >= Math.max(MINQ, x.fair))) {
+        adv.push({ t: 'now', k: x.k, p: x.p, q: x.fair, book: bk || undefined });
+        return head + '<p class="tip-do-v positive">GIOCA ORA · quota già buona (giusta ' + x.fair.toFixed(2) + ')' + (bk ? ' · book ' + bk.toFixed(2) + ' ✓' : '') + '</p>';
+      }
+      if (x.fair >= MINQ && bk) head += '<p class="tip-do-v negative">Ora no: book ' + bk.toFixed(2) + ' sotto la minima ' + Math.max(MINQ, x.fair).toFixed(2) + '</p>';
       var cond = function (t1) { return 1 - (1 - x.p) / Math.max(1e-6, 1 - r.pWin(t1)); };
       var lines = [];
       var st1 = null, bestMin = 0;
@@ -1296,13 +1374,40 @@ function tipLiveSheet(id, obj) {
         adv.push({ t: 'wait', k: x.k, t1: wt.t, p: wt.p, q: 1 / wt.p });
         lines.push('<li><b>Aspetta il ' + wt.t + '’</b>: se ancora nessun gol, ' + pct(wt.p) + ' a quota ≥ ' + Math.max(MINQ, 1 / wt.p).toFixed(2) + ' · poi risincronizza</li>');
       }
-      if (!lines.length) return head + '<p class="tip-do-v negative">NO · quota giusta solo ' + x.fair.toFixed(2) + ' e non si arriva a ' + MINQ.toFixed(2) + ' né a step né aspettando</p>';
-      return head + '<p class="tip-do-v">Ora quota troppo bassa (giusta ' + x.fair.toFixed(2) + '). Puoi:</p><ul>' + lines.join('') + '</ul>';
+      if (!lines.length) return head + (x.fair >= MINQ ? '' : '<p class="tip-do-v negative">NO · quota giusta solo ' + x.fair.toFixed(2) + ' e non si arriva a ' + MINQ.toFixed(2) + ' né a step né aspettando</p>');
+      return head + (x.fair >= MINQ ? '<p class="tip-do-v">Puoi:</p>' : '<p class="tip-do-v">Ora quota troppo bassa (giusta ' + x.fair.toFixed(2) + bkTxt + '). Puoi:</p>') + '<ul>' + lines.join('') + '</ul>';
     };
     var blocks = [];
     var hOne = r.lines.find(function (x) { return x.k === 'h1'; }), nOne = r.lines.find(function (x) { return x.k === 'n1'; });
     if (hOne && v.min <= 40) blocks.push(planFor(hOne, 'Gol entro l’intervallo', 45, 'h1'));
     if (nOne && v.min < 88) blocks.push(planFor(nOne, 'Altro gol entro la fine', 88, 'n1'));
+    /* 3.26.0 — dal 25' del 1° tempo: piccola prova sul gol prima dell'intervallo se la partita è viva,
+       poi piano a step nel 2° tempo se all'intervallo il punteggio non è cambiato */
+    var halfNow = v.half || (v.min > 46 ? 2 : 1);
+    if (halfNow === 1 && v.min >= 25 && v.min <= 44 && hOne && nOne) {
+      var ph = hOne.p, live = r.used && r.F >= 1.08, gateN = tipLiveGate(m, r, v.min, 1, 'n1');
+      var h2Any = 1 - (1 - nOne.p) / Math.max(1e-6, 1 - ph); /* almeno un gol nel 2° tempo se all'intervallo nulla è cambiato */
+      var pIn = function (t) { return 1 - (1 - r.pWin(t)) / Math.max(1e-6, 1 - ph); }; /* gol tra 46' e t, se 0 gol fino all'intervallo */
+      var best2 = null, bm = 0;
+      for (var tt = 55; tt <= 80; tt += 5) {
+        var a1 = pIn(tt), b1 = 1 - (1 - h2Any) / Math.max(1e-6, 1 - a1);
+        if (a1 < 0.05 || b1 < 0.05) continue;
+        var lo2 = Math.min(1 / a1, 1 / b1);
+        if (lo2 >= MINQ && lo2 > bm) { bm = lo2; best2 = { t: tt, a: a1, b: b1 }; }
+      }
+      var li = [];
+      if (live && ph >= 0.4 && 1 / ph >= MINQ) adv.push({ t: 'now', k: 'h1', p: ph, q: 1 / ph, small: true });
+      if (live && ph >= 0.4 && 1 / ph >= MINQ) li.push('<li><b>Prova piccola</b> (pochi euro) sul gol prima dell’intervallo: ' + pct(ph) + ' · quota ≥ ' + Math.max(MINQ, 1 / ph).toFixed(2) + ' · la partita spinge' + (ph < 0.5 ? ', ma è meno di 1 su 2' : '') + '</li>');
+      else if (ph >= 0.4 && 1 / ph >= MINQ) li.push('<li class="muted">Gol prima dell’intervallo ' + pct(ph) + ': la partita non spinge abbastanza per provarci</li>');
+      if (!gateN && h2Any >= TIP_LIVE_MINP && 1 / h2Any >= MINQ) adv.push({ t: '2h', p: h2Any, q: 1 / h2Any });
+      else if (!gateN && h2Any >= TIP_LIVE_MINP && best2) adv.push({ t: 'step2h', t1: best2.t, p1: best2.a, p2: best2.b, p: h2Any });
+      if (gateN) li.push('<li class="muted">2° tempo: ' + gateN + '</li>');
+      else if (h2Any < TIP_LIVE_MINP) li.push('<li class="muted">2° tempo: gol solo al ' + pct(h2Any) + ', non abbastanza</li>');
+      else if (1 / h2Any >= MINQ) li.push('<li><b>2° tempo</b>, se all’intervallo il punteggio non cambia: gol nel 2° tempo ' + pct(h2Any) + ' · quota ≥ ' + Math.max(MINQ, 1 / h2Any).toFixed(2) + ' · rivaluta al 46’</li>');
+      else if (best2) li.push('<li><b>2° tempo a step</b>, se all’intervallo il punteggio non cambia: dal 46’ gol entro il ' + best2.t + '’ (' + pct(best2.a) + ', quota ≥ ' + Math.max(MINQ, 1 / best2.a).toFixed(2) + '), se no entro la fine (' + pct(best2.b) + ', quota ≥ ' + Math.max(MINQ, 1 / best2.b).toFixed(2) + ') · almeno uno ' + pct(h2Any) + ' · rivaluta al 46’</li>');
+      else li.push('<li class="muted">2° tempo: gol ' + pct(h2Any) + ' ma a ' + MINQ.toFixed(2) + ' non si arriva neanche a step</li>');
+      blocks.push('<div class="tip-do-h"><b>Piano 1° tempo + 2° tempo</b></div><ul>' + li.join('') + '</ul>');
+    }
     var preTxt2 = 'Prepartita 1T ' + Math.round(c0.ht05) + '% · O1.5 ' + Math.round(c0.o15) + '% · ritmo ' + (r.F >= 1 ? '+' : '') + Math.round((r.F - 1) * 100) + '%';
     var doHtml = '<div class="tip-do"><div class="tip-strat-h"><b>Cosa fare</b><label>quota da <input type="number" inputmode="decimal" step="0.05" min="1.5" data-minq value="' + MINQ.toFixed(2) + '"></label></div>' +
       blocks.map(function (h) { return '<div class="tip-do-b">' + h + '</div>'; }).join('') +
@@ -1637,7 +1742,7 @@ function tipsPage() {
       '<div class="actions"><button type="button" class="primary" data-tip-fetch>↻ Cerca aggiornamenti</button><button type="button" data-tip-import>Importa file</button></div></section><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden>'
     );
   }
-  return tipToolbar(list) + (tipUI.panel === 'stats' ? tipStatsPanel(list) : tipUI.panel === 'top' ? tipTopPanel(list) : tipUI.panel === 'live' ? tipLivePanel(list) : tipListPanel(list));
+  return tipToolbar(list) + (tipUI.panel === 'stats' ? tipStatsPanel(list) : tipUI.panel === 'top' ? tipPrePlayPanel(list) + tipTopPanel(list) : tipUI.panel === 'live' ? tipLivePanel(list) : tipListPanel(list));
 }
 function tipListPanel(list) {
   var days = [],
@@ -1999,6 +2104,64 @@ function tipTopRow(c, i) {
     (o.s ? '<em class="tip-tmark" aria-label="' + { V: 'vinto', P: 'perso', N: 'annullato' }[o.s] + '">' + { V: '✓', P: '✕', N: '–' }[o.s] + '</em>' : '') +
     '</button>'
   );
+}
+/* ---------- 3.27.0 — Prepartita: "Da giocare" solo dove c'è valore ----------
+   Stesse regole del live: partita da gol (soglie Top), segnano almeno al 60%, quota ≥ 1.50;
+   se c'è la quota del book deve essere almeno la quota giusta (valore). Il gol nel 1° tempo
+   (quote basse) si gioca a step: gol entro il 30' prepartita, poi il Live al 30' se ancora 0-0. */
+function tipPreValue(m, top) {
+  var P = tipParams(), c = tipCalc(m, P), o = m.odds || {}, out = [], MINQ = Math.max(TIP_MIN_ODDS, tipLiveMinQ());
+  var add = function (key, label, p, book, extra) {
+    if (p < TIP_LIVE_MINP) return;
+    var fair = 1 / p, need = Math.max(MINQ, fair);
+    if (U.finite(book) && book > 1) {
+      if (book >= need) out.push({ k: key, label: label, p: p, book: book, need: need, ev: p * book - 1, ok: true, extra: extra });
+    } else if (fair >= MINQ) out.push({ k: key, label: label, p: p, need: need, ev: 0, ok: false, extra: extra });
+  };
+  if (c.ht05 >= tipThr(P, 'ht05')) {
+    var x = tipPlan(c.ht05);
+    if (x.fair1 >= MINQ * 0.98) out.push({ k: 'g30', label: 'Gol entro il 30’', p: x.p1, need: Math.max(MINQ, x.fair1), ev: 0, ok: false,
+      extra: 'gol 1T ' + Math.round(c.ht05) + '% · se 0-0 al 30’ apri il Live: gol 1T solo da quota ' + Math.max(MINQ, x.fair2).toFixed(2) });
+  }
+  if (c.o15 >= tipThr(P, 'o15')) {
+    add('o25', 'Over 2.5', c.o25 / 100, o.o25);
+    add('gg', 'Goal', c.gg / 100, o.gg);
+    add('o15', 'Over 1.5', c.o15 / 100, o.o15);
+  }
+  /* senza quota del book si propone solo se la partita è nelle Top di quel mercato */
+  top = top || {};
+  out = out.filter(function (r) { return r.ok || (r.k === 'g30' ? top.ht05 : top.o15); });
+  out.sort(function (a, b) { return (b.ok - a.ok) || (b.ev - a.ev) || (b.p - a.p); });
+  return out;
+}
+function tipPrePlayPanel(list) {
+  var now = Date.now(), P = tipParams(), inTop = {};
+  var days = [];
+  list.forEach(function (m) { if (days.indexOf(m.date) < 0) days.push(m.date); });
+  days.forEach(function (d) {
+    var T = tipTopFor(d, list, P);
+    ['ht05', 'o15'].forEach(function (k) {
+      if (!T[k]) return;
+      (T[k].items || []).concat(T[k].ext || []).forEach(function (c) { (inTop[c.m.id] = inTop[c.m.id] || {})[k] = true; });
+    });
+  });
+  var items = list.filter(function (m) {
+    var ko = tipKickoff(m).getTime();
+    if (m.cancelled || tipNum(m.ft) || ko < now - 5 * 60e3 || ko > now + 36 * 3600e3) return false;
+    return tipUI.day === 'all' || !tipUI.day || m.date === tipUI.day || true;
+  }).map(function (m) { return { m: m, rec: tipPreValue(m, inTop[m.id]) }; }).filter(function (x) { return x.rec.length; });
+  items.sort(function (a, b) { return (b.rec[0].ok - a.rec[0].ok) || (b.rec[0].ev - a.rec[0].ev) || (tipKickoff(a.m) - tipKickoff(b.m)); });
+  var withVal = items.filter(function (x) { return x.rec[0].ok; }).length;
+  var row = function (x) {
+    var m = x.m;
+    return '<button type="button" class="tip-trow tip-prerow" data-tip-open="' + U.esc(m.id) + '"><span class="tip-tn tip-ln">' + U.esc(m.time) + '</span><span class="tip-tmain"><b>' + U.esc(m.home) + ' – ' + U.esc(m.away) + '</b><small>' +
+      x.rec.slice(0, 2).map(function (r) {
+        return '<span class="' + (r.ok ? 'positive' : '') + '">' + U.esc(r.label) + ' ' + Math.round(r.p * 100) + '% · ' + (r.ok ? 'book ' + r.book.toFixed(2) + ' ✓' : 'da ' + r.need.toFixed(2)) + '</span>' + (r.extra ? '<i> · ' + U.esc(r.extra) + '</i>' : '');
+      }).join('<br>') + '</small></span><span class="tip-tpick"><small>' + U.esc(m.league) + '</small></span></button>';
+  };
+  return '<section class="card tip-top"><div class="tip-top-head"><b>Da giocare (prepartita)</b><span>' + items.length + ' partite · ' + withVal + ' con valore sul book</span></div>' +
+    (items.length ? '<div class="tip-tlist">' + items.slice(0, 25).map(row).join('') + '</div>' : '<p class="muted tip-tnone">Niente da giocare prepartita: nessuna partita da gol con quota 1.50 raggiungibile.</p>') +
+    '<p class="muted tip-hint">✓ = la quota del book è sopra la minima. “da X” = gioca solo se trovi almeno X.</p></section>';
 }
 function tipTopPanel(list) {
   var P = tipParams(),
