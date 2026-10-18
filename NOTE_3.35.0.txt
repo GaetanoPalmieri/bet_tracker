@@ -1,0 +1,12 @@
+Bet Tracker 3.35.0
+
+Traccia delle giocate consigliate e resoconto automatico
+- Ogni giocata OTTIMA (verde) che l'app mostra - nello scanner, in In corso o in Live · sintonizza -
+  viene salvata una volta per partita e tipo: minuto, punteggio, probabilita' di riuscita, quote minime,
+  puntate, rischio e vincita.
+- A fine partita i risultati automatici la chiudono: vinta, persa o non giocata (attesa con gol prima).
+- A fine giornata (quando tutte le giocate del giorno hanno l'esito, al massimo dopo 2 giorni) il resoconto
+  si calcola da solo e compare un avviso: "Resoconto sab 17: 9/12 giocate ottime vinte · +14.20€".
+- Statistiche › "Resoconto giocate ottime": giorno per giorno e per tipo di giocata (n, previsto, vinte, €),
+  oggi in corso, e il totale degli ultimi giorni per tipo. € calcolati a quota minima con la puntata base.
+- "Esporta traccia per il retraining" scarica tutto (giocate, valutazioni live, resoconti).
