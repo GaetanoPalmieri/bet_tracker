@@ -1,0 +1,16 @@
+Bet Tracker 3.28.0
+
+Live: step o aspettare, deciso per la partita
+- Quando si puo' sia a step sia aspettando, "Cosa fare" sceglie (★):
+  - la partita spinge (ritmo +8% o piu') -> STEP: il gol puo' arrivare presto e con lo step lo prendi;
+  - altrimenti -> ASPETTA: se non segnano la quota sale e rivaluti con dati nuovi.
+- Lo stesso criterio vale nello scanner e nella lista In corso.
+
+Partite da giocare evidenziate
+- In corso: le partite dei pronostici con qualcosa da giocare (gol 1° tempo o gol 2° tempo/fine) sono in cima,
+  bordate di verde, con GIOCA / STEP / ASPETTA e la percentuale. Il titolo dice quante sono da giocare.
+- Bastano i dati della scansione: non serve sincronizzare una per una.
+- Da giocare adesso (scanner): righe giocabili bordate di verde.
+- Schede partita: il pulsante Live diventa verde e dice cosa giocare (es. "📡 Live · STEP gol fine").
+
+(Funzione Supabase invariata rispetto alla 3.27.0.)

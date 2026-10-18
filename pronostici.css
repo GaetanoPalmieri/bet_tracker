@@ -532,3 +532,7 @@ dialog#editor.sheet.tip-dlg {
 .tip-prerow .tip-tmain small i{font-style:normal;opacity:.75}
 .tip-prerow .tip-tpick small{max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .tip-do-cmp{margin:2px 0;font-size:12px;opacity:.9}
+/* 3.28.0 — partite da giocare evidenziate */
+.tip-trow.tip-hot{border:1.5px solid rgba(46,160,90,.75)!important;background:rgba(46,160,90,.14)!important}
+.tip-livechip.tip-hot{background:linear-gradient(135deg,#2fa57f,#1f8a4c)!important;color:#fff!important}
+.tip-do li.tip-rec{font-weight:650}
