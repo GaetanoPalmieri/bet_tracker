@@ -1,0 +1,8 @@
+Bet Tracker 3.43.0 — Classificazione segnali live
+
+- I vincoli di ingresso futuro e progressione costosa non nascondono piu un segnale statistico altrimenti valido: viene mostrato in arancione, mai in verde.
+- Restano operativi i filtri per statistiche live mancanti, pressione offensiva debole e finestre temporali.
+- Le opportunita arancioni con ingresso futuro o step troppo costoso si conservano come SOLO MONITORAGGIO e non entrano nel conteggio vinte/perse.
+- Le percentuali non sono calibrate e NON sono una garanzia di successo; nessun segnale obbliga a scommettere.
+- La Edge Function Supabase pronostici-dati non e cambiata; basta distribuire il frontend.
+- Per i consigli salvati in precedenza non e possibile ricostruire automaticamente se siano stati realmente giocati.
