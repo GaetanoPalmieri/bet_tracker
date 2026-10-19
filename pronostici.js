@@ -741,6 +741,17 @@ var TIP_LM_LABEL = {
   draw_l: 'pari dopo il 60’', fav: 'forza prepartita', rg: 'gol appena segnato', altro: 'altri fattori',
 };
 /* inp: { min, half, gh, ga, side:[{s,t,b,c,xg,poss,red},{...}], prev:{min, side} } */
+var TIP_DA_PER_GOAL = 37;
+/* 3.63.0 — media gol del campionato, costruita dal server con le partite finite (stato "lgAvg").
+   Con le quote il book ne tiene già conto: correzione leggera; senza quote: correzione più forte.
+   Sotto le 8 partite non si usa; si "tira" verso 2,7 con 12 partite virtuali. */
+function tipLgFactor(league, withOdds) {
+  var A = tipUI.lgAvg && tipUI.lgAvg[league];
+  if (!A || !(A.n >= 8)) return 1;
+  var avg = (A.g + 2.7 * 12) / (A.n + 12);
+  return Math.max(0.85, Math.min(1.15, Math.pow(avg / 2.7, withOdds ? 0.35 : 0.7)));
+}
+function tipLgAvgOf(league) { var A = tipUI.lgAvg && tipUI.lgAvg[league]; return A && A.n >= 8 ? { avg: A.g / A.n, n: A.n } : null; }
 function tipInplay(m, inp, book) {
   var P = tipParams(),
     c = tipCalc(m, P),
@@ -789,6 +800,12 @@ function tipInplay(m, inp, book) {
       x += v;
       parts.push({ k: k, v: v });
     });
+    /* 3.63.0 — attacchi pericolosi (TotalCorner): pressione rispetto a quella attesa per i gol previsti.
+       Circa 37 attacchi pericolosi per gol atteso; peso prudente, finché non lo ricalibriamo sui risultati. */
+    if (U.finite(si.da) && si.da > 0 && min >= 10) {
+      var vda = Math.max(-0.25, Math.min(0.25, 0.12 * lg(si.da, TIP_DA_PER_GOAL * Ei, 3)));
+      x += vda; parts.push({ k: 'da', v: vda });
+    }
     x = Math.max(-1.2, Math.min(1.2, x));
     return { all: lam[i] * R.all * Math.exp(x), ht: lam[i] * R.ht * Math.exp(x) * mod.c1, mult: Math.exp(x), parts: parts };
   });
@@ -835,7 +852,7 @@ function tipInplay(m, inp, book) {
   /* probabilità (calibrata) di almeno un gol da adesso al minuto t2 */
   var pWin = function (t2) { return tipLmCal(1 - Math.exp(-multL(t2))); };
   /* 3.62.0 — gol attesi pre-partita dalle quote del book (null se la partita non ha quote) */
-  var lamPre = U.finite(m.lhM) && U.finite(m.laM) ? m.lhM + m.laM : m.scanSrc === 'quote' ? m.lh + m.la : null;
+  var lamPre = U.finite(m.lhM) && U.finite(m.laM) ? m.lhM + m.laM : m.scanSrc === 'quote' ? (m.lh + m.la) / (m.lgF || 1) : null;
   return { lamPre: lamPre, lgTier: tipLeagueTier(m), goals: G, pWin: pWin, F: L / Math.max(0.001, base), used: hasStats, model: name, recent: !!pv, xg: hasXg, rem: R, L: L, rh: rh, ra: ra, lines: lines, lam: lam[0] + lam[1], teams: out };
 }
 function tipIsLiveNow(m) {
@@ -850,6 +867,7 @@ async function tipScanFetch() {
   var r = null;
   try { r = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'scan' } }); } catch (e) { r = null; }
   if (!r || !Array.isArray(r.live)) r = await SuiteSync.api(TIP_FN, { method: 'POST', json: { action: 'scan', odds: true } });
+  if (r.lgAvg) tipUI.lgAvg = r.lgAvg;
   tipUI.scan = { at: Date.now(), list: r.live || [], oddsNote: r.oddsNote || null, remaining: r.remaining };
   return tipUI.scan;
 }
@@ -863,10 +881,18 @@ function tipNameTok(s) {
     .replace(/\b(fc|fk|sc|sv|ac|as|cf|nk|club|calcio|cd|afc|ssc|us|if|bk|sk)\b/g, ' ')
     .replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
 }
+/* 3.63.0 — parole comuni che da sole non identificano una squadra ("Al" Hilal / "Al" Nassr, "Real", "United"...):
+   prima bastava "Al" per scambiare due partite saudite. Ora serve almeno una parola distintiva in comune,
+   e la categoria (U19, U21, femminile, riserve) deve essere la stessa. */
+var TIP_NAME_STOP = { al: 1, el: 1, de: 1, del: 1, da: 1, la: 1, le: 1, los: 1, las: 1, the: 1, real: 1, united: 1, utd: 1, city: 1, town: 1, sporting: 1, sport: 1, athletic: 1, atletico: 1, deportivo: 1, dinamo: 1, dynamo: 1, olympic: 1, olimpia: 1, union: 1, fc: 1, sc: 1 };
+function tipNameCat(T) { return T.filter(function (t) { return /^(u\d{2}|w|women|femminile|fem|ii|b|reserves?|youth|res)$/.test(t); }).sort().join(' '); }
 function tipNameSim(a, b) {
-  var A = tipNameTok(a), B = tipNameTok(b);
-  if (!A.length || !B.length) return 0;
-  if (A.join('') === B.join('')) return 1;
+  var A0 = tipNameTok(a), B0 = tipNameTok(b);
+  if (!A0.length || !B0.length) return 0;
+  if (A0.join('') === B0.join('')) return 1;
+  if (tipNameCat(A0) !== tipNameCat(B0)) return 0;
+  var sig = function (T) { var r = T.filter(function (t) { return !TIP_NAME_STOP[t] && t.length >= 3 && !/^(u\d{2})$/.test(t); }); return r.length ? r : T; };
+  var A = sig(A0), B = sig(B0);
   var c = A.filter(function (t) { return B.some(function (u) { return u === t || (t.length >= 4 && u.length >= 4 && (u.indexOf(t) === 0 || t.indexOf(u) === 0)); }); }).length;
   return c / Math.min(A.length, B.length);
 }
@@ -910,6 +936,8 @@ function tipScanMatch(x) {
       src = 'quote live';
     }
   }
+  var lgF = tipLgFactor(x.league, src !== 'media');
+  lam *= lgF;
   var sh = 0.53, x12 = (pre && pre.x12) || (x.odds && x.odds.x12);
   if (x12 && (gh === ga || (pre && pre.x12))) {
     var ih = 1 / x12[0], ia = 1 / x12[2], sum = ih + 1 / x12[1] + ia;
@@ -917,7 +945,7 @@ function tipScanMatch(x) {
   }
   var ko = x.kickoff ? new Date(x.kickoff) : new Date();
   var m = {
-    id: 'scan_' + x.afId, afId: x.afId, scan: true, scanSrc: src,
+    id: 'scan_' + x.afId, afId: x.afId, scan: true, scanSrc: src, lgF: lgF,
     home: x.home, away: x.away, league: (x.country ? x.country + ' · ' : '') + x.league,
     date: ko.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }),
     time: ko.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' }),
@@ -1709,7 +1737,7 @@ function tipLivePanel(list) {
           '<b class="tip-prow-name">' + (x.isNew ? '<i class="tip-newtag">NUOVA</i> ' : '') + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b>' +
           '<span class="tip-prow-line"><span>' + P2.min + '’ · <b>' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : '?-?') + '</b></span><span class="' + (x.pl.green ? 'positive' : 'tip-amber-text') + '"><b>' + pc + '%</b> ' + (x.pl.green ? 'OTTIMA' : 'DA VALUTARE') + ' ›</span></span>' +
           tipLabelChips(x.pl.prof, x.pl.rit) +
-          '<small class="muted">' + U.esc(P2.m.league || '') + '</small>' +
+          '<small class="muted">' + U.esc(P2.m.league || '') + (function () { var A = tipLgAvgOf(P2.m.league); return A ? ' · media ' + A.avg.toFixed(1).replace('.', ',') + ' gol (' + A.n + ' partite)' : ''; })() + '</small>' +
           (x.prev ? '<small class="tip-amber-text">già segnalata al ' + x.prev.min + '’: ' + U.esc(TIP_PLAY_SHORT[x.prev.k] || x.prev.k) + '</small>' : '') + '</button>';
       }).join('') + '</div></section>';
   }).join('');
@@ -3235,6 +3263,31 @@ function tipFilterSheet(key) {
   });
 }
 /* Pannello File: aggiorna dal sito, importa JSON/CSV, esporta lo storico. */
+/* 3.62.0 — azzeramento: si riparte da zero con le nuove regole di predizione.
+   Si cancellano partite e pronostici, consigli (oggi e storico), resoconti, tracce e preferite live.
+   Restano: saldo e scommesse, impostazioni degli avvisi, correzioni del modello.
+   sigSince = adesso: i segnali già salvati sul server non vengono reimportati. */
+function tipResetAll() {
+  var pm = db.predModel || {}, n = (db.predictions || []).length, c = (pm.playLog || []).length;
+  U.confirm({
+    title: 'Azzerare tutti i pronostici?',
+    text: 'Si cancellano ' + n + ' partite e ' + c + ' consigli salvati, con resoconti e storico. Saldo e scommesse non cambiano. Se vuoi tenerne una copia, prima usa Esporta storico.',
+    detail: 'Hai qualche secondo per annullare.',
+  }).then(function (ok) {
+    if (!ok) return;
+    var before = { predictions: U.clone(db.predictions || []), predModel: U.clone(pm) };
+    tipUI._plQ = []; tipUI.freshIds = {}; tipUI.liveData = {}; tipUI.scanRows = []; tipUI.scan = null; tipUI.lblF = {};
+    mutate(function (d) {
+      d.predictions = [];
+      d.predModel = d.predModel || {};
+      ['playLog', 'reports', 'reportsV', 'liveLog', 'liveStars', 'lastBatch', 'lastAutoBatch', 'lastLabel'].forEach(function (k) { delete d.predModel[k]; });
+      d.predModel.sigSince = Date.now();
+      d.predModel.resetAt = Date.now();
+    });
+    render();
+    U.toast('Pronostici azzerati', function () { mutate(function (d) { d.predictions = before.predictions; d.predModel = before.predModel; }); render(); });
+  });
+}
 function tipFileSheet() {
   var P = tipParams(),
     pm = db.predModel || {},
@@ -3248,6 +3301,7 @@ function tipFileSheet() {
     '<button type="button" class="tip-sheet-btn" data-s="fetch"><b>↻ Aggiorna dal sito</b><small>Scarica il pronostici.json pubblicato con l’app</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="import"><b>Importa file</b><small>pronostici.json o pronostici.csv preparati da Claude</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="results"><b>↻ Risultati automatici</b><small>' + (pm.lastResults ? 'Ultimo controllo ' + U.esc(U.date(pm.lastResults)) + (pm.afRemaining != null ? ' · richieste rimaste oggi ' + U.esc(pm.afRemaining) : '') : 'Finale, 1° tempo e minuto del primo gol da API-Football') + '</small></button>' +
+    '<button type="button" class="tip-sheet-btn tip-sheet-danger" data-s="reset"><b>⟲ Azzera pronostici</b><small>Cancella partite, consigli di oggi e storico, resoconti e tracce live. Saldo e scommesse restano.</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="export"><b>Esporta storico</b><small>Risultati ed esiti in JSON, da dare a Claude o GPT per ricalibrare</small></button>' +
     '</div>';
   var d = sheetModal(html);
@@ -3270,6 +3324,7 @@ function tipFileSheet() {
     d.close();
     tipAutoResults({ manual: true });
   };
+  d.querySelector('[data-s="reset"]').onclick = function () { d.close(); tipResetAll(); };
   d.querySelector('[data-s="export"]').onclick = function () {
     d.close();
     tipExport();

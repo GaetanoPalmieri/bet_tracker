@@ -784,3 +784,4 @@ header { display: flex; align-items: flex-end; justify-content: space-between; g
 .tip-lchip { flex: 0 0 auto; padding: 7px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); color: inherit; font: inherit; font-size: 13px; }
 .tip-lchip.on { background: #2fbf8a; border-color: #2fbf8a; color: #062; font-weight: 700; }
 .tip-bytype td b, .tip-bytype td small { display: inline !important; white-space: nowrap; }
+.tip-sheet-btn.tip-sheet-danger b { color: #ff7a7a; }
