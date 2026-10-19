@@ -593,6 +593,8 @@ async function tipAutoResults(opts) {
     return;
   }
   var now = Date.now();
+  /* 3.64.1 — una volta: i consigli rimasti in attesa per l'errore dei risultati ripartono da zero tentativi */
+  if (!((db.predModel || {}).missReset364)) mutate(function (d) { d.predModel = d.predModel || {}; (d.predModel.playLog || []).forEach(function (e) { if (e.res == null) e.miss = 0; }); d.predModel.missReset364 = true; });
   var hasHt = function (m) { return (m.picks || []).some(function (p) { return p.m === 'ht05'; }); };
   var todo = (db.predictions || []).filter(function (m) {
     if (m.cancelled || (m.afMiss || 0) >= 3) return false;
@@ -605,14 +607,21 @@ async function tipAutoResults(opts) {
   });
   /* 3.23.0 — partite valutate nel live ancora senza esito */
   var logTodo = {};
-  (((db.predModel || {}).liveLog) || []).forEach(function (x) {
-    if (x.res || (x.miss || 0) >= 10) return;
-    var ko = tipKickoff({ date: x.date, time: x.time }).getTime();
-    if (!(ko + 125 * 60e3 < now) || ko < now - 7 * 86400e3) return;
-    if (!logTodo[x.id]) logTodo[x.id] = { id: 'log:' + x.id, date: x.date, time: x.time, home: x.home, away: x.away, league: x.league, afId: x.afId || null, needFg: true, needGoals: true };
-  });
+  /* 3.64.1 — prima i consigli (playLog), poi le altre partite valutate nel live: prima i consigli restavano
+     fuori dal lotto. Fine partita stimata anche dal minuto del consiglio (l'orario d'inizio può essere sbagliato). */
+  var endOf = function (x) {
+    var ko = tipKickoff({ date: x.date, time: x.time }).getTime(), e1 = ko + 125 * 60e3;
+    if (U.finite(x.t) && U.finite(x.min)) { var rest = x.half === 1 ? (45 - x.min) + 15 + 50 : Math.max(0, 95 - x.min); e1 = Math.min(e1, x.t + (rest + 10) * 60e3); }
+    return e1;
+  };
   (((db.predModel || {}).playLog) || []).forEach(function (x) {
     if ((x.res != null && !(x.played && x.played.res == null)) || (x.miss || 0) >= 10 || logTodo[x.id]) return;
+    var end = endOf(x);
+    if (!(end < now) || end < now - 7 * 86400e3) return;
+    logTodo[x.id] = { id: 'log:' + x.id, date: x.date, time: x.time, endBy: end, home: x.home, away: x.away, league: x.league, afId: x.afId || null, needFg: true, needGoals: true };
+  });
+  (((db.predModel || {}).liveLog) || []).forEach(function (x) {
+    if (x.res || (x.miss || 0) >= 10 || logTodo[x.id]) return;
     var ko = tipKickoff({ date: x.date, time: x.time }).getTime();
     if (!(ko + 125 * 60e3 < now) || ko < now - 7 * 86400e3) return;
     logTodo[x.id] = { id: 'log:' + x.id, date: x.date, time: x.time, home: x.home, away: x.away, league: x.league, afId: x.afId || null, needFg: true, needGoals: true };
@@ -626,7 +635,7 @@ async function tipAutoResults(opts) {
   try {
     var r = await SuiteSync.api(TIP_FN, {
       method: 'POST',
-      json: { action: 'results', matches: todo.slice(0, 80).map(function (m) { return { id: m.id, date: m.date, time: m.time, home: m.home, away: m.away, league: m.league, afId: m.afId || null, needFg: hasHt(m) && !Number.isInteger(m.fg) }; }).concat(logList.slice(0, 40)) },
+      json: { action: 'results', matches: todo.slice(0, 80).map(function (m) { return { id: m.id, date: m.date, time: m.time, home: m.home, away: m.away, league: m.league, afId: m.afId || null, needFg: hasHt(m) && !Number.isInteger(m.fg) }; }).concat(logList.slice(0, 40)).sort(function (a, b) { return (b.endBy ? 1 : 0) - (a.endBy ? 1 : 0); }) },
     });
     var byId = {};
     (r.results || []).forEach(function (x) { byId[x.id] = x; });
