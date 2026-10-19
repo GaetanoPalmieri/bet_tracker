@@ -1,0 +1,6 @@
+Bet Tracker 3.55.0
+- Campionati: maggiori (soglie normali), minori (+7 punti per OTTIMA), giovanili/riserve/regionali (+10 punti).
+- Partite con gia 3+ gol: +5 punti per OTTIMA.
+- Live, Home e numero sulla barra usano la stessa valutazione (sempre uguali); la scansione automatica gira anche nella Home dei Pronostici.
+- Consigli di oggi: solo dalle 00:00 di oggi, senza monitoraggi. Tutto resta salvato per statistiche e retraining.
+- Supabase: ripubblicare pronostici-avvisi.

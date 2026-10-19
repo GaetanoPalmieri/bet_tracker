@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.54.0
+// Versione app: 3.56.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -821,7 +821,7 @@ function tipInplay(m, inp, book) {
   var base = (lam[0] + lam[1]) * R.all;
   /* probabilità (calibrata) di almeno un gol da adesso al minuto t2 */
   var pWin = function (t2) { return tipLmCal(1 - Math.exp(-multL(t2))); };
-  return { pWin: pWin, F: L / Math.max(0.001, base), used: hasStats, model: name, recent: !!pv, xg: hasXg, rem: R, L: L, rh: rh, ra: ra, lines: lines, lam: lam[0] + lam[1], teams: out };
+  return { lgTier: tipLeagueTier(m), goals: G, pWin: pWin, F: L / Math.max(0.001, base), used: hasStats, model: name, recent: !!pv, xg: hasXg, rem: R, L: L, rh: rh, ra: ra, lines: lines, lam: lam[0] + lam[1], teams: out };
 }
 function tipPoisAtLeast(n, L) {
   var p = 0, t = Math.exp(-L);
@@ -980,8 +980,26 @@ function tipPlayEstimate(r, min, half, x) {
 var TIP_GREEN_MINP = 0.50;
 var TIP_GREEN_MINP_1T = 0.55;
 function tipMinP(x) { return x && x.k && x.k.indexOf('t1') === 0 ? TIP_GREEN_MINP_1T : TIP_GREEN_MINP; }
+var TIP_LG_MAJOR = /la ?liga|laliga|segunda divisi|serie a|serie b|bundesliga|3\. liga|ligue 1|ligue 2|eredivisie|eerste divisie|keuken|primeira liga|liga portugal|super lig|eliteserien|allsvenskan|superettan|veikkausliiga|ekstraklasa|scottish premiership|\bmls\b|major league soccer|usl championship|brasileir|liga mx|j1 league|j2 league|k league 1|a-league|saudi pro|uae pro|champions league|europa league|conference league|copa libertadores|copa sudamericana|nations league|world cup|besta deild|urvalsdeild|úrvalsdeild|challenge league|chinese super league|2\. liga/i;
+var TIP_LG_GENERIC = /premier league|championship|league one|league two|super ?league|superliga|pro league|first league|primera divisi|liga profesional|1\. liga|first division|division 1/i;
+var TIP_LG_COUNTRY = /england|scotland|spain|italy|germany|france|netherlands|holland|portugal|belgium|turkey|denmark|norway|sweden|finland|poland|austria|switzerland|greece|czech|croatia|serbia|romania|hungary|iceland|usa|brazil|argentina|mexico|japan|korea|australia|china|saudi|qatar|ukraine|scottish|english|spanish|italian|german|french|dutch|swiss|danish|swedish|norwegian/i;
+var TIP_LG_YOUTH = /\bu-?1[5-9]\b|\bu-?2[0-3]\b|under ?1[5-9]|under ?2[0-3]|youth|junior|primavera|reserve|reserves|\bii\b|\bb team\b|jong |academy|amateur|regional|women|femenin|feminin|frauen|w$|\(w\)/i;
+var TIP_LG_STRONG = /england|english|spain|spanish|italy|italian|germany|german|france|french|netherlands|dutch|holland|portugal|belgium|brazil|argentina|japan|scotland|denmark|sweden|norway|austria|switzerland|swiss|turkey|usa|mexico|croatia|serbia|czech|poland|korea|australia/i;
+function tipLeagueStrong(m) { return TIP_LG_STRONG.test(String((m && m.league) || '')); }
+function tipLeagueTier(m) {
+  var t = String((m && m.league) || '') + ' ' + String((m && m.home) || '') + ' ' + String((m && m.away) || '');
+  if (TIP_LG_YOUTH.test(t)) return tipLeagueStrong(m) ? 'youth+' : 'youth';
+  var lg = String((m && m.league) || '');
+  if (TIP_LG_MAJOR.test(lg)) return 'major';
+  if (TIP_LG_GENERIC.test(lg) && TIP_LG_COUNTRY.test(lg)) return 'major';
+  return tipLeagueStrong(m) ? 'minor+' : 'minor';
+}
+var TIP_LG_EXTRA = { major: 0, 'minor+': 0.04, minor: 0.07, 'youth+': 0.06, youth: 0.10 };
 function tipGreenFloor(x) {
-  return Math.max(tipMinP(x), x.thr);
+  var f = Math.max(tipMinP(x), x.thr) + (TIP_LG_EXTRA[x.lg] || 0);
+  /* 3.55.0 — partite che hanno già segnato tanto (3+ gol): il gol successivo non è più probabile, serve margine */
+  if (x.goals >= 3) f += 0.05;
+  return Math.min(0.9, f);
 }
 function tipPlayTier(r, min, half, x) {
   if (!x || !U.finite(x.p) || !U.finite(x.thr)) return 'none';
@@ -994,7 +1012,7 @@ function tipPlayTier(r, min, half, x) {
   if (p >= tipGreenFloor(x) && (r.xg || r.recent)) return 'excellent';
   return 'try';
 }
-function tipAmberFloor(x) { return Math.max(TIP_GREEN_MINP, x.thr - 0.04); }
+function tipAmberFloor(x) { return Math.max(TIP_GREEN_MINP, x.thr - 0.04 + ({ youth: 0.04, 'youth+': 0.02, minor: 0.02, 'minor+': 0.01 }[x.lg] || 0)); }
 function tipDecisionThresholds(x) {
   return 'Per DA VALUTARE ≥' + Math.ceil(tipAmberFloor(x) * 1000) / 10 +
     '% · per OTTIMA ≥' + Math.round(tipGreenFloor(x) * 100) + '%';
@@ -1027,6 +1045,7 @@ function tipPlays(r, min, half, book) {
     var thr = tipPlayThr(thrK || k, thrMin || min), c = cost(legs);
     /* 3.48.0 — step costoso: rischio oltre 2,5 volte la vincita oppure oltre 4 puntate base */
     var x = { k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, legs: legs, thr: thr, note: note || '', cost: c, costly: legs.length > 1 && (c.ratio > 2.5 || c.risk > 4 * base) };
+    x.lg = r.lgTier || 'major'; x.goals = r.goals || 0;
     x.minQ = Math.max(k === 't2u18' || k === 't1s18' ? 1.8 : TIP_MIN_ODDS, 1 / Math.max(0.01, legs[0].p));
     /* 3.48.0 — quota live del book: se c'è ed è sotto la minima, al massimo DA VALUTARE */
     if (book && U.finite(book.n1) && book.n1 > 1 && (k === 't2u15' || k === 't2u18')) { x.book = book.n1; x.lowBook = book.n1 < x.minQ; }
@@ -1095,7 +1114,7 @@ function tipQuickAction(y) {
   var gl = (y.x && y.x.goals) || ((tipUI.liveData || {})[y.m && y.m.id] || {}).goals || [0, 0],
     prev = y.m ? tipPlayFind(y.m.id, { half: y.half, gh: gl[0] || 0, ga: gl[1] || 0 }) : null;
   return { k: g.k, t: (g.green ? 'OTTIMA' : 'DA VALUTARE') + ' · ' + Math.round((g.evalP == null ? g.p : g.evalP) * 100) + '%', c: g.green ? 'positive' : 'tip-amber-text', p: g.p, w: g.k.indexOf('t1') === 0 ? '1T' : 'fine',
-    s: g.short + (prev && prev.k !== g.k ? ' · già segnalata al ' + prev.min + '’ (' + (TIP_PLAY_SHORT[prev.k] || prev.k) + ')' : '') };
+    s: g.short + ({ youth: ' · giovanili: soglia alta', 'youth+': ' · giovanili (paese forte): soglia media', minor: ' · campionato minore: soglia alta', 'minor+': ' · serie minore (paese forte): soglia media' }[g.lg] || '') + (prev && prev.k !== g.k ? ' · già segnalata al ' + prev.min + '’ (' + (TIP_PLAY_SHORT[prev.k] || prev.k) + ')' : '') };
 }
 function tipLiveInput(m, d) {
   var half = d.status === '2H' || d.status === 'HT' || d.status === 'ET' || Number(d.elapsed) > 46 ? 2 : 1,
