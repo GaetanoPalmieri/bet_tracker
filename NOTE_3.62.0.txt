@@ -1,0 +1,4 @@
+Bet Tracker 3.62.0 (rifatta dalla 3.61.0)
+- Minori/giovanili: niente segnali se le quote pre-partita prevedono pochi gol (minimi: maggiori 2.2, minori+ 2.5, giovanili+ 2.6, minori 2.7, giovanili 2.8). Senza quote il filtro non si applica.
+- Fuori dai maggiori: scartata la giocata se la quota live del book e molto piu alta della stima (oltre 12 punti).
+- Ripubblicare pronostici-avvisi.

@@ -834,7 +834,9 @@ function tipInplay(m, inp, book) {
   var base = (lam[0] + lam[1]) * R.all;
   /* probabilità (calibrata) di almeno un gol da adesso al minuto t2 */
   var pWin = function (t2) { return tipLmCal(1 - Math.exp(-multL(t2))); };
-  return { lgTier: tipLeagueTier(m), goals: G, pWin: pWin, F: L / Math.max(0.001, base), used: hasStats, model: name, recent: !!pv, xg: hasXg, rem: R, L: L, rh: rh, ra: ra, lines: lines, lam: lam[0] + lam[1], teams: out };
+  /* 3.62.0 — gol attesi pre-partita dalle quote (null se non ci sono quote) */
+  var lamPre = U.finite(m.lhM) && U.finite(m.laM) ? m.lhM + m.laM : m.scanSrc === 'quote' ? m.lh + m.la : null;
+  return { lamPre: lamPre, lgTier: tipLeagueTier(m), goals: G, pWin: pWin, F: L / Math.max(0.001, base), used: hasStats, model: name, recent: !!pv, xg: hasXg, rem: R, L: L, rh: rh, ra: ra, lines: lines, lam: lam[0] + lam[1], teams: out };
 }
 function tipIsLiveNow(m) {
   if (m.cancelled || tipNum(m.ft)) return false;
@@ -1336,17 +1338,17 @@ function tipLiveSafetyReason(r, min, half, x) {
   if (x.evalP < tipGreenFloor(x)) return 'margine rispetto alla soglia insufficiente';
   return null;
 }
-/* gol attesi minimi a inizio partita per tipo di campionato (linea 2.5 ≈ 2.7 gol) */
+/* 3.62.0 — gol attesi minimi a inizio partita per tipo di campionato */
 var TIP_LAM_MIN = { major: 2.2, 'minor+': 2.5, 'youth+': 2.6, minor: 2.7, youth: 2.8 };
 function tipPlayTier(r, min, half, x) {
   if (!x || !U.finite(x.p) || !U.finite(x.thr)) return 'none';
   if (tipLiveSafety(r, min, half, x)) return 'none';
   var p = U.finite(x.evalP) ? x.evalP : tipPlayEstimate(r, min, half, x);
   if (!U.finite(p) || p < tipAmberFloor(x)) return 'none';
-  /* 3.62.0 — gol attesi prima della partita (dalle quote): nei campionati minori e giovanili
-     le partite che il book prezza "da pochi gol" non si chiamano, anche se le statistiche live spingono. */
-  if (U.finite(x.lamPre) && x.lamPre < (TIP_LAM_MIN[x.lg] || TIP_LAM_MIN.major)) return 'none';
-  /* quota live del book molto più alta di quanto pensa il modello: il book sa qualcosa, si scarta */
+  /* 3.62.0 — gol attesi pre-partita (quote): nei minori e giovanili le partite
+     prezzate "da pochi gol" non si chiamano, anche se le statistiche live spingono */
+  if (x.lamPre != null && x.lamPre < (TIP_LAM_MIN[x.lg] || TIP_LAM_MIN.major)) return 'none';
+  /* quota live del book molto più alta di quanto stima il modello (oltre 12 punti): si scarta */
   if (x.book && x.lg !== 'major' && 1 / (x.book * 1.05) < p - 0.12) return 'none';
   if (x.at || x.costly || x.lowBook) return 'try';
   /* Non usare una soglia assoluta irraggiungibile per mercati a quota minima.
@@ -1396,7 +1398,7 @@ function tipPlays(r, min, half, book) {
     var thr = tipPlayThr(thrK || k, thrMin || min), c = cost(legs);
     /* 3.48.0 — step costoso: rischio oltre 2,5 volte la vincita oppure oltre 4 puntate base */
     var x = { k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, legs: legs, thr: thr, note: note || '', cost: c, costly: legs.length > 1 && (c.ratio > 2.5 || c.risk > 4 * base) };
-    x.lg = r.lgTier || 'major'; x.goals = r.goals || 0; x.lamPre = U.finite(r.lam) ? r.lam : null;
+    x.lg = r.lgTier || 'major'; x.goals = r.goals || 0; x.lamPre = U.finite(r.lamPre) ? r.lamPre : null;
     x.minQ = Math.max(k === 't2u18' || k === 't1s18' ? 1.8 : TIP_MIN_ODDS, 1 / Math.max(0.01, legs[0].p));
     /* 3.48.0 — quota live del book: se c'è ed è sotto la minima, al massimo DA VALUTARE */
     if (book && U.finite(book.n1) && book.n1 > 1 && (k === 't2u15' || k === 't2u18')) { x.book = book.n1; x.lowBook = book.n1 < x.minQ; }
