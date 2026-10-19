@@ -592,12 +592,13 @@ function tipResultsCheck(note) {
     var id = 'log:' + e.id, r = (D.by || {})[id], q = (D.endBy || {})[e.id], why;
     if (!q) why = (e.miss || 0) >= 10 ? 'tentativi finiti' : 'non ancora cercata (fine stimata ' + (function () { var t = tipKickoff({ date: e.date, time: e.time }).getTime(); return new Date(t + 125 * 60e3).toLocaleString('it-IT', { day: '2-digit', hour: '2-digit', minute: '2-digit' }); })() + ')';
     else if ((D.sent || []).indexOf(id) < 0) why = 'fuori dal lotto, riprova';
-    else if (!r) why = 'nessuna risposta dal server';
+    else if (!r) why = D.ver ? 'nessuna risposta dal server' : 'nessuna risposta: su Supabase c’è ancora la vecchia pronostici-dati';
     else if (r.dbg && r.dbg.err) why = 'errore: ' + r.dbg.err;
     else if (!Array.isArray(r.ft)) why = 'non finita per TotalCorner · stato "' + (r.dbg ? r.dbg.st : '?') + '" · gol ' + (r.dbg ? r.dbg.hg + '-' + r.dbg.ag : '?') + ' · inizio ' + (r.dbg && r.dbg.ko ? new Date(r.dbg.ko).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '?');
     else why = 'risultato ' + r.ft.join('-') + (r.ht ? ' (1T ' + r.ht.join('-') + ')' : ' (manca il 1° tempo)') + ' · esito non calcolabile';
     return '<div class="tip-memory-row"><div class="tip-memory-info"><b>' + U.esc((e.home || '') + ' – ' + (e.away || '')) + '</b><small>' + U.esc(TIP_PLAY_SHORT[e.k] || e.k) + ' · ' + U.esc(e.date || '') + ' ' + U.esc(e.time || '') + ' · ' + (e.min || 0) + '’ · id ' + U.esc(e.afId || 'nessuno') + ' · tentativi ' + (e.miss || 0) + '</small><small class="tip-amber-text">' + U.esc(why) + '</small></div></div>';
   }).join('');
+  if (typeof note !== 'string' && D.sent) note = D.ver ? 'Server pronostici-dati ' + D.ver : 'Server pronostici-dati vecchio: ripubblicalo con l’ultimo file';
   var d = sheetModal(sheetHead('Consigli in attesa', { sub: L.length ? L.length + ' negli ultimi 3 giorni' : 'Nessuno' }) + '<div class="tip-sheet">' + (typeof note === 'string' ? '<p class="tip-amber-text">' + U.esc(note) + '</p>' : '') + '<p class="muted">Fai uno screenshot e mandalo a Claude se restano in attesa.</p><div class="tip-tlist">' + (rows || '<p class="muted">Tutti chiusi.</p>') + '</div></div>');
   d.classList.add('tip-dlg');
 }
@@ -699,7 +700,7 @@ async function tipAutoResults(opts) {
       if (r.remaining != null) d.predModel.afRemaining = r.remaining;
     });
     setTimeout(tipDailyReports, 300);
-    if (opts.manual) { tipUI.resDbg = { at: Date.now(), sent: logList.slice(0, 40).map(function (x) { return x.id; }), by: byId, endBy: logTodo }; setTimeout(function () { tipResultsCheck(); }, 400); }
+    if (opts.manual) { tipUI.resDbg = { at: Date.now(), ver: r.ver || null, sent: logList.slice(0, 40).map(function (x) { return x.id; }), by: byId, endBy: logTodo }; setTimeout(function () { tipResultsCheck(); }, 400); }
     if (n || voids || opts.manual)
       U.toast(n || voids ? 'Risultati automatici: ' + n + ' partite' + (voids ? ', ' + voids + ' rinviate' : '') : 'Nessun nuovo risultato (' + (r.unmatched || 0) + ' partite non trovate)');
   } catch (e) {
