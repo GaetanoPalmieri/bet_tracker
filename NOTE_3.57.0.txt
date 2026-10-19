@@ -1,0 +1,5 @@
+Bet Tracker 3.57.0
+- TotalCorner: il server legge le partite live una sola volta ogni 2 minuti e le salva; l app le prende da li (niente richieste doppie).
+- Se TotalCorner segnala troppe richieste, il giro si ferma 3 minuti e poi riparte da solo.
+- Pronostici automatici: 4 pagine per giro, completi in circa un ora.
+- Supabase: ripubblicare pronostici-avvisi e pronostici-dati.

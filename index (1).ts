@@ -569,7 +569,7 @@ function tcIsSim(x: any) {
   return /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(h) && /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(a);
 }
 async function tcLive() {
-  const { list } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 8);
+  const { list } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 6);
   tcCalibrate(list);
   return list.filter((x: any) => !tcIsSim(x)).map(tcFixture).filter((r: any) => r.home && r.away);
 }

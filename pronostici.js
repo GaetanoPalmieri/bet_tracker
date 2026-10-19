@@ -844,7 +844,10 @@ function tipIsLiveNow(m) {
 /* ---------- 3.18.0 — Scanner: tutte le partite live del mondo ---------- */
 async function tipScanFetch() {
   if (!tipCanSync()) throw Object.assign(new Error('auth'), { auth: true });
-  var r = await SuiteSync.api(TIP_FN, { method: 'POST', json: { action: 'scan', odds: true } });
+  /* 3.57.0 — prima le partite già scaricate dal giro sul server (nessuna richiesta in più a TotalCorner), poi la lettura diretta */
+  var r = null;
+  try { r = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'scan' } }); } catch (e) { r = null; }
+  if (!r || !Array.isArray(r.live)) r = await SuiteSync.api(TIP_FN, { method: 'POST', json: { action: 'scan', odds: true } });
   tipUI.scan = { at: Date.now(), list: r.live || [], oddsNote: r.oddsNote || null, remaining: r.remaining };
   return tipUI.scan;
 }

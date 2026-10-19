@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.56.0
+// Versione app: 3.57.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -356,8 +356,8 @@ async function buildPrematch() {
   return file;
 }
 /* TotalCorner: le partite dei prossimi giorni arrivano a pagine da 30 (circa 1.300 al giorno).
-   Per stare nel limite di 30 richieste al minuto si leggono 12 pagine per giro (ogni 2 minuti):
-   oggi, domani e dopodomani si completano in circa 15 minuti, poi si ricomincia ogni 6 ore. */
+   Per stare nel limite di 30 richieste al minuto si leggono poche pagine per giro (ogni 2 minuti):
+   oggi, domani e dopodomani si completano in circa un'ora (4 pagine per giro), poi si ricomincia ogni 6 ore. */
 function tcPreMatch(x: any) {
   if (tcIsSim(x)) return null;
   const f = tcFixture(x);
@@ -397,7 +397,7 @@ async function tcPrematchStep(force = false) {
   const days = [0, 1, 2].map((n) => romeParts(now + n * 86400e3).date);
   if (force || !st.cycleAt || now - st.cycleAt > PRE_EVERY || !days.includes(st.day)) { st.cycleAt = now; st.day = days[0]; st.page = 1; st.byDay = st.byDay || {}; st.done = false; }
   if (st.done) return st;
-  let budget = 10;
+  let budget = 4;
   while (budget > 0 && !st.done) {
     const ymd = st.day.replace(/-/g, "");
     const r = await tcList("/match/schedule", { date: ymd, columns: "odds,goalLine,btts" }, Math.min(budget, 12), st.page);
@@ -427,7 +427,7 @@ async function getPrematch(force = false) {
     const cur: any = await getState("prematch");
     /* l'app legge solo quello che il giro ha già preparato: niente richieste in più (limite 30 al minuto) */
     if (cur && String(cur.batch || "").startsWith("auto-tc")) return cur;
-    return { matches: [], error: "Pronostici automatici in preparazione: il giro ogni 2 minuti li completa in circa 15 minuti." };
+    return { matches: [], error: "Pronostici automatici in preparazione: il giro ogni 2 minuti li completa in circa un'ora." };
   }
   const cur: any = await getState("prematch");
   if (!force && cur && cur.generatedAt && Date.now() - Date.parse(cur.generatedAt) < PRE_EVERY) return cur;
@@ -559,7 +559,7 @@ function tcIsSim(x: any) {
   return /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(h) && /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(a);
 }
 async function tcLive() {
-  const { list } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 8);
+  const { list } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 6);
   tcCalibrate(list);
   return list.filter((x: any) => !tcIsSim(x)).map(tcFixture).filter((r: any) => r.home && r.away);
 }
@@ -1209,13 +1209,24 @@ async function loadData(userId: string) {
   return data?.data ?? null;
 }
 
+/* 3.57.0 — TotalCorner: una sola lettura delle partite live per giro, salvata e riusata dall'app
+   (azione "scan"); se TotalCorner dice "troppe richieste" ci si ferma 3 minuti. */
+async function tcBlocked() { const b: any = await getState("tcBlock"); return b && b.until > Date.now(); }
+async function tcBlock(e: any) { if (/rateLimit|troppe/.test(String(e?.message || e))) await setState("tcBlock", { until: Date.now() + 3 * 60e3 }); }
+let liveCache: any[] | null = null;
 async function runCron() {
-  let pre: any = null;
+  let pre: any = null, liveErr: any = null;
+  if (TC_TOKEN) {
+    if (await tcBlocked()) return { note: "TotalCorner in pausa per il limite di richieste" };
+    try { liveCache = await scanList(); await setState("tcLive", { at: Date.now(), live: liveCache }); }
+    catch (e) { liveErr = (e as Error).message; await tcBlock(e); return { error: liveErr }; }
+  }
   try {
     if (TC_TOKEN) { const st: any = await tcPrematchStep(false); const f: any = await getState("prematch"); pre = { at: f?.generatedAt, matches: f?.matches?.length, day: st.day, page: st.page, done: st.done }; }
     else { const f: any = await getPrematch(false); pre = { at: f.generatedAt, matches: f.matches?.length }; }
-  } catch (e) { pre = { error: (e as Error).message }; }
-  const res: any = await runAlerts();
+  } catch (e) { pre = { error: (e as Error).message }; await tcBlock(e); }
+  let res: any;
+  try { res = await runAlerts(); } catch (e) { res = { error: (e as Error).message }; }
   res.prematch = pre;
   res.bzRemaining = bzRem;
   res.tcCalls = tcCalls; res.tcRemaining = tcRem; res.tcOffset = tcOff;
@@ -1237,7 +1248,7 @@ async function runAlerts() {
   if (!BZ_KEY && !TC_TOKEN) return { error: "manca il segreto TOTALCORNER_TOKEN" };
 
   const now = Date.now();
-  const list = await scanList();
+  const list = liveCache || await scanList();
   const oddsCache = new Map<string, number | null>();
   let sent = 0, newSig = 0, evaluated = 0;
   for (const u of users) {
@@ -1320,6 +1331,12 @@ Deno.serve(async (req) => {
     if (e2) return json({ error: e2.message }, 500);
     const rem: any = await getState("bzRemaining");
     return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null });
+  }
+  if (body.action === "scan") {
+    /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
+    const c: any = await getState("tcLive");
+    if (c && c.live && Date.now() - c.at < 5 * 60e3) return json({ live: c.live, at: c.at, source: "totalcorner-cache" });
+    return json({ error: "Dati live non ancora pronti: il giro ogni 2 minuti li aggiorna." }, 503);
   }
   if (body.action === "prematch") {
     try {
