@@ -1,0 +1,17 @@
+Bet Tracker 3.49.0 — Pronostici prepartita automatici, avvisi ogni 2 minuti
+
+Pronostici automatici
+- La funzione pronostici-avvisi prepara da sola le partite dei prossimi 3 giorni (ogni 6 ore):
+  quote medie dei bookmaker da Bzzoiro (1X2, Over/Under 1.5-2.5-3.5, Goal) -> gol attesi casa e ospite.
+  Se mancano le quote Over/Under usa i gol attesi del modello di Bzzoiro.
+- L'app li scarica da sola all'apertura di Pronostici; a mano: File › "↻ Pronostici automatici".
+- Le partite automatiche hanno già il collegamento a Bzzoiro: risultati e live si trovano sempre.
+- Il file pronostici.json preparato a mano si può ancora importare.
+
+Più veloce
+- Il server controlla le partite live ogni 2 minuti (prima 3); la pagina Live aperta si riscansiona ogni 2 minuti.
+- Richieste Bzzoiro rimaste oggi (se Bzzoiro le comunica): nel riquadro Avvisi e in File.
+
+Supabase
+- Ripubblicare pronostici-avvisi (nuovo contenuto) e rieseguire supabase/avvisi.sql (giro ogni 2 minuti).
+- pronostici-dati invariata.

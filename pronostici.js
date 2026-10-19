@@ -361,6 +361,7 @@ function tipMerge(file, { manual = false } = {}) {
           ov: {},
         };
         if (Number.isInteger(fm.fg)) m.fg = fm.fg;
+        if (typeof fm.afId === 'string') m.afId = fm.afId;
         if (Array.isArray(fm.p1x2) && fm.p1x2.length === 3) m.p1x2 = fm.p1x2.map(Number);
         if (fm.cancelled) m.cancelled = true;
         tipCopyExtra(m, fm);
@@ -406,6 +407,7 @@ function tipMerge(file, { manual = false } = {}) {
           if (cur.ov) delete cur.ov.ht05;
         }
         if (!Number.isInteger(cur.fg) && Number.isInteger(fm.fg)) cur.fg = fm.fg;
+        if (!cur.afId && typeof fm.afId === 'string') cur.afId = fm.afId;
         if (fm.cancelled && !cur.cancelled) { cur.cancelled = true; res.updated++; }
       }
     });
@@ -534,6 +536,29 @@ async function tipFetch({ manual = false } = {}) {
     if (manual) U.toast(e.message || 'Impossibile leggere il file dei pronostici.');
   } finally {
     tipUI.loading = false;
+    if (tab === 'tips') render();
+  }
+}
+
+/* ---------- 3.49.0 — Pronostici prepartita automatici ----------
+   La funzione pronostici-avvisi prepara da sola le partite dei prossimi 3 giorni dalle quote medie dei
+   bookmaker (Bzzoiro): niente più file da far preparare a Claude o GPT. Il file manuale resta possibile. */
+async function tipAutoPrematch({ manual = false } = {}) {
+  if (!tipCanSync() || tipUI.preBusy) { if (manual && !tipCanSync()) U.toast('Fai l’accesso in Altro › Sincronizzazione per i pronostici automatici.'); return; }
+  tipUI.preBusy = true;
+  try {
+    var f = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'prematch' } });
+    if (f && f.bzRemaining != null) tipUI.bzRem = f.bzRemaining;
+    if (!f || !Array.isArray(f.matches)) { if (manual) U.toast((f && f.error) || 'Pronostici automatici non disponibili.'); return; }
+    var pm = db.predModel || {};
+    if (!manual && f.batch === pm.lastAutoBatch) return;
+    var file = { batch: f.batch, label: f.label, model: pm.base || TIP_DEFAULTS, matches: f.matches };
+    tipMerge(file, { manual: manual });
+    mutate(function (d) { d.predModel = d.predModel || {}; d.predModel.lastAutoBatch = f.batch; d.predModel.lastAutoAt = f.generatedAt; });
+  } catch (e) {
+    if (manual) U.toast(tipFnErr(e).replace('pronostici-dati', 'pronostici-avvisi').replace('GUIDA_DATI_AUTOMATICI', 'GUIDA_AVVISI'));
+  } finally {
+    tipUI.preBusy = false;
     if (tab === 'tips') render();
   }
 }
@@ -1457,7 +1482,7 @@ function tipExcellentArchive() {
 }
 
 /* ---------- 3.48.0 — Scansione automatica, segnali nuovi e avvisi sul telefono ---------- */
-var TIP_AUTO_MS = 180e3; /* con la pagina Live aperta si riscansiona ogni 3 minuti */
+var TIP_AUTO_MS = 120e3; /* con la pagina Live aperta si riscansiona ogni 2 minuti */
 var TIP_ALERT_FN = '/functions/v1/pronostici-avvisi';
 function tipFreshIds() {
   var now = Date.now(), out = {};
@@ -1502,6 +1527,7 @@ async function tipSignalsPull(quiet) {
   try {
     var since = ((db.predModel || {}).sigSince) || Date.now() - 2 * 86400e3;
     var r = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'signals', since: since } });
+    if (r && r.bzRemaining != null) tipUI.bzRem = r.bzRemaining;
     var L = (r && r.signals) || [];
     if (!L.length) return;
     var mx = since;
@@ -1518,10 +1544,10 @@ function tipAlertCard() {
   if (typeof pushState !== 'undefined' && !pushState.loaded && typeof refreshPushState === 'function' && !tipUI._pushAsked) { tipUI._pushAsked = 1; setTimeout(refreshPushState, 50); }
   var st = !tipCanSync() ? 'Fai l’accesso in Altro › Sincronizzazione.' :
     !sub ? 'Prima attiva le notifiche del telefono in Altro › Notifiche (stesso permesso del promemoria serale), poi torna qui.' :
-    A.on ? 'Attivi: il server controlla le partite ogni 3 minuti e ti avvisa quando trova ' + (A.amber ? 'OTTIME e DA VALUTARE' : 'una OTTIMA') + (A.stars ? ' tra le preferite' : '') + ', anche ad app chiusa.' :
+    A.on ? 'Attivi: il server controlla le partite ogni 2 minuti e ti avvisa quando trova ' + (A.amber ? 'OTTIME e DA VALUTARE' : 'una OTTIMA') + (A.stars ? ' tra le preferite' : '') + ', anche ad app chiusa.' :
     'Spenti: tocca per ricevere un avviso quando compare una giocata, anche ad app chiusa.';
   var btn = function (k, on, label) { return '<button type="button" class="tip-chipbtn' + (on ? ' on' : '') + '" data-alert="' + k + '">' + label + '</button>'; };
-  return '<section class="card tip-top tip-alerts"><div class="tip-top-head"><b>🔔 Avvisi sul telefono</b><span>' + (A.on && sub ? 'attivi' : 'spenti') + '</span></div><p class="muted tip-hint">' + U.esc(st) + '</p>' +
+  return '<section class="card tip-top tip-alerts"><div class="tip-top-head"><b>🔔 Avvisi sul telefono</b><span>' + (A.on && sub ? 'attivi' : 'spenti') + '</span></div><p class="muted tip-hint">' + U.esc(st) + (tipUI.bzRem != null ? ' Richieste Bzzoiro rimaste oggi: ' + U.esc(tipUI.bzRem) + '.' : '') + '</p>' +
     (tipCanSync() && sub ? '<div class="tip-chips">' + btn('on', A.on, A.on ? 'Avvisi attivi' : 'Attiva avvisi') + btn('amber', A.amber, 'Anche DA VALUTARE') + btn('stars', A.stars, 'Solo preferite') + '<button type="button" class="tip-chipbtn" data-alert="test">Invia una prova</button></div>' : '') +
     '</section>';
 }
@@ -1579,7 +1605,7 @@ function tipLivePanel(list) {
       }).join('') + '</div></section>';
   }).join('');
   return (
-    '<div class="tip-live-sticky"><div class="tip-live-sticky-label"><b><i class="tip-livedot on"></i> Live scanner</b><small>' + (tipUI.scan ? 'Ultima scansione ' + new Date(tipUI.scan.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + ' · da sola ogni 3 min' : 'Scansione automatica ogni 3 minuti') + '</small></div><button type="button" class="tip-live-get tip-scan-fixed" data-scan>🔎 ' + (tipUI.scan ? 'Riscansiona' : 'Scansiona') + '</button></div>' +
+    '<div class="tip-live-sticky"><div class="tip-live-sticky-label"><b><i class="tip-livedot on"></i> Live scanner</b><small>' + (tipUI.scan ? 'Ultima scansione ' + new Date(tipUI.scan.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + ' · da sola ogni 2 min' : 'Scansione automatica ogni 2 minuti') + '</small></div><button type="button" class="tip-live-get tip-scan-fixed" data-scan>🔎 ' + (tipUI.scan ? 'Riscansiona' : 'Scansiona') + '</button></div>' +
     tipAlertCard() + scanHtml + tipStarPanel(list) + playsHtml + tipExcellentArchive() +
     '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>In corso</b><span>' + live.length + ' partite · ' + live.filter(function (m) { return evals[m.id] && evals[m.id].act.k !== 'no'; }).length + ' da giocare</span></div>' +
     (live.length ? '<div class="tip-tlist">' + live.map(row).join('') + '</div>' : '<p class="muted tip-tnone">Nessuna partita dei pronostici in corso adesso.</p>') +
@@ -3010,13 +3036,18 @@ function tipFileSheet() {
     sheetHead('Pronostici', { sub: list.length ? 'Dal ' + U.esc(tipDayLabel(days[0])) + ' al ' + U.esc(tipDayLabel(days[days.length - 1])) : 'Nessuna partita' }) +
     '<div class="tip-sheet">' +
     '<div class="tip-sheet-info"><div><small>Modello</small><b>v' + U.esc(P.version) + (pm.learned ? ' + correzioni' : '') + '</b></div><div><small>Soglie</small><b>1T ' + tipThr(P, 'ht05') + '% · O1.5 ' + tipThr(P, 'o15') + '%</b></div><div class="wide"><small>Ultimo file</small><b>' + U.esc(pm.lastLabel || pm.lastBatch || '—') + '</b></div><div class="wide"><small>Ultimo controllo</small><b>' + (pm.lastCheck ? U.esc(U.date(pm.lastCheck)) : 'mai') + '</b></div></div>' +
-    '<button type="button" class="tip-sheet-btn primary" data-s="fetch"><b>↻ Aggiorna dal sito</b><small>Scarica il pronostici.json pubblicato con l’app</small></button>' +
+    '<button type="button" class="tip-sheet-btn primary" data-s="auto"><b>↻ Pronostici automatici</b><small>' + (pm.lastAutoAt ? 'Ultimi del ' + U.esc(U.date(pm.lastAutoAt)) + ' · ' : '') + 'prossimi 3 giorni dalle quote dei bookmaker (Bzzoiro)' + (tipUI.bzRem != null ? ' · richieste Bzzoiro rimaste oggi ' + U.esc(tipUI.bzRem) : '') + '</small></button>' +
+    '<button type="button" class="tip-sheet-btn" data-s="fetch"><b>↻ Aggiorna dal sito</b><small>Scarica il pronostici.json pubblicato con l’app</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="import"><b>Importa file</b><small>pronostici.json o pronostici.csv preparati da Claude</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="results"><b>↻ Risultati automatici</b><small>' + (pm.lastResults ? 'Ultimo controllo ' + U.esc(U.date(pm.lastResults)) + (pm.afRemaining != null ? ' · richieste rimaste oggi ' + U.esc(pm.afRemaining) : '') : 'Finale, 1° tempo e minuto del primo gol da API-Football') + '</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="export"><b>Esporta storico</b><small>Risultati ed esiti in JSON, da dare a Claude o GPT per ricalibrare</small></button>' +
     '</div>';
   var d = sheetModal(html);
   d.classList.add('tip-dlg');
+  d.querySelector('[data-s="auto"]').onclick = function () {
+    d.close();
+    tipAutoPrematch({ manual: true });
+  };
   d.querySelector('[data-s="fetch"]').onclick = function () {
     d.close();
     tipFetch({ manual: true });
@@ -3470,6 +3501,7 @@ function bindTips() {
   if (!tipUI.loading && (!tipUI.checkedAt || Date.now() - tipUI.checkedAt > 30 * 60e3) && navigator.onLine !== false) {
     tipUI.checkedAt = Date.now();
     if (!last || Date.now() - Date.parse(last) > 30 * 60e3 || !(db.predictions || []).length) tipFetch();
+    setTimeout(function () { tipAutoPrematch(); }, 900);
   }
   /* 3.12.0 — risultati automatici all'apertura, al massimo ogni 20 minuti */
   if (!tipUI.resBusy && (!tipUI.resAt || Date.now() - tipUI.resAt > 30 * 60e3) && navigator.onLine !== false && tipCanSync()) {
