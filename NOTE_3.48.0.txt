@@ -1,0 +1,35 @@
+Bet Tracker 3.48.0 — Live: una giocata per partita, giocate vere, avvisi ad app chiusa
+
+Una giocata per partita
+- Ogni partita compare una volta sola, nella sezione della sua giocata migliore.
+- Con lo stesso punteggio la partita resta UNA scommessa: se prima era "step 60-80-fine" e poi
+  diventa "step 80-fine" o "unico", l'app scrive "già segnalata al 47’ (stessa scommessa)".
+  Una DA VALUTARE che diventa OTTIMA viene aggiornata. Dopo un gol è una giocata nuova.
+- Il resoconto conta una giocata per partita e punteggio, anche per i giorni già salvati
+  (il 18/10 diventa 52 vinte su 74, non 114 su 161).
+
+Giocate vere
+- "L'ho giocata" su ogni giocata: scrivi quota e puntata (per gli step: quelle del primo step).
+- Nel resoconto: "Giocate da te" con i soldi veri, accanto al conto a quota minima.
+
+Quote live del book
+- Per "altro gol entro la fine", se la quota live c'è ed è sicuramente live, la giocata è OTTIMA
+  solo se il book paga almeno la quota minima; altrimenti DA VALUTARE "aspetta che salga".
+
+Live sempre aggiornato
+- Con la pagina Live aperta la scansione riparte da sola ogni 3 minuti.
+- Ogni scansione salva le statistiche: dopo 5 minuti c'è l'andamento recente (modello completo).
+- Giocate nuove evidenziate (NUOVA), avviso nell'app con vibrazione, numero delle OTTIME sul pulsante Live.
+
+Avvisi sul telefono anche ad app chiusa (nuovo, vedi GUIDA_AVVISI.txt)
+- Funzione Supabase pronostici-avvisi + supabase/avvisi.sql (giro ogni 3 minuti).
+- Riquadro "Avvisi sul telefono" in Pronostici › Live: OTTIME, anche DA VALUTARE, solo preferite, prova.
+
+Regole più prudenti
+- Step costoso (solo DA VALUTARE) anche se il rischio supera 4 puntate base.
+- 1° tempo: OTTIMA solo da 55%; gol 1T secco solo fino al 35'.
+- Top prepartita: Over 1.5 escluso se il book paga meno di 1.25.
+
+Supabase
+- pronostici-dati: invariata.
+- NUOVA pronostici-avvisi + avvisi.sql: vedi GUIDA_AVVISI.txt.

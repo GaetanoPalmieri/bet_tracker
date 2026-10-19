@@ -1,0 +1,18 @@
+Bet Tracker 3.47.0 — Live: tornano le OTTIME, fuori le giocate sotto il 50%
+
+Verifica sulla traccia live del 18/10 (191 giocate chiuse, 69 partite):
+- Il motore live non era ottimista: previsto 61%, vinte 69%.
+- Le regole della 3.46 lasciavano passare come OTTIMA 2 giocate su 191.
+- Le giocate con stima sotto il 50% hanno vinto 1 volta su 16.
+
+Cosa cambia
+- OTTIMA: stima almeno 50% e sopra la soglia di quel minuto (70° percentile su 8.534 partite).
+  Sul 18/10 questa regola avrebbe dato 128 vinte su 170 (75%).
+- DA VALUTARE: fino a 4 punti sotto la soglia, mai sotto il 50%; oppure ingresso futuro / step costoso.
+- Tolte le riduzioni di 2-4 punti quando mancano xG o andamento recente.
+- Sotto il 50% la giocata non viene più proposta.
+
+Attenzione
+- E' un solo giorno di dati: va riverificato dopo una settimana con "Esporta traccia per il retraining".
+- I guadagni del resoconto sono calcolati alla quota minima: valgono solo se il book paga almeno quella.
+- Nessuna modifica alla funzione Supabase.

@@ -1,0 +1,53 @@
+BET TRACKER — AVVISI LIVE SUL TELEFONO (anche ad app chiusa)
+(si fa una volta sola, tutto dal sito di Supabase)
+
+Cosa fa
+- Ogni 3 minuti Supabase guarda tutte le partite in corso (Bzzoiro), le valuta con lo stesso motore
+  dell'app e ti manda una notifica quando trova una giocata OTTIMA (e, se lo scegli, DA VALUTARE).
+- Una sola notifica per partita e punteggio. Arriva di nuovo solo se una DA VALUTARE diventa OTTIMA
+  o se dopo un gol la partita offre una giocata nuova.
+- Tocchi la notifica: si apre Pronostici › Live con la partita.
+- I segnali trovati ad app chiusa entrano comunque nella traccia e nel resoconto di fine giornata.
+
+Cosa serve prima
+- Il promemoria serale già attivo (GUIDA_NOTIFICHE): usa lo stesso permesso del telefono e lo stesso
+  segreto del giro orario. Se non l'hai fatto, fai prima quella guida.
+- Il segreto BZZOIRO_KEY già su Supabase (GUIDA_DATI_AUTOMATICI).
+
+PASSO 1 — Carica la nuova versione
+Carica i file di bet_tracker come sempre (comprese le cartelle supabase/...). Apri Bet Tracker
+e tocca "Aggiorna" quando compare l'avviso.
+
+PASSO 2 — Funzione
+Supabase › Edge Functions › Deploy a new function › Via editor
+  Nome: pronostici-avvisi   (esattamente così: l'indirizzo deve finire per /pronostici-avvisi)
+  Contenuto: tutto il file supabase/functions/pronostici-avvisi/index.ts
+             (oppure il file pronostici-avvisi.txt, è lo stesso)
+Pubblica (Deploy). Poi nelle impostazioni della funzione DISATTIVA la verifica JWT
+("Verify JWT" / "Enforce JWT verification"): i controlli di sicurezza sono dentro la funzione.
+
+PASSO 3 — Tabelle e giro ogni 3 minuti
+SQL Editor › New query. Incolla supabase/avvisi.sql e premi Run. Deve dire "Success".
+
+PASSO 4 — Sul telefono
+Bet Tracker › Pronostici › Live › riquadro "🔔 Avvisi sul telefono":
+  - "Attiva avvisi": solo le OTTIME;
+  - "Anche DA VALUTARE": anche quelle vicine alla soglia;
+  - "Solo preferite": solo le partite con la stella;
+  - "Invia una prova": deve arrivare la notifica.
+Le scelte si sincronizzano: il server le legge dai tuoi dati.
+
+Quante richieste usa
+- 1-2 richieste a Bzzoiro ogni 3 minuti (circa 500-1.000 al giorno su 7.500), più 1 per controllare
+  la quota live quando una OTTIMA è "altro gol entro la fine". Se nessuno ha gli avvisi attivi,
+  la funzione non chiama Bzzoiro.
+
+Se qualcosa non va
+- La prova non arriva: controlla le notifiche in Altro › Notifiche ("Invia una prova" del promemoria).
+- Nessun avviso: SQL Editor →
+    select jobname, schedule from cron.job where jobname = 'bet-avvisi-live';
+    select status_code, content from net._http_response order by created desc limit 5;
+  Nel contenuto vedi "users" (quanti hanno gli avvisi attivi), "live" (partite in corso),
+  "newSignals" e "sent".
+- Log: Supabase › Edge Functions › pronostici-avvisi › Logs.
+- Per spegnere tutto: tocca "Avvisi attivi" nell'app, oppure in SQL: select cron.unschedule('bet-avvisi-live');
