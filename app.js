@@ -1,4 +1,4 @@
-const APP_VERSION = '3.49.0';
+const APP_VERSION = '3.51.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -15,7 +15,7 @@ const emptyDB = () => ({
 });
 let db = emptyDB(),
   storageError = '',
-  tab = 'home',
+  tab = 'tips',
   filter = {
     period: 'month',
     day: U.local().slice(0, 10),
@@ -541,7 +541,7 @@ function limitCard() {
     : '';
 }
 function render() {
-  if (!['home', 'stats', 'tips', 'accounts'].includes(tab)) tab = 'home';
+  if (!['home', 'stats', 'tips', 'accounts'].includes(tab)) tab = 'tips';
   document.getElementById('title').textContent = {
     home: 'Home',
     stats: 'Statistiche',
@@ -556,7 +556,7 @@ function render() {
   chartPoints = [];
   if (tab === 'home') html = diaryPage('home');
   if (tab === 'stats') html = diaryPage('stats');
-  if (tab === 'tips') html = tipsPage();
+  if (tab === 'tips') html = typeof tipsPage === 'function' ? tipsPage() : ''; /* 3.51.0 — Pronostici è la prima scheda: pronostici.js arriva dopo */
   if (tab === 'accounts') {
     const s = startDate();
     html = `${window.SuiteTheme ? SuiteTheme.card({ cls: 'card' }) : ''}${window.SuiteSync && typeof syncBet !== 'undefined' && syncBet ? SuiteSync.cardHtml('bet', { cls: 'card' }) + '<div class="card suite-sync-card push-card" id="pushCard"></div>' : ''}<div class="card hero acc-hero"><small>SALDO ATTUALE</small><div class="big">${U.money(balance())}</div><div class="acc-initial"><span>Saldo iniziale <b>${U.money(db.accounts[0].initial)}</b>${s ? ' · dal ' + U.esc(dLabel(s)) : ''}</span><button type="button" id="initial">Modifica</button></div><div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tx="deposit"><span aria-hidden="true">↓</span>Deposito</button><button type="button" class="flow-btn out" data-tx="withdraw"><span aria-hidden="true">↑</span>Prelievo</button></div></div><h2 class="section">Depositi e prelievi</h2>${
@@ -574,7 +574,7 @@ function render() {
   bind();
   U.bindChart(main, chartPoints);
   if (tab === 'home' || tab === 'stats') bindDiary();
-  if (tab === 'tips') bindTips();
+  if (tab === 'tips' && typeof bindTips === 'function') bindTips();
   if (tab === 'accounts' && typeof renderPushCard === 'function') renderPushCard();
 }
 function sportsCard() {
@@ -1883,7 +1883,7 @@ async function importData(e) {
 // 3.0.0 — niente più inserimento scommesse
 
 // 1.1.8 — navigazione bidirezionale con transizione coerente con il verso dello swipe.
-const TAB_ORDER = ['home', 'stats', 'tips', 'accounts'];
+const TAB_ORDER = ['tips', 'home', 'stats', 'accounts'];
 let swipeStart = null,
   tabTransitioning = false;
 function prefersReducedMotion() {

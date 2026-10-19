@@ -1,0 +1,8 @@
+Bet Tracker 3.51.0 — Prova fonti dati
+
+- Pronostici › Aggiorna › "🧪 Prova fonti dati": la funzione pronostici-avvisi interroga Highlightly
+  (segreto HIGHLIGHTLY_KEY) e, se c'è, TotalCorner (TOTALCORNER_TOKEN): campionati da gol presenti,
+  partite live di oggi, statistiche lette due volte a 60 secondi di distanza, quote pre-partita e live, bet365.
+  Usa circa 25-30 richieste Highlightly (il piano gratuito ne ha 100 al giorno).
+- Il risultato si copia con un tocco e si manda a Claude.
+- Supabase: ripubblicare pronostici-avvisi (nuovo contenuto). Nient'altro.

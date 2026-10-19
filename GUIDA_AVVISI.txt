@@ -14,8 +14,8 @@ Cosa fa
   Non serve più far preparare il file a Claude o GPT. Il file manuale si può ancora importare.
 
 Cosa serve prima
-- Il promemoria serale già attivo (GUIDA_NOTIFICHE): usa lo stesso permesso del telefono e lo stesso
-  segreto del giro orario. Se non l'hai fatto, fai prima quella guida.
+- Le notifiche del telefono attive in Altro › Notifiche (stesso permesso del promemoria serale,
+  segreti BET_VAPID_PUBLIC_KEY e BET_VAPID_PRIVATE_KEY della GUIDA_NOTIFICHE).
 - Il segreto BZZOIRO_KEY già su Supabase (GUIDA_DATI_AUTOMATICI).
 
 PASSO 1 — Carica la nuova versione

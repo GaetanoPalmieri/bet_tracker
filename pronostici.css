@@ -651,3 +651,79 @@ dialog#editor.sheet.tip-dlg {
 .tip-chipbtn{font-size:12px;padding:6px 10px;border-radius:16px;font-weight:700;opacity:.8}
 .tip-chipbtn.on{background:rgba(46,160,90,.18);border:1.5px solid rgba(46,160,90,.75);opacity:1}
 .tip-mine{font-size:12px;margin:6px 0 0}
+
+/* ---------- 3.50.0 — Navigazione dei Pronostici, Home, giorni ---------- */
+.tip-nav {
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + 6px); z-index: 20;
+  display: flex; align-items: stretch; gap: 6px; margin: 0 0 14px; padding: 5px;
+  border-radius: 18px; background: var(--suite-glass-strong); border: 1px solid var(--suite-glass-edge);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: var(--suite-glass-shadow);
+}
+.tip-navseg { flex: 1 1 auto; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+.tip-navtools { flex: 0 0 auto; display: flex; gap: 2px; padding-left: 5px; border-left: 1px solid var(--suite-glass-edge); }
+.tip-navb {
+  position: relative; display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 48px; min-width: 0; padding: 4px 2px !important; border: 0 !important; border-radius: 13px !important;
+  background: transparent !important; color: var(--suite-text-soft) !important; font: 600 10.5px/1.1 var(--suite-font-body) !important;
+  box-shadow: none !important; transition: background .18s, color .18s;
+}
+.tip-navb span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; letter-spacing: -.01em; }
+.tip-navb svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.tip-navb.on { background: var(--suite-teal-grad) !important; color: #fff !important; box-shadow: 0 6px 16px -8px rgba(31,122,98,.8) !important; }
+.tip-navicon { width: 50px; }
+.tip-navb.armed { color: var(--tip-won) !important; }
+.tip-navdot { position: absolute; top: 7px; right: 12px; width: 7px; height: 7px; border-radius: 50%; background: var(--tip-won); box-shadow: 0 0 0 2px var(--suite-glass-strong); }
+.tip-navb .tip-badge { top: 2px; right: 6px; }
+.tip-navb .tip-spin { top: 6px; right: 10px; }
+
+.tip-pagehead { display: grid; gap: 2px; margin: 2px 4px 12px; }
+.tip-pagehead b { font: 700 20px/1.15 var(--suite-font-display); letter-spacing: -.02em; }
+.tip-pagehead small { font-size: 12.5px; color: var(--suite-text-soft); }
+
+.tip-days { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0 0 14px; }
+.tip-dayb {
+  display: grid !important; gap: 1px; justify-items: center; min-height: 52px; padding: 7px 4px !important;
+  border-radius: 14px !important; background: var(--suite-glass-card) !important; border: 1px solid var(--suite-glass-edge) !important;
+  color: var(--suite-text) !important; box-shadow: none !important;
+}
+.tip-dayb b { font: 700 13.5px var(--suite-font-body); letter-spacing: -.01em; }
+.tip-dayb small { font-size: 11px; color: var(--suite-text-soft); white-space: nowrap; }
+.tip-dayb.on { background: var(--suite-teal-grad) !important; border-color: transparent !important; color: #fff !important; }
+.tip-dayb.on small { color: rgba(255,255,255,.85); }
+.tip-dayb.empty:not(.on) { opacity: .55; }
+
+.tip-hub {
+  display: grid !important; gap: 10px; width: 100%; text-align: left; margin: 0 0 12px !important; padding: 14px 14px 12px !important;
+  border-radius: var(--suite-radius-xl) !important; color: var(--suite-text) !important; cursor: pointer;
+}
+.tip-hubhead { display: flex; align-items: center; gap: 10px; }
+.tip-hubhead b { flex: 1 1 auto; font: 700 16.5px var(--suite-font-display); letter-spacing: -.01em; }
+.tip-hubhead > svg { width: 18px; height: 18px; fill: none; stroke: var(--suite-text-soft); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tip-hubic { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: rgba(63,179,142,.16); color: var(--tip-won); }
+.tip-hubic svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tip-hub-live .tip-hubic, .tip-hub-hot .tip-hubic { background: rgba(79,159,232,.16); color: var(--tip-live); }
+.tip-hub-hot { border: 1.5px solid rgba(46,160,90,.6) !important; }
+.tip-hubmeta { font-size: 12px; color: var(--suite-text-soft); white-space: nowrap; }
+.tip-hubpill { font-style: normal; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 9px; background: #1f8a4c; color: #fff; }
+.tip-hubbody { display: grid; gap: 6px; }
+.tip-hubrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; align-items: baseline; font-size: 13px; }
+.tip-hubrow > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tip-hubrow b { font-size: 12.5px; white-space: nowrap; }
+.tip-hubrow small { grid-column: 1 / -1; font-size: 11.5px; color: var(--suite-text-soft); }
+.tip-hubempty { font-size: 13px; color: var(--suite-text-soft); }
+.tip-hubdays { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.tip-hubdays > span { display: grid; justify-items: center; padding: 6px 0; border-radius: 12px; background: var(--suite-glass-row); }
+.tip-hubdays b { font: 700 18px var(--suite-font-display); }
+.tip-hubdays small { font-size: 11px; color: var(--suite-text-soft); }
+.tip-actrow { display: flex; justify-content: flex-end; margin: -4px 0 10px; }
+.tip-actrow .tip-live-get { min-height: 36px; font-size: 13px; }
+.tip-alertsheet .tip-alerts { margin: 0; }
+@media (max-width: 370px) { .tip-navb { font-size: 9.5px !important; } .tip-navicon { width: 42px; } }
+.tip-body-list .tip-fgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.tip-body-list .tip-fbtn small { font-size: 9.5px; }
+.tip-body-list .tip-fbtn b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tip-body-list .tip-fbtn { padding-left: 10px !important; padding-right: 8px !important; }
+.tip-body-list .tip-fbtn svg { width: 14px; }
+.tip-probe { max-height: 52vh; overflow: auto; font: 11px/1.35 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-word; padding: 10px; border-radius: 12px; background: var(--suite-glass-row); margin: 8px 0; }
+.tip-probe:empty { display: none; }
