@@ -1,3 +1,0 @@
-Bet Tracker 3.56.0
-- Margine per OTTIMA secondo campionato e paese: maggiori +0; serie minori di paesi forti +4; altre minori +7; giovanili di paesi forti +6; altre giovanili +10 punti.
-- Supabase: ripubblicare pronostici-avvisi.

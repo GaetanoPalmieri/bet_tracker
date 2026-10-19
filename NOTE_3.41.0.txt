@@ -1,6 +1,0 @@
-Bet Tracker 3.41.0
-- Storico: solo segnali OTTIMA e DA VALUTARE, con esiti separati per livello.
-- Classificazione arancione per segnali vicini alla soglia ma che superano i filtri di sicurezza.
-- Contatori primari: Ottime, Da valutare, totale in secondo piano.
-- Nessuna modifica alla funzione Edge Supabase in questa release; pubblicare solo il frontend.
-- Resta necessaria una verifica su risultati reali e dati live per calibrare il modello.
