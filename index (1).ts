@@ -560,10 +560,18 @@ function tcFixture(x: any) {
   if (st) r.stats = st;
   return r;
 }
+/* partite simulate (eSoccer, Cyber, virtuali, FIFA/eFootball con giocatori): da escludere */
+const TC_SIM = /e-?soccer|esports?|cyber|simulat|virtual|efootball|e-football|\bfifa\b|\bfc ?2[0-9]\b|\bpes\b|gt league|volta|battle|\d+ ?min(s|utes)?\b|h2h gg|ebasketball|valhalla/i;
+function tcIsSim(x: any) {
+  const l = String(x.l || x.league || ""), h = String(x.h || x.home || ""), a = String(x.a || x.away || "");
+  if (TC_SIM.test(l)) return true;
+  /* squadre con il nome del giocatore tra parentesi, tipico delle partite virtuali: "Arsenal (Kray)" */
+  return /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(h) && /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(a);
+}
 async function tcLive() {
   const { list } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 8);
   tcCalibrate(list);
-  return list.map(tcFixture).filter((r: any) => r.home && r.away);
+  return list.filter((x: any) => !tcIsSim(x)).map(tcFixture).filter((r: any) => r.home && r.away);
 }
 /*TC-END*/
 async function handleTc(body: any) {

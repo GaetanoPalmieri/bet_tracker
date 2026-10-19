@@ -549,7 +549,7 @@ async function tipAutoPrematch({ manual = false } = {}) {
   try {
     var f = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'prematch' } });
     if (f && f.bzRemaining != null) tipUI.bzRem = f.bzRemaining;
-    if (!f || !Array.isArray(f.matches)) { if (manual) U.toast((f && f.error) || 'Pronostici automatici non disponibili.'); return; }
+    if (!f || !Array.isArray(f.matches) || (!f.matches.length && f.error)) { if (manual) U.toast((f && f.error) || 'Pronostici automatici non disponibili.'); return; }
     var pm = db.predModel || {};
     if (!manual && f.batch === pm.lastAutoBatch) return;
     var file = { batch: f.batch, label: f.label, model: pm.base || TIP_DEFAULTS, matches: f.matches };
@@ -579,9 +579,9 @@ function tipFnErr(e) {
     tipUI.afOff = Date.now(); /* niente tentativi automatici finché l'account non torna attivo */
     return 'Account API-Football sospeso: entra su dashboard.api-football.com e controlla email/messaggi, o scrivi al supporto. I dati automatici ripartono da soli quando lo riattivano.';
   }
-  if (/rateLimit|Too many requests|per minute/i.test(t)) return 'API-Football: troppe richieste in un minuto. Riprova tra un minuto.';
+  if (/rateLimit|Too many requests|per minute/i.test(t)) return 'Troppe richieste in un minuto alla fonte dati. Riprova tra un minuto.';
   if (/request limit for the day|"requests"/i.test(t)) return 'Richieste giornaliere di API-Football finite: si azzerano alle 2 di notte.';
-  if (/429|limit/i.test(t)) return 'API-Football: limite di richieste raggiunto. Riprova tra qualche minuto.';
+  if (/429|limit/i.test(t)) return 'Limite di richieste della fonte dati raggiunto. Riprova tra qualche minuto.';
   return t.replace(/^Errore \d+:\s*/, '').slice(0, 140) || 'Dati automatici non disponibili.';
 }
 async function tipAutoResults(opts) {
@@ -2430,15 +2430,17 @@ function tipNav(list) {
     if (!hd || typeof tab === 'undefined' || tab !== 'tips') return;
     var box = hd.querySelector('.tip-htools');
     if (!box) { box = document.createElement('div'); box.className = 'tip-htools'; hd.appendChild(box); }
-    box.innerHTML = tool('live', TIP_IC.live, 'Live', nOtt) + tool('stats', TIP_IC.stats, 'Statistiche') +
+    box.innerHTML = tool('stats', TIP_IC.stats, 'Statistiche') +
       tool('alerts', TIP_IC.bell, 'Avvisi', '', 'data-tip-alerts', A.on ? ' armed' : '') +
       tool('file', TIP_IC.file, 'Aggiorna', '', 'data-tip-sheet', tipUI.loading || tipUI.preBusy ? ' busy' : '');
     box.querySelectorAll('[data-tip-panel]').forEach(function (b) { b.onclick = function () { tipUI.panel = b.dataset.tipPanel; render(); window.scrollTo(0, 0); }; });
     box.querySelectorAll('[data-tip-alerts]').forEach(function (b) { b.onclick = tipAlertSheet; });
     box.querySelectorAll('[data-tip-sheet]').forEach(function (b) { b.onclick = tipFileSheet; });
   }, 0);
-  return '<div class="tip-nav" role="navigation" aria-label="Sezioni dei pronostici"><div class="tip-navseg">' +
-    it('home', TIP_IC.home, 'Home') + it('top', TIP_IC.star, 'Top') + it('list', TIP_IC.list, 'Partite') +
+  /* 3.54.0 — Home fissa a sinistra, poi lo switch Partite · Top · Live */
+  return '<div class="tip-nav" role="navigation" aria-label="Sezioni dei pronostici">' +
+    '<button type="button" class="tip-navhome' + (P === 'home' ? ' on' : '') + '" data-tip-panel="home" aria-label="Home dei pronostici">' + TIP_IC.home + '</button>' +
+    '<div class="tip-navseg">' + it('list', TIP_IC.list, 'Partite') + it('top', TIP_IC.star, 'Top') + it('live', TIP_IC.live, 'Live', nOtt) +
     '</div></div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden>';
 }
 /* giorni a scelta rapida, uguali in Top e Partite: Oggi · Domani · Dopodomani · Tutti (con il numero di partite) */

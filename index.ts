@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.53.0
+// Versione app: 3.54.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -359,6 +359,7 @@ async function buildPrematch() {
    Per stare nel limite di 30 richieste al minuto si leggono 12 pagine per giro (ogni 2 minuti):
    oggi, domani e dopodomani si completano in circa 15 minuti, poi si ricomincia ogni 6 ore. */
 function tcPreMatch(x: any) {
+  if (tcIsSim(x)) return null;
   const f = tcFixture(x);
   if (!f.home || !f.away || f.status !== "NS" || !f.kickoff) return null;
   const ts = Date.parse(f.kickoff);
@@ -396,7 +397,7 @@ async function tcPrematchStep(force = false) {
   const days = [0, 1, 2].map((n) => romeParts(now + n * 86400e3).date);
   if (force || !st.cycleAt || now - st.cycleAt > PRE_EVERY || !days.includes(st.day)) { st.cycleAt = now; st.day = days[0]; st.page = 1; st.byDay = st.byDay || {}; st.done = false; }
   if (st.done) return st;
-  let budget = 12;
+  let budget = 10;
   while (budget > 0 && !st.done) {
     const ymd = st.day.replace(/-/g, "");
     const r = await tcList("/match/schedule", { date: ymd, columns: "odds,goalLine,btts" }, Math.min(budget, 12), st.page);
@@ -424,8 +425,9 @@ async function tcPrematchStep(force = false) {
 async function getPrematch(force = false) {
   if (TC_TOKEN) {
     const cur: any = await getState("prematch");
-    if (force || !cur || !String(cur.batch || "").startsWith("auto-tc")) await tcPrematchStep(!!force);
-    return (await getState("prematch")) || { matches: [] };
+    /* l'app legge solo quello che il giro ha già preparato: niente richieste in più (limite 30 al minuto) */
+    if (cur && String(cur.batch || "").startsWith("auto-tc")) return cur;
+    return { matches: [], error: "Pronostici automatici in preparazione: il giro ogni 2 minuti li completa in circa 15 minuti." };
   }
   const cur: any = await getState("prematch");
   if (!force && cur && cur.generatedAt && Date.now() - Date.parse(cur.generatedAt) < PRE_EVERY) return cur;
@@ -548,10 +550,18 @@ function tcFixture(x: any) {
   if (st) r.stats = st;
   return r;
 }
+/* partite simulate (eSoccer, Cyber, virtuali, FIFA/eFootball con giocatori): da escludere */
+const TC_SIM = /e-?soccer|esports?|cyber|simulat|virtual|efootball|e-football|\bfifa\b|\bfc ?2[0-9]\b|\bpes\b|gt league|volta|battle|\d+ ?min(s|utes)?\b|h2h gg|ebasketball|valhalla/i;
+function tcIsSim(x: any) {
+  const l = String(x.l || x.league || ""), h = String(x.h || x.home || ""), a = String(x.a || x.away || "");
+  if (TC_SIM.test(l)) return true;
+  /* squadre con il nome del giocatore tra parentesi, tipico delle partite virtuali: "Arsenal (Kray)" */
+  return /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(h) && /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(a);
+}
 async function tcLive() {
   const { list } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 8);
   tcCalibrate(list);
-  return list.map(tcFixture).filter((r: any) => r.home && r.away);
+  return list.filter((x: any) => !tcIsSim(x)).map(tcFixture).filter((r: any) => r.home && r.away);
 }
 
 /* ===================== Motore dell'app (generato da pronostici.js) ===================== */
