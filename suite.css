@@ -1197,3 +1197,9 @@ dialog#editor.day-sheet .day-diary-btn.primary { margin-top: 12px; }
 dialog#editor.day-sheet .sheet-note { margin-top: 8px !important; }
 .diary-seg.diary-mode { grid-template-columns: 1fr 1fr !important; display: grid !important; }
 .diary-seg.diary-mode button { white-space: nowrap; }
+
+/* 3.52.0 — giorni con saldo segnato: verde pieno se in positivo, rosso pieno se in negativo */
+.wk-day.has.up { background: color-mix(in srgb, var(--bt-up) min(100%, calc(var(--a) + 30%)), transparent); }
+.wk-day.has.down { background: color-mix(in srgb, var(--bt-down) min(100%, calc(var(--a) + 30%)), transparent); }
+.wk-day.has.up b, .wk-day.has.down b, .wk-day.has.up span, .wk-day.has.down span { color: #fff; }
+.wk-day.has.up small, .wk-day.has.down small { color: rgba(255,255,255,.85); }

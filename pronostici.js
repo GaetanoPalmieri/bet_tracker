@@ -2416,12 +2416,24 @@ function tipNav(list) {
   var it = function (k, ic, label, badge) {
     return '<button type="button" class="tip-navb' + (P === k ? ' on' : '') + '" data-tip-panel="' + k + '" aria-label="' + label + '"' + (P === k ? ' aria-current="page"' : '') + '>' + ic + '<span>' + label + '</span>' + (badge ? '<b class="tip-badge">' + badge + '</b>' : '') + '</button>';
   };
+  var tool = function (k, ic, label, badge, attr, cls) {
+    return '<button type="button" class="tip-hbtn' + (P === k ? ' on' : '') + (cls || '') + '" ' + (attr || 'data-tip-panel="' + k + '"') + ' aria-label="' + label + '">' + ic + (badge ? '<b class="tip-badge">' + badge + '</b>' : '') + '</button>';
+  };
+  /* 3.52.0 — accanto al titolo Pronostici: Live, Stats, Avvisi, Aggiorna. Nella barra solo Home, Top, Partite. */
+  setTimeout(function () {
+    var hd = document.querySelector('header');
+    if (!hd || typeof tab === 'undefined' || tab !== 'tips') return;
+    var box = hd.querySelector('.tip-htools');
+    if (!box) { box = document.createElement('div'); box.className = 'tip-htools'; hd.appendChild(box); }
+    box.innerHTML = tool('live', TIP_IC.live, 'Live', nOtt) + tool('stats', TIP_IC.stats, 'Statistiche') +
+      tool('alerts', TIP_IC.bell, 'Avvisi', '', 'data-tip-alerts', A.on ? ' armed' : '') +
+      tool('file', TIP_IC.file, 'Aggiorna', '', 'data-tip-sheet', tipUI.loading || tipUI.preBusy ? ' busy' : '');
+    box.querySelectorAll('[data-tip-panel]').forEach(function (b) { b.onclick = function () { tipUI.panel = b.dataset.tipPanel; render(); window.scrollTo(0, 0); }; });
+    box.querySelectorAll('[data-tip-alerts]').forEach(function (b) { b.onclick = tipAlertSheet; });
+    box.querySelectorAll('[data-tip-sheet]').forEach(function (b) { b.onclick = tipFileSheet; });
+  }, 0);
   return '<div class="tip-nav" role="navigation" aria-label="Sezioni dei pronostici"><div class="tip-navseg">' +
     it('home', TIP_IC.home, 'Home') + it('top', TIP_IC.star, 'Top') + it('list', TIP_IC.list, 'Partite') +
-    it('live', TIP_IC.live, 'Live', nOtt || (nLive ? '' : '')) + it('stats', TIP_IC.stats, 'Stats') +
-    '</div><div class="tip-navtools">' +
-    '<button type="button" class="tip-navb tip-navicon' + (A.on ? ' armed' : '') + '" data-tip-alerts aria-label="Avvisi sul telefono">' + TIP_IC.bell + '<span>Avvisi</span>' + (A.on ? '<i class="tip-navdot"></i>' : '') + '</button>' +
-    '<button type="button" class="tip-navb tip-navicon" data-tip-sheet aria-label="Aggiorna, importa ed esporta">' + TIP_IC.file + '<span>Aggiorna</span>' + (tipUI.loading || tipUI.preBusy ? '<i class="tip-spin"></i>' : '') + '</button>' +
     '</div></div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden>';
 }
 /* giorni a scelta rapida, uguali in Top e Partite: Oggi · Domani · Dopodomani · Tutti (con il numero di partite) */

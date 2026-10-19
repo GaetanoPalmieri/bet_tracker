@@ -1,4 +1,4 @@
-const APP_VERSION = '3.51.0';
+const APP_VERSION = '3.52.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -543,7 +543,7 @@ function limitCard() {
 function render() {
   if (!['home', 'stats', 'tips', 'accounts'].includes(tab)) tab = 'tips';
   document.getElementById('title').textContent = {
-    home: 'Home',
+    home: 'Saldo',
     stats: 'Statistiche',
     tips: 'Pronostici',
     accounts: 'Altro',
@@ -556,7 +556,7 @@ function render() {
   chartPoints = [];
   if (tab === 'home') html = diaryPage('home');
   if (tab === 'stats') html = diaryPage('stats');
-  if (tab === 'tips') html = typeof tipsPage === 'function' ? tipsPage() : ''; /* 3.51.0 — Pronostici è la prima scheda: pronostici.js arriva dopo */
+  if (tab === 'tips') html = typeof tipsPage === 'function' ? tipsPage() : ''; /* 3.52.0 — Pronostici è la prima scheda: pronostici.js arriva dopo */
   if (tab === 'accounts') {
     const s = startDate();
     html = `${window.SuiteTheme ? SuiteTheme.card({ cls: 'card' }) : ''}${window.SuiteSync && typeof syncBet !== 'undefined' && syncBet ? SuiteSync.cardHtml('bet', { cls: 'card' }) + '<div class="card suite-sync-card push-card" id="pushCard"></div>' : ''}<div class="card hero acc-hero"><small>SALDO ATTUALE</small><div class="big">${U.money(balance())}</div><div class="acc-initial"><span>Saldo iniziale <b>${U.money(db.accounts[0].initial)}</b>${s ? ' · dal ' + U.esc(dLabel(s)) : ''}</span><button type="button" id="initial">Modifica</button></div><div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tx="deposit"><span aria-hidden="true">↓</span>Deposito</button><button type="button" class="flow-btn out" data-tx="withdraw"><span aria-hidden="true">↑</span>Prelievo</button></div></div><h2 class="section">Depositi e prelievi</h2>${
@@ -570,6 +570,7 @@ function render() {
         .join('') || '<div class="card empty">Nessun deposito o prelievo.</div>'
     }<div class="card"><h2>Backup e ripristino</h2><p class="muted">Dati salvati sul telefono e, se colleghi la sincronizzazione, anche online. Ultima esportazione richiesta: ${db.settings.lastExport ? U.date(db.settings.lastExport) : 'mai'}.</p><div class="actions"><button id="export">Esporta JSON</button><button id="import">Importa backup</button></div><input type="file" accept=".json,application/json" id="import-file" hidden></div><div class="card app-version-card"><h2>Versione app</h2><p class="muted">Bet Tracker ${APP_VERSION} · gli aggiornamenti vengono controllati automaticamente.</p><button type="button" id="check-app-update">Controlla aggiornamenti</button></div>`;
   }
+  if (tab !== 'tips') document.querySelector('header .tip-htools')?.remove(); /* 3.52.0 — pulsanti dei Pronostici solo nella loro scheda */
   main.innerHTML = html;
   bind();
   U.bindChart(main, chartPoints);
