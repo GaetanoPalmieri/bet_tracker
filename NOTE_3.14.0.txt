@@ -1,6 +1,0 @@
-Bet Tracker 3.14.0
-
-Pronostici: Top allargata
-- Sotto la Top Over 0.5 1T e la Top Over 1.5 c'e' la "Top allargata": partite fino a 3 punti sotto l'obiettivo (1T 77-79%, Over 1.5 82-84%) che non sono entrate nella Top sicura.
-- Si giocano solo se la quota del book supera la quota minima indicata accanto a ogni partita: per il 1T la quota del gol entro il 30' e quella live al 30' sullo 0-0; per l'Over 1.5 la quota minima (con "conviene"/"sotto" rispetto alla quota media del book).
-- Il piano 10+20 usa ora il 66% di gol entro il 30' (imparato su 83 partite) invece del 62%.

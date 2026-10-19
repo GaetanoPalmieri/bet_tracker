@@ -1,5 +1,0 @@
-Bet Tracker 3.59.0
-- Consigli di oggi: al posto di "non giocate" il numero delle giocate segnate da te.
-- Top: tolti i giorni ripetuti e il riquadro "Da giocare (prepartita)".
-- Top: le migliori del giorno sopra una soglia minima (obiettivo - 8 punti), massimo 10 per mercato: con le quote bet365 la vecchia media 80-85% non la raggiungeva quasi nessuna partita.
-- Supabase: nessuna modifica.

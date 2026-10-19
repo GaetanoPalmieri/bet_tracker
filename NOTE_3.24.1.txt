@@ -1,6 +1,0 @@
-Bet Tracker 3.24.1
-
-- Scanner: se una partita live e' anche nei pronostici, l'app usa quella (forza prepartita da statistiche + quote + contesto).
-  Aprendola dallo scanner o da 'In corso' il risultato ora e' identico. Nello scanner e' segnata 'dai pronostici'.
-
-(Contiene la 3.24.0. Funzione Supabase invariata rispetto alla 3.23.0.)

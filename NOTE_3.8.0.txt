@@ -1,6 +1,0 @@
-Bet Tracker 3.8.0
-
-Pronostici
-- Ogni partita mostra anche gli altri mercati, sotto i pronostici colorati: in grigio e piu' piccoli, con la loro percentuale (per esempio Under 2.5 58% · Goal 54%).
-- Restano in lista solo le partite con almeno un pronostico oltre il 70%: quelli oltre soglia sono le etichette colorate, gli altri sono solo informativi.
-- A partita finita anche i mercati in grigio mostrano ✓ o ✕, ma non contano nelle statistiche dei vinti.
