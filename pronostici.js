@@ -585,7 +585,7 @@ function tipFnErr(e) {
   return t.replace(/^Errore \d+:\s*/, '').slice(0, 140) || 'Dati automatici non disponibili.';
 }
 /* 3.64.2 — controllo dei consigli ancora in attesa: perché non si chiudono (dopo ↻ Risultati automatici) */
-function tipResultsCheck() {
+function tipResultsCheck(note) {
   var D = tipUI.resDbg || {}, now = Date.now();
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.res == null && (e.t || 0) > now - 3 * 86400e3; }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
   var rows = L.map(function (e) {
@@ -598,12 +598,12 @@ function tipResultsCheck() {
     else why = 'risultato ' + r.ft.join('-') + (r.ht ? ' (1T ' + r.ht.join('-') + ')' : ' (manca il 1° tempo)') + ' · esito non calcolabile';
     return '<div class="tip-memory-row"><div class="tip-memory-info"><b>' + U.esc((e.home || '') + ' – ' + (e.away || '')) + '</b><small>' + U.esc(TIP_PLAY_SHORT[e.k] || e.k) + ' · ' + U.esc(e.date || '') + ' ' + U.esc(e.time || '') + ' · ' + (e.min || 0) + '’ · id ' + U.esc(e.afId || 'nessuno') + ' · tentativi ' + (e.miss || 0) + '</small><small class="tip-amber-text">' + U.esc(why) + '</small></div></div>';
   }).join('');
-  var d = sheetModal(sheetHead('Consigli in attesa', { sub: L.length ? L.length + ' negli ultimi 3 giorni' : 'Nessuno' }) + '<div class="tip-sheet"><p class="muted">Fai uno screenshot e mandalo a Claude se restano in attesa.</p><div class="tip-tlist">' + (rows || '<p class="muted">Tutti chiusi.</p>') + '</div></div>');
+  var d = sheetModal(sheetHead('Consigli in attesa', { sub: L.length ? L.length + ' negli ultimi 3 giorni' : 'Nessuno' }) + '<div class="tip-sheet">' + (typeof note === 'string' ? '<p class="tip-amber-text">' + U.esc(note) + '</p>' : '') + '<p class="muted">Fai uno screenshot e mandalo a Claude se restano in attesa.</p><div class="tip-tlist">' + (rows || '<p class="muted">Tutti chiusi.</p>') + '</div></div>');
   d.classList.add('tip-dlg');
 }
 async function tipAutoResults(opts) {
   opts = opts || {};
-  if (tipUI.resBusy) return;
+  if (tipUI.resBusy) { if (opts.manual) U.toast('Ricerca dei risultati già in corso, attendi qualche secondo.'); return; }
   if (!opts.manual && tipUI.afOff && Date.now() - tipUI.afOff < 6 * 3600e3) return;
   if (!tipCanSync()) {
     if (opts.manual) U.toast('Fai l’accesso in Altro › Sincronizzazione per i risultati automatici.');
@@ -645,7 +645,7 @@ async function tipAutoResults(opts) {
   });
   var logList = Object.keys(logTodo).map(function (k) { return logTodo[k]; });
   if (!todo.length && !logList.length) {
-    if (opts.manual) U.toast('Nessun risultato da cercare.');
+    if (opts.manual) { tipUI.resDbg = { at: Date.now(), sent: [], by: {}, endBy: {} }; tipResultsCheck('Nessun consiglio è ancora da cercare: le partite risultano non finite.'); }
     return;
   }
   tipUI.resBusy = true;
@@ -699,11 +699,11 @@ async function tipAutoResults(opts) {
       if (r.remaining != null) d.predModel.afRemaining = r.remaining;
     });
     setTimeout(tipDailyReports, 300);
-    if (opts.manual) { tipUI.resDbg = { at: Date.now(), sent: logList.slice(0, 40).map(function (x) { return x.id; }), by: byId, endBy: logTodo }; setTimeout(tipResultsCheck, 400); }
+    if (opts.manual) { tipUI.resDbg = { at: Date.now(), sent: logList.slice(0, 40).map(function (x) { return x.id; }), by: byId, endBy: logTodo }; setTimeout(function () { tipResultsCheck(); }, 400); }
     if (n || voids || opts.manual)
       U.toast(n || voids ? 'Risultati automatici: ' + n + ' partite' + (voids ? ', ' + voids + ' rinviate' : '') : 'Nessun nuovo risultato (' + (r.unmatched || 0) + ' partite non trovate)');
   } catch (e) {
-    if (opts.manual) U.toast(tipFnErr(e));
+    if (opts.manual) { tipUI.resDbg = { at: Date.now(), sent: [], by: {}, endBy: {} }; tipResultsCheck('Errore dal server: ' + tipFnErr(e)); }
   } finally {
     tipUI.resBusy = false;
     if (tab === 'tips') render();
@@ -3426,6 +3426,7 @@ function tipFileSheet() {
     '<button type="button" class="tip-sheet-btn" data-s="fetch"><b>↻ Aggiorna dal sito</b><small>Scarica il pronostici.json pubblicato con l’app</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="import"><b>Importa file</b><small>pronostici.json o pronostici.csv preparati da Claude</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="results"><b>↻ Risultati automatici</b><small>' + (pm.lastResults ? 'Ultimo controllo ' + U.esc(U.date(pm.lastResults)) + (pm.afRemaining != null ? ' · richieste rimaste oggi ' + U.esc(pm.afRemaining) : '') : 'Finale, 1° tempo e minuto del primo gol da API-Football') + '</small></button>' +
+    '<button type="button" class="tip-sheet-btn" data-s="check"><b>🔍 Consigli in attesa</b><small>Cerca i risultati e mostra perché un consiglio non si chiude</small></button>' +
     '<button type="button" class="tip-sheet-btn tip-sheet-danger" data-s="reset"><b>⟲ Azzera pronostici</b><small>Cancella partite, consigli di oggi e storico, resoconti e tracce live. Saldo e scommesse restano.</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="export"><b>Esporta storico</b><small>Risultati ed esiti in JSON, da dare a Claude o GPT per ricalibrare</small></button>' +
     '</div>';
@@ -3449,6 +3450,7 @@ function tipFileSheet() {
     d.close();
     tipAutoResults({ manual: true });
   };
+  d.querySelector('[data-s="check"]').onclick = function () { d.close(); U.toast('Cerco i risultati…'); tipAutoResults({ manual: true }); };
   d.querySelector('[data-s="reset"]').onclick = function () { d.close(); tipResetAll(); };
   d.querySelector('[data-s="export"]').onclick = function () {
     d.close();

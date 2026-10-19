@@ -3,30 +3,30 @@
    - Pagina: rete con timeout di 3 secondi, poi la copia salvata (funziona anche offline).
    - File con ?v= e icone: prima la cache; un nuovo rilascio cambia ?v= e quindi l'indirizzo.
    - Il nuovo worker resta in attesa finché l'app non chiede di attivarlo (avviso "Aggiorna"). */
-const VERSION = '3.64.2';
+const VERSION = '3.64.3';
 const PREFIX = 'bet-tracker-';
 const CACHE = PREFIX + VERSION;
 const SHELL = [
   './',
   './index.html',
-  './suite.js?v=3.64.2',
-  './colors.css?v=3.64.2',
-  './base.css?v=3.64.2',
-  './shared.css?v=3.64.2',
-  './app.css?v=3.64.2',
-  './suite.css?v=3.64.2',
-  './suite-tokens.css?v=3.64.2',
-  './vetro.css?v=3.64.2',
-  './shared.js?v=3.64.2',
-  './app.js?v=3.64.2',
-  './pronostici.js?v=3.64.2',
-  './pronostici.css?v=3.64.2',
-  './manifest.webmanifest?v=3.64.2',
-  './favicon.ico?v=3.64.2',
-  './favicon-32.png?v=3.64.2',
-  './apple-touch-icon.png?v=3.64.2',
-  './bet-icon-192.png?v=3.64.2',
-  './bet-icon-512.png?v=3.64.2'
+  './suite.js?v=3.64.3',
+  './colors.css?v=3.64.3',
+  './base.css?v=3.64.3',
+  './shared.css?v=3.64.3',
+  './app.css?v=3.64.3',
+  './suite.css?v=3.64.3',
+  './suite-tokens.css?v=3.64.3',
+  './vetro.css?v=3.64.3',
+  './shared.js?v=3.64.3',
+  './app.js?v=3.64.3',
+  './pronostici.js?v=3.64.3',
+  './pronostici.css?v=3.64.3',
+  './manifest.webmanifest?v=3.64.3',
+  './favicon.ico?v=3.64.3',
+  './favicon-32.png?v=3.64.3',
+  './apple-touch-icon.png?v=3.64.3',
+  './bet-icon-192.png?v=3.64.3',
+  './bet-icon-512.png?v=3.64.3'
 ];
 const NETWORK_TIMEOUT_MS = 3000;
 
@@ -65,7 +65,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // TheSportsDB e Supabase: sempre dalla rete
-  if (url.pathname.endsWith('/pronostici.json')) return; // 3.64.2 — file dei pronostici: sempre dalla rete
+  if (url.pathname.endsWith('/pronostici.json')) return; // 3.64.3 — file dei pronostici: sempre dalla rete
 
   if (req.mode === 'navigate') {
     const network = fromNetworkAndStore(req, './index.html');
@@ -103,7 +103,7 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const target = new URL((event.notification.data && event.notification.data.url) || './', self.registration.scope).href;
   const diary = new URL(target).searchParams.get('diary') === 'today';
-  const live = new URL(target).searchParams.get('live'); /* 3.64.2 — avvisi delle giocate live */
+  const live = new URL(target).searchParams.get('live'); /* 3.64.3 — avvisi delle giocate live */
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const c of list) {
