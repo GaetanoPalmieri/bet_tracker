@@ -1553,17 +1553,26 @@ function tipLblPass(prof, rit) {
   var f = tipUI.lblF || {};
   return (!f.p || f.p === prof) && (!f.r || f.r === rit);
 }
+/* 3.63.0 — filtri compatti: una sola riga con "Filtri" (apre un pannello) e i filtri attivi rimovibili */
 function tipLblFilterBar() {
-  var f = tipUI.lblF || {}, chip = function (kind, v, t) { var on = (f[kind] || '') === v; return '<button type="button" class="tip-lchip' + (on ? ' on' : '') + '" data-lblf="' + kind + ':' + v + '">' + t + '</button>'; };
-  return '<div class="tip-lblf"><div>' + chip('p', '', 'Tutte') + chip('p', 'gol', 'Da gol') + chip('p', 'medio', 'Media') + chip('p', 'pochi', 'Pochi gol') + chip('p', 'nq', 'Senza quote') + '</div>' +
-    '<div>' + chip('r', '', 'Ogni ritmo') + chip('r', 'alto', 'Ritmo alto') + chip('r', 'norm', 'Normale') + chip('r', 'basso', 'Ritmo basso') + '</div></div>';
+  var f = tipUI.lblF || {}, act = [];
+  if (f.p) act.push('<button type="button" class="tip-lchip on" data-lblf="p:">' + TIP_PROF[f.p] + ' ✕</button>');
+  if (f.r) act.push('<button type="button" class="tip-lchip on" data-lblf="r:">' + TIP_RIT[f.r] + ' ✕</button>');
+  return '<div class="tip-lblf"><button type="button" class="tip-lchip tip-lfbtn" data-lblsheet>⚲ Filtri' + (act.length ? ' (' + act.length + ')' : '') + '</button>' + act.join('') + '</div>';
+}
+function tipLblSheet() {
+  var f = tipUI.lblF || {}, chip = function (kind, v, t) { return '<button type="button" class="tip-lchip' + ((f[kind] || '') === v ? ' on' : '') + '" data-lblf="' + kind + ':' + v + '">' + t + '</button>'; };
+  var d = sheetModal(sheetHead('Filtri', { sub: 'Valgono per le giocate live e per i consigli di oggi' }) +
+    '<div class="tip-sheet"><p class="tip-lfsec">Profilo (quote pre-partita)</p><div class="tip-lfgrid">' + chip('p', '', 'Tutte') + chip('p', 'gol', 'Da gol') + chip('p', 'medio', 'Media') + chip('p', 'pochi', 'Pochi gol') + chip('p', 'nq', 'Senza quote') + '</div>' +
+    '<p class="tip-lfsec">Ritmo (statistiche live)</p><div class="tip-lfgrid">' + chip('r', '', 'Ogni ritmo') + chip('r', 'alto', 'Alto') + chip('r', 'norm', 'Normale') + chip('r', 'basso', 'Basso') + '</div></div>');
+  d.classList.add('tip-dlg');
+  d.querySelectorAll('[data-lblf]').forEach(function (b) {
+    b.onclick = function (ev) { ev.stopPropagation(); var kv = b.getAttribute('data-lblf').split(':'); tipUI.lblF = tipUI.lblF || {}; tipUI.lblF[kv[0]] = kv[1] || ''; d.close(); render(); };
+  });
 }
 document.addEventListener('click', function (ev) {
-  var b = ev.target.closest && ev.target.closest('[data-lblf]');
-  if (!b) return;
-  var kv = b.getAttribute('data-lblf').split(':');
-  tipUI.lblF = tipUI.lblF || {}; tipUI.lblF[kv[0]] = kv[1] || '';
-  render();
+  var b = ev.target.closest && ev.target.closest('[data-lblsheet]');
+  if (b) tipLblSheet();
 });
 /* 3.60.0 — spaccato per tipo di segnale · 3.62.0 — e per profilo × ritmo */
 function tipArchiveSplit(L) {
@@ -1582,7 +1591,9 @@ function tipArchiveSplit(L) {
     var arr = L.filter(function (e) { return (e.prof || 'nq') === q; });
     return '<tr><th>' + TIP_PROF[q] + '</th>' + rs.map(function (r) { return cell(arr.filter(function (e) { return (e.rit || 'norm') === r; })); }).join('') + cell(arr) + '</tr>';
   }).join('') + '</table>';
-  return t1 + t2 + '<p class="muted tip-hint">vinte/perse · +in attesa. Profilo dalle quote pre-partita, ritmo dalle statistiche live al momento del consiglio.</p>';
+  var op = tipUI.splitOpen ? ' open' : '';
+  return '<details class="tip-split"' + op + ' ontoggle="tipUI.splitOpen=this.open"><summary>Spaccato per tipo di segnale</summary>' + t1 + '</details>' +
+    '<details class="tip-split"' + (tipUI.splitOpen2 ? ' open' : '') + ' ontoggle="tipUI.splitOpen2=this.open"><summary>Spaccato profilo × ritmo</summary>' + t2 + '<p class="muted tip-hint">vinte/perse · +in attesa</p></details>';
 }
 function tipExcellentArchive() {
   /* I vecchi record senza tier provengono dal precedente registro delle Ottime. */
