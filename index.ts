@@ -14,11 +14,11 @@
 // Chi la chiama:
 //  - il cron (intestazione x-cron-secret: segreto creato da avvisi.sql nella tabella pronostici_stato);
 //  - l'app, con l'accesso della sincronizzazione: { action: "signals", since }, { action: "test" },
-//    { action: "prematch" } (pronostici dei prossimi 3 giorni), { action: "probe", wait } (prova fonti dati).
+//    { action: "prematch" } (pronostici dei prossimi 3 giorni).
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.51.0
+// Versione app: 3.53.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -26,6 +26,7 @@ import webpush from "npm:web-push@3.6.7";
 const APP = "bet";
 const env = (k: string) => Deno.env.get(k) ?? "";
 const BZ_KEY = env("BZZOIRO_KEY");
+const __unused = 0;
 const BZ = "https://sports.bzzoiro.com";
 const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false } });
 /* senza le chiavi delle notifiche la funzione lavora lo stesso (pronostici automatici), ma non manda avvisi */
@@ -224,6 +225,13 @@ function bzParseOU(d: any) {
 
 /* partite in corso nello stesso formato della scansione dell'app */
 async function scanList() {
+  if (TC_TOKEN) {
+    const sv: any = await getState("tcOff");
+    if (sv != null && tcOff == null) tcOff = Number(sv);
+    const L = await tcLive();
+    if (tcOff != null) await setState("tcOff", tcOff);
+    return L;
+  }
   const list = await bzLive();
   return list.map((e: any) => {
     const f = bzFixture(e);
@@ -242,7 +250,7 @@ async function scanList() {
 /* quota live del book per "altro gol entro la fine" (Over punteggio+0,5).
    Come nell'app: si usa solo se è sicuramente live (la linea già vinta non deve essere più quotata). */
 async function bookN1(afId: string, G: number) {
-  if (G < 1) return null;
+  if (G < 1 || String(afId).startsWith("tc:")) return null;
   try {
     const raw = String(afId).replace(/^bz:/, "");
     const ou = bzParseOU(await bzGet(`/api/v2/events/${raw}/odds/`));
@@ -347,103 +355,203 @@ async function buildPrematch() {
   await setState("prematch", file);
   return file;
 }
+/* TotalCorner: le partite dei prossimi giorni arrivano a pagine da 30 (circa 1.300 al giorno).
+   Per stare nel limite di 30 richieste al minuto si leggono 12 pagine per giro (ogni 2 minuti):
+   oggi, domani e dopodomani si completano in circa 15 minuti, poi si ricomincia ogni 6 ore. */
+function tcPreMatch(x: any) {
+  const f = tcFixture(x);
+  if (!f.home || !f.away || f.status !== "NS" || !f.kickoff) return null;
+  const ts = Date.parse(f.kickoff);
+  if (ts < Date.now() + 5 * 60e3) return null;
+  const L = f.odds?.pre?.lam;
+  if (!L) return null;
+  const p1x = f.odds?.pre?.x12;
+  let s = 0.53, mk: any = null;
+  if (p1x) {
+    const inv = p1x.map((v: number) => 1 / v), S = inv[0] + inv[1] + inv[2], ph = inv[0] / S, pd = inv[1] / S, pa = inv[2] / S, target = ph - pa;
+    let lo = 0.08, hi = 0.92;
+    for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2, r = hda(L * mid, L * (1 - mid)); if (r.h - r.a < target) lo = mid; else hi = mid; }
+    s = (lo + hi) / 2;
+    mk = { p1: Math.round(ph * 1000) / 10, px: Math.round(pd * 1000) / 10, p2: Math.round(pa * 1000) / 10 };
+  }
+  const lh = Math.round(L * s * 1000) / 1000, la = Math.round(L * (1 - s) * 1000) / 1000;
+  /* si tengono solo le partite che possono entrare nei pronostici (Over 1.5 o gol nel 1° tempo plausibili) */
+  const p15 = 1 - Math.exp(-L) * (1 + L), pht = 1 - Math.exp(-0.45 * L);
+  if (p15 < 0.72 && pht < 0.66) return null;
+  const rp = romeParts(ts);
+  const odds: any = { gl: f.odds.pre.line };
+  if (p1x) { odds["1"] = p1x[0]; odds["X"] = p1x[1]; odds["2"] = p1x[2]; }
+  const bt = tcNum(Array.isArray(x.p_btts) ? x.p_btts[0] : x.p_btts);
+  if (bt && bt > 1) odds.gg = bt;
+  return {
+    id: rp.date + "_" + slugT(f.home) + "_" + slugT(f.away), date: rp.date, time: rp.time, league: f.league, home: f.home, away: f.away, lh, la,
+    rel: p1x ? "B" : "C", review: "auto", note: "Automatico: quote bet365 (TotalCorner), linea gol " + f.odds.pre.line,
+    src: "quote", lhM: lh, laM: la, wMkt: 1, afId: f.afId, odds, mkt: mk || undefined, fav: mk ? Math.round(Math.max(mk.p1, mk.p2)) : undefined,
+  };
+}
+async function tcPrematchStep(force = false) {
+  if (tcOff == null) { const sv: any = await getState("tcOff"); if (sv != null) tcOff = Number(sv); }
+  const st: any = (await getState("tcpre")) || {};
+  const now = Date.now();
+  const days = [0, 1, 2].map((n) => romeParts(now + n * 86400e3).date);
+  if (force || !st.cycleAt || now - st.cycleAt > PRE_EVERY || !days.includes(st.day)) { st.cycleAt = now; st.day = days[0]; st.page = 1; st.byDay = st.byDay || {}; st.done = false; }
+  if (st.done) return st;
+  let budget = 12;
+  while (budget > 0 && !st.done) {
+    const ymd = st.day.replace(/-/g, "");
+    const r = await tcList("/match/schedule", { date: ymd, columns: "odds,goalLine,btts" }, Math.min(budget, 12), st.page);
+    budget -= Math.max(1, r.nextPage - st.page);
+    const keep = r.list.map(tcPreMatch).filter(Boolean);
+    const cur = st.byDay[st.day] && st.page > 1 ? st.byDay[st.day] : [];
+    st.byDay[st.day] = cur.concat(keep);
+    if (r.nextPage > r.pages || !r.list.length) {
+      const k = days.indexOf(st.day);
+      if (k < days.length - 1) { st.day = days[k + 1]; st.page = 1; } else st.done = true;
+    } else st.page = r.nextPage;
+  }
+  for (const d of Object.keys(st.byDay)) if (!days.includes(d)) delete st.byDay[d];
+  await setState("tcpre", st);
+  if (st.done || Object.keys(st.byDay).length) {
+    const seen = new Set<string>();
+    const matches = days.flatMap((d) => st.byDay[d] || []).filter((m: any) => !seen.has(m.id) && (seen.add(m.id), true));
+    const file = { app: "bet_tracker", kind: "pronostici", auto: true, batch: "auto-tc-" + new Date(st.cycleAt).toISOString().slice(0, 13) + (st.done ? "" : "-p"),
+      generatedAt: new Date(now).toISOString(), label: "Automatico · bet365 (TotalCorner) · " + romeParts(now).date + " " + romeParts(now).time + (st.done ? "" : " · in completamento"),
+      from: days[0], to: days[2], matches };
+    await setState("prematch", file);
+  }
+  return st;
+}
 async function getPrematch(force = false) {
+  if (TC_TOKEN) {
+    const cur: any = await getState("prematch");
+    if (force || !cur || !String(cur.batch || "").startsWith("auto-tc")) await tcPrematchStep(!!force);
+    return (await getState("prematch")) || { matches: [] };
+  }
   const cur: any = await getState("prematch");
   if (!force && cur && cur.generatedAt && Date.now() - Date.parse(cur.generatedAt) < PRE_EVERY) return cur;
   return await buildPrematch();
 }
 
 
-/* ===================== Prova fonti dati (Highlightly, TotalCorner) ===================== */
-const HL_KEY = env("HIGHLIGHTLY_KEY"), TC_TOKEN = env("TOTALCORNER_TOKEN");
-const HL_BASES = ["https://soccer.highlightly.net", "https://sports.highlightly.net/football"];
-let hlBase = HL_BASES[0], hlCalls = 0, hlRem: string | null = null;
-async function hlGet(path: string) {
-  let last: any = null;
-  for (const base of hlBase === HL_BASES[0] ? HL_BASES : [hlBase]) {
-    hlCalls++;
-    const r = await fetch(base + path, { headers: { "x-rapidapi-key": HL_KEY, Accept: "application/json" } });
-    hlRem = r.headers.get("x-ratelimit-requests-remaining") ?? r.headers.get("ratelimit-remaining") ?? hlRem;
-    const txt = await r.text();
-    let body: any = null; try { body = JSON.parse(txt); } catch { body = txt.slice(0, 300); }
-    if (r.ok) { hlBase = base; return { ok: true, status: r.status, body }; }
-    last = { ok: false, status: r.status, body: typeof body === "string" ? body : JSON.stringify(body).slice(0, 300), base };
-    if (r.status !== 404 && r.status !== 403) break;
+/* ===================== TotalCorner (fonte principale dal 3.53.0) =====================
+   Segreto TOTALCORNER_TOKEN. Una richiesta = tutte le partite live (30 per pagina) con punteggio,
+   statistiche (tiri, angoli, possesso, attacchi) e quote bet365 (1X2 e linea gol pre-partita e live).
+   Limite: 30 richieste al minuto. I campi si leggono "con prudenza" (nomi alternativi). */
+const TC_TOKEN = Deno.env.get("TOTALCORNER_TOKEN") ?? "";
+const TC = "https://api.totalcorner.com/v1";
+const TC_COLS = "events,odds,asian,goalLine,attacks,dangerousAttacks,shotOn,shotOff,possession";
+let tcCalls = 0, tcRem: string | null = null, tcOff: number | null = null;
+const tcNum = (v: any) => (v == null || v === "" ? null : isFinite(Number(v)) ? Number(v) : null);
+async function tcGet(path: string, params: Record<string, string | number> = {}) {
+  tcCalls++;
+  const qs = Object.entries(params).map(([k, v]) => k + "=" + encodeURIComponent(String(v))).join("&");
+  const r = await fetch(TC + path + "?" + (qs ? qs + "&" : "") + "token=" + encodeURIComponent(TC_TOKEN), { headers: { Accept: "application/json" } });
+  tcRem = r.headers.get("x-rate-limit-remaining") ?? tcRem;
+  let j: any = null;
+  try { j = await r.json(); } catch { throw new Error("TotalCorner " + r.status + ": risposta non valida"); }
+  if (!r.ok || j?.success === 0 || j?.error) {
+    const c = j?.error?.code || r.status, msg = j?.error?.message || "";
+    if (c === "TOKEN_ERROR") throw new Error("TotalCorner: token non valido (segreto TOTALCORNER_TOKEN)");
+    if (c === "NO_PERMISSION") throw new Error("TotalCorner: serve l'abbonamento VIP attivo");
+    if (c === "TOO_MANY_REQUEST") throw new Error("TotalCorner: troppe richieste in un minuto (rateLimit)");
+    throw new Error("TotalCorner " + c + (msg ? ": " + msg : ""));
   }
-  return last;
+  return j;
 }
-const PROBE_TARGETS: [string, string[]][] = [
-  ["Netherlands", ["eerste divisie", "keuken kampioen"]], ["Germany", ["3. liga", "regionalliga"]],
-  ["Iceland", ["besta", "urvalsdeild", "úrvalsdeild", "premier", "1. deild"]], ["Norway", ["obos", "1. division", "eliteserien"]],
-  ["Sweden", ["superettan", "allsvenskan"]], ["Switzerland", ["challenge league", "super league"]],
-  ["Austria", ["2. liga", "bundesliga"]], ["Denmark", ["1st division", "1. division", "superliga"]],
-  ["Australia", ["a-league", "a league"]], ["Singapore", ["premier"]], ["Estonia", ["meistriliiga"]], ["Qatar", ["stars"]],
-];
-const LIVE_STATES = ["First half", "Second half", "Half time", "Extra time", "In progress", "Break time"];
-async function probeSources(wait: number) {
-  const out: any = { at: new Date().toISOString(), highlightly: null, totalcorner: null };
-  if (HL_KEY) {
-    const H: any = { leagues: {}, errors: [] };
-    for (const [country, wants] of PROBE_TARGETS) {
-      const r = await hlGet(`/leagues?countryName=${encodeURIComponent(country)}&limit=100`);
-      if (!r.ok) { H.errors.push({ leagues: country, status: r.status, body: r.body }); if (r.status === 401 || r.status === 429) break; continue; }
-      const names = (r.body?.data || []).map((l: any) => l.name);
-      H.leagues[country] = { total: names.length, cercati: names.filter((n: string) => wants.some((w) => n.toLowerCase().includes(w))), altri: names.slice(0, 12) };
-      if (r.body?.plan) H.plan = r.body.plan;
-    }
-    const today = romeParts(Date.now()).date;
-    let matches: any[] = [];
-    for (let off = 0; off < 300; off += 100) {
-      const r = await hlGet(`/matches?date=${today}&timezone=Europe/Rome&limit=100&offset=${off}`);
-      if (!r.ok) { H.errors.push({ matches: off, status: r.status, body: r.body }); break; }
-      matches = matches.concat(r.body?.data || []);
-      if (!r.body?.pagination || off + 100 >= (r.body.pagination.totalCount || 0)) { H.matchesTotal = r.body?.pagination?.totalCount ?? matches.length; break; }
-    }
-    const live = matches.filter((m) => LIVE_STATES.includes(m?.state?.description));
-    H.today = { partite: H.matchesTotal ?? matches.length, letti: matches.length, live: live.length,
-      campionatiLive: [...new Set(live.map((m) => `${m.country?.name || ""} · ${m.league?.name || ""}`))].slice(0, 40) };
-    const pick = live.slice().sort((a, b) => (b.state?.clock || 0) - (a.state?.clock || 0)).slice(0, 3);
-    const first: any[] = [];
-    for (const m of pick) {
-      const r = await hlGet(`/statistics/${m.id}`);
-      first.push({ id: m.id, partita: `${m.homeTeam?.name} – ${m.awayTeam?.name}`, campionato: `${m.country?.name} · ${m.league?.name}`, minuto: m.state?.clock, risultato: m.state?.score?.current,
-        stat: r.ok ? (r.body || []).map((t: any) => ({ squadra: t.team?.name, v: Object.fromEntries((t.statistics || []).map((s: any) => [s.displayName, s.value])) })) : { errore: r.status, body: r.body } });
-    }
-    H.statistiche = first;
-    if (pick.length && wait > 0) {
-      await new Promise((res) => setTimeout(res, wait * 1000));
-      H.dopoSecondi = wait;
-      H.statisticheDopo = [];
-      for (const m of pick) {
-        const [r, mm] = [await hlGet(`/statistics/${m.id}`), await hlGet(`/matches/${m.id}`)];
-        const md = Array.isArray(mm.body) ? mm.body[0] : mm.body?.data?.[0] ?? mm.body;
-        H.statisticheDopo.push({ id: m.id, minuto: md?.state?.clock, risultato: md?.state?.score?.current,
-          stat: r.ok ? (r.body || []).map((t: any) => ({ squadra: t.team?.name, v: Object.fromEntries((t.statistics || []).map((s: any) => [s.displayName, s.value])) })) : { errore: r.status } });
-      }
-    }
-    const om = pick[0] || matches[0];
-    if (om) {
-      for (const ty of ["prematch", "live"]) {
-        const r = await hlGet(`/odds?matchId=${om.id}&oddsType=${ty}`);
-        const d = r.ok ? (r.body?.data || [])[0] : null;
-        H["quote_" + ty] = r.ok ? { bookmaker: [...new Set((d?.odds || []).map((o: any) => o.bookmakerName))].slice(0, 20), mercati: [...new Set((d?.odds || []).map((o: any) => o.market))].slice(0, 20), plan: r.body?.plan } : { errore: r.status, body: r.body };
-      }
-    }
-    const bk = await hlGet(`/bookmakers?name=bet365`);
-    H.bet365 = bk.ok ? bk.body?.data : { errore: bk.status, body: bk.body };
-    H.base = hlBase; H.richieste = hlCalls; H.rimaste = hlRem;
-    out.highlightly = H;
-  } else out.highlightly = "manca il segreto HIGHLIGHTLY_KEY";
-  if (TC_TOKEN) {
-    try {
-      const r = await fetch(`https://api.totalcorner.com/v1/match/today?type=inplay&columns=events,odds,cornerLine,goalLine,attacks,dangerousAttacks,shotOn,shotOff,possession&token=${encodeURIComponent(TC_TOKEN)}`);
-      const txt = await r.text(); let b: any = null; try { b = JSON.parse(txt); } catch { b = txt.slice(0, 300); }
-      const L = Array.isArray(b?.data) ? b.data : [];
-      out.totalcorner = { status: r.status, limite: r.headers.get("x-rate-limit-remaining"), live: L.length, pagine: b?.pagination || null,
-        campionati: [...new Set(L.map((x: any) => x.l || x.league || ""))].slice(0, 40), esempio: L[0] || b };
-    } catch (e) { out.totalcorner = { errore: (e as Error).message }; }
-  } else out.totalcorner = "manca il segreto TOTALCORNER_TOKEN (facoltativo)";
-  return out;
+async function tcList(path: string, params: Record<string, string | number>, maxPages = 8, firstPage = 1) {
+  let out: any[] = [], page = firstPage, pages = firstPage;
+  for (let n = 0; n < maxPages; n++) {
+    const j = await tcGet(path, { ...params, page });
+    const d = Array.isArray(j?.data) ? j.data : Array.isArray(j?.data?.data) ? j.data.data : [];
+    out = out.concat(d);
+    const pg = j?.pagination || j?.data?.pagination || {};
+    pages = tcNum(pg.pages) ?? page;
+    if (!pg.next || page >= pages || !d.length) { page++; break; }
+    page++;
+  }
+  return { list: out, nextPage: page, pages };
+}
+function tcPair(x: any, ...keys: string[]): [number | null, number | null] {
+  for (const k of keys) {
+    const v = x?.[k];
+    if (Array.isArray(v) && v.length >= 2) return [tcNum(v[0]), tcNum(v[1])];
+    if (typeof v === "string" && v.includes(",")) { const p = v.split(","); return [tcNum(p[0]), tcNum(p[1])]; }
+  }
+  return [null, null];
+}
+/* linea gol ("2.5", "2.5,3.0", ["3.0"]) -> gol attesi della partita intera */
+function tcLine(v: any): number | null {
+  const s = Array.isArray(v) ? v[0] : v;
+  if (s == null || s === "") return null;
+  const parts = String(s).split(",").map(Number).filter((n) => isFinite(n));
+  if (!parts.length) return null;
+  return parts.reduce((a, b) => a + b, 0) / parts.length;
+}
+function tcLamFromLine(L: number | null) {
+  if (L == null || L <= 0) return null;
+  const fr = L - Math.floor(L), adj = Math.abs(fr - 0.5) < 0.01 ? 0.17 : Math.abs(fr - 0.25) < 0.01 || Math.abs(fr - 0.75) < 0.01 ? 0.08 : 0;
+  return Math.max(0.6, Math.min(6, L + adj));
+}
+/* orario d'inizio: TotalCorner non dice il fuso; lo ricavo dalle partite live (inizio + minuto ≈ adesso) */
+function tcParseStart(s: any) { const t = Date.parse(String(s || "").replace(" ", "T") + "Z"); return isFinite(t) ? t : null; }
+function tcCalibrate(list: any[]) {
+  const d: number[] = [];
+  for (const x of list) {
+    const t = tcParseStart(x.start), m = tcNum(x.status);
+    if (t == null || m == null) continue;
+    d.push((Date.now() - t - (m + (String(x.ish) === "1" ? 15 : 0)) * 60e3) / 3600e3);
+  }
+  if (d.length < 3) return;
+  d.sort((a, b) => a - b);
+  tcOff = Math.round(-d[Math.floor(d.length / 2)] * 4) / 4;
+}
+function tcStartUtc(s: any) { const t = tcParseStart(s); return t == null ? null : t - (tcOff || 0) * 3600e3; }
+function tcStatus(x: any) {
+  const raw = String(x.status ?? "").trim(), n = tcNum(raw);
+  if (n != null) return { st: String(x.ish) === "1" || n > 46 ? "2H" : "1H", el: n };
+  if (/half|ht|break/i.test(raw)) return { st: "HT", el: 45 };
+  if (/full|ft|end|finish/i.test(raw)) return { st: "FT", el: 90 };
+  if (/post|canc|aband|susp/i.test(raw)) return { st: /post/i.test(raw) ? "PST" : "CANC", el: null };
+  return { st: "NS", el: null };
+}
+function tcGoals(x: any) {
+  return (Array.isArray(x.events) ? x.events : []).filter((e: any) => String(e.tp).toLowerCase() === "g")
+    .map((e: any) => ({ min: tcNum(e.t) ?? 0, side: e.h === "h" ? 0 : e.h === "a" ? 1 : null })).sort((a: any, b: any) => a.min - b.min);
+}
+function tcStats(x: any) {
+  const on = tcPair(x, "shot_on", "shotOn"), off = tcPair(x, "shot_off", "shotOff"), pos = tcPair(x, "possess", "possession"),
+    att = tcPair(x, "attacks"), da = tcPair(x, "dangerous_attacks", "dangerousAttacks", "dattacks", "dang_attacks");
+  const hc = tcNum(x.hc), ac = tcNum(x.ac), hr = tcNum(x.hrc) ?? 0, ar = tcNum(x.arc) ?? 0;
+  const has = on[0] != null || hc != null;
+  if (!has) return null;
+  const side = [0, 1].map((i) => ({
+    s: on[i] != null || off[i] != null ? (on[i] || 0) + (off[i] || 0) : null, t: on[i], c: i ? ac : hc,
+    poss: pos[i], red: i ? ar : hr, att: att[i], da: da[i], xg: null,
+  }));
+  return { s: (side[0].s || 0) + (side[1].s || 0), t: (side[0].t || 0) + (side[1].t || 0), c: (hc || 0) + (ac || 0), red: hr + ar, xg: null, side };
+}
+/* partita TotalCorner -> stesso formato della scansione dell'app */
+function tcFixture(x: any) {
+  const s = tcStatus(x), ko = tcStartUtc(x.start), goals = tcGoals(x);
+  const x12 = tcPair(x, "p_odds"), ox12 = Array.isArray(x.p_odds) && x.p_odds.length >= 3 ? x.p_odds.map(tcNum) : null;
+  const lam = tcLamFromLine(tcLine(x.p_goal));
+  const r: any = {
+    afId: "tc:" + x.id, status: s.st, elapsed: s.el, kickoff: ko != null ? new Date(ko).toISOString() : null,
+    league: String(x.l || x.league || ""), country: "", home: String(x.h || x.home || ""), away: String(x.a || x.away || ""),
+    goals: [tcNum(x.hg) ?? 0, tcNum(x.ag) ?? 0], lastGoal: goals.length ? goals[goals.length - 1].min : null,
+    ht: tcNum(x.hf_hg) != null && tcNum(x.hf_ag) != null ? [tcNum(x.hf_hg), tcNum(x.hf_ag)] : null, goalList: goals,
+    liveLine: tcLine(x.i_goal), preLine: tcLine(x.p_goal),
+  };
+  if (lam || (ox12 && ox12.every((v: any) => v && v > 1))) r.odds = { pre: { lam, line: tcLine(x.p_goal), x12: ox12 && ox12.every((v: any) => v && v > 1) ? ox12 : null } };
+  void x12;
+  const st = tcStats(x);
+  if (st) r.stats = st;
+  return r;
+}
+async function tcLive() {
+  const { list } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 8);
+  tcCalibrate(list);
+  return list.map(tcFixture).filter((r: any) => r.home && r.away);
 }
 
 /* ===================== Motore dell'app (generato da pronostici.js) ===================== */
@@ -740,7 +848,12 @@ function tipScanMatch(x) {
     R = tipRemain(min, half, TIP_LM.H1),
     lam = 2.7, src = 'media';
   var ou = x.odds && x.odds.ou, pre = x.odds && x.odds.pre;
-  if (pre && pre.o25 > 1 && pre.u25 > 1) {
+  if (pre && pre.lam > 0) {
+    /* 3.53.0 — TotalCorner: gol attesi dalla linea gol bet365 pre-partita */
+    lam = Math.max(1, Math.min(5.5, pre.lam));
+    src = 'quote';
+    ou = null;
+  } else if (pre && pre.o25 > 1 && pre.u25 > 1) {
     /* quote prepartita Over/Under 2.5 (Bzzoiro): gol attesi della partita intera */
     var p25 = (1 / pre.o25) / (1 / pre.o25 + 1 / pre.u25), a = 0.3, z = 7;
     for (var j = 0; j < 40; j++) { var md = (a + z) / 2; if (tipPoisAtLeast(3, md) < p25) a = md; else z = md; }
@@ -1069,10 +1182,14 @@ async function loadData(userId: string) {
 
 async function runCron() {
   let pre: any = null;
-  try { const f: any = await getPrematch(false); pre = { at: f.generatedAt, matches: f.matches?.length }; } catch (e) { pre = { error: (e as Error).message }; }
+  try {
+    if (TC_TOKEN) { const st: any = await tcPrematchStep(false); const f: any = await getState("prematch"); pre = { at: f?.generatedAt, matches: f?.matches?.length, day: st.day, page: st.page, done: st.done }; }
+    else { const f: any = await getPrematch(false); pre = { at: f.generatedAt, matches: f.matches?.length }; }
+  } catch (e) { pre = { error: (e as Error).message }; }
   const res: any = await runAlerts();
   res.prematch = pre;
   res.bzRemaining = bzRem;
+  res.tcCalls = tcCalls; res.tcRemaining = tcRem; res.tcOffset = tcOff;
   if (bzRem != null) await setState("bzRemaining", { v: bzRem, at: Date.now() });
   return res;
 }
@@ -1088,7 +1205,7 @@ async function runAlerts() {
     if (prefs.on) users.push({ id: uid, data: d, prefs, subs: ss });
   }
   if (!users.length) return { users: 0, note: "nessuno ha gli avvisi attivi" };
-  if (!BZ_KEY) return { error: "manca il segreto BZZOIRO_KEY" };
+  if (!BZ_KEY && !TC_TOKEN) return { error: "manca il segreto TOTALCORNER_TOKEN" };
 
   const now = Date.now();
   const list = await scanList();
@@ -1181,10 +1298,6 @@ Deno.serve(async (req) => {
       const rem: any = await getState("bzRemaining");
       return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
-  }
-  if (body.action === "probe") {
-    try { return json(await probeSources(Math.max(0, Math.min(90, Number(body.wait ?? 60))))); }
-    catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
     const { data: subs } = await admin.from("push_subscriptions").select("*").eq("app", APP).eq("user_id", au.user.id).eq("enabled", true);

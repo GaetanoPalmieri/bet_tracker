@@ -2,6 +2,7 @@
 //
 // Chi la chiama: l'app (scheda Pronostici), con l'accesso della sincronizzazione.
 // Fonti dati (si usa la prima che ha la chiave nei Secrets):
+//   0) TotalCorner (totalcorner.com, VIP) — segreto TOTALCORNER_TOKEN. Fonte principale dal 3.53.0.
 //   1) Bzzoiro Sports (sports.bzzoiro.com) — segreto BZZOIRO_KEY. Gratis, 7.500 richieste/giorno.
 //   2) API-Football (api-sports.io)         — segreto API_FOOTBALL_KEY. Gratis 100 richieste/giorno.
 //
@@ -442,10 +443,194 @@ async function handleBz(body: any) {
   return json({ error: "Azione sconosciuta" }, 400);
 }
 
+
+/*TC-BEGIN*/
+/* ===================== TotalCorner (fonte principale dal 3.53.0) =====================
+   Segreto TOTALCORNER_TOKEN. Una richiesta = tutte le partite live (30 per pagina) con punteggio,
+   statistiche (tiri, angoli, possesso, attacchi) e quote bet365 (1X2 e linea gol pre-partita e live).
+   Limite: 30 richieste al minuto. I campi si leggono "con prudenza" (nomi alternativi). */
+const TC_TOKEN = Deno.env.get("TOTALCORNER_TOKEN") ?? "";
+const TC = "https://api.totalcorner.com/v1";
+const TC_COLS = "events,odds,asian,goalLine,attacks,dangerousAttacks,shotOn,shotOff,possession";
+let tcCalls = 0, tcRem: string | null = null, tcOff: number | null = null;
+const tcNum = (v: any) => (v == null || v === "" ? null : isFinite(Number(v)) ? Number(v) : null);
+async function tcGet(path: string, params: Record<string, string | number> = {}) {
+  tcCalls++;
+  const qs = Object.entries(params).map(([k, v]) => k + "=" + encodeURIComponent(String(v))).join("&");
+  const r = await fetch(TC + path + "?" + (qs ? qs + "&" : "") + "token=" + encodeURIComponent(TC_TOKEN), { headers: { Accept: "application/json" } });
+  tcRem = r.headers.get("x-rate-limit-remaining") ?? tcRem;
+  let j: any = null;
+  try { j = await r.json(); } catch { throw new Error("TotalCorner " + r.status + ": risposta non valida"); }
+  if (!r.ok || j?.success === 0 || j?.error) {
+    const c = j?.error?.code || r.status, msg = j?.error?.message || "";
+    if (c === "TOKEN_ERROR") throw new Error("TotalCorner: token non valido (segreto TOTALCORNER_TOKEN)");
+    if (c === "NO_PERMISSION") throw new Error("TotalCorner: serve l'abbonamento VIP attivo");
+    if (c === "TOO_MANY_REQUEST") throw new Error("TotalCorner: troppe richieste in un minuto (rateLimit)");
+    throw new Error("TotalCorner " + c + (msg ? ": " + msg : ""));
+  }
+  return j;
+}
+async function tcList(path: string, params: Record<string, string | number>, maxPages = 8, firstPage = 1) {
+  let out: any[] = [], page = firstPage, pages = firstPage;
+  for (let n = 0; n < maxPages; n++) {
+    const j = await tcGet(path, { ...params, page });
+    const d = Array.isArray(j?.data) ? j.data : Array.isArray(j?.data?.data) ? j.data.data : [];
+    out = out.concat(d);
+    const pg = j?.pagination || j?.data?.pagination || {};
+    pages = tcNum(pg.pages) ?? page;
+    if (!pg.next || page >= pages || !d.length) { page++; break; }
+    page++;
+  }
+  return { list: out, nextPage: page, pages };
+}
+function tcPair(x: any, ...keys: string[]): [number | null, number | null] {
+  for (const k of keys) {
+    const v = x?.[k];
+    if (Array.isArray(v) && v.length >= 2) return [tcNum(v[0]), tcNum(v[1])];
+    if (typeof v === "string" && v.includes(",")) { const p = v.split(","); return [tcNum(p[0]), tcNum(p[1])]; }
+  }
+  return [null, null];
+}
+/* linea gol ("2.5", "2.5,3.0", ["3.0"]) -> gol attesi della partita intera */
+function tcLine(v: any): number | null {
+  const s = Array.isArray(v) ? v[0] : v;
+  if (s == null || s === "") return null;
+  const parts = String(s).split(",").map(Number).filter((n) => isFinite(n));
+  if (!parts.length) return null;
+  return parts.reduce((a, b) => a + b, 0) / parts.length;
+}
+function tcLamFromLine(L: number | null) {
+  if (L == null || L <= 0) return null;
+  const fr = L - Math.floor(L), adj = Math.abs(fr - 0.5) < 0.01 ? 0.17 : Math.abs(fr - 0.25) < 0.01 || Math.abs(fr - 0.75) < 0.01 ? 0.08 : 0;
+  return Math.max(0.6, Math.min(6, L + adj));
+}
+/* orario d'inizio: TotalCorner non dice il fuso; lo ricavo dalle partite live (inizio + minuto ≈ adesso) */
+function tcParseStart(s: any) { const t = Date.parse(String(s || "").replace(" ", "T") + "Z"); return isFinite(t) ? t : null; }
+function tcCalibrate(list: any[]) {
+  const d: number[] = [];
+  for (const x of list) {
+    const t = tcParseStart(x.start), m = tcNum(x.status);
+    if (t == null || m == null) continue;
+    d.push((Date.now() - t - (m + (String(x.ish) === "1" ? 15 : 0)) * 60e3) / 3600e3);
+  }
+  if (d.length < 3) return;
+  d.sort((a, b) => a - b);
+  tcOff = Math.round(-d[Math.floor(d.length / 2)] * 4) / 4;
+}
+function tcStartUtc(s: any) { const t = tcParseStart(s); return t == null ? null : t - (tcOff || 0) * 3600e3; }
+function tcStatus(x: any) {
+  const raw = String(x.status ?? "").trim(), n = tcNum(raw);
+  if (n != null) return { st: String(x.ish) === "1" || n > 46 ? "2H" : "1H", el: n };
+  if (/half|ht|break/i.test(raw)) return { st: "HT", el: 45 };
+  if (/full|ft|end|finish/i.test(raw)) return { st: "FT", el: 90 };
+  if (/post|canc|aband|susp/i.test(raw)) return { st: /post/i.test(raw) ? "PST" : "CANC", el: null };
+  return { st: "NS", el: null };
+}
+function tcGoals(x: any) {
+  return (Array.isArray(x.events) ? x.events : []).filter((e: any) => String(e.tp).toLowerCase() === "g")
+    .map((e: any) => ({ min: tcNum(e.t) ?? 0, side: e.h === "h" ? 0 : e.h === "a" ? 1 : null })).sort((a: any, b: any) => a.min - b.min);
+}
+function tcStats(x: any) {
+  const on = tcPair(x, "shot_on", "shotOn"), off = tcPair(x, "shot_off", "shotOff"), pos = tcPair(x, "possess", "possession"),
+    att = tcPair(x, "attacks"), da = tcPair(x, "dangerous_attacks", "dangerousAttacks", "dattacks", "dang_attacks");
+  const hc = tcNum(x.hc), ac = tcNum(x.ac), hr = tcNum(x.hrc) ?? 0, ar = tcNum(x.arc) ?? 0;
+  const has = on[0] != null || hc != null;
+  if (!has) return null;
+  const side = [0, 1].map((i) => ({
+    s: on[i] != null || off[i] != null ? (on[i] || 0) + (off[i] || 0) : null, t: on[i], c: i ? ac : hc,
+    poss: pos[i], red: i ? ar : hr, att: att[i], da: da[i], xg: null,
+  }));
+  return { s: (side[0].s || 0) + (side[1].s || 0), t: (side[0].t || 0) + (side[1].t || 0), c: (hc || 0) + (ac || 0), red: hr + ar, xg: null, side };
+}
+/* partita TotalCorner -> stesso formato della scansione dell'app */
+function tcFixture(x: any) {
+  const s = tcStatus(x), ko = tcStartUtc(x.start), goals = tcGoals(x);
+  const x12 = tcPair(x, "p_odds"), ox12 = Array.isArray(x.p_odds) && x.p_odds.length >= 3 ? x.p_odds.map(tcNum) : null;
+  const lam = tcLamFromLine(tcLine(x.p_goal));
+  const r: any = {
+    afId: "tc:" + x.id, status: s.st, elapsed: s.el, kickoff: ko != null ? new Date(ko).toISOString() : null,
+    league: String(x.l || x.league || ""), country: "", home: String(x.h || x.home || ""), away: String(x.a || x.away || ""),
+    goals: [tcNum(x.hg) ?? 0, tcNum(x.ag) ?? 0], lastGoal: goals.length ? goals[goals.length - 1].min : null,
+    ht: tcNum(x.hf_hg) != null && tcNum(x.hf_ag) != null ? [tcNum(x.hf_hg), tcNum(x.hf_ag)] : null, goalList: goals,
+    liveLine: tcLine(x.i_goal), preLine: tcLine(x.p_goal),
+  };
+  if (lam || (ox12 && ox12.every((v: any) => v && v > 1))) r.odds = { pre: { lam, line: tcLine(x.p_goal), x12: ox12 && ox12.every((v: any) => v && v > 1) ? ox12 : null } };
+  void x12;
+  const st = tcStats(x);
+  if (st) r.stats = st;
+  return r;
+}
+async function tcLive() {
+  const { list } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 8);
+  tcCalibrate(list);
+  return list.map(tcFixture).filter((r: any) => r.home && r.away);
+}
+/*TC-END*/
+async function handleTc(body: any) {
+  tcCalls = 0;
+  if (body.action === "scan") {
+    const live = await tcLive();
+    return json({ live, source: "totalcorner", calls: tcCalls, remaining: tcRem });
+  }
+  if (body.action === "live") {
+    const m = body.match || {};
+    const id = typeof m.afId === "string" && m.afId.startsWith("tc:") ? m.afId.slice(3) : null;
+    let x: any = null;
+    if (id) {
+      try { const j = await tcGet(`/match/view/${id}`, { columns: TC_COLS }); x = Array.isArray(j?.data) ? j.data[0] : j?.data; } catch { x = null; }
+    }
+    if (!x || !(x.h || x.home)) {
+      const live = await tcLive();
+      let best: any = null, bs = 0;
+      for (const f of live) { const sc = sim(m.home || "", f.home) + sim(m.away || "", f.away); if (sim(m.home || "", f.home) >= 0.34 && sim(m.away || "", f.away) >= 0.34 && sc > bs) { bs = sc; best = f; } }
+      if (!best) return json({ error: `Partita non trovata su TotalCorner (${live.length} live).`, source: "totalcorner" }, 404);
+      return json({ ...best, ou: null, source: "totalcorner", calls: tcCalls });
+    }
+    const f = tcFixture(x);
+    return json({ ...f, ou: null, source: "totalcorner", calls: tcCalls });
+  }
+  if (body.action === "results") {
+    const matches = (body.matches || []).slice(0, 160);
+    const mine = matches.filter((m: any) => typeof m.afId === "string" && m.afId.startsWith("tc:"));
+    const rest = matches.filter((m: any) => !(typeof m.afId === "string" && m.afId.startsWith("tc:")));
+    const out: any[] = [];
+    let asked = 0, found = 0;
+    for (const m of mine.slice(0, 25)) {
+      asked++;
+      try {
+        const j = await tcGet(`/match/view/${m.afId.slice(3)}`, { columns: "events" });
+        const x = Array.isArray(j?.data) ? j.data[0] : j?.data;
+        if (!x) continue;
+        found++;
+        const f = tcFixture(x), r: any = { id: m.id, afId: f.afId, status: f.status, name: f.home + " - " + f.away };
+        const ko = f.kickoff ? Date.parse(f.kickoff) : null;
+        const ended = f.status === "FT" || (f.status !== "1H" && f.status !== "2H" && f.status !== "HT" && ko != null && Date.now() - ko > 130 * 60e3);
+        if (ended && tcNum(x.hg) != null) {
+          r.status = "FT"; r.ft = f.goals;
+          if (f.ht) r.ht = f.ht;
+          const gs = f.goalList;
+          if (gs.length === f.goals[0] + f.goals[1]) { r.goals = gs; const g1 = gs.filter((g: any) => g.min <= 45); if (g1.length) r.fg = g1[0].min; }
+        }
+        if (f.status === "CANC" || f.status === "PST") r.cancelled = true;
+        out.push(r);
+      } catch (e) { if (/rateLimit|token|VIP/.test(String((e as Error).message))) break; }
+    }
+    if (rest.length && BZ_KEY) {
+      try { const r2 = await handleBz({ action: "results", matches: rest }); const j2 = await r2.json(); out.push(...(j2.results || [])); asked += rest.length; found += (j2.results || []).length; } catch { /* ok */ }
+    }
+    return json({ results: out, unmatched: asked - found, source: "totalcorner", calls: tcCalls, remaining: tcRem });
+  }
+  return json({ error: "Azione sconosciuta" }, 400);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Richiesta non valida" }, 400); }
+  if (TC_TOKEN) {
+    try { return await handleTc(body); }
+    catch (e) { return json({ error: String((e as Error).message || e), source: "totalcorner" }, 502); }
+  }
   if (BZ_KEY) {
     try { return await handleBz(body); }
     catch (e) { return json({ error: String((e as Error).message || e), source: "bzzoiro" }, 502); }

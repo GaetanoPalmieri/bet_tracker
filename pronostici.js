@@ -883,7 +883,12 @@ function tipScanMatch(x) {
     R = tipRemain(min, half, TIP_LM.H1),
     lam = 2.7, src = 'media';
   var ou = x.odds && x.odds.ou, pre = x.odds && x.odds.pre;
-  if (pre && pre.o25 > 1 && pre.u25 > 1) {
+  if (pre && pre.lam > 0) {
+    /* 3.53.0 — TotalCorner: gol attesi dalla linea gol bet365 pre-partita */
+    lam = Math.max(1, Math.min(5.5, pre.lam));
+    src = 'quote';
+    ou = null;
+  } else if (pre && pre.o25 > 1 && pre.u25 > 1) {
     /* quote prepartita Over/Under 2.5 (Bzzoiro): gol attesi della partita intera */
     var p25 = (1 / pre.o25) / (1 / pre.o25 + 1 / pre.u25), a = 0.3, z = 7;
     for (var j = 0; j < 40; j++) { var md = (a + z) / 2; if (tipPoisAtLeast(3, md) < p25) a = md; else z = md; }
@@ -1547,7 +1552,7 @@ function tipAlertCard() {
     A.on ? 'Attivi: il server controlla le partite ogni 2 minuti e ti avvisa quando trova ' + (A.amber ? 'OTTIME e DA VALUTARE' : 'una OTTIMA') + (A.stars ? ' tra le preferite' : '') + ', anche ad app chiusa.' :
     'Spenti: tocca per ricevere un avviso quando compare una giocata, anche ad app chiusa.';
   var btn = function (k, on, label) { return '<button type="button" class="tip-chipbtn' + (on ? ' on' : '') + '" data-alert="' + k + '">' + label + '</button>'; };
-  return '<section class="card tip-top tip-alerts"><div class="tip-top-head"><b>🔔 Avvisi sul telefono</b><span>' + (A.on && sub ? 'attivi' : 'spenti') + '</span></div><p class="muted tip-hint">' + U.esc(st) + (tipUI.bzRem != null ? ' Richieste Bzzoiro rimaste oggi: ' + U.esc(tipUI.bzRem) + '.' : '') + '</p>' +
+  return '<section class="card tip-top tip-alerts"><div class="tip-top-head"><b>🔔 Avvisi sul telefono</b><span>' + (A.on && sub ? 'attivi' : 'spenti') + '</span></div><p class="muted tip-hint">' + U.esc(st) + (tipUI.bzRem != null ? ' Richieste rimaste: ' + U.esc(tipUI.bzRem) + '.' : '') + '</p>' +
     (tipCanSync() && sub ? '<div class="tip-chips">' + btn('on', A.on, A.on ? 'Avvisi attivi' : 'Attiva avvisi') + btn('amber', A.amber, 'Anche DA VALUTARE') + btn('stars', A.stars, 'Solo preferite') + '<button type="button" class="tip-chipbtn" data-alert="test">Invia una prova</button></div>' : '') +
     '</section>';
 }
@@ -2475,26 +2480,6 @@ function tipHubPanel(list) {
     card('list', TIP_IC.list, 'Partite', list.filter(function (m) { return m.date >= today && !m.cancelled; }).length + ' in programma', listBody) +
     card('stats', TIP_IC.stats, 'Resoconto', rep ? 'ultimo giorno' : '', statBody);
 }
-/* 3.51.0 — prova delle fonti dati: la funzione interroga Highlightly/TotalCorner, il risultato si copia e si manda a Claude */
-async function tipProbeSheet() {
-  var dlg = sheetModal(sheetHead('Prova fonti dati') + '<div class="tip-sheet"><p class="muted tip-hint" data-pr-msg>Prova in corso: circa 1 minuto (legge due volte le stesse partite live per vedere ogni quanto si aggiornano). Non chiudere.</p><pre class="tip-probe" data-pr-out></pre><div class="actions"><button type="button" class="primary" data-pr-copy disabled>Copia risultato</button></div></div>');
-  dlg.classList.add('tip-dlg');
-  var out = dlg.querySelector('[data-pr-out]'), msg = dlg.querySelector('[data-pr-msg]'), cp = dlg.querySelector('[data-pr-copy]'), txt = '';
-  try {
-    var r = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'probe', wait: 60 } });
-    txt = JSON.stringify(r, null, 1);
-    msg.textContent = 'Fatto. Tocca “Copia risultato” e incollalo nella chat con Claude.';
-  } catch (e) {
-    txt = String((e && e.message) || e);
-    msg.textContent = 'Errore: ' + tipFnErr(e).replace('pronostici-dati', 'pronostici-avvisi');
-  }
-  out.textContent = txt;
-  cp.disabled = false;
-  cp.onclick = async function () {
-    try { await navigator.clipboard.writeText(txt); U.toast('Copiato'); }
-    catch (e) { var rg = document.createRange(); rg.selectNodeContents(out); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(rg); U.toast('Selezionato: tieni premuto e copia'); }
-  };
-}
 /* avvisi: dalla campanella della barra */
 function tipAlertSheet() {
   var inner = function () { return tipAlertCard().replace(/<div class="tip-top-head">.*?<\/div>/, ''); };
@@ -2797,8 +2782,8 @@ function tipTopFor(day, list, P) {
       cand = [];
     list.forEach(function (m) {
       /* 3.50.0 — bastano le quote Over del book (1.5 o 2.5): le partite automatiche spesso non hanno l'Over 1.5 */
-      if (m.date !== day || m.cancelled || m.warn || !m.odds || !(m.odds.o15 || m.odds.o25)) return;
-      if (m.topSkip && !m.odds.o25) return;
+      if (m.date !== day || m.cancelled || m.warn || !m.odds || !(m.odds.o15 || m.odds.o25 || m.odds.gl)) return;
+      if (m.topSkip && !m.odds.o25 && !m.odds.gl) return;
       var pk = (m.picks || []).find(function (x) { return x.m === k; });
       if (!pk) return;
       /* niente Under / No goal nelle Top: solo i lati "Over / Goal / segno" */
@@ -2969,7 +2954,7 @@ function tipTopPanel(list) {
     days = [];
   list.forEach(function (m) { if (days.indexOf(m.date) < 0) days.push(m.date); });
   days.sort();
-  var hasOdds = function (d) { return list.some(function (m) { return m.date === d && m.odds && (m.odds.o15 || m.odds.o25); }); };
+  var hasOdds = function (d) { return list.some(function (m) { return m.date === d && m.odds && (m.odds.o15 || m.odds.o25 || m.odds.gl); }); };
   var shown = tipUI.day !== 'all' ? [tipUI.day] : days.filter(function (d) { return d >= today && hasOdds(d); });
   if (!shown.length) shown = days.slice(-1);
   var chips = '<div class="tip-chips tip-topdays">' + ['all'].concat(days).map(function (d) {
@@ -3135,8 +3120,7 @@ function tipFileSheet() {
     sheetHead('Pronostici', { sub: list.length ? 'Dal ' + U.esc(tipDayLabel(days[0])) + ' al ' + U.esc(tipDayLabel(days[days.length - 1])) : 'Nessuna partita' }) +
     '<div class="tip-sheet">' +
     '<div class="tip-sheet-info"><div><small>Modello</small><b>v' + U.esc(P.version) + (pm.learned ? ' + correzioni' : '') + '</b></div><div><small>Soglie</small><b>1T ' + tipThr(P, 'ht05') + '% · O1.5 ' + tipThr(P, 'o15') + '%</b></div><div class="wide"><small>Ultimo file</small><b>' + U.esc(pm.lastLabel || pm.lastBatch || '—') + '</b></div><div class="wide"><small>Ultimo controllo</small><b>' + (pm.lastCheck ? U.esc(U.date(pm.lastCheck)) : 'mai') + '</b></div></div>' +
-    '<button type="button" class="tip-sheet-btn primary" data-s="auto"><b>↻ Pronostici automatici</b><small>' + (pm.lastAutoAt ? 'Ultimi del ' + U.esc(U.date(pm.lastAutoAt)) + ' · ' : '') + 'prossimi 3 giorni dalle quote dei bookmaker (Bzzoiro)' + (tipUI.bzRem != null ? ' · richieste Bzzoiro rimaste oggi ' + U.esc(tipUI.bzRem) : '') + '</small></button>' +
-    '<button type="button" class="tip-sheet-btn" data-s="probe"><b>🧪 Prova fonti dati</b><small>Controlla Highlightly / TotalCorner: campionati, partite live, statistiche e quote (circa 1 minuto)</small></button>' +
+    '<button type="button" class="tip-sheet-btn primary" data-s="auto"><b>↻ Pronostici automatici</b><small>' + (pm.lastAutoAt ? 'Ultimi del ' + U.esc(U.date(pm.lastAutoAt)) + ' · ' : '') + 'prossimi 3 giorni dalle quote bet365 (TotalCorner)' + (tipUI.bzRem != null ? ' · richieste rimaste ' + U.esc(tipUI.bzRem) : '') + '</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="fetch"><b>↻ Aggiorna dal sito</b><small>Scarica il pronostici.json pubblicato con l’app</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="import"><b>Importa file</b><small>pronostici.json o pronostici.csv preparati da Claude</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="results"><b>↻ Risultati automatici</b><small>' + (pm.lastResults ? 'Ultimo controllo ' + U.esc(U.date(pm.lastResults)) + (pm.afRemaining != null ? ' · richieste rimaste oggi ' + U.esc(pm.afRemaining) : '') : 'Finale, 1° tempo e minuto del primo gol da API-Football') + '</small></button>' +
@@ -3144,7 +3128,6 @@ function tipFileSheet() {
     '</div>';
   var d = sheetModal(html);
   d.classList.add('tip-dlg');
-  d.querySelector('[data-s="probe"]').onclick = function () { d.close(); tipProbeSheet(); };
   d.querySelector('[data-s="auto"]').onclick = function () {
     d.close();
     tipAutoPrematch({ manual: true });
