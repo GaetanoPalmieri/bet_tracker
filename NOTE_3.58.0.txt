@@ -1,0 +1,3 @@
+Bet Tracker 3.58.0
+- Dettaglio partita live: riquadro "Valuta una quota" (mercato + quota del book -> statistiche, book, stima combinata, valore e quota minima).
+- Supabase: nessuna modifica rispetto alla 3.57.0.

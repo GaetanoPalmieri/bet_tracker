@@ -1,0 +1,3 @@
+Bet Tracker 3.60.0
+- Consigli di oggi: oltre al riepilogo OTTIME / DA VALUTARE, tabella per tipo di segnale (vinte/perse, +in attesa).
+- Supabase invariato.

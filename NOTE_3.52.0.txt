@@ -1,0 +1,5 @@
+Bet Tracker 3.52.0
+- La scheda Home si chiama Saldo.
+- Calendario del Saldo: giorno segnato in verde pieno se in positivo, rosso pieno se in negativo.
+- Pronostici: barra con Home, Top, Partite (pulsanti grandi); Live, Stats, Avvisi e Aggiorna in alto a destra del titolo.
+- Supabase: nessuna modifica rispetto alla 3.51.0.

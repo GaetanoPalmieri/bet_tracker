@@ -1,0 +1,5 @@
+Bet Tracker 3.61.0
+- Notifiche essenziali: OTTIMA/DA VALUTARE (colore), partita, risultato e minuto, campionato.
+- Riquadro giocata live: nome partita intero in alto; tolte quote minime e testo lungo.
+- DA VALUTARE piu severo: almeno la soglia del minuto e max 5 punti sotto OTTIMA.
+- Supabase: ripubblicare pronostici-avvisi (index.ts).

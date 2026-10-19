@@ -1,0 +1,143 @@
+/* =====================================================================
+   Bet Tracker 3.6.0 — Vetro ovunque
+   Sezioni, riquadri e pannelli trasparenti con sfocatura, come Money.
+   Caricato per ultimo: vince sulle regole precedenti.
+   ===================================================================== */
+:root {
+  --vt-card: rgba(27, 35, 44, .40);
+  --vt-card-2: rgba(27, 35, 44, .30);
+  --vt-row: rgba(255, 255, 255, .05);
+  --vt-panel: rgba(24, 32, 40, .52);
+  --vt-backdrop: rgba(6, 10, 14, .30);
+  --vt-edge: rgba(255, 255, 255, .10);
+  --vt-blur: blur(20px) saturate(1.7);
+  --vt-blur-panel: blur(30px) saturate(1.9);
+}
+:root[data-theme="light"] {
+  --vt-card: rgba(255, 255, 255, .50);
+  --vt-card-2: rgba(255, 255, 255, .40);
+  --vt-row: rgba(20, 24, 26, .045);
+  --vt-panel: rgba(255, 255, 255, .58);
+  --vt-backdrop: rgba(20, 24, 26, .16);
+  --vt-edge: rgba(255, 255, 255, .65);
+}
+
+/* Fondo: bagliori un po' più vivi, così il vetro si vede */
+body::before {
+  background:
+    radial-gradient(44% 32% at 10% 6%, rgba(232, 163, 61, .20), transparent 70%),
+    radial-gradient(40% 32% at 96% 32%, rgba(58, 166, 132, .26), transparent 70%),
+    radial-gradient(48% 36% at 24% 88%, rgba(110, 120, 230, .20), transparent 72%),
+    radial-gradient(36% 28% at 88% 92%, rgba(200, 90, 160, .12), transparent 72%),
+    var(--suite-bg) !important;
+}
+
+/* ---------- Sezioni e riquadri ---------- */
+main .card,
+main .diary-kpi,
+main .tip-filters,
+main .tip-card,
+main section.card {
+  background-color: var(--vt-card) !important;
+  -webkit-backdrop-filter: var(--vt-blur) !important;
+  backdrop-filter: var(--vt-blur) !important;
+  border-color: var(--vt-edge) !important;
+}
+main .tip-fbtn,
+main .tip-tool,
+main .tip-srow input,
+main .money-grid > div,
+main .dcal-week,
+main .diary-seg {
+  background-color: var(--vt-card-2) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+}
+main .tip-fbtn.on { background-color: rgba(58, 166, 132, .18) !important; }
+main .tip-tool.on { background: var(--suite-teal-grad) !important; }
+/* Le partite colorate tengono la loro tinta sopra al vetro */
+main .tip-card { background-image: linear-gradient(100deg, var(--tint), transparent 70%) !important; }
+
+/* Barra in basso */
+nav.tabbar {
+  background: var(--vt-panel) !important;
+  -webkit-backdrop-filter: var(--vt-blur-panel) !important;
+  backdrop-filter: var(--vt-blur-panel) !important;
+}
+
+/* ---------- Pannelli (tutti i dialog dell'app) ---------- */
+:root[data-theme] dialog,
+:root[data-theme] dialog#editor.sheet,
+:root[data-theme] dialog#modal {
+  background: var(--vt-panel) !important;
+  -webkit-backdrop-filter: var(--vt-blur-panel) !important;
+  backdrop-filter: var(--vt-blur-panel) !important;
+  border: 1px solid var(--vt-edge) !important;
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, .55) !important;
+}
+:root[data-theme] dialog::backdrop {
+  background: var(--vt-backdrop) !important;
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+/* Righe, caselle e blocchi dentro i pannelli: trasparenti anche loro */
+:root[data-theme] dialog .sheet-head,
+:root[data-theme] dialog .editor-head,
+:root[data-theme] dialog#editor.sheet .sheet-head,
+:root[data-theme="light"] dialog#editor.sheet .sheet-head,
+:root[data-theme="dark"] dialog#editor.sheet .sheet-head {
+  /* testata che resta in alto scorrendo: velo leggero e sfocato, non pieno */
+  background: color-mix(in srgb, var(--suite-surface) 28%, transparent) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+}
+:root[data-theme] dialog input,
+:root[data-theme] dialog select,
+:root[data-theme] dialog textarea,
+:root[data-theme] dialog .sheet-row,
+:root[data-theme] dialog .sheet-box,
+:root[data-theme] dialog .sheet-group,
+:root[data-theme] dialog .sheet-hero,
+:root[data-theme] dialog .tip-prob,
+:root[data-theme] dialog .tip-opt,
+:root[data-theme] dialog .tip-pick-row,
+:root[data-theme] dialog .tip-sheet-btn:not(.primary),
+:root[data-theme] dialog .tip-sheet-info > div {
+  background-color: var(--vt-row) !important;
+}
+:root[data-theme] dialog .tip-opt.on { background-color: rgba(58, 166, 132, .18) !important; }
+:root[data-theme] dialog .tip-prob.hot { background-color: rgba(232, 163, 61, .2) !important; }
+:root[data-theme] dialog .tip-pick-row.won { background-color: rgba(47, 165, 127, .2) !important; }
+:root[data-theme] dialog .tip-pick-row.lost { background-color: rgba(208, 87, 79, .18) !important; }
+
+/* Avvisi (aggiornamento, conferme) e notifiche brevi */
+.app-update-card,
+:root[data-theme="light"] .app-update-card {
+  background: var(--vt-panel) !important;
+  -webkit-backdrop-filter: var(--vt-blur-panel) !important;
+  backdrop-filter: var(--vt-blur-panel) !important;
+  border-color: var(--vt-edge) !important;
+}
+.app-update-modal, :root[data-theme="light"] .app-update-modal { background: var(--vt-backdrop) !important; }
+.app-toast {
+  -webkit-backdrop-filter: var(--vt-blur-panel);
+  backdrop-filter: var(--vt-blur-panel);
+}
+
+/* ---------- Pannelli centrati nella pagina, mai sotto la Dynamic Island ---------- */
+:root[data-theme] dialog[open]:modal,
+:root[data-theme] dialog#editor[open]:modal,
+:root[data-theme] dialog#modal[open]:modal {
+  position: fixed !important;
+  inset: calc(env(safe-area-inset-top, 0px) + 12px) 0 calc(env(safe-area-inset-bottom, 0px) + 12px) 0 !important;
+  margin: auto !important;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px) !important;
+  height: fit-content !important;
+}
+:root[data-theme] dialog#editor.sheet.tip-dlg { margin: auto !important; }
+
+/* Senza supporto alla sfocatura: vetro più pieno per restare leggibile */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --vt-card: rgba(27, 35, 44, .88); --vt-panel: rgba(22, 30, 38, .96); }
+  :root[data-theme="light"] { --vt-card: rgba(255, 255, 255, .92); --vt-panel: rgba(250, 250, 247, .97); }
+}

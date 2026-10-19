@@ -1,0 +1,15 @@
+Bet Tracker 3.53.0 — TotalCorner come fonte dati
+
+- Fonte principale: TotalCorner (segreto TOTALCORNER_TOKEN su Supabase). Se il segreto c'è, si usa solo TotalCorner;
+  Bzzoiro resta solo per chiudere le partite vecchie già collegate a Bzzoiro.
+- Scanner Live e avvisi: tutte le partite in corso nel mondo (oltre 1.700 campionati) in poche richieste,
+  con tiri, tiri in porta, angoli, possesso, cartellini e quote bet365 (1X2 e linea gol).
+- Forza pre-partita dalla linea gol bet365 (non serve più l'Over/Under 2.5 di Bzzoiro).
+- Pronostici automatici: partite di oggi, domani e dopodomani dalle quote bet365; si completano in circa 15 minuti
+  (12 pagine ogni 2 minuti, per stare sotto 30 richieste al minuto) e si rifanno ogni 6 ore.
+- Risultati, 1° tempo e minuti dei gol da TotalCorner.
+- Tolta la "Prova fonti dati" e Highlightly (il segreto HIGHLIGHTLY_KEY si può cancellare).
+
+Supabase
+- Ripubblicare pronostici-dati (pronostici-dati.txt) e pronostici-avvisi (pronostici-avvisi.txt), Verify JWT come prima.
+- Segreto TOTALCORNER_TOKEN obbligatorio. avvisi.sql invariato.

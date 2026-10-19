@@ -1,0 +1,55 @@
+BET TRACKER — ATTIVARE IL PROMEMORIA SERALE "SEGNA IL SALDO DI OGGI"
+(si fa una volta sola, tutto dal sito di Supabase, niente programmi da installare)
+
+Usa lo stesso progetto Supabase delle altre app: la tabella delle notifiche (push_subscriptions)
+esiste già e il giro orario riusa il segreto di Bilancio. Servono solo 2 segreti nuovi.
+
+Cosa serve prima
+- iPhone con iOS 16.4 o successivo, Bet Tracker aperto dall'icona sulla schermata Home.
+- Accesso fatto in Altro › Sincronizzazione (il promemoria controlla i dati online).
+- Le notifiche di Bilancio (o di RecompApp) già attive: il passo 4 usa il loro segreto.
+- Il file segreti/bet_tracker_SEGRETI.txt (nella cartella applications, fuori da bet_tracker:
+  NON caricarlo su GitHub).
+
+PASSO 1 — Carica la nuova versione
+Carica i file di bet_tracker come sempre (comprese le cartelle supabase/...). Apri Bet Tracker
+e tocca "Aggiorna" quando compare l'avviso.
+
+PASSO 2 — Segreti
+Supabase › Edge Functions › Secrets. Aggiungi questi due, copiando i valori dal file dei segreti:
+  BET_VAPID_PUBLIC_KEY
+  BET_VAPID_PRIVATE_KEY
+
+PASSO 3 — Funzione che invia il promemoria
+Supabase › Edge Functions › crea una nuova funzione con l'editor del sito.
+  Nome: notify-bet   (esattamente così: controlla che l'indirizzo finisca per /notify-bet)
+  Contenuto: tutto il file supabase/functions/notify-bet/index.ts
+Pubblica (Deploy). Poi, nelle impostazioni della funzione, DISATTIVA la verifica JWT
+("Verify JWT" / "Enforce JWT verification"): i controlli di sicurezza sono già dentro la funzione.
+
+PASSO 4 — Giro orario
+SQL Editor › New query. Incolla supabase/promemoria.sql e premi Run. Non serve incollare
+nessuna password: prende il segreto dal cron di Bilancio. Deve dire "Success".
+
+PASSO 5 — Sul telefono
+Bet Tracker › Altro › Notifiche › "🔔 Attiva promemoria" › Consenti.
+Scegli l'ora (predefinita 21:00) e tocca "Invia una prova": deve arrivare la notifica.
+
+Come funziona
+- Ogni ora la funzione controlla i telefoni iscritti: quando nel tuo fuso arriva l'ora scelta,
+  guarda il diario sincronizzato. Se il saldo di oggi NON è ancora segnato manda:
+    📝 Saldo di oggi
+    💶 Saldo attuale …
+    🕒 Ultimo segnato … · …
+    🎯 Da allora … da scommesse e movimenti
+    👉 Tocca per segnarlo
+  Se l'hai già segnato non arriva nulla. Al massimo un promemoria al giorno.
+- Toccando la notifica si apre la Home con la finestra "Segna saldo" già pronta.
+
+Se qualcosa non va
+- "Su Supabase manca la funzione notify-bet": controlla il nome (passo 3).
+- "Accesso non valido": la verifica JWT è ancora attiva (passo 3) oppure rifai l'accesso.
+- Il passo 4 dice "Non trovo il segreto": prima vanno attivate le notifiche di Bilancio o RecompApp.
+- La prova arriva ma il promemoria serale no: SQL Editor →
+    select * from cron.job_run_details order by start_time desc limit 5;
+    select status_code, content from net._http_response order by created desc limit 5;
