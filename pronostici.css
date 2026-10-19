@@ -792,3 +792,17 @@ header { display: flex; align-items: flex-end; justify-content: space-between; g
 .tip-split { margin: 8px 0; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 0 12px; }
 .tip-split summary { padding: 11px 0; font-weight: 600; font-size: 14px; cursor: pointer; }
 .tip-split[open] { padding-bottom: 8px; }
+/* 3.64.0 — statistiche e storico */
+.tip-subnav { margin-bottom: 10px; }
+.tip-subnav .tip-navb { min-height: 42px !important; font-size: 14px !important; }
+.tip-sep { width: 1px; height: 22px; background: rgba(255,255,255,.15); margin: 0 2px; }
+.tip-days14 { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; align-items: end; height: 110px; margin-top: 8px; }
+.tip-d14 { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+.tip-d14bar { flex: 1; width: 100%; display: flex; flex-direction: column-reverse; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,.04); }
+.tip-d14bar i.w { background: #2fbf8a; }
+.tip-d14bar i.l { background: #e05a5a; }
+.tip-d14 small { font-size: 10px; opacity: .6; }
+.tip-histday { padding: 0 14px !important; margin-bottom: 8px; }
+.tip-histday summary { display: flex; justify-content: space-between; gap: 8px; padding: 13px 0; cursor: pointer; font-size: 14px; }
+.tip-histday[open] { padding-bottom: 10px !important; }
+.tip-alllive summary { font-size: 15px; }
