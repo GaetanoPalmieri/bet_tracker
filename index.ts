@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.57.0
+// Versione app: 3.62.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1001,18 +1001,24 @@ function tipGreenFloor(x) {
   if (x.goals >= 3) f += 0.05;
   return Math.min(0.9, f);
 }
+var TIP_LAM_MIN = { major: 2.2, 'minor+': 2.5, 'youth+': 2.6, minor: 2.7, youth: 2.8 };
 function tipPlayTier(r, min, half, x) {
   if (!x || !U.finite(x.p) || !U.finite(x.thr)) return 'none';
   if (tipLiveSafety(r, min, half, x)) return 'none';
   var p = U.finite(x.evalP) ? x.evalP : tipPlayEstimate(r, min, half, x);
   if (!U.finite(p) || p < tipAmberFloor(x)) return 'none';
+  /* 3.62.0 — gol attesi prima della partita (dalle quote): nei campionati minori e giovanili
+     le partite che il book prezza "da pochi gol" non si chiamano, anche se le statistiche live spingono. */
+  if (U.finite(x.lamPre) && x.lamPre < (TIP_LAM_MIN[x.lg] || TIP_LAM_MIN.major)) return 'none';
+  /* quota live del book molto più alta di quanto pensa il modello: il book sa qualcosa, si scarta */
+  if (x.book && x.lg !== 'major' && 1 / (x.book * 1.05) < p - 0.12) return 'none';
   if (x.at || x.costly || x.lowBook) return 'try';
   /* Non usare una soglia assoluta irraggiungibile per mercati a quota minima.
      Il verde richiede margine positivo + osservazioni live disponibili. */
   if (p >= tipGreenFloor(x) && (r.xg || r.recent)) return 'excellent';
   return 'try';
 }
-function tipAmberFloor(x) { return Math.max(TIP_GREEN_MINP, x.thr - 0.04 + ({ youth: 0.04, 'youth+': 0.02, minor: 0.02, 'minor+': 0.01 }[x.lg] || 0)); }
+function tipAmberFloor(x) { return Math.max(TIP_GREEN_MINP, x.thr + ({ youth: 0.04, 'youth+': 0.02, minor: 0.02, 'minor+': 0.01 }[x.lg] || 0), tipGreenFloor(x) - 0.05); }
 function tipDecisionThresholds(x) {
   return 'Per DA VALUTARE ≥' + Math.ceil(tipAmberFloor(x) * 1000) / 10 +
     '% · per OTTIMA ≥' + Math.round(tipGreenFloor(x) * 100) + '%';
@@ -1045,7 +1051,7 @@ function tipPlays(r, min, half, book) {
     var thr = tipPlayThr(thrK || k, thrMin || min), c = cost(legs);
     /* 3.48.0 — step costoso: rischio oltre 2,5 volte la vincita oppure oltre 4 puntate base */
     var x = { k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, legs: legs, thr: thr, note: note || '', cost: c, costly: legs.length > 1 && (c.ratio > 2.5 || c.risk > 4 * base) };
-    x.lg = r.lgTier || 'major'; x.goals = r.goals || 0;
+    x.lg = r.lgTier || 'major'; x.goals = r.goals || 0; x.lamPre = U.finite(r.lam) ? r.lam : null;
     x.minQ = Math.max(k === 't2u18' || k === 't1s18' ? 1.8 : TIP_MIN_ODDS, 1 / Math.max(0.01, legs[0].p));
     /* 3.48.0 — quota live del book: se c'è ed è sotto la minima, al massimo DA VALUTARE */
     if (book && U.finite(book.n1) && book.n1 > 1 && (k === 't2u15' || k === 't2u18')) { x.book = book.n1; x.lowBook = book.n1 < x.minQ; }
@@ -1187,17 +1193,13 @@ async function send(sub: any, payload: unknown) {
   }
 }
 function message(e: any, x: any, upgraded: boolean) {
-  const sc = `${e.gh}-${e.ga}`;
-  const legs = (x.legs || []).map((l: any) => Math.max(TIP_MIN_ODDS, 1 / l.p).toFixed(2)).join(" → ");
-  const lines = [
-    `${sc} al ${e.min}' · ${TIP_SHORT[e.k] || e.k} · ${Math.round(e.p * 100)}%`,
-    `Quota minima ${legs}${e.book ? ` · book ${Number(e.book).toFixed(2)}` : ""}`,
-  ];
-  if (e.tier !== "excellent") lines.push(e.costly ? "Step costoso: valuta tu" : e.conditional ? `Rivaluta al ${e.at}'` : "Vicina alla soglia: valuta tu");
-  lines.push(`👉 ${e.league}`);
+  /* 3.61.0 — notifica essenziale: tipo e colore, partita, risultato e minuto, campionato */
+  void x;
+  const lines = [`${e.gh}-${e.ga} al ${e.min}'`, `${e.league || ""}`];
   return {
-    title: `${e.tier === "excellent" ? "🟢 OTTIMA" : "🟠 DA VALUTARE"}${upgraded ? " (ora)" : ""} · ${e.home} – ${e.away}`,
-    body: lines.join("\n"),
+    title: `${e.tier === "excellent" ? "🟢 OTTIMA" : "🟠 DA VALUTARE"} · ${e.home} – ${e.away}`,
+    body: lines.filter(Boolean).join("\n"),
+    upgraded,
     tag: "bet-live-" + (e.afId || e.id),
     renotify: true,
     url: "./?live=" + encodeURIComponent(e.afId || ""),

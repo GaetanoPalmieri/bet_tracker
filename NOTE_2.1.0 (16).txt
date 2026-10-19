@@ -1,0 +1,14 @@
+BET TRACKER 2.1.0
+
+- Promemoria serale "Segna il saldo di oggi" (Altro › Notifiche): all'ora scelta, solo se il saldo
+  di oggi non è ancora segnato. Notifica schematica; toccandola si apre "Segna saldo".
+  Da attivare su Supabase: vedi GUIDA_NOTIFICHE.txt.
+- Home: nuove sezioni "Saldo segnato e scommesse" (quanto della variazione del saldo spiegano
+  scommesse e movimenti, e la differenza non spiegata) e "Per giorno della settimana"
+  (variazione media del saldo per lunedì…domenica).
+- Eliminare scommesse e movimenti: conferma in stile app con il dettaglio di cosa elimini,
+  e "Annulla" nell'avviso subito dopo.
+- Leghe e squadre: le risposte di TheSportsDB restano salvate sul telefono 30 giorni e si usano
+  offline. In Altro puoi scegliere "solo dati salvati" (nessuna chiamata esterna) o svuotarli.
+- Importi nel formato unico della suite: 1.234,56 € (punto delle migliaia anche sotto 10.000).
+- Codice riformattato su righe leggibili (nessun cambiamento di funzionamento).

@@ -1,0 +1,6 @@
+BET TRACKER 2.1.2 — Restyling UI
+
+Modifiche applicate partendo dal pacchetto 2.1.1 fornito:
+- pannelli e popup resi più moderni con trasparenza/blur glass più marcati;
+- calendario Agenda della Home completamente ridisegnato mantenendo la logica esistente;
+- durante lo scroll resta fisso solo il pulsante “+ Scommessa”, mentre il nome dell’app scorre via.

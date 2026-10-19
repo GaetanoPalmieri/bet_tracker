@@ -1,0 +1,6 @@
+VERSIONE 2.2.1
+
+Telefoni diversi
+- Una sola soglia per tutti gli iPhone moderni (fino a 480 px): dal 17 al 17 Pro Max
+  valgono le stesse regole. Prima i modelli piu larghi restavano fuori da diverse
+  regole pensate per l'iPhone e alcuni riquadri si riposizionavano cambiando telefono.
