@@ -756,3 +756,11 @@ header { display: flex; align-items: flex-end; justify-content: space-between; g
 .tip-navhome.on { background: var(--suite-teal-grad) !important; color: #fff !important; }
 .tip-nav .tip-navseg { padding-left: 6px; border-left: 1px solid var(--suite-glass-edge); }
 .tip-nav .tip-navb { font-size: 14px !important; gap: 6px; }
+.tip-qv { margin: 0 0 12px; padding: 12px; border-radius: 16px; background: var(--suite-glass-card); border: 1px solid var(--suite-glass-edge); display: grid; gap: 8px; }
+.tip-qvrow { display: grid; grid-template-columns: 1fr 96px; gap: 8px; }
+.tip-qvrow select, .tip-qvrow input { font-size: 16px; padding: 8px 10px; border-radius: 10px; min-width: 0; }
+.tip-qvres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; }
+.tip-qvres span { padding: 6px 0; border-radius: 10px; background: var(--suite-glass-row); display: grid; }
+.tip-qvres small { font-size: 11px; color: var(--suite-text-soft); }
+.tip-qvres b { font-size: 18px; }
+.tip-qvv { margin: 0; font-weight: 800; }

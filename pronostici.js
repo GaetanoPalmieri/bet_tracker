@@ -1516,7 +1516,7 @@ function tipExcellentArchive() {
     var waiting=arr.filter(function(e){return e.res==null;}).length;
     var skipped=arr.filter(function(e){return e.res==='skip';}).length;
     return '<div class="tip-archive-group tip-archive-'+g.cls+'"><strong>'+g.label+'</strong><span>'+arr.length+' salvate</span>'+
-      '<div class="tip-archive-stats"><b class="positive">'+wins+' vinte</b><b class="negative">'+losses+' perse</b><small>'+waiting+' in attesa · '+skipped+' non giocate</small></div></div>';
+      '<div class="tip-archive-stats"><b class="positive">'+wins+' vinte</b><b class="negative">'+losses+' perse</b><small>'+waiting+' in attesa · '+arr.filter(function(e){return e.played;}).length+' giocate da te</small></div></div>';
   }).join('');
   var rows=L.slice(0,60).map(function(e){
     var t=e.tier||'excellent', sc=(e.gh||0)+'-'+(e.ga||0), goal=(e.gh||0)+(e.ga||0)+1;
@@ -2121,7 +2121,24 @@ function tipLiveSheet(id, obj) {
     if (dl && dl.elapsed != null && Number(dl.elapsed) === v.min) tipPlayLogAdd(m, ctxV, plays);
     var logged = tipPlayFind(m.id, ctxV), baseSt = (tipUI.step && tipUI.step.s1) || 10;
     adv = plays.filter(function (x) { return x.green; }).map(function (x) { return { t: 'play', k: x.k, p: x.p, at: x.at, legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }) }; });
-    doHtml = '<div class="tip-do"><div class="tip-do-h"><b>Giocate adesso</b><span class="muted">probabilità di riuscita</span></div>' +
+    /* 3.58.0 — Valuta una quota: scrivi la quota del book, la stima unisce statistiche e prezzo del book */
+    var qv = tipUI.qv = tipUI.qv || { k: 'n1', q: '' };
+    var qLines = r.lines.filter(function (x) { return x.k === 'n1' || x.k === 'h1' || x.k === 'n2' || x.k === 'gg'; });
+    if (!qLines.some(function (x) { return x.k === qv.k; })) qv.k = qLines[0] ? qLines[0].k : 'n1';
+    var qL = qLines.find(function (x) { return x.k === qv.k; }), qq = Number(String(qv.q).replace(',', '.')), qvHtml = '';
+    if (qL) {
+      var lg = function (p) { p = Math.min(0.99, Math.max(0.01, p)); return Math.log(p / (1 - p)); }, il = function (z) { return 1 / (1 + Math.exp(-z)); };
+      var res = '';
+      if (qq > 1) {
+        var pb = Math.min(0.97, 1 / (qq * 1.05)), pc = il(0.5 * lg(qL.p) + 0.5 * lg(pb)), ev = pc * qq - 1;
+        var verdict = ev >= 0.03 && qq >= TIP_MIN_ODDS ? ['positive', 'CONVIENE · valore ' + (ev * 100).toFixed(0) + '%'] : ev >= -0.02 ? ['tip-amber-text', 'AL LIMITE · valore ' + (ev * 100).toFixed(0) + '%'] : ['negative', 'NON CONVIENE · valore ' + (ev * 100).toFixed(0) + '%'];
+        res = '<div class="tip-qvres"><span><small>Statistiche</small><b>' + pct(qL.p) + '</b></span><span><small>Book</small><b>' + pct(pb) + '</b></span><span><small>Stima</small><b>' + pct(pc) + '</b></span></div>' +
+          '<p class="' + verdict[0] + ' tip-qvv">' + verdict[1] + '</p><small class="muted">Stima = metà statistiche live, metà quota del book (tolto il margine). Quota minima ' + Math.max(TIP_MIN_ODDS, 1 / pc).toFixed(2) + '.</small>';
+      } else res = '<small class="muted">Statistiche ' + pct(qL.p) + ' · quota minima ' + Math.max(TIP_MIN_ODDS, 1 / qL.p).toFixed(2) + '. Scrivi la quota del book per la stima completa.</small>';
+      qvHtml = '<div class="tip-qv"><div class="tip-do-h"><b>Valuta una quota</b></div><div class="tip-qvrow"><select data-qv-k>' + qLines.map(function (x) { return '<option value="' + x.k + '"' + (x.k === qv.k ? ' selected' : '') + '>' + U.esc(x.label) + '</option>'; }).join('') + '</select>' +
+        '<input type="number" inputmode="decimal" step="0.01" min="1.01" placeholder="quota" data-qv-q value="' + U.esc(qv.q) + '"></div>' + res + '</div>';
+    }
+    doHtml = qvHtml + '<div class="tip-do"><div class="tip-do-h"><b>Giocate adesso</b><span class="muted">probabilità di riuscita</span></div>' +
       (logged && logged.k && !plays.some(function (x) { return x.k === logged.k && (x.green || x.warm); }) ? '<p class="tip-amber-text tip-prevplay">Con questo punteggio era già stata segnalata al ' + logged.min + '’: ' + U.esc(TIP_PLAY_SHORT[logged.k] || logged.k) + '. È la stessa scommessa: non raddoppiare.</p>' : '') +
       (plays.length ? plays.map(function (x, i) {
         return '<div class="tip-play' + (x.green ? ' tip-hot' : x.warm ? ' tip-warm' : '') + '"><div class="tip-play-h"><b>' + U.esc(x.name) + '</b><strong class="' + (x.green ? 'positive' : x.warm ? 'tip-amber-text' : '') + '">' + pct(x.p) + '</strong></div>' +
@@ -2153,6 +2170,9 @@ function tipLiveSheet(id, obj) {
           '<input type="number" min="1" step="0.01" inputmode="decimal" placeholder="quota" data-iq="' + x.k + '" value="' + (U.finite(qq) ? qq : '') + '"></div>';
       }).join('') +
       '</div><p class="muted tip-hint">' + preTxt2 + '</p></details>';
+    var qk = out.querySelector('[data-qv-k]'), qi = out.querySelector('[data-qv-q]');
+    if (qk) qk.onchange = function () { tipUI.qv.k = qk.value; draw(); };
+    if (qi) qi.onchange = function () { tipUI.qv.q = qi.value; draw(); };
     out.querySelectorAll('[data-mark]').forEach(function (bt) {
       bt.onclick = function () {
         var x = plays[Number(bt.dataset.mark)], row = out.querySelector('[data-markrow="' + bt.dataset.mark + '"]');
@@ -2559,7 +2579,7 @@ function tipsPage() {
   var pn = tipUI.panel;
   if (['home', 'top', 'list', 'live', 'stats'].indexOf(pn) < 0) pn = tipUI.panel = 'home';
   var body = pn === 'stats' ? tipHead('Statistiche', 'Resoconto, calibrazione e correzioni') + tipStatsPanel(list)
-    : pn === 'top' ? tipHead('Top', 'Le partite più sicure del giorno') + tipDayChips(list, 'Da oggi') + tipPrePlayPanel(list) + tipTopPanel(list)
+    : pn === 'top' ? tipHead('Top', 'Le partite più sicure del giorno') + tipDayChips(list, 'Da oggi') + tipTopPanel(list)
     : pn === 'live' ? tipHead('Live', tipUI.scan ? 'Aggiornato alle ' + new Date(tipUI.scan.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + ' · da solo ogni 2 minuti' : 'Scansione automatica ogni 2 minuti') + tipLivePanel(list)
     : pn === 'list' ? tipHead('Partite', 'Tutti i pronostici, con filtri') + tipDayChips(list, 'Tutti') + tipListPanel(list)
     : tipHubPanel(list);
@@ -2844,23 +2864,19 @@ function tipTopFor(day, list, P) {
       cand.push({ m: m, p: pp, score: pc + tipFavBonus(m, k) });
     });
     cand.sort(function (a, b) { return b.score - a.score || b.p.p - a.p.p; });
-    var pickd = [], sum = 0, stop = false;
+    /* 3.59.0 — con le quote vere (bet365) poche partite arrivano alla media dell'85%: la Top prende le migliori
+       del giorno sopra una soglia minima (obiettivo − 8 punti), al massimo 10 per mercato */
+    var pickd = [], sum = 0, floor = target - 8;
     cand.forEach(function (c) {
-      if (stop) return;
-      /* partita equilibrata (favorita sotto il 42%): entra solo se da sola raggiunge l'obiettivo */
-      if (tipFavBonus(c.m, k) < 0 && c.p.p < target) return;
-      /* 3.9.1 — ogni partita al massimo 1 punto sotto l'obiettivo e media sopra l'obiettivo;
-         le partite sotto il minimo restano fuori (le Top restano corte e solide). */
-      if (c.p.p >= target - 1 && (sum + c.p.p) / (pickd.length + 1) >= target) {
-        pickd.push(c);
-        sum += c.p.p;
-      }
+      if (pickd.length >= 10 || c.p.p < floor) return;
+      if (tipFavBonus(c.m, k) < 0 && c.p.p < target - 4) return;
+      pickd.push(c); sum += c.p.p;
     });
     /* 3.14.0 — Top allargata: fino a 3 punti sotto l'obiettivo, fuori dalla Top sicura.
        Si giocano solo se la quota del book supera la quota minima indicata. */
     var inTop = {};
     pickd.forEach(function (c) { inTop[c.m.id] = 1; });
-    var ext = cand.filter(function (c) { return !inTop[c.m.id] && c.p.p >= target - 3; })
+    var ext = cand.filter(function (c) { return false && !inTop[c.m.id]; })
       .sort(function (a, b) { return b.p.p - a.p.p || b.score - a.score; })
       .slice(0, 10);
     res[k] = { items: pickd, ext: ext, avg: pickd.length ? sum / pickd.length : null, target: target, cand: cand.length, near: pickd.length || ext.length ? [] : cand.slice(0, 3) };
@@ -3009,7 +3025,8 @@ function tipTopPanel(list) {
     var on = tipUI.day === d;
     return '<button type="button" class="tip-chip' + (on ? ' on' : '') + '" data-tip-day="' + d + '">' + (d === 'all' ? 'Da oggi' : U.esc(tipCap(tipDayLabel(d)))) + '</button>';
   }).join('') + '</div>';
-  var html = chips;
+  var html = '';
+  void chips;
   shown.forEach(function (day) {
     var T = tipTopFor(day, list, P);
     html += '<h2 class="tip-day"><span>' + tipDayLabel(day, true) + '</span><small>' + T.all.length + (T.all.length === 1 ? ' partita in Top' : ' partite in Top') + '</small></h2>';
