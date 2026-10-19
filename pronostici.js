@@ -584,6 +584,23 @@ function tipFnErr(e) {
   if (/429|limit/i.test(t)) return 'Limite di richieste della fonte dati raggiunto. Riprova tra qualche minuto.';
   return t.replace(/^Errore \d+:\s*/, '').slice(0, 140) || 'Dati automatici non disponibili.';
 }
+/* 3.64.2 — controllo dei consigli ancora in attesa: perché non si chiudono (dopo ↻ Risultati automatici) */
+function tipResultsCheck() {
+  var D = tipUI.resDbg || {}, now = Date.now();
+  var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.res == null && (e.t || 0) > now - 3 * 86400e3; }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
+  var rows = L.map(function (e) {
+    var id = 'log:' + e.id, r = (D.by || {})[id], q = (D.endBy || {})[e.id], why;
+    if (!q) why = (e.miss || 0) >= 10 ? 'tentativi finiti' : 'non ancora cercata (fine stimata ' + (function () { var t = tipKickoff({ date: e.date, time: e.time }).getTime(); return new Date(t + 125 * 60e3).toLocaleString('it-IT', { day: '2-digit', hour: '2-digit', minute: '2-digit' }); })() + ')';
+    else if ((D.sent || []).indexOf(id) < 0) why = 'fuori dal lotto, riprova';
+    else if (!r) why = 'nessuna risposta dal server';
+    else if (r.dbg && r.dbg.err) why = 'errore: ' + r.dbg.err;
+    else if (!Array.isArray(r.ft)) why = 'non finita per TotalCorner · stato "' + (r.dbg ? r.dbg.st : '?') + '" · gol ' + (r.dbg ? r.dbg.hg + '-' + r.dbg.ag : '?') + ' · inizio ' + (r.dbg && r.dbg.ko ? new Date(r.dbg.ko).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '?');
+    else why = 'risultato ' + r.ft.join('-') + (r.ht ? ' (1T ' + r.ht.join('-') + ')' : ' (manca il 1° tempo)') + ' · esito non calcolabile';
+    return '<div class="tip-memory-row"><div class="tip-memory-info"><b>' + U.esc((e.home || '') + ' – ' + (e.away || '')) + '</b><small>' + U.esc(TIP_PLAY_SHORT[e.k] || e.k) + ' · ' + U.esc(e.date || '') + ' ' + U.esc(e.time || '') + ' · ' + (e.min || 0) + '’ · id ' + U.esc(e.afId || 'nessuno') + ' · tentativi ' + (e.miss || 0) + '</small><small class="tip-amber-text">' + U.esc(why) + '</small></div></div>';
+  }).join('');
+  var d = sheetModal(sheetHead('Consigli in attesa', { sub: L.length ? L.length + ' negli ultimi 3 giorni' : 'Nessuno' }) + '<div class="tip-sheet"><p class="muted">Fai uno screenshot e mandalo a Claude se restano in attesa.</p><div class="tip-tlist">' + (rows || '<p class="muted">Tutti chiusi.</p>') + '</div></div>');
+  d.classList.add('tip-dlg');
+}
 async function tipAutoResults(opts) {
   opts = opts || {};
   if (tipUI.resBusy) return;
@@ -644,8 +661,8 @@ async function tipAutoResults(opts) {
       d.predictions.forEach(function (m) {
         if (!todo.some(function (t) { return t.id === m.id; })) return;
         var x = byId[m.id];
-        if (!x) { m.afMiss = (m.afMiss || 0) + 1; return; }
-        m.afId = x.afId;
+        if (!x || (x.dbg && x.dbg.err)) { m.afMiss = (m.afMiss || 0) + 1; return; }
+        m.afId = x.afId || m.afId;
         if (x.cancelled && !m.cancelled) { m.cancelled = true; m.ov = {}; voids++; }
         /* 3.14.1 — il risultato automatico prevale su quello segnato a mano:
            si aggiornano punteggi e si tolgono gli esiti manuali */
@@ -682,6 +699,7 @@ async function tipAutoResults(opts) {
       if (r.remaining != null) d.predModel.afRemaining = r.remaining;
     });
     setTimeout(tipDailyReports, 300);
+    if (opts.manual) { tipUI.resDbg = { at: Date.now(), sent: logList.slice(0, 40).map(function (x) { return x.id; }), by: byId, endBy: logTodo }; setTimeout(tipResultsCheck, 400); }
     if (n || voids || opts.manual)
       U.toast(n || voids ? 'Risultati automatici: ' + n + ' partite' + (voids ? ', ' + voids + ' rinviate' : '') : 'Nessun nuovo risultato (' + (r.unmatched || 0) + ' partite non trovate)');
   } catch (e) {
