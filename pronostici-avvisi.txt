@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.74.0
+// Versione app: 3.78.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1124,7 +1124,7 @@ function tipTrialPlays(r, min, half, x, prev) {
     if (half === 2) { out.push(mk('tc1', corner.p1, 0.80, 0.72, extra(1))); out.push(mk('tc2', corner.p2, 0.50, 0.42, extra(2))); }
     else { out.push(mk('th1', corner.p1, 0.78, 0.68, extra(1))); out.push(mk('th2', corner.p2, 0.50, 0.40, extra(2))); }
   }
-  return out.filter(function (z) { return z.tier !== 'none'; });
+  return out.filter(function (z) { return z.tier !== 'none' && !TIP_K_OFF[z.k]; });
 }
 function tipPlayBest(plays) { return (plays || []).filter(function (x) { return x.green || x.warm; })[0] || null; }
 function tipPlayKey(id, ctx) { return id + '|' + (ctx.half || 1) + '|' + (ctx.gh || 0) + '-' + (ctx.ga || 0); }
@@ -1182,7 +1182,7 @@ function tipLeagueTier(m) {
 var TIP_LG_WOMEN = /women|femenin|feminin|frauen|damallsvenskan|toppserien|\bwsl\b|liga f\b|\(w\)|\bw$/i;
 var TIP_LG_EXTRA = { major: 0, 'minor+': 0.02, minor: 0.04, 'youth+': 0.03, youth: 0.06, women: 0.06 };
 var TIP_STEP1T_ON = false;
-var TIP_K_OFF = { t1s18: 1, t2u18: 1, tp1: 1, tp2: 1 };
+var TIP_K_OFF = { t1s18: 1, t2u18: 1, tp1: 1, tp2: 1, tc2: 1, th2: 1 };
 var TIP_K_FLOOR = { t1s15: 0.65, t2u15: 0.63, t1s18: 0.65, t2u18: 0.63, t2st2: 0.63, t2st3: 0.63, t1st: 0.74, t1w: 0.65, t2w: 0.65 };
 var TIP_K_EXTRA = {};
 function tipGreenFloor(x) {
@@ -1397,11 +1397,19 @@ function tipAlertGroup(k) {
   if (/^tc/.test(k)) return 'cor2';
   return k === 'tp1' || k === 'tq1' || k.indexOf('t1') === 0 ? 'gol1' : 'gol2';
 }
+var TIP_QUALITY_MINP = 0.62, TIP_QUALITY_LG = { major: 1, 'minor+': 1, 'youth+': 1 };
+function tipQualityPass(e) {
+  if (!e) return false;
+  var lg = e.lg || tipLeagueTier({ league: e.league, home: e.home, away: e.away });
+  if (!TIP_QUALITY_LG[lg]) return false;
+  return /^t[ch][12]$/.test(String(e.k || '')) || (e.p || 0) >= TIP_QUALITY_MINP;
+}
 function tipAlertWants(A, e) {
   if (!A || !A.on || !e) return false;
   if (e.trial ? A.trial === false : A.stable === false) return false;
   if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return false;
   if (A[tipAlertGroup(e.k)] === false) return false;
+  if (A.quality !== false && !tipQualityPass(e)) return false;
   return !(A.off && A.off[e.k]);
 }
 function message(e: any, x: any, upgraded: boolean) {
