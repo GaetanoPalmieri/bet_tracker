@@ -899,3 +899,11 @@ header { display: flex; align-items: flex-end; justify-content: space-between; g
 .tip-fpane[hidden],.tip-fhint[hidden]{display:none!important}
 .tip-fpane .tip-fcal{flex-basis:100%}
 :root[data-theme="light"] .tip-ftab.set small{color:#127a68}
+/* 3.82.0 — controllo notifiche */
+.tip-diag-list{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+.tip-diag-row{display:flex;gap:8px;align-items:flex-start}
+.tip-diag-row>span:last-child{display:grid;gap:1px;min-width:0}
+.tip-diag-row b{font-size:12.5px;overflow-wrap:anywhere}
+.tip-diag-row small{font-size:11px;color:var(--suite-text-soft)}
+.tip-diag-ico{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;flex:none;font-size:12px;background:rgba(130,140,150,.16)}
+.tip-diag-ico.ok{background:rgba(26,152,103,.24)}
