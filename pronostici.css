@@ -829,3 +829,16 @@ header { display: flex; align-items: flex-end; justify-content: space-between; g
 .tip-calday.end { background: #2fbf8a; color: #052; font-weight: 700; }
 .tip-calday.today { outline: 1px solid rgba(255,255,255,.35); }
 .tip-lbl-trial { background: rgba(160,120,255,.22); color: #c9b3ff; }
+
+/* 3.74.0 — scheda consiglio: livello ed etichette in alto, partita, dettagli; esito come icona in basso a sinistra */
+.tip-memory-row.tip-mem2{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:start;padding:10px 12px}
+.tip-memory-row.tip-mem2>.tip-mem-top{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
+.tip-mem-top .tip-history-tier{margin:0 2px 0 0}
+.tip-mem-top .tip-lbl{font-size:10.5px;padding:1px 7px}
+.tip-memory-row .tip-mem-name{font-size:14px;font-weight:800;line-height:1.25;color:var(--suite-text)}
+.tip-memory-row.tip-mem2>.tip-mem-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:11.5px;color:var(--suite-text-soft);font-variant-numeric:tabular-nums}
+.tip-mem-meta>span:not(.tip-mem-res){white-space:nowrap}
+.tip-mem-meta .tip-mem-kind{color:var(--suite-text);font-weight:750}
+.tip-mem-res{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;flex:none;font-size:12px;font-weight:900;line-height:1;margin-right:2px;background:rgba(130,140,150,.16);color:var(--suite-text-soft)}
+.tip-mem-res-win{background:rgba(26,152,103,.24);color:#61f0b4}
+.tip-mem-res-loss{background:rgba(207,50,63,.24);color:#ff9297}

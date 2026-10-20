@@ -451,7 +451,7 @@ async function handleBz(body: any) {
    Limite: 30 richieste al minuto. I campi si leggono "con prudenza" (nomi alternativi). */
 const TC_TOKEN = Deno.env.get("TOTALCORNER_TOKEN") ?? "";
 const TC = "https://api.totalcorner.com/v1";
-const TC_COLS = "events,odds,asian,goalLine,attacks,dangerousAttacks,shotOn,shotOff,possession";
+const TC_COLS = "events,odds,asian,goalLine,cornerLine,cornerLineHalf,attacks,dangerousAttacks,shotOn,shotOff,possession";
 let tcCalls = 0, tcRem: string | null = null, tcOff: number | null = null;
 const tcNum = (v: any) => (v == null || v === "" ? null : isFinite(Number(v)) ? Number(v) : null);
 async function tcGet(path: string, params: Record<string, string | number> = {}) {
@@ -556,6 +556,9 @@ function tcFixture(x: any) {
     goals: [tcNum(x.hg) ?? 0, tcNum(x.ag) ?? 0], lastGoal: goals.length ? goals[goals.length - 1].min : null,
     ht: tcNum(x.hf_hg) != null && tcNum(x.hf_ag) != null ? [tcNum(x.hf_hg), tcNum(x.hf_ag)] : null, goalList: goals,
     liveLine: tcLine(x.i_goal), preLine: tcLine(x.p_goal),
+    /* 3.71.0 — linee angoli bet365 (pre-partita e live, partita e 1° tempo) e angoli all'intervallo */
+    corner: { pre: tcLine(x.p_corner), live: tcLine(x.i_corner), preHt: tcLine(x.p_corner_h ?? x.p_corner_half ?? x.p_hcorner), liveHt: tcLine(x.i_corner_h ?? x.i_corner_half ?? x.i_hcorner) },
+    htCorners: tcNum(x.hf_hc) != null && tcNum(x.hf_ac) != null ? [tcNum(x.hf_hc), tcNum(x.hf_ac)] : null,
   };
   if (lam || (ox12 && ox12.every((v: any) => v && v > 1))) r.odds = { pre: { lam, line: tcLine(x.p_goal), x12: ox12 && ox12.every((v: any) => v && v > 1) ? ox12 : null } };
   void x12;
@@ -640,6 +643,7 @@ async function handleTc(body: any) {
           r.status = "FT"; r.resultConfirmed = true; r.resultSource = "totalcorner"; r.confirmedAt = new Date().toISOString(); r.ft = f.goals;
           if (tcNum(x.hc) != null && tcNum(x.ac) != null) r.corners = [tcNum(x.hc), tcNum(x.ac)];
           if (f.ht) r.ht = f.ht;
+          if (f.htCorners) r.htCorners = f.htCorners;
           const gs = f.goalList;
           if (gs.length === f.goals[0] + f.goals[1]) { r.goals = gs; const g1 = gs.filter((g: any) => g.min <= 45); if (g1.length) r.fg = g1[0].min; }
         }
@@ -657,7 +661,7 @@ async function handleTc(body: any) {
       try { const r2 = await handleBz({ action: "results", matches: rest }); const j2 = await r2.json(); out.push(...(j2.results || [])); asked += rest.length; found += (j2.results || []).length; } catch { /* ok */ }
     }
     for (const m of mine.slice(20)) out.push({ id: m.id, dbg: { err: "in coda: verrà cercata al prossimo giro" } });
-    return json({ results: out, unmatched: asked - found, source: "totalcorner", calls: tcCalls, remaining: tcRem, ver: "3.68.0" });
+    return json({ results: out, unmatched: asked - found, source: "totalcorner", calls: tcCalls, remaining: tcRem, ver: "3.71.0" });
   }
   return json({ error: "Azione sconosciuta" }, 400);
 }
