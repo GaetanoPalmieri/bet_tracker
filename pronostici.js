@@ -1781,6 +1781,18 @@ function tipPlayDecision(r, min, half, x) {
   if (p < tipAmberFloor(x)) return 'Non consigliata: stima ' + Math.round(p * 100) + '% inferiore al minimo per DA VALUTARE (' + (Math.ceil(tipAmberFloor(x) * 1000) / 10) + '%)';
   return 'Non consigliata: requisiti non raggiunti · ' + tipDecisionThresholds(x);
 }
+/* 3.76.0 — intestazione della sezione per tipo di segnale: nome breve + STABILE/IN PROVA, descrizione sotto
+   a tutta larghezza, conteggi a destra (prima il nome lungo restava schiacciato in una colonna stretta) */
+/* 3.77.0 — stabile / in prova solo come icona: 🧪 in prova (viola), ◆ stabile (grigio) */
+function tipSampleIcon(trial, cls) {
+  var t = trial ? 'Segnale in prova' : 'Segnale stabile';
+  return '<i class="tip-sample-ico ' + cls + (trial ? ' tip-sample-trial' : '') + '" role="img" aria-label="' + t + '" title="' + t + '">' + (trial ? '🧪' : '◆') + '</i>';
+}
+function tipTypeHead(k, total, found, possible) {
+  var desc = String(TIP_PLAY_NAME[k] || '').replace(/^IN PROVA · /, '');
+  return '<div class="tip-top-head tip-type-head"><div class="tip-type-title">' + tipSampleIcon(TIP_TRIAL[k], 'tip-type-icon') + '<b>' + U.esc(TIP_PLAY_SHORT[k] || k) + '</b>' +
+    '</div>' + tipCountSummary(total, found, possible) + (desc ? '<small class="tip-type-desc">' + U.esc(desc) + '</small>' : '') + '</div>';
+}
 function tipCountSummary(total, excellent, maybe) {
   return '<div class="tip-count-summary" aria-label="' + excellent + ' ottime, ' + maybe + ' da valutare, ' + total + ' partite analizzate">' +
     '<div class="tip-count-strong tip-count-green"><b>' + excellent + '</b><small>OTTIME</small></div>' +
@@ -1992,7 +2004,7 @@ function tipMemRow(e) {
   var corner = /^t[ch][12]$/.test(e.k), firstHalf = e.k.charAt(1) === 'h' || e.k === 'tq1' || e.k === 'tp1' || e.k.indexOf('t1') === 0;
   var lbl = function (cls, txt) { return '<i class="tip-lbl ' + cls + '">' + U.esc(txt) + '</i>'; };
   var chips = (e.prof ? lbl('tip-lbl-' + e.prof, TIP_PROF[e.prof] || e.prof) : '') + (e.rit ? lbl('tip-lbl-r' + e.rit, TIP_RIT[e.rit] || e.rit) : '') +
-    (e.trial ? lbl('tip-lbl-trial', 'IN PROVA') : '') + (e.lg && e.lg !== 'major' ? lbl('', TIP_LG_NAME[e.lg] || e.lg) : '') +
+    (e.lg && e.lg !== 'major' ? lbl('', TIP_LG_NAME[e.lg] || e.lg) : '') +
     (e.played ? lbl('tip-lbl-gol', 'giocata da te') : '');
   var day = e.date ? tipCap(tipDayLabel(e.date)) : '';
   var target = corner ? 'angoli ' + (e.cn != null ? e.cn : '?') + ' → +' + (e.need || 1) : sc + ' → ' + goal + '° gol';
@@ -2001,7 +2013,9 @@ function tipMemRow(e) {
     f(corner ? U.esc(sc) + ' · ' + U.esc(target) : U.esc(target)) + f(e.book ? '@' + Number(e.book).toFixed(2) : '') +
     f(Array.isArray(e.ft) ? 'finale ' + e.ft[0] + '-' + e.ft[1] : '') +
     f(e.played ? 'tua @' + e.played.q.toFixed(2) + ' · ' + e.played.s + '€' : '');
-  return '<div class="tip-memory-row tip-mem2 tip-memory-' + state + '">' +
+  /* 3.75.0 — stabile o in prova: sempre nello stesso punto, in alto a destra */
+  var kind = tipSampleIcon(e.trial, 'tip-mem-sample');
+  return '<div class="tip-memory-row tip-mem2 tip-memory-' + state + (e.trial ? ' tip-mem-istrial' : '') + '">' + kind +
     '<div class="tip-mem-top"><span class="tip-history-tier tip-history-' + t + '">' + (t === 'try' ? 'DA VALUTARE' : 'OTTIMA') + '</span>' + chips + '</div>' +
     '<b class="tip-mem-name">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</b>' +
     '<div class="tip-mem-meta"><span class="tip-mem-res tip-mem-res-' + state + '" role="img" aria-label="' + said + '" title="' + said + '">' + icon + '</span>' + meta + '</div></div>';
@@ -2191,7 +2205,7 @@ function tipLivePanel(list) {
   var playsHtml = tipLblFilterBar() + Object.keys(TIP_PLAY_NAME).filter(function (k) { return byType[k] && byType[k].length; }).map(function (k) {
     var found = byType[k].filter(function (x) { return x.pl.green; }).length, possible = byType[k].length - found;
     var L = byType[k].sort(function (a, b) { return (b.pl.green ? 1 : 0) - (a.pl.green ? 1 : 0) || b.pl.p - a.pl.p; }).slice(0, 10);
-    return '<section class="card tip-top tip-grade-section"><div class="tip-top-head"><b>' + U.esc(TIP_PLAY_NAME[k]) + '</b>' + tipCountSummary(byType[k].length, found, possible) + '</div><div class="tip-tlist">' +
+    return '<section class="card tip-top tip-grade-section' + (TIP_TRIAL[k] ? ' tip-grade-trial' : '') + '">' + tipTypeHead(k, byType[k].length, found, possible) + '<div class="tip-tlist">' +
       L.map(function (x) {
         var P2 = x.P;
         var pc = Math.round((x.pl.evalP == null ? x.pl.p : x.pl.evalP) * 100);
