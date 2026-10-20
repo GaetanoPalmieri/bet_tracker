@@ -907,3 +907,6 @@ header { display: flex; align-items: flex-end; justify-content: space-between; g
 .tip-diag-row small{font-size:11px;color:var(--suite-text-soft)}
 .tip-diag-ico{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;flex:none;font-size:12px;background:rgba(130,140,150,.16)}
 .tip-diag-ico.ok{background:rgba(26,152,103,.24)}
+/* 3.83.0 — Storico: riepilogo e tabelle dentro ogni giorno */
+.tip-histday .tip-smx{margin-top:8px}
+.tip-histday>summary>span{font-variant-numeric:tabular-nums}

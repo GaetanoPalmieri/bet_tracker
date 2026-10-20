@@ -3593,13 +3593,24 @@ function tipDayMiniLive(arr) {
     return '<tr><th>' + U.esc(tipKindLabel(k)) + '</th><td>' + tipWL(tipStatCount(a.filter(function (e) { return (e.tier || 'excellent') === 'excellent'; }))) + '</td><td>' + tipWL(tipStatCount(a.filter(function (e) { return e.tier === 'try'; }))) + '</td><td>' + (c.n ? Math.round(c.rate) + '%' : '—') + '</td></tr>';
   }).join('') + '</table>';
 }
+/* 3.83.0 — Storico giorno per giorno con lo stesso schema di Live › Consigli di oggi: riepilogo Stabili / In prova / Totale,
+   selettore del campione, tabelle per tipo e profilo × ritmo, elenco con l'ora del segnale. Valgono periodo e filtri. */
 function tipStatsLiveHistory() {
-  var L = tipStatLog(), byDay = {};
-  L.forEach(function (e) { (byDay[tipLiveDay(e)] = byDay[tipLiveDay(e)] || []).push(e); });
-  return tipDaysList(Object.keys(byDay).sort().reverse(), function (d, i) {
-    var arr = byDay[d], c = tipStatCount(arr);
-    return '<details class="card tip-histday"' + (i === 0 ? ' open' : '') + '><summary><b>' + U.esc(tipCap(tipDayLabel(d))) + '</b><span><b class="positive">' + c.w + '</b>/<b class="negative">' + c.l + '</b>' + (c.a ? ' · ' + c.a + ' in attesa' : '') + (c.rate != null ? ' · <b>' + Math.round(c.rate) + '%</b>' : '') + (c.n ? ' · <span class="' + (c.pl >= 0 ? 'positive' : 'negative') + '">' + (c.pl >= 0 ? '+' : '') + Math.round(c.pl) + '€</span>' : '') + '</span></summary>' +
-      tipDayMiniLive(arr) + '<div class="tip-tlist">' + arr.map(tipMemRow).join('') + '</div></details>';
+  var smp = (tipUI.stF || {}).sample || '', ALL = tipStatLog(true), byDay = {};
+  ALL.forEach(function (e) { (byDay[tipLiveDay(e)] = byDay[tipLiveDay(e)] || []).push(e); });
+  var wl = function (a) {
+    var w = a.filter(function (e) { return e.res === 1; }).length, l = a.filter(function (e) { return e.res === 0; }).length;
+    return '<b class="positive">' + w + '</b>–<b class="negative">' + l + '</b>';
+  };
+  return tipSampleSeg(smp, 'data-st-sample') + tipDaysList(Object.keys(byDay).sort().reverse(), function (d, i) {
+    var all = byDay[d].sort(function (a, b) { return (b.t || 0) - (a.t || 0); }), arr = tipSampleOf(all, smp), c = tipStatCount(all);
+    var st = all.filter(function (e) { return !e.trial; }), tr = all.filter(function (e) { return e.trial; });
+    return '<details class="card tip-histday"' + (i === 0 ? ' open' : '') + '><summary><b>' + U.esc(tipCap(tipDayLabel(d))) + '</b><span>' +
+      (st.length ? '◆ ' + wl(st) : '') + (st.length && tr.length ? ' · ' : '') + (tr.length ? '🧪 ' + wl(tr) : '') +
+      (c.n ? ' · <span class="' + (c.pl >= 0 ? 'positive' : 'negative') + '">' + (c.pl >= 0 ? '+' : '') + Math.round(c.pl) + '€</span>' : '') + (c.a ? ' · ' + c.a + ' ◷' : '') + '</span></summary>' +
+      tipSampleMatrix(all, true) +
+      (arr.length ? tipArchiveSplit(arr) + '<div class="tip-tlist">' + arr.slice(0, 80).map(tipMemRow).join('') + '</div>'
+        : '<p class="muted tip-tnone">Nessun consiglio ' + (smp === 'trial' ? 'in prova' : 'stabile') + ' in questo giorno.</p>') + '</details>';
   });
 }
 function tipDaysList(ds, fn) {
