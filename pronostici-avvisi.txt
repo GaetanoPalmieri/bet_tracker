@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.78.0
+// Versione app: 3.79.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1404,8 +1404,9 @@ function tipQualityPass(e) {
   if (!TIP_QUALITY_LG[lg]) return false;
   return /^t[ch][12]$/.test(String(e.k || '')) || (e.p || 0) >= TIP_QUALITY_MINP;
 }
+var TIP_NO_PUSH = { th1: 1 };
 function tipAlertWants(A, e) {
-  if (!A || !A.on || !e) return false;
+  if (!A || !A.on || !e || TIP_NO_PUSH[e.k]) return false;
   if (e.trial ? A.trial === false : A.stable === false) return false;
   if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return false;
   if (A[tipAlertGroup(e.k)] === false) return false;

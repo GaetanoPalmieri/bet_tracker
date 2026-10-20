@@ -861,3 +861,26 @@ header { display: flex; align-items: flex-end; justify-content: space-between; g
 .tip-memory-row.tip-mem2>.tip-mem-top{padding-right:30px}
 .tip-type-title{flex-wrap:nowrap}
 .tip-type-head .tip-type-title>b{overflow-wrap:anywhere}
+/* 3.79.0 — riepilogo a matrice e selettore Totale / Stabili / In prova */
+.tip-smx{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;margin:10px 0 4px}
+.tip-smx th,.tip-smx td{padding:8px 6px;text-align:center;border-top:1px solid var(--suite-glass-edge)}
+.tip-smx thead th{border-top:0;font-size:11px;font-weight:800;color:var(--suite-text-soft);letter-spacing:.3px;white-space:nowrap}
+.tip-smx thead th.trial{color:#c9b3ff}
+.tip-smx tbody th{text-align:left;font-size:11px;font-weight:850;letter-spacing:.4px;white-space:nowrap}
+.tip-smx td b{display:block;font-size:15px;font-weight:850;line-height:1.15}
+.tip-smx td b i{font-style:normal;color:var(--suite-text-soft);margin:0 2px;font-weight:600}
+.tip-smx td small{display:block;font-size:10.5px;color:var(--suite-text-soft);margin-top:1px;white-space:nowrap}
+.tip-smx td:nth-child(3){background:rgba(160,120,255,.07)}
+.tip-smx td:last-child,.tip-smx thead th:last-child{background:color-mix(in srgb,var(--suite-text) 4%,transparent)}
+.tip-smx .tip-smx-tot th,.tip-smx .tip-smx-tot td{border-top:1.5px solid color-mix(in srgb,var(--suite-text) 22%,transparent)}
+.tip-smx .tip-smx-eur td{font-weight:850;font-size:13px}
+.tip-smx .tip-smx-empty{color:var(--suite-text-soft);opacity:.6}
+.tip-smpseg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;margin:12px 0 10px;border-radius:12px;background:color-mix(in srgb,var(--suite-text) 6%,transparent);border:1px solid var(--suite-glass-edge)}
+.tip-smpbtn{border:0;border-radius:9px;padding:8px 6px;font:inherit;font-size:12.5px;font-weight:800;background:transparent;color:var(--suite-text-soft);cursor:pointer;white-space:nowrap}
+.tip-smpbtn.on{background:color-mix(in srgb,var(--suite-text) 14%,transparent);color:var(--suite-text)}
+.tip-smpbtn.trial.on{background:rgba(160,120,255,.3);color:#e3d7ff}
+.tip-archive .tip-split{margin-top:6px}
+:root[data-theme="light"] .tip-smx thead th.trial{color:#6b45c9}
+:root[data-theme="light"] .tip-smx tbody th.tip-amber-text{color:#a35f00!important}
+:root[data-theme="light"] .tip-smx td:nth-child(3){background:rgba(120,80,220,.07)}
+:root[data-theme="light"] .tip-smpbtn.trial.on{background:rgba(120,80,220,.16);color:#4a2aa6}
