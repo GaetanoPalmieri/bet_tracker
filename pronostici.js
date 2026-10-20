@@ -2012,6 +2012,117 @@ document.addEventListener('click', function (ev) {
   else { tipUI.stF = Object.assign({}, tipUI.stF || {}); tipUI.stF.sample = b.getAttribute('data-st-sample'); }
   render();
 });
+/* 3.80.0 — FILTRI COMUNI dei consigli live: uguali nelle Statistiche e in Live › Consigli di oggi.
+   Si combinano con il selettore Totale / Stabili / In prova e con il filtro etichette (profilo, ritmo). */
+var TIP_F_LABEL = { tier: { excellent: 'Ottime', try: 'Da valutare' }, half: { 1: '1° tempo', 2: '2° tempo' }, res: { win: 'Vinte', loss: 'Perse', wait: 'In attesa' },
+  q: { in: 'Passano filtro qualità', out: 'Esclusi dal filtro qualità' }, g: { 0: '0 gol segnati', 1: '1 gol segnato', 2: '2+ gol segnati' } };
+function tipEFilter(F, e) {
+  F = F || {};
+  if (F.tier && (e.tier || 'excellent') !== F.tier) return false;
+  if (F.k && e.k !== F.k) return false;
+  if (F.lg && (e.lg || tipLeagueTier(e)) !== F.lg) return false;
+  if (F.half && String(e.half || 1) !== String(F.half)) return false;
+  if (F.res && (e.res === 1 ? 'win' : e.res === 0 ? 'loss' : 'wait') !== F.res) return false;
+  if (F.q && (F.q === 'in') !== tipQualityPass(e)) return false;
+  if (F.g !== undefined && F.g !== '') { var G = (e.gh || 0) + (e.ga || 0); if (String(F.g) === '2' ? G < 2 : String(G) !== String(F.g)) return false; }
+  return true;
+}
+/* sezioni del pannello: chip(kind, valore, testo) arriva da chi apre il pannello */
+function tipEFilterSections(chip, sec, sample, hide) {
+  /* niente ingressi condizionati (aspetta unico / aspetta 1T): non diventano mai consigli contati */
+  var act = function (trial) { return Object.keys(TIP_PLAY_SHORT).filter(function (k) { return tipKindActive(k) && !!TIP_TRIAL[k] === trial && k !== 't1w' && k !== 't2w' && !(hide && hide[k]); }); };
+  var kinds = (sample !== 'trial' ? '<p class="tip-lfsub">◆ Stabili</p>' + act(false).map(function (k) { return chip('k', k, TIP_PLAY_SHORT[k]); }).join('') : '') +
+    (sample !== 'stable' ? '<p class="tip-lfsub">🧪 In prova</p>' + act(true).map(function (k) { return chip('k', k, TIP_PLAY_SHORT[k]); }).join('') : '');
+  return sec('Livello', chip('tier', '', 'Tutti') + chip('tier', 'excellent', 'Ottime') + chip('tier', 'try', 'Da valutare')) +
+    sec('Tipo', chip('k', '', 'Tutti') + kinds) +
+    sec('Tempo', chip('half', '', 'Tutti') + chip('half', '1', '1° tempo') + chip('half', '2', '2° tempo')) +
+    sec('Esito', chip('res', '', 'Tutti') + chip('res', 'win', 'Vinte') + chip('res', 'loss', 'Perse') + chip('res', 'wait', 'In attesa')) +
+    sec('Gol segnati', chip('g', '', 'Tutti') + chip('g', '0', '0') + chip('g', '1', '1') + chip('g', '2', '2 o più')) +
+    sec('Qualità', chip('q', '', 'Tutti') + chip('q', 'in', 'Passano') + chip('q', 'out', 'Esclusi')) +
+    sec('Campionato', chip('lg', '', 'Tutti') + Object.keys(TIP_LG_NAME).map(function (k) { return chip('lg', k, TIP_LG_NAME[k]); }).join('')) +
+    sec('Profilo', chip('p', '', 'Tutti') + chip('p', 'gol', 'Da gol') + chip('p', 'medio', 'Media') + chip('p', 'pochi', 'Pochi gol') + chip('p', 'nq', 'Senza quote')) +
+    sec('Ritmo', chip('r', '', 'Tutti') + chip('r', 'alto', 'Alto') + chip('r', 'norm', 'Normale') + chip('r', 'basso', 'Basso'));
+}
+function tipEFilterChips(F, lf, clearAttr) {
+  var out = [], x = function (key, label) { out.push('<button type="button" class="tip-lchip on" ' + clearAttr + '="' + key + '">' + U.esc(label) + ' ✕</button>'); };
+  F = F || {}; lf = lf || {};
+  if (F.tier) x('tier', TIP_F_LABEL.tier[F.tier]);
+  if (F.k) x('k', tipKindLabel(F.k));
+  if (F.half) x('half', TIP_F_LABEL.half[F.half]);
+  if (F.res) x('res', TIP_F_LABEL.res[F.res]);
+  if (F.g !== undefined && F.g !== '') x('g', TIP_F_LABEL.g[F.g]);
+  if (F.q) x('q', TIP_F_LABEL.q[F.q]);
+  if (F.lg) x('lg', TIP_LG_NAME[F.lg] || F.lg);
+  if (lf.p) x('p', TIP_PROF[lf.p]);
+  if (lf.r) x('r', TIP_RIT[lf.r]);
+  return out;
+}
+/* 3.81.0 — pannello filtri compatto: una griglia di pulsanti (sezione + valore scelto); tocchi e si aprono le alternative */
+function tipFilterTabs(list) {
+  return '<div class="tip-ftabs">' + list.map(function (x, i) {
+    return '<button type="button" class="tip-ftab" data-ftab="' + i + '"><b>' + U.esc(x.t) + '</b><small>—</small></button>';
+  }).join('') + '</div><p class="muted tip-hint tip-fhint">Tocca una voce per vedere le alternative.</p>' +
+    list.map(function (x, i) { return '<div class="tip-fpane" data-fpane="' + i + '" hidden><div class="tip-lfgrid">' + x.body + '</div></div>'; }).join('');
+}
+function tipFilterTabsBind(d, list) {
+  var tabs = d.querySelectorAll('[data-ftab]'), panes = d.querySelectorAll('[data-fpane]');
+  var label = function () {
+    list.forEach(function (x, i) {
+      var t = tabs[i], p = panes[i], on = p && p.querySelector('.tip-lchip.on'), set, txt;
+      if (x.label) { txt = x.label(); set = x.isSet ? x.isSet() : true; }
+      else { txt = on ? on.textContent.replace(/^\s+|\s+$/g, '') : 'Tutti'; var a = on && (on.getAttribute('data-stf') || on.getAttribute('data-arcf') || ''); set = !!(a && a.split(':')[1]); }
+      t.querySelector('small').textContent = txt; t.classList.toggle('set', !!set);
+    });
+  };
+  tabs.forEach(function (t) {
+    t.onclick = function (ev) {
+      ev.stopPropagation();
+      var i = t.getAttribute('data-ftab'), open = !t.classList.contains('open');
+      tabs.forEach(function (x) { x.classList.toggle('open', open && x === t); });
+      panes.forEach(function (p) { p.hidden = !(open && p.getAttribute('data-fpane') === i); });
+      var h = d.querySelector('.tip-fhint'); if (h) h.hidden = open;
+    };
+  });
+  d.addEventListener('click', function () { setTimeout(label, 0); }, true);
+  label();
+}
+/* filtri di Live › Consigli di oggi */
+function tipArcFilterBar() {
+  var act = tipEFilterChips(tipUI.arcF, tipUI.lblF, 'data-arcclear');
+  return '<div class="tip-lblf"><button type="button" class="tip-lchip tip-lfbtn" data-arcfilters>⚲ Filtri' + (act.length ? ' (' + act.length + ')' : '') + '</button>' + act.join('') + '</div>';
+}
+function tipArcFilterSheet() {
+  var F = tipUI.arcF = Object.assign({}, tipUI.arcF || {});
+  var chip = function (kind, v, t) {
+    var cur = kind === 'p' || kind === 'r' ? ((tipUI.lblF || {})[kind] || '') : (F[kind] == null ? '' : String(F[kind]));
+    return '<button type="button" class="tip-lchip' + (cur === String(v) ? ' on' : '') + '" data-arcf="' + kind + ':' + v + '">' + t + '</button>';
+  };
+  var list = [], sec = function (t, body) { list.push({ t: t, body: body }); return ''; };
+  tipEFilterSections(chip, sec, tipUI.splitSample || '', TIP_LIVE_HIDE);
+  var d = sheetModal(sheetHead('Filtri · Consigli di oggi', { sub: 'Valgono per riepilogo, tabelle ed elenco' }) + '<div class="tip-sheet">' + tipFilterTabs(list) +
+    '<div class="actions"><button type="button" data-arcf-reset>Azzera</button><button type="button" class="primary" data-arcf-ok>Fatto</button></div></div>');
+  d.classList.add('tip-dlg');
+  d.querySelectorAll('[data-arcf]').forEach(function (b) {
+    b.onclick = function (ev) {
+      ev.stopPropagation();
+      var kv = b.getAttribute('data-arcf').split(':'), k = kv[0], v = kv[1] || '';
+      if (k === 'p' || k === 'r') { tipUI.lblF = Object.assign({}, tipUI.lblF || {}); tipUI.lblF[k] = v; } else tipUI.arcF[k] = v;
+      d.querySelectorAll('[data-arcf^="' + k + ':"]').forEach(function (x) { x.classList.toggle('on', x === b); });
+    };
+  });
+  tipFilterTabsBind(d, list);
+  d.querySelector('[data-arcf-reset]').onclick = function () { tipUI.arcF = {}; tipUI.lblF = {}; d.close(); };
+  d.querySelector('[data-arcf-ok]').onclick = function () { d.close(); };
+  d.addEventListener('close', function () { render(); });
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-arcfilters],[data-arcclear]');
+  if (!b) return;
+  if (b.hasAttribute('data-arcfilters')) return tipArcFilterSheet();
+  var k = b.getAttribute('data-arcclear');
+  if (k === 'p' || k === 'r') { tipUI.lblF = Object.assign({}, tipUI.lblF || {}); tipUI.lblF[k] = ''; } else { tipUI.arcF = Object.assign({}, tipUI.arcF || {}); tipUI.arcF[k] = ''; }
+  render();
+});
 function tipArchiveSplit(L) {
   if (!L.length) return '';
   var cell = function (arr) {
@@ -2063,11 +2174,12 @@ function tipExcellentArchive() {
   var today0 = U.local().slice(0, 10), smp = tipUI.splitSample || '';
   var all = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return (e.trial || tipKindActive(e.k)) && !TIP_LIVE_HIDE[e.k] && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip' && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipLblPass(e.prof || 'nq', e.rit || 'norm'); })
     .slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
+  all = all.filter(function (e) { return tipEFilter(tipUI.arcF, e); });
   var L = tipSampleOf(all, smp), mine = all.filter(function (e) { return e.played; }).length;
   return '<section class="card tip-top tip-live-section tip-archive"><div class="tip-top-head"><b>★ Consigli di oggi</b><small class="tip-archive-total">' + all.length + ' salvati' + (mine ? ' · ' + mine + ' giocati da te' : '') + '</small></div>' +
-    (all.length ? tipSampleMatrix(all, false) + tipSampleSeg(smp, 'data-split-sample') + tipArchiveSplit(L) : '') +
+    (all.length ? tipSampleMatrix(all, false) : '') + tipSampleSeg(smp, 'data-split-sample') + tipArcFilterBar() + (L.length ? tipArchiveSplit(L) : '') +
     '<p class="muted tip-hint">Vinte–perse, % sulle chiuse, ◷ in attesa. Una voce per partita e punteggio; ingressi futuri e step costosi non contano.</p>' +
-    (L.length ? '<div class="tip-tlist">' + L.slice(0, 60).map(tipMemRow).join('') + '</div>' : '<p class="muted tip-tnone">Nessun consiglio ' + (smp === 'trial' ? 'in prova ' : smp === 'stable' ? 'stabile ' : '') + 'salvato oggi.</p>') + '</section>';
+    (L.length ? '<div class="tip-tlist">' + L.slice(0, 60).map(tipMemRow).join('') + '</div>' : '<p class="muted tip-tnone">Nessun consiglio ' + (smp === 'trial' ? 'in prova ' : smp === 'stable' ? 'stabile ' : '') + 'oggi' + (tipEFilterChips(tipUI.arcF, tipUI.lblF, 'x').length ? ' con questi filtri' : '') + '.</p>') + '</section>';
 }
 
 /* ---------- 3.48.0 — Scansione automatica, segnali nuovi e avvisi sul telefono ---------- */
@@ -3316,7 +3428,7 @@ function tipStatLog(anySample) {
   var base = anySample ? tipLiveAll(false).concat(tipLiveAll(true)) : F.sample === 'trial' ? tipLiveAll(true) : F.sample === 'stable' ? tipLiveAll(false) : tipLiveAll(false).concat(tipLiveAll(true));
   return base.filter(function (e) {
     var d = tipLiveDay(e);
-    return d >= R.from && d <= R.to && (!F.tier || (e.tier || 'excellent') === F.tier) && (!F.k || e.k === F.k) && (!F.lg || e.lg === F.lg) &&
+    return d >= R.from && d <= R.to && tipEFilter(F, e) &&
       (!lf.p || (e.prof || 'nq') === lf.p) && (!lf.r || (e.rit || 'norm') === lf.r);
   }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
 }
@@ -3482,11 +3594,7 @@ function tipStatChips() {
   if (live) {
     if (F.sample === 'trial') x('sample', 'Solo in prova 🧪');
     if (F.sample === 'stable') x('sample', 'Solo stabili');
-    if (F.tier) x('tier', F.tier === 'try' ? 'Da valutare' : 'Ottime');
-    if (F.k) x('k', TIP_PLAY_SHORT[F.k] || F.k);
-    if (F.lg) x('lg', TIP_LG_NAME[F.lg] || F.lg);
-    if (lf.p) x('p', TIP_PROF[lf.p]);
-    if (lf.r) x('r', TIP_RIT[lf.r]);
+    act = act.concat(tipEFilterChips(F, lf, 'data-stclear'));
   } else {
     if (F.m) x('m', (TIP_MARKETS.find(function (k) { return k[0] === F.m; }) || [0, F.m])[1]);
     if (F.lg) x('lg', TIP_LG_NAME[F.lg] || F.lg);
@@ -3515,18 +3623,14 @@ function tipStatFilterSheet() {
     var cur = kind === 'p' || kind === 'r' ? ((tipUI.lblF || {})[kind] || '') : ((live ? tipUI.stF : tipUI.stPF) || {})[kind] || '';
     return '<button type="button" class="tip-lchip' + (cur === String(v) ? ' on' : '') + '" data-stf="' + kind + ':' + v + '">' + t + '</button>';
   };
-  var sec = function (t, body) { return '<p class="tip-lfsec">' + t + '</p><div class="tip-lfgrid">' + body + '</div>'; };
+  var list = [], sec = function (t, body, lab, isSet) { list.push({ t: t, body: body, label: lab, isSet: isSet }); return ''; };
   var quick = '<div class="tip-lfgrid">' + [['Oggi', 0, 0], ['Ieri', 1, 1], ['7 giorni', 6, 0], ['30 giorni', 29, 0], ['Tutto', -1, 0]].map(function (q) { return '<button type="button" class="tip-lchip" data-calq="' + q[1] + ':' + q[2] + '">' + q[0] + '</button>'; }).join('') + '</div>';
-  var body = sec('Periodo · ' + U.esc(tipStRangeLabel()), '') + quick + '<div data-calbox>' + tipCalHtml() + '</div>';
-  if (live) body += sec('Campione', chip('sample', '', 'Stabili e in prova') + chip('sample', 'stable', 'Solo stabili') + chip('sample', 'trial', 'Solo in prova 🧪')) + sec('Livello', chip('tier', '', 'Tutti') + chip('tier', 'excellent', 'Ottime') + chip('tier', 'try', 'Da valutare')) +
-    sec('Tipo di giocata', chip('k', '', 'Tutte') + Object.keys(TIP_PLAY_SHORT).map(function (k) { return chip('k', k, TIP_PLAY_SHORT[k]); }).join('')) +
-    sec('Campionato', chip('lg', '', 'Tutti') + Object.keys(TIP_LG_NAME).map(function (k) { return chip('lg', k, TIP_LG_NAME[k]); }).join('')) +
-    sec('Profilo (quote pre-partita)', chip('p', '', 'Tutti') + chip('p', 'gol', 'Da gol') + chip('p', 'medio', 'Media') + chip('p', 'pochi', 'Pochi gol') + chip('p', 'nq', 'Senza quote')) +
-    sec('Ritmo live', chip('r', '', 'Ogni ritmo') + chip('r', 'alto', 'Alto') + chip('r', 'norm', 'Normale') + chip('r', 'basso', 'Basso'));
-  else body += sec('Tipo di pronostico', chip('m', '', 'Tutti') + TIP_MARKETS.map(function (k) { return chip('m', k[0], k[1]); }).join('')) +
-    sec('Liste Top', chip('top', '', 'Tutti') + chip('top', 'top', 'Solo Top') + chip('top', 'no', 'Fuori Top') + chip('top', 'unknown', 'Top non documentata')) +
+  sec('Periodo', quick.replace(/^<div class="tip-lfgrid">|<\/div>$/g, '') + '<div data-calbox class="tip-fcal">' + tipCalHtml() + '</div>', tipStRangeLabel, function () { return !!tipUI.stFrom; });
+  if (live) { sec('Campione', chip('sample', '', 'Totale') + chip('sample', 'stable', '◆ Stabili') + chip('sample', 'trial', '🧪 In prova')); tipEFilterSections(chip, sec, (tipUI.stF || {}).sample || ''); }
+  else sec('Tipo', chip('m', '', 'Tutti') + TIP_MARKETS.map(function (k) { return chip('m', k[0], k[1]); }).join('')) +
+    sec('Top', chip('top', '', 'Tutti') + chip('top', 'top', 'Solo Top') + chip('top', 'no', 'Fuori Top') + chip('top', 'unknown', 'Top non documentata')) +
     sec('Campionato', chip('lg', '', 'Tutti') + Object.keys(TIP_LG_NAME).map(function (k) { return chip('lg', k, TIP_LG_NAME[k]); }).join(''));
-  var d = sheetModal(sheetHead(live ? 'Filtri · Live' : 'Filtri · Prepartita', { sub: 'Periodo e tipo di consiglio' }) + '<div class="tip-sheet">' + body +
+  var d = sheetModal(sheetHead(live ? 'Filtri · Live' : 'Filtri · Prepartita', { sub: 'Periodo e tipo di consiglio' }) + '<div class="tip-sheet">' + tipFilterTabs(list) +
     '<div class="actions"><button type="button" data-stf-reset>Azzera</button><button type="button" class="primary" data-stf-ok>Fatto</button></div></div>');
   d.classList.add('tip-dlg');
   var bindCal = function () {
@@ -3570,6 +3674,7 @@ function tipStatFilterSheet() {
       d.querySelectorAll('[data-stf^="' + k + ':"]').forEach(function (x) { x.classList.toggle('on', x === b); });
     };
   });
+  tipFilterTabsBind(d, list);
   d.querySelector('[data-stf-reset]').onclick = function () { if (live) { tipUI.stF = {}; tipUI.lblF = {}; } else tipUI.stPF = {}; tipUI.stFrom = undefined; d.close(); };
   d.querySelector('[data-stf-ok]').onclick = function () { d.close(); };
   d.addEventListener('close', function () { tipUI.histN = 10; render(); });
