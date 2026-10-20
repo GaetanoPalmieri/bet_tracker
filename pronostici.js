@@ -691,7 +691,7 @@ async function tipAutoResults(opts) {
         if (!x || !Array.isArray(x.ft)) { e.miss = (e.miss || 0) + 1; return; }
         if (e.res == null) {
           var o = tipPlayOutcome(e, x);
-          if (o != null) { e.res = o; e.ft = x.ft; e.ht = x.ht || null; }
+          if (o != null) { e.res = o; e.ft = x.ft; e.ht = x.ht || null; if (Array.isArray(x.goals)) e.goalsAt = x.goals; }
           else e.miss = (e.miss || 0) + 1;
         }
         if (needP) { var op = tipPlayedOutcome(e, x); if (op != null) e.played.res = op; }
@@ -1172,7 +1172,7 @@ function tipPlayFind(id, ctx) {
 function tipPlayEntry(m, ctx, x, lid) {
   return { key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
     k: x.k, tier: x.green ? 'excellent' : 'try', conditional: !!x.at, costly: !!x.costly, res: (x.at || x.costly || x.lowBook) ? 'skip' : null, min: ctx.min, half: ctx.half, gh: ctx.gh || 0, ga: ctx.ga || 0, p: Math.round((x.evalP == null ? x.p : x.evalP) * 1000) / 1000, rawP: Math.round(x.p * 1000) / 1000,
-    legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }), prof: x.prof, rit: x.rit, lg: x.lg, at: x.at, ts: x.ts, minQ: x.minQ ? Math.round(x.minQ * 100) / 100 : undefined, book: x.book || undefined,
+    legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }), prof: x.prof, rit: x.rit, lg: x.lg, snap: x.snap, stats: (function () { var d = (tipUI.liveData || {})[m.id]; return d && d.stats ? d.stats : undefined; })(), at: x.at, ts: x.ts, minQ: x.minQ ? Math.round(x.minQ * 100) / 100 : undefined, book: x.book || undefined,
     risk: Math.round(x.cost.risk * 100) / 100, win: Math.round(x.cost.win * 100) / 100, t: Date.now() };
 }
 /* applica in coda (dopo il disegno della pagina: salvare ridisegna) */
@@ -1463,6 +1463,8 @@ function tipPlays(r, min, half, book) {
     var x = { k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, legs: legs, thr: thr, note: note || '', cost: c, costly: legs.length > 1 && (c.ratio > 2.5 || c.risk > 4 * base) };
     x.lg = r.lgTier || 'major'; x.goals = r.goals || 0;
     var lb = tipLabels(r); x.prof = lb.prof; x.rit = lb.rit;
+    /* 3.64.6 — istantanea del modello al momento del consiglio, per il retraining */
+    x.snap = { lam: Math.round((r.lam || 0) * 100) / 100, lamPre: U.finite(r.lamPre) ? Math.round(r.lamPre * 100) / 100 : null, F: Math.round((r.F || 0) * 100) / 100, model: r.model, xg: !!r.xg, recent: !!r.recent, thr: Math.round(thr * 1000) / 1000 };
     x.minQ = Math.max(k === 't2u18' || k === 't1s18' ? 1.8 : TIP_MIN_ODDS, 1 / Math.max(0.01, legs[0].p));
     /* 3.48.0 — quota live del book: se c'è ed è sotto la minima, al massimo DA VALUTARE */
     if (book && U.finite(book.n1) && book.n1 > 1 && (k === 't2u15' || k === 't2u18')) { x.book = book.n1; x.lowBook = book.n1 < x.minQ; }
@@ -2804,26 +2806,73 @@ function tipStatLog() {
   var per = tipUI.stPer || 30, from = per === 'all' ? 0 : Date.now() - per * 86400e3, tf = tipUI.stTier || '';
   return tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) {
     return (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= from &&
-      (!tf || (e.tier || 'excellent') === tf) && tipLblPass(e.prof || 'nq', e.rit || 'norm');
+      (!tf || (e.tier || 'excellent') === tf) && (!tipUI.stK || e.k === tipUI.stK) && (!tipUI.stLg || e.lg === tipUI.stLg) && tipLblPass(e.prof || 'nq', e.rit || 'norm');
   }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
 }
+/* 3.64.5 — filtri delle statistiche in un pannello (come nel Live), con i filtri attivi rimovibili */
+var TIP_ST_PER = { 7: '7 giorni', 30: '30 giorni', all: 'Tutto' };
 function tipStatChips() {
-  var c = function (k, v, t) { var on = String(tipUI[k] == null ? (k === 'stPer' ? 30 : '') : tipUI[k]) === String(v); return '<button type="button" class="tip-lchip' + (on ? ' on' : '') + '" data-stset="' + k + ':' + v + '">' + t + '</button>'; };
-  return '<div class="tip-lblf">' + c('stPer', 7, '7 giorni') + c('stPer', 30, '30 giorni') + c('stPer', 'all', 'Tutto') + '<span class="tip-sep"></span>' + c('stTier', '', 'Tutte') + c('stTier', 'excellent', 'Ottime') + c('stTier', 'try', 'Da valutare') + '</div>' + tipLblFilterBar();
+  var f = tipUI.lblF || {}, act = [], x = function (key, label) { act.push('<button type="button" class="tip-lchip on" data-stclear="' + key + '">' + U.esc(label) + ' ✕</button>'); };
+  if (tipUI.stTier) x('stTier', tipUI.stTier === 'try' ? 'Da valutare' : 'Ottime');
+  if (tipUI.stK) x('stK', TIP_PLAY_SHORT[tipUI.stK] || tipUI.stK);
+  if (tipUI.stLg) x('stLg', TIP_LG_NAME[tipUI.stLg] || tipUI.stLg);
+  if (f.p) x('p', TIP_PROF[f.p]);
+  if (f.r) x('r', TIP_RIT[f.r]);
+  return '<div class="tip-lblf"><button type="button" class="tip-lchip tip-lfbtn" data-stfilters>⚲ Filtri' + (act.length ? ' (' + act.length + ')' : '') + '</button><span class="tip-lchip on" style="pointer-events:none">' + TIP_ST_PER[tipUI.stPer || 30] + '</span>' + act.join('') + '</div>';
 }
+function tipStatFilterSheet() {
+  var f = tipUI.lblF || {};
+  var chip = function (kind, v, t) {
+    var cur = kind === 'p' || kind === 'r' ? (f[kind] || '') : String(tipUI[kind] == null ? (kind === 'stPer' ? 30 : '') : tipUI[kind]);
+    return '<button type="button" class="tip-lchip' + (cur === String(v) ? ' on' : '') + '" data-stf="' + kind + ':' + v + '">' + t + '</button>';
+  };
+  var sec = function (t, body) { return '<p class="tip-lfsec">' + t + '</p><div class="tip-lfgrid">' + body + '</div>'; };
+  var d = sheetModal(sheetHead('Filtri delle statistiche', { sub: 'Valgono per Riepilogo e Storico' }) + '<div class="tip-sheet">' +
+    sec('Periodo', chip('stPer', 7, '7 giorni') + chip('stPer', 30, '30 giorni') + chip('stPer', 'all', 'Tutto')) +
+    sec('Livello', chip('stTier', '', 'Tutti') + chip('stTier', 'excellent', 'Ottime') + chip('stTier', 'try', 'Da valutare')) +
+    sec('Tipo di giocata', chip('stK', '', 'Tutte') + Object.keys(TIP_PLAY_SHORT).map(function (k) { return chip('stK', k, TIP_PLAY_SHORT[k]); }).join('')) +
+    sec('Campionato', chip('stLg', '', 'Tutti') + Object.keys(TIP_LG_NAME).map(function (k) { return chip('stLg', k, TIP_LG_NAME[k]); }).join('')) +
+    sec('Profilo (quote pre-partita)', chip('p', '', 'Tutti') + chip('p', 'gol', 'Da gol') + chip('p', 'medio', 'Media') + chip('p', 'pochi', 'Pochi gol') + chip('p', 'nq', 'Senza quote')) +
+    sec('Ritmo live', chip('r', '', 'Ogni ritmo') + chip('r', 'alto', 'Alto') + chip('r', 'norm', 'Normale') + chip('r', 'basso', 'Basso')) +
+    '<div class="actions"><button type="button" data-stf-reset>Azzera filtri</button><button type="button" class="primary" data-stf-ok>Fatto</button></div></div>');
+  d.classList.add('tip-dlg');
+  d.querySelectorAll('[data-stf]').forEach(function (b) {
+    b.onclick = function (ev) {
+      ev.stopPropagation();
+      var kv = b.getAttribute('data-stf').split(':'), k = kv[0], v = kv[1] || '';
+      if (k === 'p' || k === 'r') { tipUI.lblF = tipUI.lblF || {}; tipUI.lblF[k] = v; }
+      else tipUI[k] = k === 'stPer' && v !== 'all' ? Number(v) : v;
+      d.querySelectorAll('[data-stf^="' + k + ':"]').forEach(function (x) { x.classList.toggle('on', x === b); });
+    };
+  });
+  d.querySelector('[data-stf-reset]').onclick = function () { tipUI.stTier = ''; tipUI.stK = ''; tipUI.stLg = ''; tipUI.stPer = 30; tipUI.lblF = {}; d.close(); render(); };
+  d.querySelector('[data-stf-ok]').onclick = function () { d.close(); render(); };
+  d.addEventListener('close', function () { render(); });
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-stfilters],[data-stclear]');
+  if (!b) return;
+  if (b.hasAttribute('data-stfilters')) return tipStatFilterSheet();
+  var k = b.dataset.stclear;
+  if (k === 'p' || k === 'r') { tipUI.lblF = tipUI.lblF || {}; tipUI.lblF[k] = ''; } else tipUI[k] = '';
+  render();
+});
 function tipStatCount(arr) {
-  var w = 0, l = 0, a = 0, p = 0, n = 0;
-  arr.forEach(function (e) { if (e.res === 1) w++; else if (e.res === 0) l++; else a++; if (e.res === 1 || e.res === 0) { p += e.p || 0; n++; } });
-  return { w: w, l: l, a: a, n: n, rate: n ? w / n * 100 : null, exp: n ? p / n * 100 : null };
+  var w = 0, l = 0, a = 0, p = 0, n = 0, pl = 0;
+  arr.forEach(function (e) { if (e.res === 1) w++; else if (e.res === 0) l++; else a++; if (e.res === 1 || e.res === 0) { p += e.p || 0; n++; pl += e.res ? (e.win || 0) : -(e.risk || 0); } });
+  return { w: w, l: l, a: a, n: n, pl: pl, rate: n ? w / n * 100 : null, exp: n ? p / n * 100 : null };
 }
 function tipStatTable(title, groups) {
   var rows = groups.filter(function (g) { return g[1].length; });
   if (!rows.length) return '';
   return '<section class="card diary-card tip-markets"><h2>' + title + '</h2>' + rows.map(function (g) {
     var c = tipStatCount(g[1]), w = c.rate == null ? 0 : Math.max(2, c.rate);
-    return '<div class="tip-mrow"><div class="tip-mhead"><b>' + g[0] + '</b><span>' + (c.n ? c.w + '/' + c.n + ' · ' + Math.round(c.rate) + '% (previsto ' + Math.round(c.exp) + '%)' : 'nessun esito') + (c.a ? ' · ' + c.a + ' in attesa' : '') + '</span></div>' +
+    var ex = tipStatCount(g[1].filter(function (e) { return (e.tier || 'excellent') === 'excellent'; })), tr = tipStatCount(g[1].filter(function (e) { return e.tier === 'try'; }));
+    var wl = function (x) { return x.n || x.a ? '<b class="positive">' + x.w + '</b>/<b class="negative">' + x.l + '</b>' + (x.a ? ' +' + x.a : '') : '—'; };
+    return '<div class="tip-mrow"><div class="tip-mhead"><b>' + g[0] + '</b><span>' + (c.n ? c.w + '/' + c.n + ' · <b>' + Math.round(c.rate) + '%</b> (prev. ' + Math.round(c.exp) + '%)' : 'nessun esito') + '</span></div>' +
+      '<div class="tip-msub"><span>Ottime ' + wl(ex) + '</span><span>Da valutare ' + wl(tr) + '</span>' + (c.n ? '<span class="' + (c.pl >= 0 ? 'positive' : 'negative') + '">' + (c.pl >= 0 ? '+' : '') + Math.round(c.pl) + '€</span>' : '') + '</div>' +
       '<div class="tip-bar"><i class="' + (c.rate != null && c.rate < c.exp - 5 ? 'low' : '') + '" style="width:' + w + '%"></i>' + (c.n ? '<em style="left:' + c.exp + '%"></em>' : '') + '</div></div>';
-  }).join('') + '<p class="muted tip-hint">La barra è la percentuale vinta, il trattino quella prevista dal modello.</p></section>';
+  }).join('') + '<p class="muted tip-hint">Vinte/perse (+in attesa). Barra = percentuale vinta, trattino = prevista. € alla quota minima con la puntata base.</p></section>';
 }
 function tipStatsSummary() {
   var L = tipStatLog(), c = tipStatCount(L), ex = tipStatCount(L.filter(function (e) { return (e.tier || 'excellent') === 'excellent'; })), tr = tipStatCount(L.filter(function (e) { return e.tier === 'try'; }));
@@ -2834,6 +2883,7 @@ function tipStatsSummary() {
     kpi('Consigli vinti', pc(c), c.n ? c.w + ' su ' + c.n + ' · previsto ' + Math.round(c.exp) + '%' : 'nessun esito ancora', cl(c)) +
     kpi('Ottime', pc(ex), ex.n ? ex.w + ' su ' + ex.n : '—', cl(ex)) +
     kpi('Da valutare', pc(tr), tr.n ? tr.w + ' su ' + tr.n : '—', cl(tr)) +
+    kpi('Saldo teorico', c.n ? (c.pl >= 0 ? '+' : '') + Math.round(c.pl) + '€' : '—', 'tutte alla quota minima', c.n ? (c.pl >= 0 ? 'positive' : 'negative') : '') +
     kpi('Giocate da te', mine.length ? mw + '/' + mine.length : '—', mine.length ? (mpl >= 0 ? '+' : '') + Math.round(mpl) + '€' : 'segna le giocate dal Live', mine.length ? (mpl >= 0 ? 'positive' : 'negative') : '') +
     '</div>';
   /* ultimi 14 giorni */
@@ -2873,11 +2923,27 @@ document.addEventListener('click', function (ev) {
   else { var kv = b.dataset.stset.split(':'); tipUI[kv[0]] = kv[0] === 'stPer' && kv[1] !== 'all' ? Number(kv[1]) : kv[1]; }
   render();
 });
+/* 3.64.6 — esportazione completa per il retraining: consigli live (con istantanea del modello e statistiche),
+   valutazioni live, medie dei campionati, pronostici prepartita chiusi */
+function tipRetrainExport() {
+  var pm = db.predModel || {};
+  var data = { app: 'bet_tracker', kind: 'retraining-live', version: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '', exported: new Date().toISOString(),
+    note: 'playLog = consigli live (un record per partita e punteggio): p probabilità, res 1/0/null, k tipo di giocata, snap = stato del modello, stats = statistiche live al momento, goalsAt = minuti dei gol',
+    thresholds: { greenMin: TIP_GREEN_MINP, greenMin1T: TIP_GREEN_MINP_1T, leagueExtra: TIP_LG_EXTRA, daPerGoal: typeof TIP_DA_PER_GOAL !== 'undefined' ? TIP_DA_PER_GOAL : null },
+    playLog: pm.playLog || [], liveLog: pm.liveLog || [], lgAvg: tipUI.lgAvg || {}, reports: pm.reports || {},
+    prematch: (db.predictions || []).filter(function (m) { return tipNum(m.ft); }).map(function (m) { return { id: m.id, date: m.date, league: m.league, home: m.home, away: m.away, lh: m.lh, la: m.la, src: m.src, ft: m.ft, ht: m.ht, fg: m.fg, picks: m.picks }; }) };
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  a.download = 'retraining-live-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  U.toast('File per il retraining scaricato: ' + (pm.playLog || []).length + ' consigli');
+}
+document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('[data-retrain]')) tipRetrainExport(); });
 function tipStatsPanel(list) {
   var T = tipUI.stTab || 'riep', tab = function (k, t) { return '<button type="button" class="tip-navb' + (T === k ? ' on' : '') + '" data-sttab="' + k + '"><span>' + t + '</span></button>'; };
   var head = '<div class="tip-nav tip-subnav"><div class="tip-navseg">' + tab('riep', 'Riepilogo') + tab('storico', 'Storico') + tab('pre', 'Prepartita') + '</div></div>';
   if (T === 'pre') return head + tipStatsPre(list);
-  return head + tipStatChips() + (T === 'storico' ? tipStatsHistory() : tipStatsSummary());
+  return head + tipStatChips() + (T === 'storico' ? tipStatsHistory() : tipStatsSummary()) + '<div class="actions"><button type="button" class="primary" data-retrain>⬇︎ Esporta per il retraining</button></div>';
 }
 function tipStatsPre(list) {
   var P = tipParams(),
@@ -3427,6 +3493,7 @@ function tipFileSheet() {
     '<button type="button" class="tip-sheet-btn" data-s="fetch"><b>↻ Aggiorna dal sito</b><small>Scarica il pronostici.json pubblicato con l’app</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="import"><b>Importa file</b><small>pronostici.json o pronostici.csv preparati da Claude</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="results"><b>↻ Risultati automatici</b><small>' + (pm.lastResults ? 'Ultimo controllo ' + U.esc(U.date(pm.lastResults)) + (pm.afRemaining != null ? ' · richieste rimaste oggi ' + U.esc(pm.afRemaining) : '') : 'Finale, 1° tempo e minuto del primo gol da API-Football') + '</small></button>' +
+    '<button type="button" class="tip-sheet-btn" data-retrain><b>⬇︎ Esporta per il retraining</b><small>Tutti i consigli live con esiti, statistiche e stato del modello</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="check"><b>🔍 Consigli in attesa</b><small>Cerca i risultati e mostra perché un consiglio non si chiude</small></button>' +
     '<button type="button" class="tip-sheet-btn tip-sheet-danger" data-s="reset"><b>⟲ Azzera pronostici</b><small>Cancella partite, consigli di oggi e storico, resoconti e tracce live. Saldo e scommesse restano.</small></button>' +
     '<button type="button" class="tip-sheet-btn" data-s="export"><b>Esporta storico</b><small>Risultati ed esiti in JSON, da dare a Claude o GPT per ricalibrare</small></button>' +
@@ -3451,6 +3518,7 @@ function tipFileSheet() {
     d.close();
     tipAutoResults({ manual: true });
   };
+  d.querySelector('[data-retrain]').onclick = function () { d.close(); tipRetrainExport(); };
   d.querySelector('[data-s="check"]').onclick = function () { d.close(); U.toast('Cerco i risultati…'); tipAutoResults({ manual: true }); };
   d.querySelector('[data-s="reset"]').onclick = function () { d.close(); tipResetAll(); };
   d.querySelector('[data-s="export"]').onclick = function () {
