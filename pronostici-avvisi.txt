@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.82.0
+// Versione app: 3.85.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1438,10 +1438,20 @@ function tipQualityPass(e) {
   return /^t[ch][12]$/.test(String(e.k || '')) || (e.p || 0) >= TIP_QUALITY_MINP;
 }
 var TIP_NO_PUSH = { th1: 1 };
+function tipKindActive(k) { return !TIP_K_OFF[k] && !(k === 't1st' && !TIP_STEP1T_ON); }
+function tipStatsFrom() { return tipUI.stArchive ? 0 : (((db.predModel || {}).statsFrom) || 0); }
+function tipStatsFromDay() { var f = tipStatsFrom(); return f ? new Date(f).toLocaleDateString('sv-SE') : '0000-00-00'; }
+function tipStatsOk(e) { return !!tipUI.stArchive || ((e.t || 0) >= tipStatsFrom() && tipKindActive(e.k)); }
+function tipStatsResetOnce() {
+  if (((db.predModel || {}).statsFrom) || tipUI._stReset) return;
+  tipUI._stReset = true;
+  setTimeout(function () { mutate(function (d) { d.predModel = d.predModel || {}; if (!d.predModel.statsFrom) d.predModel.statsFrom = Date.now(); }); }, 0);
+}
 function tipAlertWhy(A, e) {
   if (!e) return 'segnale vuoto';
   if (!A || !A.on) return 'avvisi spenti';
   if (TIP_NO_PUSH[e.k]) return 'tipo senza notifiche';
+  if (!tipKindActive(e.k)) return 'tipo sospeso';
   if (e.trial ? A.trial === false : A.stable === false) return e.trial ? 'segnali in prova spenti' : 'segnali stabili spenti';
   if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return e.tier === 'excellent' ? 'OTTIME spente' : 'DA VALUTARE spente';
   if (A[tipAlertGroup(e.k)] === false) return 'tipo ' + ((TIP_ALERT_GROUPS.find(function (g) { return g[0] === tipAlertGroup(e.k); }) || [0, ''])[1]).toLowerCase() + ' spento';
@@ -1784,7 +1794,7 @@ Deno.serve(async (req) => {
       .gte("updated_at", new Date(since - 60e3).toISOString()).order("updated_at", { ascending: true }).limit(300);
     if (e2) return json({ error: e2.message }, 500);
     const rem: any = await getState("bzRemaining");
-    return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null, ver: "3.82.0" });
+    return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null, ver: "3.85.0" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */

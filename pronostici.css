@@ -910,3 +910,9 @@ header { display: flex; align-items: flex-end; justify-content: space-between; g
 /* 3.83.0 — Storico: riepilogo e tabelle dentro ogni giorno */
 .tip-histday .tip-smx{margin-top:8px}
 .tip-histday>summary>span{font-variant-numeric:tabular-nums}
+/* 3.84.0 — intestazione di Consigli di oggi come la riga dello Storico */
+.tip-archive>.tip-archive-head{align-items:center;flex-wrap:wrap;gap:4px 10px}
+.tip-archive>.tip-archive-head>.tip-archive-sum{display:inline;padding:0!important;border:0!important;background:transparent!important;font-size:12.5px!important;font-weight:700!important;color:var(--suite-text-soft)!important;white-space:normal}
+.tip-archive>.tip-archive-head>.tip-archive-sum b,.tip-archive>.tip-archive-head>.tip-archive-sum span{display:inline;padding:0!important;border:0!important;background:transparent!important;font-size:inherit!important}
+.tip-archive>.tip-archive-head>.tip-archive-sum .positive{color:var(--bt-up-text)!important}
+.tip-archive>.tip-archive-head>.tip-archive-sum .negative{color:var(--bt-down-text)!important}
