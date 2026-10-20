@@ -211,6 +211,67 @@ function tipPicksFor(m, P) {
   return out;
 }
 
+/* 3.69.0 — Il consiglio emesso è immutabile. I dati precedenti non dimostrano
+   l'appartenenza alle Top: non ricostruiamo selezioni usando risultati futuri. */
+function tipFreezePrematch(state, now) {
+  var keep = db, cal = tipUI._cal;
+  db = state; tipUI._cal = null;
+  try {
+    var P = tipParams(), list = state.predictions || [], pending = list.filter(function (m) { return !m.preIssue; });
+    var future = pending.filter(function (m) { return !m.cancelled && !tipNum(m.ft) && !tipNum(m.ht) && !(m.ov && Object.keys(m.ov).length) && tipKickoff(m).getTime() > now; });
+    var ranks = {}, days = {};
+    future.forEach(function (m) { days[m.date] = true; });
+    Object.keys(days).forEach(function (day) {
+      var T = tipTopCandidates(day, future, P);
+      TIP_TOP_MK.forEach(function (mk) {
+        var used = list.reduce(function (n, m) { return n + (m.date === day && m.preIssue && m.preIssue.top && m.preIssue.top[mk[0]] ? 1 : 0); }, 0);
+        T[mk[0]].items.slice(0, Math.max(0, 10 - used)).forEach(function (c, i) {
+          (ranks[c.m.id] = ranks[c.m.id] || {})[mk[0]] = used + i + 1;
+        });
+      });
+    });
+    /* Compute all probabilities before changing picks: the calibration sample stays fixed. */
+    var prepared = pending.map(function (m) {
+      var fresh = future.indexOf(m) >= 0;
+      return { m: m, fresh: fresh, picks: (m.picks || []).map(function (p) {
+        return Object.assign({}, p, { raw: p.raw == null ? p.p : p.raw, p: fresh ? tipCal(p.m, p.p) : p.p });
+      }) };
+    });
+    prepared.forEach(function (x) {
+      var m = x.m;
+      var inputs = {};
+      ['lh', 'la', 'hts', 'p1x2', 'odds', 'src', 'fav', 'ctx', 'rel', 'lhS', 'laS', 'lhM', 'laM', 'wMkt'].forEach(function (k) {
+        if (m[k] != null) inputs[k] = m[k];
+      });
+      m.preIssue = JSON.parse(JSON.stringify({
+        schemaVersion: 2, id: (m.afId || m.id) + '|pre|' + (x.fresh ? now : 'legacy'),
+        issuedAt: x.fresh ? new Date(now).toISOString() : null,
+        recordedAt: new Date(now).toISOString(), legacy: !x.fresh,
+        modelVersion: x.fresh ? '3.69.0' : 'unknown', parameters: x.fresh ? P : null,
+        top: x.fresh ? (ranks[m.id] || {}) : null, picks: x.picks, inputs: inputs
+      }));
+      m.picks = JSON.parse(JSON.stringify(m.preIssue.picks));
+    });
+    return pending.length;
+  } finally { db = keep; tipUI._cal = cal; }
+}
+function tipEnsurePrematch() {
+  if (!(db.predictions || []).some(function (m) { return !m.preIssue; }) || tipUI._freezePending) return;
+  tipUI._freezePending = true;
+  setTimeout(function () {
+    try { mutate(function (n) { tipFreezePrematch(n, Date.now()); }); }
+    finally { tipUI._freezePending = false; }
+  }, 0);
+}
+function tipValidIssue(issue) {
+  return issue && issue.schemaVersion === 2 && issue.inputs && typeof issue.inputs === 'object' &&
+    Array.isArray(issue.picks) && issue.picks.every(function (p) {
+      return p && TIP_MARKETS.some(function (k) { return k[0] === p.m; }) && typeof p.sel === 'string' && U.finite(p.p) && p.p >= 0 && p.p <= 100;
+    }) && (issue.top === null || (issue.top && typeof issue.top === 'object' && Object.keys(issue.top).every(function (k) {
+      return TIP_TOP_MK.some(function (mk) { return mk[0] === k; }) && Number.isInteger(issue.top[k]) && issue.top[k] >= 1 && issue.top[k] <= 10;
+    })));
+}
+
 /* ---------- Esiti ---------- */
 function tipNum(v) {
   return Array.isArray(v) && v.length === 2 && v.every(function (n) {
@@ -311,6 +372,7 @@ function tipMerge(file, { manual = false } = {}) {
   var ok = mutate(function (n) {
     n.predictions = n.predictions || [];
     n.predModel = n.predModel || {};
+    tipFreezePrematch(n, Date.now());
     var fp = Object.assign({}, TIP_DEFAULTS, file.model || {});
     var oldV = n.predModel.base && n.predModel.base.version;
     /* Azzerare l'apprendimento soltanto se cambia DAVVERO la versione del modello,
@@ -366,11 +428,21 @@ function tipMerge(file, { manual = false } = {}) {
         if (fm.cancelled) m.cancelled = true;
         tipCopyExtra(m, fm);
         m.picks = tipPicksFor(m, P);
+        if (tipValidIssue(fm.preIssue)) {
+          m.preIssue = JSON.parse(JSON.stringify(fm.preIssue));
+          m.picks = JSON.parse(JSON.stringify(m.preIssue.picks));
+        } else if ((tipNum(fm.ft) || tipNum(fm.ht)) && Array.isArray(fm.picks)) {
+          m.picks = fm.picks.filter(function (p) { return p && typeof p.sel === 'string' && U.finite(p.p) && p.p >= 0 && p.p <= 100 && TIP_MARKETS.some(function (k) { return k[0] === p.m; }); });
+        }
         if (!m.picks.length) return;
         n.predictions.push(m);
         byId[id] = m;
         res.added++;
       } else {
+        if (!cur.preIssue && tipValidIssue(fm.preIssue)) {
+          cur.preIssue = JSON.parse(JSON.stringify(fm.preIssue));
+          cur.picks = JSON.parse(JSON.stringify(cur.preIssue.picks));
+        }
         var noScores = !tipNum(cur.ft) && !tipNum(cur.ht);
         var manualOutcomes = cur.ov && Object.keys(cur.ov).length > 0;
         var nextKickoff = new Date(fm.date + 'T' + (/^\d{2}:\d{2}$/.test(fm.time || '') ? fm.time : '23:59') + ':00');
@@ -390,7 +462,7 @@ function tipMerge(file, { manual = false } = {}) {
           else delete cur.p1x2;
           tipCopyExtra(cur, fm);
           cur.batch = String(file.batch || fm.date);
-          cur.picks = tipPicksFor(cur, P);
+          if (!cur.preIssue) cur.picks = tipPicksFor(cur, P);
           if (JSON.stringify([cur.lh, cur.la, cur.p1x2, cur.picks, cur.rel, cur.note, cur.time, cur.league, cur.review]) !== oldSnapshot) res.updated++;
         } else if (fm.time && cur.time !== String(fm.time) && noScores && future) {
           cur.time = String(fm.time);
@@ -429,6 +501,7 @@ function tipMerge(file, { manual = false } = {}) {
     }
     n.predModel.lastBatch = String(file.batch || '');
     n.predModel.lastCheck = new Date().toISOString();
+    tipFreezePrematch(n, Date.now());
   });
   if (ok) {
     var msg = [];
@@ -670,6 +743,9 @@ async function tipAutoResults(opts) {
         if (Array.isArray(x.ft)) {
           if (!tipNum(m.ft) || m.ft[0] !== x.ft[0] || m.ft[1] !== x.ft[1]) n++;
           m.ft = x.ft;
+          m.resultConfirmed = x.resultConfirmed === true;
+          m.resultSource = x.resultSource || x.afId || null;
+          m.confirmedAt = x.confirmedAt || null;
           m.ov = {};
         }
         if (Array.isArray(x.ht)) m.ht = x.ht;
@@ -691,9 +767,10 @@ async function tipAutoResults(opts) {
         if (!x || !Array.isArray(x.ft)) { e.miss = (e.miss || 0) + 1; return; }
         if (e.res == null) {
           var o = tipPlayOutcome(e, x);
-          if (o != null) { e.res = o; e.ft = x.ft; e.ht = x.ht || null; if (Array.isArray(x.goals)) e.goalsAt = x.goals; }
+          if (o != null) { e.res = o; e.ft = x.ft; e.ht = x.ht || null; e.cornersFinal = x.corners || null; e.resultConfirmed = x.resultConfirmed === true; e.resultSource = x.resultSource || x.afId || null; e.confirmedAt = x.confirmedAt || null; if (Array.isArray(x.goals)) e.goalsAt = x.goals; }
           else e.miss = (e.miss || 0) + 1;
         }
+        if (e.initial && e.initial.res == null) e.initial.res = tipPlayOutcome(e.initial, x);
         if (needP) { var op = tipPlayedOutcome(e, x); if (op != null) e.played.res = op; }
       });
       d.predModel.lastResults = new Date().toISOString();
@@ -1072,7 +1149,7 @@ function tipScanEval() {
     y.grp = !y.x.stats ? 1 : y.ritmo >= 1.08 ? 0 : y.ritmo <= 0.92 ? 2 : 1;
     y.act = tipQuickAction(y);
     y.best = tipPlayBest(y.plays);
-    y.trials = tipTrialPlays(y.r, y.min, y.half, y.x);
+    y.trials = tipTrialPlays(y.r, y.min, y.half, y.x, tipLivePrev(y.m.id, y.min, y.half));
     if (y.x.stats) { tipPlayLogAdd(y.m, { min: y.min, half: y.half, gh: y.x.goals[0], ga: y.x.goals[1] }, y.plays); tipTrialLogAdd(y.m, { min: y.min, half: y.half, gh: y.x.goals[0], ga: y.x.goals[1] }, y.trials, y.x.afId); }
   });
   if (tipUI._histAt !== S.at) {
@@ -1165,7 +1242,32 @@ TIP_PLAY_NAME.tc2 = 'IN PROVA · almeno 2 angoli in più entro la fine (dall’8
 /* 3.68.0 — SEGNALI IN PROVA: regole provvisorie, niente notifiche, tracciati a parte (una voce per partita, punteggio e tipo).
    Servono a misurare quanto vincono prima di tararli con i dati registrati sul server. */
 var TIP_TRIAL = { tp1: 1, tp2: 1, tc1: 1, tc2: 1 };
-function tipTrialPlays(r, min, half, x) {
+/* Experimental corner model. Recent pace is deliberately bounded; no accuracy
+   claim is made until confirmed, future outcomes are available. */
+function tipCornerEstimate(min, goals, stats, prev, addedTime) {
+  if (!stats || !Array.isArray(goals) || goals.length !== 2 || !goals.every(function (v) { return Number.isInteger(v) && v >= 0; }) || !U.finite(min) || min < 82 || min > 87) return null;
+  var side = stats.side || [{}, {}], valid = function (v) { return Number.isInteger(v) && v >= 0; };
+  var cor = valid(stats.c) ? stats.c : valid(side[0].c) && valid(side[1].c) ? side[0].c + side[1].c : null;
+  if (cor == null) return null;
+  var baseRate = (cor + 3) / (min + 27), rate = baseRate, recent = null;
+  if (prev && prev.half === 2 && prev.side && min - prev.min >= 5 && min - prev.min <= 15 &&
+      (!prev.at || Date.now() - prev.at <= 20 * 60e3) && valid(prev.side[0].c) && valid(prev.side[1].c)) {
+    var before = prev.side[0].c + prev.side[1].c, elapsed = min - prev.min;
+    if (cor >= before) {
+      recent = { minutes: elapsed, corners: cor - before };
+      var recentRate = (cor - before + baseRate * 10) / (elapsed + 10);
+      rate *= Math.max(0.85, Math.min(1.15, 0.75 + 0.25 * recentRate / baseRate));
+    }
+  }
+  var extra = U.finite(addedTime) && addedTime >= 0 && addedTime <= 20 ? addedTime : 4;
+  var rem = 90 - min + extra, diff = Math.abs(goals[0] - goals[1]), boost = diff === 1 ? 1.25 : diff === 0 ? 1.1 : 0.85;
+  if ((side[0].red || 0) + (side[1].red || 0) > 0) boost *= 0.95;
+  var lambda = rate * rem * boost;
+  return { model: 'corners-3.69.0-experimental', cn: cor, lamC: lambda, baseRate: baseRate, rate: rate, recent: recent,
+    stoppage: extra, stoppageKnown: U.finite(addedTime), remaining: rem, boost: boost,
+    p1: 1 - Math.exp(-lambda), p2: 1 - Math.exp(-lambda) * (1 + lambda) };
+}
+function tipTrialPlays(r, min, half, x, prev) {
   var out = [], st = x && x.stats, g = (x && x.goals) || [0, 0], G = (g[0] || 0) + (g[1] || 0);
   if (!r || !st || min == null) return out;
   var sd = st.side || [{}, {}], sum = function (k) { return (sd[0][k] || 0) + (sd[1][k] || 0); };
@@ -1188,13 +1290,13 @@ function tipTrialPlays(r, min, half, x) {
     if (n1 != null) out.push(mk('tp2', n1, 0.70, 0.62));
   }
   /* angoli finali: 82'-87'. Media angoli della partita "tirata" verso 10 a partita, corretta dal punteggio */
-  if (half === 2 && min >= 82 && min <= 87 && U.finite(cor)) {
-    var rate = (cor + 3) / (min + 27), rem = 90 - min + 4, d = Math.abs((g[0] || 0) - (g[1] || 0));
-    var boost = d === 1 ? 1.25 : d === 0 ? 1.1 : 0.85;
-    if ((sd[0].red || 0) + (sd[1].red || 0) > 0) boost *= 0.95;
-    var lam = rate * rem * boost, p1 = 1 - Math.exp(-lam), p2 = 1 - Math.exp(-lam) * (1 + lam);
-    out.push(mk('tc1', p1, 0.80, 0.72, { cn: cor, need: 1, lamC: Math.round(lam * 100) / 100 }));
-    out.push(mk('tc2', p2, 0.50, 0.42, { cn: cor, need: 2, lamC: Math.round(lam * 100) / 100 }));
+  if (half === 2) {
+    var corner = tipCornerEstimate(min, x.goals, st, prev, x.addedTime);
+    if (corner) {
+      var extra = function (need) { return { cn: corner.cn, need: need, lamC: corner.lamC, snap: corner }; };
+      out.push(mk('tc1', corner.p1, 0.80, 0.72, extra(1)));
+      out.push(mk('tc2', corner.p2, 0.50, 0.42, extra(2)));
+    }
   }
   return out.filter(function (z) { return z.tier !== 'none'; });
 }
@@ -1225,10 +1327,22 @@ function tipPlayFind(id, ctx) {
     .sort(function (a, b) { return (a.tier === 'try' ? 1 : 0) - (b.tier === 'try' ? 1 : 0) || (a.t || 0) - (b.t || 0); })[0] || null;
 }
 function tipPlayEntry(m, ctx, x, lid) {
-  return { key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
+  var data = (tipUI.liveData || {})[m.id] || {};
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.69.0',
+    input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
+      parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
+    key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
     k: x.k, tier: x.green ? 'excellent' : 'try', conditional: !!x.at, costly: !!x.costly, res: (x.at || x.costly || x.lowBook) ? 'skip' : null, min: ctx.min, half: ctx.half, gh: ctx.gh || 0, ga: ctx.ga || 0, p: Math.round((x.evalP == null ? x.p : x.evalP) * 1000) / 1000, rawP: Math.round(x.p * 1000) / 1000,
     legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }), prof: x.prof, rit: x.rit, lg: x.lg, snap: x.snap, stats: (function () { var d = (tipUI.liveData || {})[m.id]; return d && d.stats ? d.stats : undefined; })(), at: x.at, ts: x.ts, minQ: x.minQ ? Math.round(x.minQ * 100) / 100 : undefined, book: x.book || undefined,
-    risk: Math.round(x.cost.risk * 100) / 100, win: Math.round(x.cost.win * 100) / 100, t: Date.now() };
+    risk: Math.round(x.cost.risk * 100) / 100, win: Math.round(x.cost.win * 100) / 100, t: Date.now() }));
+}
+function tipSignalRevision(previous, next) {
+  var original = Object.assign({}, previous.initial || previous);
+  delete original.revisions;
+  var history = (previous.revisions || []).slice(), revision = Object.assign({}, next);
+  delete revision.initial; delete revision.revisions;
+  if (!history.some(function (e) { return e.t === revision.t && e.tier === revision.tier; })) history.push(revision);
+  return Object.assign({}, next, { initial: original, revisions: history, first: previous.first || { k: previous.k, min: previous.min, tier: previous.tier } });
 }
 /* applica in coda (dopo il disegno della pagina: salvare ridisegna) */
 function tipPlayQueue(op) {
@@ -1258,6 +1372,7 @@ function tipPlayApply(L, o) {
   }
   if (!cur) { L.push(o.e); return; }
   if (cur.tier === 'try' && o.e.tier === 'excellent') {
+    o.e = tipSignalRevision(cur, o.e);
     var keep = { key: cur.key, played: cur.played, first: cur.first || { k: cur.k, min: cur.min, tier: 'try' } };
     Object.keys(o.e).forEach(function (k) { cur[k] = o.e[k]; });
     cur.key = keep.key; cur.first = keep.first; if (keep.played) cur.played = keep.played;
@@ -1303,10 +1418,12 @@ function tipPlayedPL(e) {
 /* esito di una giocata: 1 vinta, 0 persa, 'skip' non giocata (attesa con gol prima), null se non si sa ancora */
 function tipPlayOutcome(e, x) {
   if (!Array.isArray(x.ft)) return null;
+  if (x.ft[0] < e.gh || x.ft[1] < e.ga || (e.half === 1 && Array.isArray(x.ht) && (x.ht[0] < e.gh || x.ht[1] < e.ga))) return null;
   var G = e.gh + e.ga, FT = x.ft[0] + x.ft[1], HT = Array.isArray(x.ht) ? x.ht[0] + x.ht[1] : null,
     mins = Array.isArray(x.goals) ? x.goals.map(function (g) { return g.min; }) : null;
   if (e.k === 'tc1' || e.k === 'tc2') {
     if (!Array.isArray(x.corners) || x.corners[0] == null || x.corners[1] == null || e.cn == null) return null;
+    if (!x.corners.every(function (n) { return Number.isInteger(n) && n >= 0; }) || x.corners[0] + x.corners[1] < e.cn) return null;
     return x.corners[0] + x.corners[1] - e.cn >= (e.need || (e.k === 'tc2' ? 2 : 1)) ? 1 : 0;
   }
   if (e.k === 'tp1') return HT == null ? null : HT > G ? 1 : 0;
@@ -1323,7 +1440,7 @@ function tipPlayOutcome(e, x) {
   return FT > G ? 1 : 0;
 }
 function tipReportFor(date) {
-  var all = tipPlayDedup((((db.predModel || {}).playLog) || []).filter(function (e) { return e.date === date; }));
+  var all = tipPlayDedup((((db.predModel || {}).playLog) || []).filter(function (e) { return e.date === date && !e.trial; }));
   var L = all.filter(function (e) { return e.res != null && (!e.tier || e.tier === 'excellent'); });
   var by = {}, tot = { n: 0, w: 0, p: 0, pl: 0, risk: 0 }, mine = { n: 0, w: 0, pl: 0, st: 0 };
   L.forEach(function (e) {
@@ -1335,7 +1452,7 @@ function tipReportFor(date) {
   });
   /* 3.48.0 — le giocate che hai segnato davvero, con quota e puntata vere */
   (((db.predModel || {}).playLog) || []).forEach(function (e) {
-    if (e.date !== date || !e.played || (e.played.res !== 0 && e.played.res !== 1)) return;
+    if (e.trial || e.date !== date || !e.played || (e.played.res !== 0 && e.played.res !== 1)) return;
     mine.n++; mine.w += e.played.res; mine.pl += tipPlayedPL(e); mine.st += e.played.n > 1 ? e.played.risk : e.played.s;
   });
   return { date: date, by: by, tot: tot, mine: mine };
@@ -1344,12 +1461,12 @@ function tipReportFor(date) {
 function tipDailyReports() {
   var M = db.predModel || {}, L = M.playLog || [], today = U.local().slice(0, 10), done = M.reports || {}, fresh = [];
   /* 3.48.0 — i resoconti salvati prima contavano più tipi della stessa partita: si ricalcolano una volta */
-  if (!M.reportsV) done = {};
+  if (M.reportsV !== 3) done = {};
   var days = [];
   L.forEach(function (e) { if (e.date < today && days.indexOf(e.date) < 0) days.push(e.date); });
   days.forEach(function (d) {
     if (done[d]) return;
-    var pend = L.filter(function (e) { return e.date === d && e.res == null && (e.miss || 0) < 3; }).length;
+    var pend = L.filter(function (e) { return !e.trial && e.date === d && e.res == null && (e.miss || 0) < 3; }).length;
     var old = (Date.parse(today) - Date.parse(d)) / 86400e3 >= 2;
     if (pend && !old) return;
     fresh.push(tipReportFor(d));
@@ -1359,7 +1476,7 @@ function tipDailyReports() {
     n.predModel = n.predModel || {};
     n.predModel.reports = n.predModel.reports || {};
     fresh.forEach(function (r) { n.predModel.reports[r.date] = { tot: r.tot, by: r.by, mine: r.mine, at: Date.now() }; });
-    n.predModel.reportsV = 2;
+    n.predModel.reportsV = 3;
   });
   var last = fresh[fresh.length - 1];
   if (last.tot.n) U.toast('Resoconto ' + tipDayLabel(last.date) + ': ' + last.tot.w + '/' + last.tot.n + ' giocate ottime vinte · ' + (last.tot.pl >= 0 ? '+' : '') + last.tot.pl.toFixed(2) + '€ (a quota minima)' + (last.mine && last.mine.n ? ' · tue ' + last.mine.w + '/' + last.mine.n + ' ' + (last.mine.pl >= 0 ? '+' : '') + last.mine.pl.toFixed(2) + '€' : ''));
@@ -1653,7 +1770,7 @@ function tipLiveEval(m) {
   var preAct = function () {
     var rec = tipPreValue(m, tipTopIds()[m.id])[0];
     if (!rec) return null;
-    return { r: null, min: d && d.elapsed != null ? Number(d.elapsed) : 0, act: { k: 'pre', t: 'SOLO PREMATCH', c: 'muted', p: rec.p, w: rec.k === 'g30' ? '1T' : 'fine', s: 'da prematch: ' + rec.label + ' da ' + rec.need.toFixed(2) } };
+    return { r: null, min: d && d.elapsed != null ? Number(d.elapsed) : 0, act: { k: 'pre', t: 'SOLO PREMATCH', c: 'muted', p: rec.p, w: rec.k === 'ht05' ? '1T' : 'fine', s: 'da prematch: ' + rec.label + ' da ' + rec.need.toFixed(2) } };
   };
   if (!d || d.elapsed == null || !d.goals) return tipKickoff(m).getTime() < Date.now() + 10 * 60e3 ? preAct() : null;
   if ((d.status !== '2H' && Number(d.elapsed) < 15)) { var pa = preAct(); if (pa) return pa; }
@@ -1835,7 +1952,7 @@ function tipLivePanel(list) {
       mn = d && d.elapsed != null ? d.elapsed + '\'' : U.esc(m.time);
     var ev = Object.prototype.hasOwnProperty.call(evals, m.id) ? evals[m.id] : (function () {
       var rec = tipPreValue(m, tipTopIds()[m.id])[0];
-      return rec ? { act: { k: 'pre', t: 'SOLO PREMATCH', c: 'muted', p: rec.p, w: rec.k === 'g30' ? '1T' : 'fine', s: 'da prematch: ' + rec.label + ' da ' + rec.need.toFixed(2) } } : null;
+      return rec ? { act: { k: 'pre', t: 'SOLO PREMATCH', c: 'muted', p: rec.p, w: rec.k === 'ht05' ? '1T' : 'fine', s: 'da prematch: ' + rec.label + ' da ' + rec.need.toFixed(2) } } : null;
     })(), go = ev && ev.act.k !== 'no';
     return '<button type="button" class="tip-trow' + (go ? ' tip-hot' : '') + '" data-tip-live="' + U.esc(m.id) + '"><span class="tip-tn tip-ln">' + mn + '</span><span class="tip-tmain"><b>' + U.esc(m.home) + ' – ' + U.esc(m.away) + '</b><small>' + (go ? '<b class="positive">' + (ev.act.w === '1T' ? 'gol 1° tempo' : 'gol 2° tempo / fine') + '</b> · ' + ev.act.s : U.esc(m.league) + (d && d.at ? ' · ' + new Date(d.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '')) + '</small>' + (d && d.goals ? '<small class="tip-next-goal">⚽ Next gol: ' + (d.goals[0] + d.goals[1] + 1) + '° · risultato ' + sc + '</small>' : '<small class="tip-next-goal">In attesa di dati live aggiornati</small>') + '</span><span class="tip-tpick"><b>' + sc + (go ? ' <span class="' + ev.act.c + '">' + ev.act.t + '</span>' : '') + '</b><small>' + (go ? Math.round(ev.act.p * 100) + '% ›' : ev ? 'niente ›' : 'valuta ›') + '</small></span></button>';
   };
@@ -1935,11 +2052,11 @@ function tipCtxSheet(id, back) {
       else delete x.ctx;
       if (!tipNum(x.ft) && !tipNum(x.ht) && tipKickoff(x).getTime() > Date.now()) {
         var keep = db; db = n;
-        try { var P = tipParams(), pk = tipPicksFor(x, P); if (pk.length) x.picks = pk; } finally { db = keep; }
+        try { var P = tipParams(), pk = tipPicksFor(x, P); if (pk.length && !x.preIssue) x.picks = pk; } finally { db = keep; }
       }
     });
     dlg.close();
-    U.toast('Contesto salvato: pronostici aggiornati.');
+    U.toast('Contesto salvato per le stime live. I consigli già emessi restano nello storico.');
     if (back === 'live') tipLiveSheet(m.id);
   };
   draw();
@@ -2693,7 +2810,7 @@ function tipCard(m, sortKey) {
   return (
     '<button type="button" class="tip-card t-' + tone + '" data-tip-open="' + U.esc(m.id) + '">' +
     (sortKey
-      ? '<span class="tip-rank"><span><small>' + U.esc(tipDayLabel(m.date)) + '</small>' + U.esc(tipSortLabel(m, sortKey)) + '</span><b>' + Math.round(m._sv != null ? m._sv : tipSortValue(m, sortKey)) + '%</b></span>'
+      ? '<span class="tip-rank"><span><small>' + U.esc(tipDayLabel(m.date)) + '</small>' + U.esc(tipSortLabel(m, sortKey)) + '</span><b>' + (tipSortValue(m, sortKey) < 0 ? '—' : Math.round(tipSortValue(m, sortKey)) + '%') + '</b></span>'
       : '') +
     '<span class="tip-meta"><span class="tip-time">' + U.esc(m.time) + '</span><span class="tip-league">' + U.esc(m.league) + '</span>' + badge + '<span class="tip-star' + (tipIsStar(m) ? ' on' : '') + '" data-tip-star="' + U.esc(m.id) + '" role="button" aria-label="Preferita">' + (tipIsStar(m) ? '★' : '☆') + '</span></span>' +
     '<span class="tip-teams"><span class="tip-home">' + U.esc(m.home) + '</span>' + mid + '<span class="tip-away">' + U.esc(m.away) + '</span></span>' +
@@ -2794,6 +2911,7 @@ function tipAlertSheet() {
   bindA();
 }
 function tipsPage() {
+  tipEnsurePrematch();
   tipUI._cal = null; /* calibrazione ricalcolata a ogni disegno della pagina */
   var list = (db.predictions || []).slice();
   if (!list.length) {
@@ -2909,14 +3027,14 @@ function tipStRangeLabel() {
 }
 function tipLiveDay(e) { return new Date(e.t || 0).toLocaleDateString('sv-SE'); }
 /* consigli live chiudibili (niente ingressi futuri, step costosi, monitoraggi) */
-function tipLiveAll() {
+function tipLiveAll(trial) {
   return tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) {
-    return (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip';
+    return !!e.trial === !!trial && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip';
   });
 }
 function tipStatLog() {
   var R = tipStRange(), F = tipUI.stF || {}, lf = tipUI.lblF || {};
-  return tipLiveAll().filter(function (e) {
+  return tipLiveAll(F.sample === 'trial').filter(function (e) {
     var d = tipLiveDay(e);
     return d >= R.from && d <= R.to && (!F.tier || (e.tier || 'excellent') === F.tier) && (!F.k || e.k === F.k) && (!F.lg || e.lg === F.lg) &&
       (!lf.p || (e.prof || 'nq') === lf.p) && (!lf.r || (e.rit || 'norm') === lf.r);
@@ -2929,11 +3047,9 @@ function tipStatCount(arr) {
 }
 /* ---- prepartita: un record per pronostico chiuso ---- */
 function tipPreTopSet(list) {
-  var set = {}, days = {};
-  list.forEach(function (m) { days[m.date] = 1; });
-  Object.keys(days).forEach(function (day) {
-    var T = tipTopFor(day, list, tipParams());
-    TIP_TOP_MK.forEach(function (mk) { (T[mk[0]].items || []).forEach(function (c) { set[c.m.id + '|' + mk[0]] = 1; }); });
+  var set = {};
+  list.forEach(function (m) {
+    Object.keys((m.preIssue || {}).top || {}).forEach(function (k) { set[m.id + '|' + k] = 1; });
   });
   return set;
 }
@@ -2946,10 +3062,12 @@ function tipPreRows(list) {
     (m.picks || []).forEach(function (p) {
       if (F.m && p.m !== F.m) return;
       var isTop = !!top[m.id + '|' + p.m];
+      var topKnown = !!(m.preIssue && m.preIssue.top != null);
       if (F.top === 'top' && !isTop) return;
-      if (F.top === 'no' && isTop) return;
+      if (F.top === 'no' && (!topKnown || isTop)) return;
+      if (F.top === 'unknown' && topKnown) return;
       var o = tipOutcome(m, p).s;
-      out.push({ m: m, p: p, top: isTop, lg: lg, res: o === 'V' ? 1 : o === 'P' ? 0 : null, prob: (p.p || 0) / 100, src: m.src || 'modello' });
+      out.push({ m: m, p: p, top: isTop, topKnown: topKnown, lg: lg, res: o === 'V' ? 1 : o === 'P' ? 0 : null, prob: (p.p || 0) / 100, src: (m.preIssue && m.preIssue.inputs.src) || m.src || 'unknown' });
     });
   });
   return out;
@@ -2988,9 +3106,9 @@ function tipLiveTable(title, groups) {
 function tipPreTable(title, groups) {
   var rows = groups.filter(function (g) { return g[1].length; });
   if (!rows.length) return '';
-  return '<section class="card diary-card"><h2>' + title + '</h2><div class="tip-tscroll"><table class="tip-caltab tip-sttab"><tr><th></th><th>Top</th><th>Altri</th><th>Totale</th></tr>' + rows.map(function (g) {
-    var c = tipPreCount(g[1]), t = tipPreCount(g[1].filter(function (r) { return r.top; })), o = tipPreCount(g[1].filter(function (r) { return !r.top; }));
-    return '<tr><th>' + g[0] + '</th><td>' + tipWL(t) + '</td><td>' + tipWL(o) + '</td><td>' + tipPctCell(c) + '</td></tr>';
+  return '<section class="card diary-card"><h2>' + title + '</h2><div class="tip-tscroll"><table class="tip-caltab tip-sttab"><tr><th></th><th>Top</th><th>Altri</th><th>Non documentati</th><th>Totale</th></tr>' + rows.map(function (g) {
+    var c = tipPreCount(g[1]), t = tipPreCount(g[1].filter(function (r) { return r.top; })), o = tipPreCount(g[1].filter(function (r) { return r.topKnown && !r.top; })), u = tipPreCount(g[1].filter(function (r) { return !r.topKnown; }));
+    return '<tr><th>' + g[0] + '</th><td>' + tipWL(t) + '</td><td>' + tipWL(o) + '</td><td>' + tipWL(u) + '</td><td>' + tipPctCell(c) + '</td></tr>';
   }).join('') + '</table></div></section>';
 }
 var TIP_PROB_BANDS = [[0, 55], [55, 60], [60, 65], [65, 70], [70, 101]];
@@ -3058,8 +3176,8 @@ function tipStatsPreSummary(list) {
   html += tipBarsByDay(byDay, tipRangeDays());
   html += tipPreTable('Per campionato', Object.keys(TIP_LG_NAME).map(function (g) { return [TIP_LG_NAME[g], R.filter(function (r) { return r.lg === g; })]; }));
   html += tipPreTable('Per probabilità', [[0, 75], [75, 80], [80, 85], [85, 90], [90, 101]].map(function (b) { return [b[0] ? (b[1] > 100 ? 'oltre ' + b[0] + '%' : b[0] + '-' + b[1] + '%') : 'sotto 75%', R.filter(function (r) { var q = r.prob * 100; return q >= b[0] && q < b[1]; })]; }));
-  html += tipPreTable('Per fonte dei dati', [['Quote TotalCorner', 'quote'], ['Quote + modello', 'quote+modello'], ['1X2 + modello', '1X2+modello'], ['Solo modello', 'modello']].map(function (s2) { return [s2[0], R.filter(function (r) { return r.src === s2[1]; })]; }));
-  return html + '<p class="muted tip-hint">Vinte/perse (+in attesa). Top = nelle liste Top del giorno.</p>';
+  html += tipPreTable('Per fonte dei dati', [['Quote TotalCorner', 'quote'], ['Quote + modello', 'quote+modello'], ['1X2 + modello', '1X2+modello'], ['Solo modello', 'modello'], ['Fonte non documentata', 'unknown']].map(function (s2) { return [s2[0], R.filter(function (r) { return r.src === s2[1]; })]; }));
+  return html + '<p class="muted tip-hint">Vinte/perse (+in attesa). Top = selezione salvata alla prima pubblicazione. Nei vecchi dati la Top non è documentata; le percentuali originali sono conservate.</p>';
 }
 function tipStatsPreHistory(list) {
   var R = tipPreRows(list), byDay = {};
@@ -3067,9 +3185,9 @@ function tipStatsPreHistory(list) {
   return tipDaysList(Object.keys(byDay).sort().reverse(), function (d, i) {
     var arr = byDay[d], c = tipPreCount(arr), byM = {};
     arr.forEach(function (r) { (byM[r.m.id] = byM[r.m.id] || { m: r.m, rs: [] }).rs.push(r); });
-    var mini = '<table class="tip-caltab tip-sttab tip-daymini"><tr><th>Pronostico</th><th>Top</th><th>Altri</th><th>%</th></tr>' + TIP_MARKETS.filter(function (k) { return arr.some(function (r) { return r.p.m === k[0]; }); }).map(function (k) {
+    var mini = '<table class="tip-caltab tip-sttab tip-daymini"><tr><th>Pronostico</th><th>Top</th><th>Altri</th><th>Non documentati</th><th>%</th></tr>' + TIP_MARKETS.filter(function (k) { return arr.some(function (r) { return r.p.m === k[0]; }); }).map(function (k) {
       var a = arr.filter(function (r) { return r.p.m === k[0]; }), x = tipPreCount(a);
-      return '<tr><th>' + k[1] + '</th><td>' + tipWL(tipPreCount(a.filter(function (r) { return r.top; }))) + '</td><td>' + tipWL(tipPreCount(a.filter(function (r) { return !r.top; }))) + '</td><td>' + (x.n ? Math.round(x.rate) + '%' : '—') + '</td></tr>';
+      return '<tr><th>' + k[1] + '</th><td>' + tipWL(tipPreCount(a.filter(function (r) { return r.top; }))) + '</td><td>' + tipWL(tipPreCount(a.filter(function (r) { return r.topKnown && !r.top; }))) + '</td><td>' + tipWL(tipPreCount(a.filter(function (r) { return !r.topKnown; }))) + '</td><td>' + (x.n ? Math.round(x.rate) + '%' : '—') + '</td></tr>';
     }).join('') + '</table>';
     var rows = Object.keys(byM).map(function (id) {
       var g = byM[id], m = g.m, sc = tipNum(m.ft) ? m.ft[0] + '-' + m.ft[1] + (tipNum(m.ht) ? ' (1T ' + m.ht[0] + '-' + m.ht[1] + ')' : '') : 'in attesa';
@@ -3085,6 +3203,7 @@ function tipStatChips() {
   var live = (tipUI.stArea || 'live') === 'live', F = live ? (tipUI.stF || {}) : (tipUI.stPF || {}), lf = tipUI.lblF || {}, act = [];
   var x = function (key, label) { act.push('<button type="button" class="tip-lchip on" data-stclear="' + key + '">' + U.esc(label) + ' ✕</button>'); };
   if (live) {
+    if (F.sample === 'trial') x('sample', 'Solo IN PROVA');
     if (F.tier) x('tier', F.tier === 'try' ? 'Da valutare' : 'Ottime');
     if (F.k) x('k', TIP_PLAY_SHORT[F.k] || F.k);
     if (F.lg) x('lg', TIP_LG_NAME[F.lg] || F.lg);
@@ -3093,7 +3212,7 @@ function tipStatChips() {
   } else {
     if (F.m) x('m', (TIP_MARKETS.find(function (k) { return k[0] === F.m; }) || [0, F.m])[1]);
     if (F.lg) x('lg', TIP_LG_NAME[F.lg] || F.lg);
-    if (F.top) x('top', F.top === 'top' ? 'Solo Top' : 'Fuori Top');
+    if (F.top) x('top', F.top === 'top' ? 'Solo Top' : F.top === 'unknown' ? 'Top non documentata' : 'Fuori Top');
   }
   return '<div class="tip-lblf"><button type="button" class="tip-lchip tip-lfbtn" data-stfilters>⚲ Filtri' + (act.length ? ' (' + act.length + ')' : '') + '</button><button type="button" class="tip-lchip on" data-stfilters>📅 ' + U.esc(tipStRangeLabel()) + '</button>' + act.join('') + '</div>';
 }
@@ -3121,13 +3240,13 @@ function tipStatFilterSheet() {
   var sec = function (t, body) { return '<p class="tip-lfsec">' + t + '</p><div class="tip-lfgrid">' + body + '</div>'; };
   var quick = '<div class="tip-lfgrid">' + [['Oggi', 0, 0], ['Ieri', 1, 1], ['7 giorni', 6, 0], ['30 giorni', 29, 0], ['Tutto', -1, 0]].map(function (q) { return '<button type="button" class="tip-lchip" data-calq="' + q[1] + ':' + q[2] + '">' + q[0] + '</button>'; }).join('') + '</div>';
   var body = sec('Periodo · ' + U.esc(tipStRangeLabel()), '') + quick + '<div data-calbox>' + tipCalHtml() + '</div>';
-  if (live) body += sec('Livello', chip('tier', '', 'Tutti') + chip('tier', 'excellent', 'Ottime') + chip('tier', 'try', 'Da valutare')) +
+  if (live) body += sec('Campione', chip('sample', '', 'Consigli ordinari') + chip('sample', 'trial', 'Solo IN PROVA')) + sec('Livello', chip('tier', '', 'Tutti') + chip('tier', 'excellent', 'Ottime') + chip('tier', 'try', 'Da valutare')) +
     sec('Tipo di giocata', chip('k', '', 'Tutte') + Object.keys(TIP_PLAY_SHORT).map(function (k) { return chip('k', k, TIP_PLAY_SHORT[k]); }).join('')) +
     sec('Campionato', chip('lg', '', 'Tutti') + Object.keys(TIP_LG_NAME).map(function (k) { return chip('lg', k, TIP_LG_NAME[k]); }).join('')) +
     sec('Profilo (quote pre-partita)', chip('p', '', 'Tutti') + chip('p', 'gol', 'Da gol') + chip('p', 'medio', 'Media') + chip('p', 'pochi', 'Pochi gol') + chip('p', 'nq', 'Senza quote')) +
     sec('Ritmo live', chip('r', '', 'Ogni ritmo') + chip('r', 'alto', 'Alto') + chip('r', 'norm', 'Normale') + chip('r', 'basso', 'Basso'));
   else body += sec('Tipo di pronostico', chip('m', '', 'Tutti') + TIP_MARKETS.map(function (k) { return chip('m', k[0], k[1]); }).join('')) +
-    sec('Liste Top', chip('top', '', 'Tutti') + chip('top', 'top', 'Solo Top') + chip('top', 'no', 'Fuori Top')) +
+    sec('Liste Top', chip('top', '', 'Tutti') + chip('top', 'top', 'Solo Top') + chip('top', 'no', 'Fuori Top') + chip('top', 'unknown', 'Top non documentata')) +
     sec('Campionato', chip('lg', '', 'Tutti') + Object.keys(TIP_LG_NAME).map(function (k) { return chip('lg', k, TIP_LG_NAME[k]); }).join(''));
   var d = sheetModal(sheetHead(live ? 'Filtri · Live' : 'Filtri · Prepartita', { sub: 'Periodo e tipo di consiglio' }) + '<div class="tip-sheet">' + body +
     '<div class="actions"><button type="button" data-stf-reset>Azzera</button><button type="button" class="primary" data-stf-ok>Fatto</button></div></div>');
@@ -3193,18 +3312,44 @@ document.addEventListener('click', function (ev) {
   render();
 });
 /* esportazione per il retraining */
-function tipRetrainExport() {
+async function tipRetrainExport() {
+  if (tipUI.exportBusy) return;
+  tipUI.exportBusy = true;
+  try {
   var pm = db.predModel || {};
-  var data = { app: 'bet_tracker', kind: 'retraining-live', version: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '', exported: new Date().toISOString(),
+  var data = { app: 'bet_tracker', kind: 'retraining-live', schemaVersion: 2, version: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '', exported: new Date().toISOString(),
     note: 'playLog = consigli live (un record per partita e punteggio): p probabilità, res 1/0/null, k tipo di giocata, snap = stato del modello, stats = statistiche live al momento, goalsAt = minuti dei gol',
     thresholds: { greenMin: TIP_GREEN_MINP, greenMin1T: TIP_GREEN_MINP_1T, leagueExtra: TIP_LG_EXTRA, typeExtra: TIP_K_EXTRA },
     playLog: pm.playLog || [], liveLog: pm.liveLog || [], lgAvg: tipUI.lgAvg || {}, reports: pm.reports || {},
-    prematch: (db.predictions || []).filter(function (m) { return tipNum(m.ft); }).map(function (m) { return { id: m.id, date: m.date, league: m.league, home: m.home, away: m.away, lh: m.lh, la: m.la, src: m.src, ft: m.ft, ht: m.ht, fg: m.fg, picks: m.picks }; }) };
+    prematch: db.predictions || [] };
+  data = JSON.parse(JSON.stringify(data));
+  data.completeness = { signals: data.playLog.length, withStats: data.playLog.filter(function (e) { return !!e.stats; }).length,
+    withModel: data.playLog.filter(function (e) { return !!e.snap; }).length, withBook: data.playLog.filter(function (e) { return !!e.book; }).length };
+  data.trace = []; data.finals = [];
+  var until = new Date().toISOString(), from = new Date(Date.now() - 7 * 86400e3).toISOString();
+  data.serverRegistry = { from: from, until: until, complete: false, note: 'Registri server degli ultimi 7 giorni; solo finali confermati.' };
+  try {
+    if (!tipCanSync()) throw Error('Sincronizzazione non collegata: esportati solo i dati locali.');
+    U.toast('Esportazione dei consigli e dei registri server degli ultimi 7 giorni…');
+    for (var kind of ['trace', 'finals']) {
+      var offset = 0;
+      do {
+        var page = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'training', kind: kind, from: from, until: until, offset: offset } });
+        if (!page || !Array.isArray(page.rows) || page.error) throw Error((page && page.error) || 'Registro server non disponibile');
+        data[kind] = data[kind].concat(page.rows);
+        if (page.nextOffset != null && (!Number.isInteger(page.nextOffset) || page.nextOffset <= offset)) throw Error('Paginazione del registro non valida');
+        offset = page.nextOffset;
+      } while (offset != null);
+    }
+    data.serverRegistry.complete = true;
+  } catch (e) { data.serverRegistry.error = e.message || String(e); }
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
   a.download = 'retraining-live-' + new Date().toISOString().slice(0, 10) + '.json';
   document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
-  U.toast('File per il retraining scaricato: ' + (pm.playLog || []).length + ' consigli');
+  U.toast('Export: ' + data.playLog.length + ' consigli · ' + data.trace.length + ' osservazioni · ' + data.finals.length + ' finali verificati' +
+    (data.serverRegistry.complete ? '' : '. Registri incompleti: ' + data.serverRegistry.error));
+  } finally { tipUI.exportBusy = false; }
 }
 document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('[data-retrain]')) tipRetrainExport(); });
 function tipStatsPanel(list) {
@@ -3355,7 +3500,7 @@ function tipCalRows() {
   tipClosed().forEach(function (r) {
     if (/^(Under|No goal)/.test(r.p.sel)) return;
     if (cur === '3' && !r.m.src) return;
-    (by[r.p.m] = by[r.p.m] || []).push([r.p.p, r.won ? 1 : 0]);
+    (by[r.p.m] = by[r.p.m] || []).push([r.p.raw == null ? r.p.p : r.p.raw, r.won ? 1 : 0]);
   });
   tipUI._cal = by;
   return by;
@@ -3391,7 +3536,7 @@ function tipFavBonus(m, k) {
   if (f >= 50) return Math.min(1, (f - 50) / 25) * 3;
   return f < 42 ? -1.5 : 0;
 }
-function tipTopFor(day, list, P) {
+function tipTopCandidates(day, list, P) {
   P = P || tipParams();
   var res = {};
   TIP_TOP_MK.forEach(function (mk) {
@@ -3446,6 +3591,30 @@ function tipTopFor(day, list, P) {
   res.all = Object.keys(best).map(function (id) { return best[id]; }).sort(function (a, b) { return b.margin - a.margin; });
   return res;
 }
+/* Le Top pubblicate sono lette dallo stesso record usato dalle statistiche. */
+function tipTopFor(day, list, P) {
+  P = P || tipParams();
+  var res = {}, best = {};
+  TIP_TOP_MK.forEach(function (mk) {
+    var k = mk[0], target = tipTarget(P, k), items = [];
+    list.forEach(function (m) {
+      var issue = m.preIssue;
+      if (m.date !== day || m.cancelled || !issue || !issue.top || !issue.top[k]) return;
+      var p = issue.picks.find(function (p) { return p.m === k; });
+      if (!p) return;
+      var original = Object.assign({}, m, issue.inputs);
+      items.push({ m: original, p: p, rank: issue.top[k], score: p.p });
+    });
+    items.sort(function (a, b) { return a.rank - b.rank || a.m.id.localeCompare(b.m.id); });
+    res[k] = { items: items, ext: [], avg: items.length ? items.reduce(function (s, c) { return s + c.p.p; }, 0) / items.length : null, target: target, cand: items.length, near: [] };
+    items.forEach(function (c) {
+      var margin = c.p.p - target;
+      if (!best[c.m.id] || margin > best[c.m.id].margin) best[c.m.id] = { m: c.m, p: c.p, margin: margin };
+    });
+  });
+  res.all = Object.keys(best).map(function (k) { return best[k]; }).sort(function (a, b) { return b.margin - a.margin; });
+  return res;
+}
 /* 3.9.2 — Piano a due passi sul 1° tempo: 1) gol entro il 30'; 2) se 0-0 al 30', Over 0.5 1T live.
    Si suppone che il 62% dei gol del 1° tempo arrivi entro il 30' (model.plan.early).
    Quote giuste: sotto queste quote la puntata perde valore. */
@@ -3494,7 +3663,7 @@ function tipTopRow(c, i) {
     '<span class="tip-tn">' + (i + 1) + '</span>' +
     '<span class="tip-tmain"><b>' + U.esc(m.home) + ' – ' + U.esc(m.away) + '</b><small>' + U.esc(m.time) + ' · ' + U.esc(m.league) + (m.fav ? ' · favorita ' + m.fav + '%' : '') + '</small></span>' +
     '<span class="tip-tpick"><b>' + U.esc(c.p.sel) + '</b><small>' + c.p.p + '%' + (c.p.raw != null && c.p.raw !== c.p.p ? ' (stima ' + c.p.raw + '%)' : '') + (odd ? ' · @' + odd.toFixed(2) : '') + '</small>' +
-    (c.p.m === 'ht05' ? (function (x) { return '<small class="tip-plan">30\' ≥' + x.fair1.toFixed(2) + ' · live ≥' + x.fair2.toFixed(2) + '</small>'; })(tipPlan(c.p.p)) : '<small class="tip-plan">quota min ' + (100 / c.p.p).toFixed(2) + (odd ? (odd >= 100 / c.p.p ? ' · conviene' : ' · sotto') : '') + '</small>') +
+    '<small class="tip-plan">quota di pareggio ' + (100 / c.p.p).toFixed(2) + (odd ? ' · quota alla pubblicazione' : ' · quota book non disponibile') + '</small>' +
     '</span>' +
     (o.s ? '<em class="tip-tmark" aria-label="' + { V: 'vinto', P: 'perso', N: 'annullato' }[o.s] + '">' + { V: '✓', P: '✕', N: '–' }[o.s] + '</em>' : '') +
     '</button>'
@@ -3505,40 +3674,23 @@ function tipTopRow(c, i) {
    se c'è la quota del book deve essere almeno la quota giusta (valore). Il gol nel 1° tempo
    (quote basse) si gioca a step: gol entro il 30' prepartita, poi il Live al 30' se ancora 0-0. */
 function tipPreValue(m, top) {
-  var P = tipParams(), c = tipCalc(m, P), o = m.odds || {}, out = [], MINQ = Math.max(TIP_MIN_ODDS, tipLiveMinQ());
-  var add = function (key, label, p, book, extra) {
-    if (p < TIP_LIVE_MINP) return;
-    var fair = 1 / p, need = Math.max(MINQ, fair);
-    if (U.finite(book) && book > 1) {
-      if (book >= need) out.push({ k: key, label: label, p: p, book: book, need: need, ev: p * book - 1, ok: true, extra: extra });
-    } else if (fair >= MINQ) out.push({ k: key, label: label, p: p, need: need, ev: 0, ok: false, extra: extra });
-  };
-  if (c.ht05 >= tipThr(P, 'ht05')) {
-    var x = tipPlan(c.ht05);
-    if (x.fair1 >= MINQ * 0.98) out.push({ k: 'g30', label: 'Gol entro il 30’', p: x.p1, need: Math.max(MINQ, x.fair1), ev: 0, ok: false,
-      extra: 'gol 1T ' + Math.round(c.ht05) + '% · se 0-0 al 30’ apri il Live: gol 1T solo da quota ' + Math.max(MINQ, x.fair2).toFixed(2) });
-  }
-  if (c.o15 >= tipThr(P, 'o15')) {
-    add('o25', 'Over 2.5', c.o25 / 100, o.o25);
-    add('gg', 'Goal', c.gg / 100, o.gg);
-    add('o15', 'Over 1.5', c.o15 / 100, o.o15);
-  }
-  /* senza quota del book si propone solo se la partita è nelle Top di quel mercato */
-  top = top || {};
-  out = out.filter(function (r) { return r.ok || (r.k === 'g30' ? top.ht05 : top.o15); });
-  out.sort(function (a, b) { return (b.ok - a.ok) || (b.ev - a.ev) || (b.p - a.p); });
-  return out;
+  var MINQ = Math.max(TIP_MIN_ODDS, tipLiveMinQ()), issue = m.preIssue, source = issue ? Object.assign({}, m, issue.inputs) : m;
+  return (m.picks || []).filter(function (p) { return !/^(Under|No goal)/.test(p.sel); }).map(function (p) {
+    var probability = p.p / 100, book = tipOdd(source, p), need = Math.max(MINQ, 1 / Math.max(0.01, probability));
+    return { k: p.m, label: p.sel, p: probability, book: book, need: need, ev: book ? probability * book - 1 : 0, ok: !!(book && book >= need) };
+  }).filter(function (r) { return r.p >= TIP_LIVE_MINP && (r.ok || (top && top[r.k])); })
+    .sort(function (a, b) { return (b.ok - a.ok) || b.ev - a.ev || b.p - a.p; });
 }
+
 /* partite nelle Top (1° tempo e Over 1.5), per giorno; calcolo tenuto per un minuto */
 function tipTopIds(list) {
   list = list || db.predictions || [];
   var key = list.length + '|' + Math.floor(Date.now() / 60e3);
-  if (tipUI._topIds && tipUI._topIds.key === key) return tipUI._topIds.map;
   var P = tipParams(), inTop = {}, days = [];
   list.forEach(function (m) { if (days.indexOf(m.date) < 0) days.push(m.date); });
   days.forEach(function (d) {
     var T = tipTopFor(d, list, P);
-    ['ht05', 'o15'].forEach(function (k) {
+    TIP_TOP_MK.map(function (mk) { return mk[0]; }).forEach(function (k) {
       if (!T[k]) return;
       (T[k].items || []).concat(T[k].ext || []).forEach(function (c) { (inTop[c.m.id] = inTop[c.m.id] || {})[k] = true; });
     });
@@ -3551,7 +3703,7 @@ function tipPrePlayPanel(list) {
   var items = list.filter(function (m) {
     var ko = tipKickoff(m).getTime();
     if (m.cancelled || tipNum(m.ft) || ko < now - 5 * 60e3 || ko > now + 36 * 3600e3) return false;
-    return tipUI.day === 'all' || !tipUI.day || m.date === tipUI.day || true;
+    return tipUI.day === 'all' || !tipUI.day || m.date === tipUI.day;
   }).map(function (m) { return { m: m, rec: tipPreValue(m, inTop[m.id]) }; }).filter(function (x) { return x.rec.length; });
   items.sort(function (a, b) { return (b.rec[0].ok - a.rec[0].ok) || (b.rec[0].ev - a.rec[0].ev) || (tipKickoff(a.m) - tipKickoff(b.m)); });
   var withVal = items.filter(function (x) { return x.rec[0].ok; }).length;
@@ -3579,7 +3731,7 @@ function tipTopPanel(list) {
     var on = tipUI.day === d;
     return '<button type="button" class="tip-chip' + (on ? ' on' : '') + '" data-tip-day="' + d + '">' + (d === 'all' ? 'Da oggi' : U.esc(tipCap(tipDayLabel(d)))) + '</button>';
   }).join('') + '</div>';
-  var html = '';
+  var html = '<p class="muted tip-hint">Top salvate alla prima pubblicazione, fino a 10 pronostici per mercato. Le Top dei vecchi dati non sono ricostruibili.</p>';
   void chips;
   shown.forEach(function (day) {
     var T = tipTopFor(day, list, P);
@@ -3593,13 +3745,9 @@ function tipTopPanel(list) {
       );
     };
     var allAvg = T.all.length ? T.all.reduce(function (s, c) { return s + c.p.p; }, 0) / T.all.length : null;
-    html += sec('★ Top di tutti i mercati', T.all, allAvg, null, 'Nessun pronostico abbastanza solido per questo giorno.');
+    html += sec('★ Top di tutti i mercati', T.all, allAvg, null, 'Nessuna Top registrata per questo giorno.');
     TIP_TOP_MK.forEach(function (mk) {
       var r = T[mk[0]];
-      if (mk[0] === 'ht05' && r.items.length) {
-        var ev = r.items.reduce(function (sum, c) { return sum + tipPlan(c.p.p).ev; }, 0), pl = tipPlan(80).pl;
-        html += '<p class="muted tip-hint tip-planbox">Piano ' + pl.s1 + '€ gol entro il 30\' + ' + pl.s2 + '€ Over 0.5 1T live se 0-0: con quote ' + pl.q1 + ' e ' + pl.q2 + ' su queste ' + r.items.length + ' partite il guadagno atteso è <b>' + (ev >= 0 ? '+' : '') + ev.toFixed(2) + '€</b>. Sotto ogni partita: quota minima per il gol entro il 30\' e per la puntata live al 30\' sullo 0-0. Sotto quelle quote la puntata perde valore.</p>';
-      }
       var near = r.near.length ? ' Le più vicine: ' + r.near.map(function (c) { return U.esc(c.m.home) + ' – ' + U.esc(c.m.away) + ' ' + c.p.p + '%'; }).join(', ') + '.' : '';
       html += sec('Top ' + mk[1], r.items, r.avg, r.target, r.cand ? 'Nessuna partita arriva al ' + r.target + '% di media.' + near : 'Nessuna candidata con quote complete.');
       if ((mk[0] === 'ht05' || mk[0] === 'o15') && r.ext.length) {
@@ -3653,9 +3801,8 @@ function tipSortValue(m, key) {
     return (m.picks || []).reduce(function (mx, p) {
       return Math.max(mx, p.p);
     }, 0);
-  var c = tipCalc(m);
-  if (key === '1x2') return Math.max(c.p1, c.px, c.p2);
-  return c[key];
+  var p = (m.picks || []).find(function (p) { return p.m === key; });
+  return p ? p.p : -1;
 }
 function tipSortLabel(m, key) {
   if (key === 'best') {
@@ -3668,7 +3815,8 @@ function tipSortLabel(m, key) {
     var c = tipCalc(m);
     return 'Segno ' + (c.p1 >= c.px && c.p1 >= c.p2 ? '1' : c.p2 >= c.px ? '2' : 'X');
   }
-  return { o05: 'Over 0.5', o15: 'Over 1.5', o25: 'Over 2.5', ht05: 'Over 0.5 1T', gg: 'Goal' }[key];
+  var p = (m.picks || []).find(function (p) { return p.m === key; });
+  return p ? p.sel : 'Nessun consiglio emesso';
 }
 function tipCap(t) {
   return t.charAt(0).toUpperCase() + t.slice(1);
@@ -3808,12 +3956,13 @@ function tipExport() {
     kind: 'pronostici-storico',
     exportedAt: new Date().toISOString(),
     compatibleWith: ['Claude', 'GPT'],
-    schemaVersion: '1',
+    schemaVersion: '2',
     model: (db.predModel || {}).base || TIP_DEFAULTS,
     learned: (db.predModel || {}).learned || null,
     matches: (db.predictions || []).map(function (m) {
       var c = tipCalc(m, P);
       return Object.assign({}, m, {
+        currentEstimateOnly: true,
         prob: { p1: c.p1, px: c.px, p2: c.p2, o05: c.o05, o15: c.o15, o25: c.o25, ht05: c.ht05, gg: c.gg },
         outcomes: (m.picks || []).map(function (p) {
           return { m: p.m, sel: p.sel, p: p.p, esito: tipOutcome(m, p).s || null };
@@ -3829,13 +3978,15 @@ function tipDetail(id) {
     return x.id === id;
   });
   if (!m) return;
-  var c = tipCalc(m),
+  var issue = m.preIssue;
+  var c = tipCalc(issue ? Object.assign({}, m, issue.inputs) : m, issue && issue.parameters ? issue.parameters : tipParams()),
     sc = function (pref, v) {
       return (
         '<div class="tip-score-in"><input type="number" min="0" max="20" inputmode="numeric" id="' + pref + '-h" value="' + (tipNum(v) ? v[0] : '') + '" aria-label="Gol ' + U.esc(m.home) + '"><span>–</span><input type="number" min="0" max="20" inputmode="numeric" id="' + pref + '-a" value="' + (tipNum(v) ? v[1] : '') + '" aria-label="Gol ' + U.esc(m.away) + '"></div>'
       );
     };
   var PP = tipParams();
+  (m.picks || []).forEach(function (p) { c[p.m] = /^(Under|No goal)/.test(p.sel) ? 100 - p.p : p.p; });
   var prob = function (label, v, both, k) {
     if (typeof v === 'string') return '<div class="tip-prob"><small>' + label + '</small><b>' + v + '</b></div>';
     var T = k ? tipThr(PP, k) : 101;
@@ -3859,14 +4010,14 @@ function tipDetail(id) {
     '<div class="tip-pick-list">' + (picks || '<p class="muted">Nessun pronostico.</p>') + '</div>' +
     '<button type="button" class="tip-ctx-btn" data-star-btn>' + (tipIsStar(m) ? '★ Tra le preferite (tocca per togliere)' : '☆ Aggiungi alle preferite') + '</button>' +
     '<button type="button" class="tip-ctx-btn" data-ctx-open>🧭 Contesto squadre' + tipCtxBadge(m) + ' ›</button>' +
-    '<h3 class="tip-sub">Probabilità</h3>' +
+    '<h3 class="tip-sub">Probabilità <small>i mercati consigliati usano la percentuale salvata</small></h3>' +
     '<div class="tip-probs">' + prob('1', c.p1) + prob('X', c.px) + prob('2', c.p2) + prob('Over 1.5', c.o15, 1, 'o15') + prob('Over 2.5', c.o25, 1, 'o25') + prob('Over 0.5 1T', c.ht05, 1, 'ht05') + prob('Goal', c.gg, 1, 'gg') + prob('Gol attesi', c.lh.toFixed(1) + '–' + c.la.toFixed(1)) + '</div>' +
     tipOddsBlock(m) +
     (function () {
       var pk = (m.picks || []).find(function (x) { return x.m === 'ht05' && x.sel.indexOf('Over') === 0; });
       if (!pk) return '';
       var x = tipPlan(c.ht05);
-      return '<h3 class="tip-sub">Piano 1° tempo <small>' + x.pl.s1 + '€ entro il 30\' + ' + x.pl.s2 + '€ live</small></h3>' +
+      return '<h3 class="tip-sub">Simulazione 1° tempo <small>non inclusa nei consigli registrati · ' + x.pl.s1 + '€ entro il 30\' + ' + x.pl.s2 + '€ live</small></h3>' +
         '<div class="tip-probs">' +
         '<div class="tip-prob"><small>Gol entro 30\'</small><b>' + Math.round(x.p1 * 100) + '%</b><i>quota min ' + x.fair1.toFixed(2) + '</i></div>' +
         '<div class="tip-prob"><small>Gol 30\'-45\'</small><b>' + Math.round(x.p2 * 100) + '%</b><i>live min ' + x.fair2.toFixed(2) + '</i></div>' +

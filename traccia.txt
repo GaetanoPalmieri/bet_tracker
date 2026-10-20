@@ -1,0 +1,41 @@
+-- Bet Tracker 3.67.0 — REGISTRO PARTITE LIVE (per studiare angoli e segnali "a pressione").
+-- Supabase > SQL Editor > New query > incolla tutto > Run. Si può rieseguire senza danni.
+
+-- Una riga ogni ~6 minuti per ogni partita live: minuto, punteggio, angoli, tiri, attacchi pericolosi ecc. (colonna d)
+create table if not exists public.pronostici_traccia (
+  id bigserial primary key,
+  af_id text not null,
+  min int,
+  st text,
+  league text,
+  home text,
+  away text,
+  d jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists pronostici_traccia_af on public.pronostici_traccia (af_id, created_at);
+create index if not exists pronostici_traccia_at on public.pronostici_traccia (created_at);
+
+-- Una riga per partita finita: gol e angoli finali, squadre e campionato (per lo storico delle squadre)
+create table if not exists public.pronostici_finali (
+  af_id text primary key,
+  league text,
+  home text,
+  away text,
+  kickoff timestamptz,
+  last_min int,
+  goals jsonb,
+  ht jsonb,
+  corners jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists pronostici_finali_home on public.pronostici_finali (home);
+create index if not exists pronostici_finali_away on public.pronostici_finali (away);
+
+-- Solo la funzione (chiave di servizio) legge e scrive.
+alter table public.pronostici_traccia enable row level security;
+alter table public.pronostici_finali enable row level security;
+
+-- Per controllare dopo qualche ora:
+--   select count(*), count(distinct af_id) from public.pronostici_traccia;
+--   select * from public.pronostici_finali order by created_at desc limit 20;
