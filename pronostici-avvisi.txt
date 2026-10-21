@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.95.0
+// Versione app: 3.95.1
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1265,9 +1265,9 @@ function tipTrialPlays(r, min, half, x, prev, prev8) {
   var corner = tipCornerEstimate(min, x.goals, st, prev, x.addedTime, half, x);
   if (corner) {
     var extra = function (need) { return { cn: corner.cn, need: need, lamC: corner.lamC, snap: corner, book: corner.book[need] }; };
-    /* 3.95.0 — tc1: con 2+ gol di scarto il +1 angolo dall’85’ arriva il 39% delle volte; sopra il 75% il modello non
-       distingue più (stima 80-90%, reale ~67%): tetto 76%, quindi al massimo DA VALUTARE. */
-    if (half === 2 && Math.abs((g[0] || 0) - (g[1] || 0)) <= 1) { out.push(mk('tc1', Math.min(0.76, corner.p1), 0.80, 0.72, extra(1))); out.push(mk('tc2', corner.p2, 0.50, 0.42, extra(2))); }
+    /* 3.95.0 — tc1: sopra il 75% il modello non distingue più (stima 80-90%, reale ~67%): tetto 76%, quindi al massimo
+       DA VALUTARE. 3.95.1 — di nuovo anche con 2+ gol di scarto: i segnali veri 20-21/10 così hanno fatto 16/20. */
+    if (half === 2) { out.push(mk('tc1', Math.min(0.76, corner.p1), 0.80, 0.72, extra(1))); out.push(mk('tc2', corner.p2, 0.50, 0.42, extra(2))); }
     else if (half === 1) { out.push(mk('th1', corner.p1, 0.78, 0.68, extra(1))); out.push(mk('th2', corner.p2, 0.50, 0.40, extra(2))); }
   }
   /* 3.95.0 — segnali mirati: OTTIMA da 82% */
@@ -2019,7 +2019,7 @@ Deno.serve(async (req) => {
     return json({ rows: data || [], nextOffset: data?.length === size ? offset + size : null, version: "3.71.0" });
   }
   if (body.action === "diag") {
-    return json({ ver: "3.95.0", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast") });
+    return json({ ver: "3.95.1", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast") });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2032,7 +2032,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "3.95.0" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "3.95.1" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */

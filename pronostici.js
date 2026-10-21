@@ -1606,9 +1606,9 @@ function tipTrialPlays(r, min, half, x, prev, prev8) {
   var corner = tipCornerEstimate(min, x.goals, st, prev, x.addedTime, half, x);
   if (corner) {
     var extra = function (need) { return { cn: corner.cn, need: need, lamC: corner.lamC, snap: corner, book: corner.book[need] }; };
-    /* 3.95.0 — tc1: con 2+ gol di scarto il +1 angolo dall’85’ arriva il 39% delle volte; sopra il 75% il modello non
-       distingue più (stima 80-90%, reale ~67%): tetto 76%, quindi al massimo DA VALUTARE. */
-    if (half === 2 && Math.abs((g[0] || 0) - (g[1] || 0)) <= 1) { out.push(mk('tc1', Math.min(0.76, corner.p1), 0.80, 0.72, extra(1))); out.push(mk('tc2', corner.p2, 0.50, 0.42, extra(2))); }
+    /* 3.95.0 — tc1: sopra il 75% il modello non distingue più (stima 80-90%, reale ~67%): tetto 76%, quindi al massimo
+       DA VALUTARE. 3.95.1 — di nuovo anche con 2+ gol di scarto: i segnali veri 20-21/10 così hanno fatto 16/20. */
+    if (half === 2) { out.push(mk('tc1', Math.min(0.76, corner.p1), 0.80, 0.72, extra(1))); out.push(mk('tc2', corner.p2, 0.50, 0.42, extra(2))); }
     else if (half === 1) { out.push(mk('th1', corner.p1, 0.78, 0.68, extra(1))); out.push(mk('th2', corner.p2, 0.50, 0.40, extra(2))); }
   }
   /* 3.95.0 — segnali mirati: OTTIMA da 82% */
@@ -2646,7 +2646,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '3.95.0', old = v && (v === 'vecchia' || v < need);
+  var v = tipUI.serverVer, need = '3.95.1', old = v && (v === 'vecchia' || v < need);
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
