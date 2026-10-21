@@ -1,4 +1,4 @@
-const APP_VERSION = '3.94.1';
+const APP_VERSION = '3.95.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -138,6 +138,40 @@ try {
 } catch (e) {
   storageError = 'Dati non leggibili: usa Altro → Importa backup. I dati originali non saranno sovrascritti.';
 }
+/* 3.95.0 — MEMORIA DEL TELEFONO. Il 21/10 lo storico dei segnali live (playLog) era arrivato a 2 milioni di caratteri:
+   più della metà era "input" (lo stato completo del modello copiato in ogni segnale). Safari tiene circa 5 MB per sito,
+   superati i quali OGNI salvataggio falliva. Ora prima di salvare:
+   - i segnali già chiusi (o più vecchi di 6 ore) perdono "input" (resta tutto il resto: stime, statistiche, esiti);
+   - dopo 4 giorni si tolgono anche le copie delle revisioni;
+   - al massimo 1200 segnali, circa 3-4 giorni (i più vecchi escono; il server li conserva).
+   Se la memoria è comunque piena: pulizia più forte (700 segnali, niente cache delle leghe) e si riprova una volta. */
+function slimForStorage(d, hard) {
+  const pm = d && d.predModel;
+  if (!pm || !Array.isArray(pm.playLog)) return;
+  const now = Date.now(),
+    L = pm.playLog,
+    cap = hard ? 700 : 1200;
+  if (L.length > cap) L.splice(0, L.length - cap);
+  const strip = (e) => {
+    if (e && typeof e === 'object') delete e.input;
+  };
+  L.forEach((e) => {
+    if (!e || typeof e !== 'object') return;
+    const age = now - (e.t || 0);
+    if (e.res != null || age > 6 * 3600e3) strip(e);
+    strip(e.initial);
+    (e.revisions || []).forEach(strip);
+    if (hard || age > 4 * 86400e3) {
+      delete e.revisions;
+      if (e.initial) delete e.initial;
+    }
+    if (hard && e.res != null && age > 2 * 86400e3) {
+      delete e.snap;
+      delete e.stats;
+    }
+  });
+  if (Array.isArray(pm.liveLog) && pm.liveLog.length > (hard ? 300 : 600)) pm.liveLog.splice(0, pm.liveLog.length - (hard ? 300 : 600));
+}
 function commit(next, { restore = false } = {}) {
   if (storageError && !restore) {
     U.toast('Ripristina un backup valido dalla sezione Altro.');
@@ -145,9 +179,23 @@ function commit(next, { restore = false } = {}) {
   }
   try {
     next.updatedAt = new Date().toISOString();
-    const serialized = JSON.stringify(next);
+    slimForStorage(next, false);
+    let serialized = JSON.stringify(next);
     if (!validDB(next)) throw Error('Dati non validi');
-    localStorage.setItem(KEY, serialized);
+    try {
+      localStorage.setItem(KEY, serialized);
+    } catch (quota) {
+      /* memoria piena: si libera spazio (cache di servizio e storico più corto) e si riprova una volta */
+      try {
+        localStorage.removeItem('bet_sdb_cache_v1');
+        localStorage.removeItem('tipLiveHist');
+      } catch {
+        /* ok */
+      }
+      slimForStorage(next, true);
+      serialized = JSON.stringify(next);
+      localStorage.setItem(KEY, serialized);
+    }
     db = next;
     storageError = '';
     render();
