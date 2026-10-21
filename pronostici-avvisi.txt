@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.85.0
+// Versione app: 3.87.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1523,7 +1523,7 @@ async function snapTrack(list: any[]) {
   await setState("snapAt", { t: full ? Date.now() : last.t, clean: day, n: rows.length });
   return rows.length;
 }
-async function lgTrack(list: any[]) {
+async function lgTrack(list: any[], wanted: string[] = []) {
   const seen: any = (await getState("lgSeenVerified")) || {}, now = Date.now();
   const ids = new Set<string>(), finished: any[] = [];
   for (const r of list || []) {
@@ -1533,8 +1533,11 @@ async function lgTrack(list: any[]) {
     else seen[r.afId] = { at: seen[r.afId]?.at || now, checkAt: seen[r.afId]?.checkAt || 0, min: r.elapsed, status: r.status };
   }
   // Disappearance only schedules a check. It never supplies a final score.
-  const pending = Object.keys(seen).filter(id => !ids.has(id) && id.startsWith("tc:") && now - seen[id].checkAt >= 10 * 60e3)
-    .sort((a, b) => seen[a].checkAt - seen[b].checkAt).slice(0, 3);
+  /* 3.87.0 — prima le partite con segnali in attesa (finite ma non ancora nel registro), poi le altre sparite dal live */
+  for (const id of wanted) if (!ids.has(id) && !seen[id]) seen[id] = { at: now, checkAt: 0 };
+  const due = (id: string) => !ids.has(id) && id.startsWith("tc:") && now - (seen[id]?.checkAt || 0) >= 10 * 60e3;
+  const want = new Set(wanted);
+  const pending = Object.keys(seen).filter(due).sort((a, b) => (want.has(b) ? 1 : 0) - (want.has(a) ? 1 : 0) || seen[a].checkAt - seen[b].checkAt).slice(0, 6);
   for (const id of pending) {
     seen[id].checkAt = now;
     try {
@@ -1553,9 +1556,11 @@ async function lgTrack(list: any[]) {
     const sd = r.stats?.side || [{}, {}];
     const row = { af_id: r.afId, league: r.league, home: r.home || null, away: r.away || null,
       kickoff: r.kickoff, last_min: r.elapsed, goals: r.goals, ht: r.ht || null,
-      corners: [sd[0]?.c ?? null, sd[1]?.c ?? null], ht_corners: r.htCorners || null, confirmed: true,
-      confirmed_at: new Date(now).toISOString(), source: "totalcorner", model_version: "3.71.0" };
-    const { error } = await admin.from("pronostici_finali").upsert(row, { onConflict: "af_id" });
+      corners: [sd[0]?.c ?? null, sd[1]?.c ?? null], ht_corners: r.htCorners || null, goal_list: Array.isArray(r.goalList) ? r.goalList : null, confirmed: true,
+      confirmed_at: new Date(now).toISOString(), source: "totalcorner", model_version: "3.87.0" };
+    let { error } = await admin.from("pronostici_finali").upsert(row, { onConflict: "af_id" });
+    /* senza la migrazione 3.86 la colonna goal_list non c'è: si salva comunque il resto */
+    if (error && /goal_list/.test(error.message)) { const { goal_list: _g, ...rest } = row as any; ({ error } = await admin.from("pronostici_finali").upsert(rest, { onConflict: "af_id" })); }
     if (error) { console.error("finali verificati", error.message); continue; }
     leagues.add(r.league); delete seen[r.afId]; added++;
   }
@@ -1632,11 +1637,75 @@ async function cornerEnrich(list: any[]) {
   await setState("cornerOdds", cache);
   return asked;
 }
+function tipPlayOutcome(e, x) {
+  if (!Array.isArray(x.ft)) return null;
+  if (x.ft[0] < e.gh || x.ft[1] < e.ga || (e.half === 1 && Array.isArray(x.ht) && (x.ht[0] < e.gh || x.ht[1] < e.ga))) return null;
+  var G = e.gh + e.ga, FT = x.ft[0] + x.ft[1], HT = Array.isArray(x.ht) ? x.ht[0] + x.ht[1] : null,
+    mins = Array.isArray(x.goals) ? x.goals.map(function (g) { return g.min; }) : null;
+  if (e.k === 'tc1' || e.k === 'tc2') {
+    if (!Array.isArray(x.corners) || x.corners[0] == null || x.corners[1] == null || e.cn == null) return null;
+    if (!x.corners.every(function (n) { return Number.isInteger(n) && n >= 0; }) || x.corners[0] + x.corners[1] < e.cn) return null;
+    return x.corners[0] + x.corners[1] - e.cn >= (e.need || (e.k === 'tc2' ? 2 : 1)) ? 1 : 0;
+  }
+  if (e.k === 'th1' || e.k === 'th2') {
+    var hc = x.htCorners;
+    if (!Array.isArray(hc) || hc.length !== 2 || !hc.every(function (n) { return Number.isInteger(n) && n >= 0; }) || e.cn == null || hc[0] + hc[1] < e.cn) return null;
+    return hc[0] + hc[1] - e.cn >= (e.need || (e.k === 'th2' ? 2 : 1)) ? 1 : 0;
+  }
+  if (e.k === 'tp1' || e.k === 'tq1' || e.k === 'tg1') return HT == null ? null : HT > G ? 1 : 0;
+  if (e.k === 'tq2' || e.k === 'tn2') return FT > G ? 1 : 0;
+  if (e.k === 'tp2') return FT > G ? 1 : 0;
+  if (e.k === 't2w' || e.k === 't1w') {
+    var tot = e.k === 't1w' ? HT : FT;
+    if (tot == null) return null;
+    if (tot === G) return 0;
+    if (!mins) return null;
+    if (mins.some(function (mm) { return mm > e.min && mm <= e.at; })) return 'skip';
+    return mins.some(function (mm) { return mm > e.at && mm <= (e.k === 't1w' ? 45 : 200); }) ? 1 : 0;
+  }
+  if (e.k.indexOf('t1') === 0) return HT == null ? null : HT > G ? 1 : 0;
+  return FT > G ? 1 : 0;
+}
+/* 3.87.0 — ESITI CHIUSI DAL SERVER: a ogni giro i segnali in attesa degli ultimi 3 giorni vengono confrontati con il
+   registro dei finali confermati (pronostici_finali). Se il finale c'è, l'esito si calcola con le stesse regole
+   dell'app e si salva nel segnale: l'app lo riceve con i segnali, senza ricerche lunghe.
+   Le partite finite ma non ancora nel registro vengono passate alla verifica dei finali (priorità). */
+async function settleSignals() {
+  const since = new Date(Date.now() - 3 * 86400e3).toISOString();
+  const { data, error } = await admin.from("pronostici_segnali").select("user_id,key,data").gte("created_at", since).limit(3000);
+  if (error) return { error: error.message, wanted: [] };
+  const open = (data || []).filter((r: any) => r.data && r.data.res == null && typeof r.data.afId === "string" && r.data.afId.startsWith("tc:"));
+  if (!open.length) return { open: 0, settled: 0, wanted: [] };
+  const ids = [...new Set(open.map((r: any) => r.data.afId))] as string[], fin = new Map<string, any>();
+  for (let i = 0; i < ids.length; i += 150) {
+    const { data: f, error: e2 } = await admin.from("pronostici_finali").select("*").eq("confirmed", true).in("af_id", ids.slice(i, i + 150));
+    if (e2) { console.error("esiti: finali", e2.message); continue; }
+    for (const x of f || []) fin.set(x.af_id, x);
+  }
+  const now = Date.now(), wanted: string[] = [];
+  let settled = 0;
+  for (const r of open) {
+    const e = r.data, f = fin.get(e.afId);
+    if (!f) {
+      const rest = e.half === 1 ? (45 - (e.min || 0)) + 15 + 50 : Math.max(0, 95 - (e.min || 0));
+      if ((e.t || 0) + (rest + 10) * 60e3 < now) wanted.push(e.afId);
+      continue;
+    }
+    const x: any = { ft: f.goals, ht: f.ht || null, corners: f.corners || null, htCorners: f.ht_corners || null, goals: Array.isArray(f.goal_list) ? f.goal_list : null };
+    const o = tipPlayOutcome(e, x);
+    if (o == null) continue;
+    const d = Object.assign({}, e, { res: o, ft: x.ft, ht: x.ht, cornersFinal: x.corners, cornersHt: x.htCorners, resultConfirmed: true, resultSource: "registro", confirmedAt: f.confirmed_at || null, settledBy: "server" });
+    if (x.goals) d.goalsAt = x.goals;
+    const { error: uErr } = await admin.from("pronostici_segnali").update({ data: d, updated_at: new Date().toISOString() }).eq("user_id", r.user_id).eq("key", r.key);
+    if (uErr) console.error("esiti: aggiornamento", uErr.message); else settled++;
+  }
+  return { open: open.length, settled, wanted: [...new Set(wanted)] };
+}
 async function runCron() {
   let pre: any = null, liveErr: any = null;
   if (TC_TOKEN) {
     if (await tcBlocked()) return { note: "TotalCorner in pausa per il limite di richieste" };
-    try { liveCache = await scanList(); try { await cornerEnrich(liveCache); } catch (e) { console.error("angoli", e); } await setState("tcLive", { at: Date.now(), live: liveCache }); try { await lgTrack(liveCache); } catch (e) { console.error("lgTrack", e); } try { await snapTrack(liveCache); } catch (e) { console.error("snap", e); } }
+    try { liveCache = await scanList(); try { await cornerEnrich(liveCache); } catch (e) { console.error("angoli", e); } await setState("tcLive", { at: Date.now(), live: liveCache }); let settle: any = { wanted: [] }; try { settle = await settleSignals(); (globalThis as any).__settle = { open: settle.open, settled: settle.settled, wanted: (settle.wanted || []).length }; } catch (e) { console.error("esiti", e); } try { await lgTrack(liveCache, settle.wanted || []); } catch (e) { console.error("lgTrack", e); } try { await snapTrack(liveCache); } catch (e) { console.error("snap", e); } }
     catch (e) { liveErr = (e as Error).message; await tcBlock(e); return { error: liveErr }; }
   }
   try {
@@ -1646,6 +1715,7 @@ async function runCron() {
   let res: any;
   try { res = await runAlerts(); } catch (e) { res = { error: (e as Error).message }; }
   res.prematch = pre;
+  res.settle = (globalThis as any).__settle || null;
   res.bzRemaining = bzRem;
   res.tcCalls = tcCalls; res.tcRemaining = tcRem; res.tcOffset = tcOff;
   if (bzRem != null) await setState("bzRemaining", { v: bzRem, at: Date.now() });
@@ -1794,7 +1864,7 @@ Deno.serve(async (req) => {
       .gte("updated_at", new Date(since - 60e3).toISOString()).order("updated_at", { ascending: true }).limit(300);
     if (e2) return json({ error: e2.message }, 500);
     const rem: any = await getState("bzRemaining");
-    return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null, ver: "3.85.0" });
+    return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null, ver: "3.87.0" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */

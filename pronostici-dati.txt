@@ -20,6 +20,10 @@
 //     -> tutte le partite in corso nel mondo (minuto, punteggio, campionato). 1 richiesta,
 //        +1 per le quote live (Over/Under e 1X2) se il piano le permette.
 
+import { createClient } from "npm:@supabase/supabase-js@2";
+/* 3.86.0 — lettura del registro dei finali confermati (scritto dal giro di pronostici-avvisi) */
+const SB_URL = Deno.env.get("SUPABASE_URL") ?? "", SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const admin = SB_URL && SB_KEY ? createClient(SB_URL, SB_KEY, { auth: { persistSession: false } }) : null;
 const KEY = Deno.env.get("API_FOOTBALL_KEY") ?? "";
 const BZ_KEY = Deno.env.get("BZZOIRO_KEY") ?? "";
 const BZ = "https://sports.bzzoiro.com";
@@ -622,18 +626,42 @@ async function handleTc(body: any) {
     /* 3.64.4 — al massimo 20 per volta, una ogni 1,5 secondi (limite TotalCorner 30 al minuto, condiviso con il giro
        ogni 2 minuti); se TotalCorner dice "troppe richieste" le altre si segnano da riprovare */
     let stop = "";
-    for (const m of mine.slice(0, 20)) {
-      if (stop) { out.push({ id: m.id, dbg: { err: stop } }); continue; }
+    /* 3.86.0 — 1) una sola ricerca per partita; 2) prima il registro dei finali confermati (nessuna richiesta a
+       TotalCorner); 3) TotalCorner per le altre, al massimo 20 partite; le restanti "in coda" (non sono tentativi falliti) */
+    const firstOf = new Map<string, any>();
+    for (const m of mine) if (!firstOf.has(m.afId)) firstOf.set(m.afId, m);
+    const got = new Map<string, any>();
+    const okPair = (v: any) => Array.isArray(v) && v.length === 2 && v.every((n: any) => Number.isInteger(n) && n >= 0);
+    if (admin && firstOf.size) {
+      try {
+        const { data, error } = await admin.from("pronostici_finali").select("*").eq("confirmed", true).in("af_id", [...firstOf.keys()]);
+        if (error) throw new Error(error.message);
+        for (const f of data || []) {
+          if (!okPair(f.goals)) continue;
+          const r: any = { afId: f.af_id, status: "FT", resultConfirmed: true, resultSource: "registro", confirmedAt: f.confirmed_at || null, ft: f.goals, name: (f.home || "") + " - " + (f.away || "") };
+          if (okPair(f.ht)) r.ht = f.ht;
+          if (okPair(f.corners)) r.corners = f.corners;
+          if (okPair(f.ht_corners)) r.htCorners = f.ht_corners;
+          const gl = Array.isArray(f.goal_list) ? f.goal_list : null;
+          if (gl && gl.length === f.goals[0] + f.goals[1]) { r.goals = gl; const g1 = gl.filter((g: any) => g.min <= 45); if (g1.length) r.fg = g1[0].min; }
+          r.dbg = { src: "registro" };
+          got.set(f.af_id, r); found++;
+        }
+      } catch (e) { console.error("registro finali", (e as Error).message); }
+    }
+    for (const [afId, m] of firstOf) {
+      if (got.has(afId)) continue;
+      if (stop) { got.set(afId, { dbg: { err: stop, queued: /limite/.test(stop) } }); continue; }
+      /* 3.87.0 — al massimo 8 per chiamata (circa 12 secondi): una richiesta lunga si interrompe se l'app va in background */
+      if (asked >= 8) { got.set(afId, { dbg: { err: "in coda: verrà cercata al prossimo giro", queued: true } }); continue; }
       if (asked) await new Promise((r) => setTimeout(r, 1500));
       asked++;
       try {
-        const j = await tcGet(`/match/view/${m.afId.slice(3)}`, { columns: "events" });
+        const j = await tcGet(`/match/view/${afId.slice(3)}`, { columns: "events" });
         const x = Array.isArray(j?.data) ? j.data[0] : j?.data;
-        if (!x) { out.push({ id: m.id, dbg: { err: "TotalCorner non ha la partita" } }); continue; }
+        if (!x) { got.set(afId, { dbg: { err: "TotalCorner non ha la partita" } }); continue; }
         found++;
-        const f = tcFixture(x), r: any = { id: m.id, afId: f.afId, status: f.status, name: f.home + " - " + f.away };
-        /* 3.64.1 — l'orario d'inizio si prende da quello salvato nell'app (ora italiana): l'orario di TotalCorner
-           ha un fuso diverso e, senza la taratura del giro, faceva sembrare la partita non ancora finita */
+        const f = tcFixture(x), r: any = { afId: f.afId, status: f.status, name: f.home + " - " + f.away };
         const koApp = romeMs(m.date, m.time), koTc = f.kickoff ? Date.parse(f.kickoff) : null;
         const ko = koApp ?? koTc;
         const endBy = Number(m.endBy) || null;
@@ -649,19 +677,19 @@ async function handleTc(body: any) {
         }
         if (f.status === "CANC" || f.status === "PST") r.cancelled = true;
         r.dbg = { st: x.status ?? null, ish: x.ish ?? null, start: x.start ?? null, hg: x.hg ?? null, ag: x.ag ?? null, live: liveNow, ended, ko: ko ? new Date(ko).toISOString() : null };
-        out.push(r);
+        got.set(afId, r);
       } catch (e) {
         const msg = String((e as Error).message);
-        out.push({ id: m.id, dbg: { err: msg.slice(0, 120) } });
+        got.set(afId, { dbg: { err: msg.slice(0, 120) } });
         if (/rateLimit|troppe/.test(msg)) stop = "limite di richieste TotalCorner: riprova tra un minuto";
         else if (/token|VIP/.test(msg)) stop = msg.slice(0, 120);
       }
     }
+    for (const m of mine) out.push(Object.assign({}, got.get(m.afId) || { dbg: { err: "non cercata" } }, { id: m.id }));
     if (rest.length && BZ_KEY) {
       try { const r2 = await handleBz({ action: "results", matches: rest }); const j2 = await r2.json(); out.push(...(j2.results || [])); asked += rest.length; found += (j2.results || []).length; } catch { /* ok */ }
     }
-    for (const m of mine.slice(20)) out.push({ id: m.id, dbg: { err: "in coda: verrà cercata al prossimo giro" } });
-    return json({ results: out, unmatched: asked - found, source: "totalcorner", calls: tcCalls, remaining: tcRem, ver: "3.71.0" });
+    return json({ results: out, unmatched: Math.max(0, asked - found), source: "totalcorner", calls: tcCalls, remaining: tcRem, ver: "3.87.0" });
   }
   return json({ error: "Azione sconosciuta" }, 400);
 }

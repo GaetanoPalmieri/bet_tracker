@@ -702,19 +702,25 @@ function tipResultsCheck(note) {
   var D = tipUI.resDbg || {}, now = Date.now();
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.res == null && tipKindActive(e.k) && (e.t || 0) > now - 3 * 86400e3; }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
   var rows = L.map(function (e) {
-    var id = 'log:' + e.id, r = (D.by || {})[id], q = (D.endBy || {})[e.id], why;
-    if (!q) why = (e.miss || 0) >= 10 ? 'tentativi finiti' : 'non ancora cercata (fine stimata ' + (function () { var t = tipKickoff({ date: e.date, time: e.time }).getTime(); return new Date(t + 125 * 60e3).toLocaleString('it-IT', { day: '2-digit', hour: '2-digit', minute: '2-digit' }); })() + ')';
-    else if ((D.sent || []).indexOf(id) < 0) why = 'fuori dal lotto, riprova';
+    var id = tipResKey(e), r = (D.by || {})[id], q = (D.endBy || {})[e.id], why;
+    var endEst = (function () { var ko = tipKickoff({ date: e.date, time: e.time }).getTime(), e1 = ko + 125 * 60e3; if (U.finite(e.t) && U.finite(e.min)) { var rest = e.half === 1 ? (45 - e.min) + 15 + 50 : Math.max(0, 95 - e.min); e1 = Math.min(e1, e.t + (rest + 10) * 60e3); } return e1; })();
+    if (!q && (e.miss || 0) < 10 && endEst < now) why = 'finita: la chiude il server o il prossimo giro (automatico)';
+    else if (!q) why = (e.miss || 0) >= 10 ? 'tentativi finiti' : 'non ancora finita (fine stimata ' + (function () { var t = tipKickoff({ date: e.date, time: e.time }).getTime(); return new Date(t + 125 * 60e3).toLocaleString('it-IT', { day: '2-digit', hour: '2-digit', minute: '2-digit' }); })() + ')';
+    else if ((D.sent || []).indexOf(id) < 0) why = 'in coda: la cerco al prossimo giro (automatico)';
     else if (!r) why = D.ver ? 'nessuna risposta dal server' : 'nessuna risposta: su Supabase c’è ancora la vecchia pronostici-dati';
+    else if (r.dbg && r.dbg.queued) why = 'in coda: la cerco al prossimo giro (automatico)';
     else if (r.dbg && r.dbg.err) why = 'errore: ' + r.dbg.err;
     else if (!Array.isArray(r.ft)) why = 'non finita per TotalCorner · stato "' + (r.dbg ? r.dbg.st : '?') + '" · gol ' + (r.dbg ? r.dbg.hg + '-' + r.dbg.ag : '?') + ' · inizio ' + (r.dbg && r.dbg.ko ? new Date(r.dbg.ko).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '?');
     else why = 'risultato ' + r.ft.join('-') + (r.ht ? ' (1T ' + r.ht.join('-') + ')' : ' (manca il 1° tempo)') + ' · esito non calcolabile';
     return '<div class="tip-memory-row"><div class="tip-memory-info"><b>' + U.esc((e.home || '') + ' – ' + (e.away || '')) + '</b><small>' + U.esc(TIP_PLAY_SHORT[e.k] || e.k) + ' · ' + U.esc(e.date || '') + ' ' + U.esc(e.time || '') + ' · ' + (e.min || 0) + '’ · id ' + U.esc(e.afId || 'nessuno') + ' · tentativi ' + (e.miss || 0) + '</small><small class="tip-amber-text">' + U.esc(why) + '</small></div></div>';
   }).join('');
   if (typeof note !== 'string' && D.sent) note = D.ver ? 'Server pronostici-dati ' + D.ver : 'Server pronostici-dati vecchio: ripubblicalo con l’ultimo file';
+  if (tipUI.serverVer) note = (typeof note === 'string' ? note + ' · ' : '') + 'pronostici-avvisi ' + tipUI.serverVer;
   var d = sheetModal(sheetHead('Consigli in attesa', { sub: L.length ? L.length + ' negli ultimi 3 giorni' : 'Nessuno' }) + '<div class="tip-sheet">' + (typeof note === 'string' ? '<p class="tip-amber-text">' + U.esc(note) + '</p>' : '') + '<p class="muted">Fai uno screenshot e mandalo a Claude se restano in attesa.</p><div class="tip-tlist">' + (rows || '<p class="muted">Tutti chiusi.</p>') + '</div></div>');
   d.classList.add('tip-dlg');
 }
+/* 3.86.0 — una richiesta per PARTITA (non per segnale): più segnali della stessa partita condividono il risultato */
+function tipResKey(x) { return x.afId ? 'af:' + x.afId : 'log:' + x.id; }
 async function tipAutoResults(opts) {
   opts = opts || {};
   if (tipUI.resBusy) { if (opts.manual) U.toast('Ricerca dei risultati già in corso, attendi qualche secondo.'); return; }
@@ -757,7 +763,15 @@ async function tipAutoResults(opts) {
     if (!(ko + 125 * 60e3 < now) || ko < now - 7 * 86400e3) return;
     logTodo[x.id] = { id: 'log:' + x.id, date: x.date, time: x.time, home: x.home, away: x.away, league: x.league, afId: x.afId || null, needFg: true, needGoals: true };
   });
-  var logList = Object.keys(logTodo).map(function (k) { return logTodo[k]; });
+  /* 3.86.0 — richieste uniche per partita, prima quelle finite da più tempo */
+  var reqMap = {};
+  Object.keys(logTodo).forEach(function (k) {
+    var x = logTodo[k], src = (((db.predModel || {}).playLog) || []).find(function (e) { return e.id === k; }) || (((db.predModel || {}).liveLog) || []).find(function (e) { return e.id === k; }) || { id: k, afId: x.afId };
+    var key = tipResKey({ id: k, afId: x.afId || src.afId }), cur = reqMap[key];
+    if (!cur) reqMap[key] = Object.assign({}, x, { id: key });
+    else if ((x.endBy || 0) < (cur.endBy || Infinity)) cur.endBy = x.endBy;
+  });
+  var logList = Object.keys(reqMap).map(function (k) { return reqMap[k]; }).sort(function (a, b) { return (a.endBy || 0) - (b.endBy || 0); });
   if (!todo.length && !logList.length) {
     if (opts.manual) { tipUI.resDbg = { at: Date.now(), sent: [], by: {}, endBy: {} }; tipResultsCheck('Nessun consiglio è ancora da cercare: le partite risultano non finite.'); }
     return;
@@ -766,7 +780,7 @@ async function tipAutoResults(opts) {
   try {
     var r = await SuiteSync.api(TIP_FN, {
       method: 'POST',
-      json: { action: 'results', matches: todo.slice(0, 80).map(function (m) { return { id: m.id, date: m.date, time: m.time, home: m.home, away: m.away, league: m.league, afId: m.afId || null, needFg: hasHt(m) && !Number.isInteger(m.fg) }; }).concat(logList.slice(0, 40)).sort(function (a, b) { return (b.endBy ? 1 : 0) - (a.endBy ? 1 : 0); }) },
+      json: { action: 'results', matches: todo.slice(0, 80).map(function (m) { return { id: m.id, date: m.date, time: m.time, home: m.home, away: m.away, league: m.league, afId: m.afId || null, needFg: hasHt(m) && !Number.isInteger(m.fg) }; }).concat(logList.slice(0, 60)).sort(function (a, b) { return (b.endBy ? 1 : 0) - (a.endBy ? 1 : 0) || (a.endBy || 0) - (b.endBy || 0); }) },
     });
     var byId = {};
     (r.results || []).forEach(function (x) { byId[x.id] = x; });
@@ -795,16 +809,17 @@ async function tipAutoResults(opts) {
       d.predModel = d.predModel || {};
       (d.predModel.liveLog || []).forEach(function (rec) {
         if (rec.res || !logTodo[rec.id]) return;
-        var x = byId['log:' + rec.id];
-        if (!x || !Array.isArray(x.ft)) { rec.miss = (rec.miss || 0) + 1; return; }
+        var x = byId[tipResKey({ id: rec.id, afId: logTodo[rec.id].afId })];
+        if (!x || !Array.isArray(x.ft)) { if (tipResChecked(x)) rec.miss = (rec.miss || 0) + 1; return; }
         var res = tipLiveLogResolve(rec, x);
         if (res) rec.res = res;
       });
       (d.predModel.playLog || []).forEach(function (e) {
         var needP = e.played && e.played.res == null;
         if ((e.res != null && !needP) || !logTodo[e.id]) return;
-        var x = byId['log:' + e.id];
-        if (!x || !Array.isArray(x.ft)) { e.miss = (e.miss || 0) + 1; return; }
+        var x = byId[tipResKey({ id: e.id, afId: logTodo[e.id].afId })];
+        /* 3.86.0 — un tentativo si conta solo se il server ha davvero cercato la partita (non se era in coda) */
+        if (!x || !Array.isArray(x.ft)) { if (tipResChecked(x)) e.miss = (e.miss || 0) + 1; return; }
         if (e.res == null) {
           var o = tipPlayOutcome(e, x);
           if (o != null) { e.res = o; e.ft = x.ft; e.ht = x.ht || null; e.cornersFinal = x.corners || null; e.cornersHt = x.htCorners || null; e.resultConfirmed = x.resultConfirmed === true; e.resultSource = x.resultSource || x.afId || null; e.confirmedAt = x.confirmedAt || null; if (Array.isArray(x.goals)) e.goalsAt = x.goals; }
@@ -817,16 +832,24 @@ async function tipAutoResults(opts) {
       if (r.remaining != null) d.predModel.afRemaining = r.remaining;
     });
     setTimeout(tipDailyReports, 300);
-    if (opts.manual) { tipUI.resDbg = { at: Date.now(), ver: r.ver || null, sent: logList.slice(0, 40).map(function (x) { return x.id; }), by: byId, endBy: logTodo }; setTimeout(function () { tipResultsCheck(); }, 400); }
+    if (opts.manual) { tipUI.resDbg = { at: Date.now(), ver: r.ver || null, sent: logList.slice(0, 60).map(function (x) { return x.id; }), by: byId, endBy: logTodo }; setTimeout(function () { tipResultsCheck(); }, 400); }
+    /* 3.86.0 — se ne restano in coda, nuovo giro tra 75 secondi (limite TotalCorner: 30 richieste al minuto) */
+    var queued = (r.results || []).filter(function (x) { return x.dbg && x.dbg.queued; }).length + Math.max(0, logList.length - 60);
+    if (queued && (tipUI._resLoop || 0) < 8) { tipUI._resLoop = (tipUI._resLoop || 0) + 1; setTimeout(function () { tipAutoResults(); }, 75e3); }
+    else tipUI._resLoop = 0;
     if (n || voids || opts.manual)
       U.toast(n || voids ? 'Risultati automatici: ' + n + ' partite' + (voids ? ', ' + voids + ' rinviate' : '') : 'Nessun nuovo risultato (' + (r.unmatched || 0) + ' partite non trovate)');
   } catch (e) {
-    if (opts.manual) { tipUI.resDbg = { at: Date.now(), sent: [], by: {}, endBy: {} }; tipResultsCheck('Errore dal server: ' + tipFnErr(e)); }
+    var net = /load failed|failed to fetch|networkerror|network request|aborted|timeout/i.test(String((e && e.message) || e));
+    /* 3.87.0 — connessione interrotta (app in background, rete): nuovo tentativo da solo; i risultati li chiude comunque il server */
+    if (net && (tipUI._resLoop || 0) < 8) { tipUI._resLoop = (tipUI._resLoop || 0) + 1; setTimeout(function () { tipAutoResults(); }, 60e3); }
+    if (opts.manual) tipResultsCheck(net ? 'Connessione interrotta durante la ricerca (succede se l’app va in background o la rete cade): riprovo da solo. Gli esiti li chiude anche il server ogni 2 minuti.' : 'Errore dal server: ' + tipFnErr(e));
   } finally {
     tipUI.resBusy = false;
     if (tab === 'tips') render();
   }
 }
+function tipResChecked(x) { return !!x && !(x.dbg && (x.dbg.queued || /in coda|limite di richieste/.test(String(x.dbg.err || '')))); }
 async function tipLiveFetch(m) {
   if (!tipCanSync()) throw Object.assign(new Error('auth'), { auth: true });
   var r = await SuiteSync.api(TIP_FN, {
@@ -1546,6 +1569,8 @@ function tipPlayApply(L, o) {
   }
   if (!cur) { L.push(o.e); return; }
   if (o.e.push) cur.push = o.e.push; /* 3.82.0 — esito della notifica dal server */
+  /* 3.87.0 — esito chiuso dal server (registro dei finali): si copia se qui è ancora in attesa */
+  if (cur.res == null && o.e.res != null && o.e.settledBy) ['res', 'ft', 'ht', 'cornersFinal', 'cornersHt', 'resultConfirmed', 'resultSource', 'confirmedAt', 'goalsAt', 'settledBy'].forEach(function (k) { if (o.e[k] !== undefined) cur[k] = o.e[k]; });
   if (cur.tier === 'try' && o.e.tier === 'excellent') {
     o.e = tipSignalRevision(cur, o.e);
     var keep = { key: cur.key, played: cur.played, first: cur.first || { k: cur.k, min: cur.min, tier: 'try' } };
@@ -2356,7 +2381,7 @@ function tipAlertFilters(A, btn) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '3.85.0', old = v && (v === 'vecchia' || v < need);
+  var v = tipUI.serverVer, need = '3.87.0', old = v && (v === 'vecchia' || v < need);
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
@@ -4892,7 +4917,7 @@ function bindTips() {
     setTimeout(function () { tipAutoPrematch(); }, 900);
   }
   /* 3.12.0 — risultati automatici all'apertura, al massimo ogni 20 minuti */
-  if (!tipUI.resBusy && (!tipUI.resAt || Date.now() - tipUI.resAt > 30 * 60e3) && navigator.onLine !== false && tipCanSync()) {
+  if (!tipUI.resBusy && (!tipUI.resAt || Date.now() - tipUI.resAt > 10 * 60e3) && navigator.onLine !== false && tipCanSync()) {
     tipUI.resAt = Date.now();
     setTimeout(function () { tipAutoResults(); }, 1500);
   }
