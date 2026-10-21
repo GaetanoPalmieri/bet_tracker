@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.95.1
+// Versione app: 3.95.2
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -395,9 +395,15 @@ async function tcPrematchStep(force = false) {
   const st: any = (await getState("tcpre")) || {};
   const now = Date.now();
   const days = [0, 1, 2].map((n) => romeParts(now + n * 86400e3).date);
-  if (force || !st.cycleAt || now - st.cycleAt > PRE_EVERY || !days.includes(st.day)) { st.cycleAt = now; st.day = days[0]; st.page = 1; st.byDay = st.byDay || {}; st.done = false; }
+  /* 3.95.1 — il giro riparte: a mezzanotte (oggi e domani subito aggiornati), 6 ore dopo un giro COMPLETO, oppure dopo
+     18 ore se si è bloccato. Prima ripartiva ogni 6 ore anche a metà: se il giro era lento non arrivava mai a domani.
+     Le partite dei giorni già letti restano finché il nuovo giro non li rilegge. */
+  if (force || !st.cycleAt || st.today !== days[0] || (st.done && now - st.cycleAt > PRE_EVERY) || (!st.done && now - st.cycleAt > 3 * PRE_EVERY) || !days.includes(st.day)) {
+    st.cycleAt = now; st.today = days[0]; st.day = days[0]; st.page = 1; st.byDay = st.byDay || {}; st.done = false;
+  }
   if (st.done) return st;
-  let budget = 4;
+  /* 3.95.1 — con poche partite live (notte, mattina) più pagine per giro: oggi + domani pronti in ~20-30 minuti */
+  let budget = (liveCache?.length ?? 0) < 40 ? 10 : 5;
   while (budget > 0 && !st.done) {
     const ymd = st.day.replace(/-/g, "");
     const r = await tcList("/match/schedule", { date: ymd, columns: "odds,goalLine,btts" }, Math.min(budget, 12), st.page);
@@ -415,7 +421,7 @@ async function tcPrematchStep(force = false) {
   if (st.done || Object.keys(st.byDay).length) {
     const seen = new Set<string>();
     const matches = days.flatMap((d) => st.byDay[d] || []).filter((m: any) => !seen.has(m.id) && (seen.add(m.id), true));
-    const file = { app: "bet_tracker", kind: "pronostici", auto: true, batch: "auto-tc-" + new Date(st.cycleAt).toISOString().slice(0, 13) + (st.done ? "" : "-p"),
+    const file = { app: "bet_tracker", kind: "pronostici", auto: true, batch: "auto-tc-" + new Date(st.cycleAt).toISOString().slice(0, 13) + (st.done ? "" : "-p" + matches.length),
       generatedAt: new Date(now).toISOString(), label: "Automatico · bet365 (TotalCorner) · " + romeParts(now).date + " " + romeParts(now).time + (st.done ? "" : " · in completamento"),
       from: days[0], to: days[2], matches };
     await setState("prematch", file);
@@ -2019,7 +2025,9 @@ Deno.serve(async (req) => {
     return json({ rows: data || [], nextOffset: data?.length === size ? offset + size : null, version: "3.71.0" });
   }
   if (body.action === "diag") {
-    return json({ ver: "3.95.1", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast") });
+    const tp: any = (await getState("tcpre")) || {};
+    const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
+    return json({ ver: "3.95.2", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2032,7 +2040,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "3.95.1" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "3.95.2" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */

@@ -664,10 +664,12 @@ async function tipAutoPrematch({ manual = false } = {}) {
     if (f && f.bzRemaining != null) tipUI.bzRem = f.bzRemaining;
     if (!f || !Array.isArray(f.matches) || (!f.matches.length && f.error)) { if (manual) U.toast((f && f.error) || 'Pronostici automatici non disponibili.'); return; }
     var pm = db.predModel || {};
-    if (!manual && f.batch === pm.lastAutoBatch) return;
+    /* 3.95.1 — durante il giro del server il file cresce (oggi, poi domani, poi dopodomani): si riprende ogni volta che
+       cambia il numero di partite, non solo quando cambia il nome del giro. Prima restavano le prime 9-15 partite. */
+    if (!manual && f.batch === pm.lastAutoBatch && f.matches.length === pm.lastAutoN) return;
     var file = { batch: f.batch, label: f.label, model: pm.base || TIP_DEFAULTS, matches: f.matches };
     tipMerge(file, { manual: manual });
-    mutate(function (d) { d.predModel = d.predModel || {}; d.predModel.lastAutoBatch = f.batch; d.predModel.lastAutoAt = f.generatedAt; });
+    mutate(function (d) { d.predModel = d.predModel || {}; d.predModel.lastAutoBatch = f.batch; d.predModel.lastAutoN = f.matches.length; d.predModel.lastAutoAt = f.generatedAt; });
   } catch (e) {
     if (manual) U.toast(tipFnErr(e).replace('pronostici-dati', 'pronostici-avvisi').replace('GUIDA_DATI_AUTOMATICI', 'GUIDA_AVVISI'));
   } finally {
@@ -2646,7 +2648,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '3.95.1', old = v && (v === 'vecchia' || v < need);
+  var v = tipUI.serverVer, need = '3.95.2', old = v && (v === 'vecchia' || v < need);
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
