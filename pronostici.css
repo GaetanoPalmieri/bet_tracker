@@ -916,3 +916,14 @@ header { display: flex; align-items: flex-end; justify-content: space-between; g
 .tip-archive>.tip-archive-head>.tip-archive-sum b,.tip-archive>.tip-archive-head>.tip-archive-sum span{display:inline;padding:0!important;border:0!important;background:transparent!important;font-size:inherit!important}
 .tip-archive>.tip-archive-head>.tip-archive-sum .positive{color:var(--bt-up-text)!important}
 .tip-archive>.tip-archive-head>.tip-archive-sum .negative{color:var(--bt-down-text)!important}
+/* 3.88.0 — switch Riepilogo / Storico in risalto */
+.tip-smpseg.tip-mainseg{grid-template-columns:repeat(2,minmax(0,1fr));padding:5px;margin:6px 0 12px;border-color:rgba(232,163,61,.45);background:rgba(232,163,61,.08)}
+.tip-mainseg .tip-smpbtn{font-size:15px;padding:11px 8px}
+.tip-mainseg .tip-smpbtn.on{background:var(--suite-amber-grad,#e8a33d);color:var(--suite-on-amber,#241800);box-shadow:0 3px 12px rgba(232,163,61,.25)}
+/* chip dei filtri: niente menu del telefono sulla pressione lunga */
+[data-stclear],[data-arcclear],[data-stfopen]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+/* pannello filtri: Azzera e ✓ in alto, X colorata */
+dialog#editor.sheet .sheet-btn.tip-sheet-reset{width:auto!important;min-width:0!important;padding:0 12px!important;font-size:13px!important;font-weight:800;background:color-mix(in srgb,var(--suite-text) 8%,transparent)!important;color:var(--suite-text)!important}
+dialog#editor.sheet .sheet-btn.tip-sheet-ok{font-size:22px!important;font-weight:900}
+dialog#editor.sheet .sheet-close.tip-sheet-x{background:color-mix(in srgb,var(--bt-down,#e05a5a) 18%,transparent)!important;color:var(--bt-down-text,#ff8a8a)!important}
+.tip-lchip.tip-lp{transform:scale(.96);box-shadow:0 0 0 2px rgba(54,189,165,.6)}

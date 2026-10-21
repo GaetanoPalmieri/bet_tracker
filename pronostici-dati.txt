@@ -609,8 +609,22 @@ async function handleTc(body: any) {
     }
     if (!x || !(x.h || x.home)) {
       const live = await tcLive();
-      let best: any = null, bs = 0;
-      for (const f of live) { const sc = sim(m.home || "", f.home) + sim(m.away || "", f.away); if (sim(m.home || "", f.home) >= 0.34 && sim(m.away || "", f.away) >= 0.34 && sc > bs) { bs = sc; best = f; } }
+      /* 3.90.0 — con l'identificativo si accetta solo quella partita: prima, se la lettura diretta falliva,
+         il nome poteva agganciare un'altra partita ("Watford Reserves" ~ "Sarmiento Reserves").
+         Senza identificativo: stessa categoria (riserve, U19, femminile), entrambe le squadre simili, nessun pari merito. */
+      let best: any = null, bs = 0, second = 0;
+      if (id) best = live.find((f: any) => f.afId === m.afId) || null;
+      else {
+        const cat = (s: string) => (String(s).toLowerCase().match(/\b(u\d{2}|ii|b|reserves?|res|women|w|femminile|youth)\b/g) || []).map((t) => /^res/.test(t) ? "reserves" : /^(women|w|femminile)$/.test(t) ? "w" : t).sort().join(" ");
+        const core = (s: string) => String(s).replace(/\b(reserves?|res|women|femminile|youth)\b/gi, " ");
+        for (const f of live) {
+          if (cat(m.home || "") !== cat(f.home) || cat(m.away || "") !== cat(f.away)) continue;
+          const a = sim(core(m.home || ""), core(f.home)), b = sim(core(m.away || ""), core(f.away)), sc = a + b;
+          if (a < 0.5 || b < 0.5) continue;
+          if (sc > bs) { second = bs; bs = sc; best = f; } else if (sc > second) second = sc;
+        }
+        if (best && bs - second < 0.25) best = null;
+      }
       if (!best) return json({ error: `Partita non trovata su TotalCorner (${live.length} live).`, source: "totalcorner" }, 404);
       return json({ ...best, ou: null, source: "totalcorner", calls: tcCalls });
     }
@@ -689,7 +703,7 @@ async function handleTc(body: any) {
     if (rest.length && BZ_KEY) {
       try { const r2 = await handleBz({ action: "results", matches: rest }); const j2 = await r2.json(); out.push(...(j2.results || [])); asked += rest.length; found += (j2.results || []).length; } catch { /* ok */ }
     }
-    return json({ results: out, unmatched: Math.max(0, asked - found), source: "totalcorner", calls: tcCalls, remaining: tcRem, ver: "3.87.0" });
+    return json({ results: out, unmatched: Math.max(0, asked - found), source: "totalcorner", calls: tcCalls, remaining: tcRem, ver: "3.90.0" });
   }
   return json({ error: "Azione sconosciuta" }, 400);
 }

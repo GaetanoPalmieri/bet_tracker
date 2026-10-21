@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.87.0
+// Versione app: 3.90.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -489,7 +489,8 @@ function tcLine(v: any): number | null {
   if (!parts.length) return null;
   return parts.reduce((a, b) => a + b, 0) / parts.length;
 }
-const TC_LINE_SCALE = 0.85;
+/* 3.89.0 — prepartita da sole quote TotalCorner: 68% vinti contro 80% previsto (66 pronostici): riduzione portata al 20% */
+const TC_LINE_SCALE = 0.80;
 function tcLamFromLine(L: number | null) {
   if (L == null || L <= 0) return null;
   const fr = L - Math.floor(L), adj = Math.abs(fr - 0.5) < 0.01 ? 0.17 : Math.abs(fr - 0.25) < 0.01 || Math.abs(fr - 0.75) < 0.01 ? 0.08 : 0;
@@ -855,25 +856,33 @@ function tipNameTok(s) {
     .replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
 }
 var TIP_NAME_STOP = { al: 1, el: 1, de: 1, del: 1, da: 1, la: 1, le: 1, los: 1, las: 1, the: 1, real: 1, united: 1, utd: 1, city: 1, town: 1, sporting: 1, sport: 1, athletic: 1, atletico: 1, deportivo: 1, dinamo: 1, dynamo: 1, olympic: 1, olimpia: 1, union: 1, fc: 1, sc: 1 };
-function tipNameCat(T) { return T.filter(function (t) { return /^(u\d{2}|w|women|femminile|fem|ii|b|reserves?|youth|res)$/.test(t); }).sort().join(' '); }
+var TIP_NAME_CAT_RE = /^(u\d{2}|w|women|femminile|fem|ii|b|reserves?|youth|res)$/;
+function tipNameCat(T) { var N = { res: 'reserves', reserve: 'reserves', women: 'w', femminile: 'w', fem: 'w' }; return T.filter(function (t) { return TIP_NAME_CAT_RE.test(t); }).map(function (t) { return N[t] || t; }).sort().join(' '); }
 function tipNameSim(a, b) {
   var A0 = tipNameTok(a), B0 = tipNameTok(b);
   if (!A0.length || !B0.length) return 0;
   if (A0.join('') === B0.join('')) return 1;
   if (tipNameCat(A0) !== tipNameCat(B0)) return 0;
-  var sig = function (T) { var r = T.filter(function (t) { return !TIP_NAME_STOP[t] && t.length >= 3 && !/^(u\d{2})$/.test(t); }); return r.length ? r : T; };
+  /* 3.90.0 — la categoria (Reserves, U19, Women...) non è una parola distintiva: "Watford Reserves" e "Sarmiento Reserves" non hanno nulla in comune */
+  var sig = function (T) { var r = T.filter(function (t) { return !TIP_NAME_STOP[t] && t.length >= 3 && !TIP_NAME_CAT_RE.test(t); }); return r.length ? r : T.filter(function (t) { return !TIP_NAME_CAT_RE.test(t); }); };
   var A = sig(A0), B = sig(B0);
+  if (!A.length || !B.length) return 0;
   var c = A.filter(function (t) { return B.some(function (u) { return u === t || (t.length >= 4 && u.length >= 4 && (u.indexOf(t) === 0 || t.indexOf(u) === 0)); }); }).length;
   return c / Math.min(A.length, B.length);
 }
-function tipFindApp(home, away, ko) {
-  var t = ko ? ko.getTime() : Date.now(), best = null, bs = 0;
-  (db.predictions || []).forEach(function (m) {
+/* 3.90.0 — prima l'identificativo della partita: se il pronostico ne ha già uno diverso, è un'altra partita.
+   Per nome solo se l'abbinamento è chiaro (nessun secondo candidato quasi uguale). */
+function tipFindApp(home, away, ko, afId) {
+  var t = ko ? ko.getTime() : Date.now(), best = null, bs = 0, second = 0, list = db.predictions || [];
+  if (afId) { var ex = list.find(function (m) { return m.afId === afId && !m.cancelled; }); if (ex) return ex; }
+  list.forEach(function (m) {
+    if (afId && m.afId && m.afId !== afId) return;
     if (Math.abs(tipKickoff(m).getTime() - t) > 4 * 3600e3) return;
-    var sc = tipNameSim(m.home, home) + tipNameSim(m.away, away);
-    if (tipNameSim(m.home, home) >= 0.5 && tipNameSim(m.away, away) >= 0.5 && sc > bs) { bs = sc; best = m; }
+    var a = tipNameSim(m.home, home), b = tipNameSim(m.away, away), sc = a + b;
+    if (a < 0.5 || b < 0.5) return;
+    if (sc > bs) { second = bs; bs = sc; best = m; } else if (sc > second) second = sc;
   });
-  return best;
+  return best && bs - second >= 0.25 ? best : null;
 }
 function tipScanMatch(x) {
   var st = x.status;
@@ -923,7 +932,7 @@ function tipScanMatch(x) {
   };
   /* 3.24.1 — se la partita è anche nei pronostici, uso quella: stessa forza prepartita
      (statistiche + quote + contesto) e stesso risultato, da qualunque parte la apri */
-  var am = tipFindApp(x.home, x.away, ko);
+  var am = tipFindApp(x.home, x.away, ko, x.afId);
   if (am) {
     m = am;
     tipUI.scanLink = tipUI.scanLink || {};
@@ -1019,6 +1028,7 @@ function tipCornerMarket(o, cor, min) {
   for (var i = 0; i < 40; i++) { var md = (lo + hi) / 2; if (tipPoisAtLeast(need, md) < pOver) lo = md; else hi = md; }
   return { lam: (lo + hi) / 2, need: need, pOver: pOver, odds: odds, line: o.line, over: odds ? o.over : null };
 }
+var TIP_CORNER_HT_SHRINK = 0.7;
 function tipCornerEstimate(min, goals, stats, prev, addedTime, half, x) {
   if (half == null) half = min > 45 ? 2 : 1;
   var W = TIP_CORNER_WIN[half];
@@ -1029,8 +1039,8 @@ function tipCornerEstimate(min, goals, stats, prev, addedTime, half, x) {
   var pr = x ? tipCornerPrior(x) : null;
   var priorRate = pr ? (half === 1 ? pr.Eht / 45 : pr.E / 90) : W.base / 90;
   var baseRate = (cor + priorRate * W.K) / (min + W.K), rate = baseRate, recent = null;
-  if (prev && prev.half === half && prev.side && min - prev.min >= 5 && min - prev.min <= 15 &&
-      (!prev.at || Date.now() - prev.at <= 20 * 60e3) && valid(prev.side[0].c) && valid(prev.side[1].c)) {
+  if (prev && prev.half === half && prev.side && min - prev.min >= 5 && min - prev.min <= 20 &&
+      (!prev.at || Date.now() - prev.at <= 25 * 60e3) && valid(prev.side[0].c) && valid(prev.side[1].c)) {
     var before = prev.side[0].c + prev.side[1].c, elapsed = min - prev.min;
     if (cor >= before) {
       recent = { minutes: elapsed, corners: cor - before };
@@ -1046,11 +1056,17 @@ function tipCornerEstimate(min, goals, stats, prev, addedTime, half, x) {
   var odds = x && x.cornerOdds ? x.cornerOdds[half === 1 ? 'ht' : 'ft'] : null;
   mk = tipCornerMarket(odds, cor, min);
   if (!mk && x && x.corner) mk = tipCornerMarket({ line: half === 1 ? x.corner.liveHt : x.corner.live }, cor, min);
-  if (mk) { wMkt = mk.odds ? 0.6 : 0.35; lambda = Math.exp(wMkt * Math.log(mk.lam) + (1 - wMkt) * Math.log(lamModel)); }
+  /* 3.90.0 — la sola linea senza quote non dice da che parte pende il book (si assumeva 50%): sui dati
+     12 segnali così ne hanno vinti 2. Ora conta solo con le quote vere. */
+  if (mk && mk.odds) { wMkt = 0.6; lambda = Math.exp(wMkt * Math.log(mk.lam) + (1 - wMkt) * Math.log(lamModel)); }
+  /* 3.90.0 — angoli 1° tempo senza quote angoli prepartita né live: sui dati 54% vinte contro 77% stimato
+     (con le quote prepartita 81%). Stima ridotta finché non ci sono più dati. */
+  var shrink = 1;
+  if (half === 1 && !(mk && mk.odds) && !(pr && /quote/.test(pr.src || ''))) { shrink = TIP_CORNER_HT_SHRINK; lambda *= shrink; }
   var book = {};
   if (mk && mk.odds && mk.need === 1) book[1] = mk.over;
   if (mk && mk.odds && mk.need === 2) book[2] = mk.over;
-  return { model: 'corners-3.71.0-experimental', half: half, cn: cor, lamC: lambda, lamModel: lamModel, lamMkt: mk ? mk.lam : null, wMkt: wMkt,
+  return { model: 'corners-3.90.0', half: half, cn: cor, lamC: lambda, lamModel: lamModel, lamMkt: mk ? mk.lam : null, wMkt: wMkt, shrink: shrink,
     prior: pr, baseRate: baseRate, rate: rate, recent: recent,
     stoppage: extra, stoppageKnown: U.finite(addedTime), remaining: rem, boost: boost, book: book, line: mk ? mk.line : null,
     p1: 1 - Math.exp(-lambda), p2: 1 - Math.exp(-lambda) * (1 + lambda) };
@@ -1169,12 +1185,12 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.71.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.90.0',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
     k: x.k, tier: x.green ? 'excellent' : 'try', conditional: !!x.at, costly: !!x.costly, res: (x.at || x.costly || x.lowBook) ? 'skip' : null, min: ctx.min, half: ctx.half, gh: ctx.gh || 0, ga: ctx.ga || 0, p: Math.round((x.evalP == null ? x.p : x.evalP) * 1000) / 1000, rawP: Math.round(x.p * 1000) / 1000,
-    legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }), prof: x.prof, rit: x.rit, lg: x.lg, snap: x.snap, stats: (function () { var d = (tipUI.liveData || {})[m.id]; return d && d.stats ? d.stats : undefined; })(), at: x.at, ts: x.ts, minQ: x.minQ ? Math.round(x.minQ * 100) / 100 : undefined, book: x.book || undefined,
+    legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }), prof: x.prof, rit: x.rit, lg: x.lg, snap: x.snap, pressure: x.pressure, factors: x.factors, stats: (function () { var d = (tipUI.liveData || {})[m.id]; return d && d.stats ? d.stats : undefined; })(), at: x.at, ts: x.ts, minQ: x.minQ ? Math.round(x.minQ * 100) / 100 : undefined, book: x.book || undefined,
     risk: Math.round(x.cost.risk * 100) / 100, win: Math.round(x.cost.win * 100) / 100, t: Date.now() }));
 }
 function tipPlayThr(k, min) { var t = TIP_PLAY_THR[k]; return t ? tipLmInterp(t, min) / 100 : 1; }
@@ -1215,7 +1231,7 @@ function tipLeagueTier(m) {
 var TIP_LG_WOMEN = /women|femenin|feminin|frauen|damallsvenskan|toppserien|\bwsl\b|liga f\b|\(w\)|\bw$/i;
 var TIP_LG_EXTRA = { major: 0, 'minor+': 0.02, minor: 0.04, 'youth+': 0.03, youth: 0.06, women: 0.06 };
 var TIP_STEP1T_ON = false;
-var TIP_K_OFF = { t1s18: 1, t2u18: 1, tp1: 1, tp2: 1, tc2: 1, th2: 1 };
+var TIP_K_OFF = { t1s18: 1, t2u18: 1, tp1: 1, tp2: 1, tc2: 1, th2: 1, tq1: 1 };
 var TIP_K_FLOOR = { t1s15: 0.65, t2u15: 0.63, t1s18: 0.65, t2u18: 0.63, t2st2: 0.63, t2st3: 0.63, t1st: 0.74, t1w: 0.65, t2w: 0.65 };
 var TIP_K_EXTRA = {};
 function tipGreenFloor(x) {
@@ -1430,7 +1446,7 @@ function tipAlertGroup(k) {
   if (/^tc/.test(k)) return 'cor2';
   return k === 'tp1' || k === 'tq1' || k === 'tg1' || k.indexOf('t1') === 0 ? 'gol1' : 'gol2';
 }
-var TIP_QUALITY_MINP = 0.62, TIP_QUALITY_LG = { major: 1, 'minor+': 1, 'youth+': 1 };
+var TIP_QUALITY_MINP = 0.65, TIP_QUALITY_LG = { major: 1, 'minor+': 1, 'youth+': 1 };
 function tipQualityPass(e) {
   if (!e) return false;
   var lg = e.lg || tipLeagueTier({ league: e.league, home: e.home, away: e.away });
@@ -1556,8 +1572,8 @@ async function lgTrack(list: any[], wanted: string[] = []) {
     const sd = r.stats?.side || [{}, {}];
     const row = { af_id: r.afId, league: r.league, home: r.home || null, away: r.away || null,
       kickoff: r.kickoff, last_min: r.elapsed, goals: r.goals, ht: r.ht || null,
-      corners: [sd[0]?.c ?? null, sd[1]?.c ?? null], ht_corners: r.htCorners || null, goal_list: Array.isArray(r.goalList) ? r.goalList : null, confirmed: true,
-      confirmed_at: new Date(now).toISOString(), source: "totalcorner", model_version: "3.87.0" };
+      corners: [sd[0]?.c ?? null, sd[1]?.c ?? null], ht_corners: r.htCorners || null, goal_list: Array.isArray(r.goalList) && r.goalList.length === r.goals[0] + r.goals[1] ? r.goalList : null, confirmed: true,
+      confirmed_at: new Date(now).toISOString(), source: "totalcorner", model_version: "3.90.0" };
     let { error } = await admin.from("pronostici_finali").upsert(row, { onConflict: "af_id" });
     /* senza la migrazione 3.86 la colonna goal_list non c'è: si salva comunque il resto */
     if (error && /goal_list/.test(error.message)) { const { goal_list: _g, ...rest } = row as any; ({ error } = await admin.from("pronostici_finali").upsert(rest, { onConflict: "af_id" })); }
@@ -1631,6 +1647,7 @@ async function cornerEnrich(list: any[]) {
       const d = Array.isArray(j?.data) ? j.data[0] : j?.data;
       const val = { ft: last(d?.corner_list ?? d?.cornerList), ht: last(d?.corner_half_list ?? d?.cornerHalfList) };
       cache[r.afId] = { at: now, v: val }; r.cornerOdds = val;
+      if (!val.ft && !val.ht) await setState("cornerOddsRaw", { at: now, id: r.afId, keys: Object.keys(d || {}), sample: JSON.stringify(j).slice(0, 1500) });
     } catch (e) { console.error("quote angoli", r.afId, (e as Error).message); await tcBlock(e); break; }
   }
   for (const k of Object.keys(cache)) if (now - cache[k].at > 3 * 3600e3) delete cache[k];
@@ -1641,7 +1658,7 @@ function tipPlayOutcome(e, x) {
   if (!Array.isArray(x.ft)) return null;
   if (x.ft[0] < e.gh || x.ft[1] < e.ga || (e.half === 1 && Array.isArray(x.ht) && (x.ht[0] < e.gh || x.ht[1] < e.ga))) return null;
   var G = e.gh + e.ga, FT = x.ft[0] + x.ft[1], HT = Array.isArray(x.ht) ? x.ht[0] + x.ht[1] : null,
-    mins = Array.isArray(x.goals) ? x.goals.map(function (g) { return g.min; }) : null;
+    mins = Array.isArray(x.goals) && x.goals.length === FT ? x.goals.map(function (g) { return g.min; }) : null; /* 3.90.0 — solo elenco completo */
   if (e.k === 'tc1' || e.k === 'tc2') {
     if (!Array.isArray(x.corners) || x.corners[0] == null || x.corners[1] == null || e.cn == null) return null;
     if (!x.corners.every(function (n) { return Number.isInteger(n) && n >= 0; }) || x.corners[0] + x.corners[1] < e.cn) return null;
@@ -1691,7 +1708,7 @@ async function settleSignals() {
       if ((e.t || 0) + (rest + 10) * 60e3 < now) wanted.push(e.afId);
       continue;
     }
-    const x: any = { ft: f.goals, ht: f.ht || null, corners: f.corners || null, htCorners: f.ht_corners || null, goals: Array.isArray(f.goal_list) ? f.goal_list : null };
+    const x: any = { ft: f.goals, ht: f.ht || null, corners: f.corners || null, htCorners: f.ht_corners || null, /* 3.90.0 — elenco dei gol solo se completo */ goals: Array.isArray(f.goal_list) && Array.isArray(f.goals) && f.goal_list.length === f.goals[0] + f.goals[1] ? f.goal_list : null };
     const o = tipPlayOutcome(e, x);
     if (o == null) continue;
     const d = Object.assign({}, e, { res: o, ft: x.ft, ht: x.ht, cornersFinal: x.corners, cornersHt: x.htCorners, resultConfirmed: true, resultSource: "registro", confirmedAt: f.confirmed_at || null, settledBy: "server" });
@@ -1699,6 +1716,7 @@ async function settleSignals() {
     const { error: uErr } = await admin.from("pronostici_segnali").update({ data: d, updated_at: new Date().toISOString() }).eq("user_id", r.user_id).eq("key", r.key);
     if (uErr) console.error("esiti: aggiornamento", uErr.message); else settled++;
   }
+  try { await setState("settleLast", { at: now, open: open.length, settled, wanted: new Set(wanted).size }); } catch { /* ok */ }
   return { open: open.length, settled, wanted: [...new Set(wanted)] };
 }
 async function runCron() {
@@ -1858,13 +1876,16 @@ Deno.serve(async (req) => {
     if (e) return json({ error: e.message }, 500);
     return json({ rows: data || [], nextOffset: data?.length === size ? offset + size : null, version: "3.71.0" });
   }
+  if (body.action === "diag") {
+    return json({ ver: "3.90.0", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast") });
+  }
   if (body.action === "signals") {
     const since = Number(body.since) || Date.now() - 2 * 86400e3;
     const { data, error: e2 } = await admin.from("pronostici_segnali").select("data,updated_at").eq("user_id", au.user.id)
       .gte("updated_at", new Date(since - 60e3).toISOString()).order("updated_at", { ascending: true }).limit(300);
     if (e2) return json({ error: e2.message }, 500);
     const rem: any = await getState("bzRemaining");
-    return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null, ver: "3.87.0" });
+    return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null, ver: "3.90.0" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
