@@ -2074,28 +2074,46 @@ function tipLiveEval(m) {
 }
 /* 3.36.0 — Storico permanente delle opportunità ottime, distinto dalla raccomandazione corrente. */
 /* 3.62.0 — filtro per etichette (Live e riepilogo di oggi) */
+/* 3.93.0 — filtri a SELEZIONE MULTIPLA: ogni sezione tiene un elenco di valori (vuoto = tutti); dentro la sezione vale "o", tra sezioni "e" */
+function tipFArr(v) { return Array.isArray(v) ? v.filter(function (x) { return x !== '' && x != null; }).map(String) : (v === '' || v == null ? [] : [String(v)]); }
+function tipFMatch(v, x) { var a = tipFArr(v); return !a.length || a.indexOf(String(x)) >= 0; }
+function tipFOn(o, k, v) { var a = tipFArr((o || {})[k]); return v === '' || v == null ? !a.length : a.indexOf(String(v)) >= 0; }
+function tipFToggle(o, k, v) {
+  v = v == null ? '' : String(v);
+  if (!v) { o[k] = []; return; }
+  var a = tipFArr(o[k]), i = a.indexOf(v);
+  if (i >= 0) a.splice(i, 1); else a.push(v);
+  o[k] = a;
+}
+function tipFRemove(o, k, v) { o[k] = v == null || v === '' ? [] : tipFArr(o[k]).filter(function (x) { return x !== String(v); }); }
+function tipFSyncChips(d, attr, k, o) {
+  d.querySelectorAll('[' + attr + '^="' + k + ':"]').forEach(function (x) { x.classList.toggle('on', tipFOn(o, k, x.getAttribute(attr).split(':')[1] || '')); });
+}
 function tipLblPass(prof, rit) {
   var f = tipUI.lblF || {};
-  return (!f.p || f.p === prof) && (!f.r || f.r === rit);
+  return tipFMatch(f.p, prof) && tipFMatch(f.r, rit);
 }
 /* 3.63.0 — filtri compatti: una sola riga con "Filtri" (apre un pannello) e i filtri attivi rimovibili */
 function tipLblFilterBar() {
   var f = tipUI.lblF || {}, act = [];
-  if (f.p) act.push('<button type="button" class="tip-lchip on" data-lblf="p:">' + TIP_PROF[f.p] + ' ✕</button>');
-  if (f.r) act.push('<button type="button" class="tip-lchip on" data-lblf="r:">' + TIP_RIT[f.r] + ' ✕</button>');
+  tipFArr(f.p).forEach(function (v) { act.push('<button type="button" class="tip-lchip on" data-lblx="p:' + v + '">' + (TIP_PROF[v] || v) + ' ✕</button>'); });
+  tipFArr(f.r).forEach(function (v) { act.push('<button type="button" class="tip-lchip on" data-lblx="r:' + v + '">' + (TIP_RIT[v] || v) + ' ✕</button>'); });
   return '<div class="tip-lblf"><button type="button" class="tip-lchip tip-lfbtn" data-lblsheet>⚲ Filtri' + (act.length ? ' (' + act.length + ')' : '') + '</button>' + act.join('') + '</div>';
 }
 function tipLblSheet() {
-  var f = tipUI.lblF || {}, chip = function (kind, v, t) { return '<button type="button" class="tip-lchip' + ((f[kind] || '') === v ? ' on' : '') + '" data-lblf="' + kind + ':' + v + '">' + t + '</button>'; };
+  var f = tipUI.lblF || {}, chip = function (kind, v, t) { return '<button type="button" class="tip-lchip' + (tipFOn(f, kind, v) ? ' on' : '') + '" data-lblf="' + kind + ':' + v + '">' + t + '</button>'; };
   var d = sheetModal(sheetHead('Filtri', { sub: 'Valgono per le giocate live e per i consigli di oggi' }) +
     '<div class="tip-sheet"><p class="tip-lfsec">Profilo (quote pre-partita)</p><div class="tip-lfgrid">' + chip('p', '', 'Tutte') + chip('p', 'gol', 'Da gol') + chip('p', 'medio', 'Media') + chip('p', 'pochi', 'Pochi gol') + chip('p', 'nq', 'Senza quote') + '</div>' +
     '<p class="tip-lfsec">Ritmo (statistiche live)</p><div class="tip-lfgrid">' + chip('r', '', 'Ogni ritmo') + chip('r', 'alto', 'Alto') + chip('r', 'norm', 'Normale') + chip('r', 'basso', 'Basso') + '</div></div>');
   d.classList.add('tip-dlg');
   d.querySelectorAll('[data-lblf]').forEach(function (b) {
-    b.onclick = function (ev) { ev.stopPropagation(); var kv = b.getAttribute('data-lblf').split(':'); tipUI.lblF = tipUI.lblF || {}; tipUI.lblF[kv[0]] = kv[1] || ''; d.close(); render(); };
+    b.onclick = function (ev) { ev.stopPropagation(); var kv = b.getAttribute('data-lblf').split(':'); tipUI.lblF = tipUI.lblF || {}; tipFToggle(tipUI.lblF, kv[0], kv[1] || ''); tipFSyncChips(d, 'data-lblf', kv[0], tipUI.lblF); };
   });
+  d.addEventListener('close', function () { render(); });
 }
 document.addEventListener('click', function (ev) {
+  var x = ev.target.closest && ev.target.closest('[data-lblx]');
+  if (x) { var kv = x.getAttribute('data-lblx').split(':'); tipUI.lblF = Object.assign({}, tipUI.lblF || {}); tipFRemove(tipUI.lblF, kv[0], kv[1]); render(); return; }
   var b = ev.target.closest && ev.target.closest('[data-lblsheet]');
   if (b) tipLblSheet();
 });
@@ -2140,13 +2158,16 @@ var TIP_F_LABEL = { tier: { excellent: 'Ottime', try: 'Da valutare' }, half: { 1
   q: { in: 'Passano filtro qualità', out: 'Esclusi dal filtro qualità' }, g: { 0: '0 gol segnati', 1: '1 gol segnato', 2: '2+ gol segnati' } };
 function tipEFilter(F, e) {
   F = F || {};
-  if (F.tier && (e.tier || 'excellent') !== F.tier) return false;
-  if (F.k && e.k !== F.k) return false;
-  if (F.lg && !tipLgIs(F.lg, e)) return false;
-  if (F.half && String(e.half || 1) !== String(F.half)) return false;
-  if (F.res && (e.res === 1 ? 'win' : e.res === 0 ? 'loss' : 'wait') !== F.res) return false;
-  if (F.q && (F.q === 'in') !== tipQualityPass(e)) return false;
-  if (F.g !== undefined && F.g !== '') { var G = (e.gh || 0) + (e.ga || 0); if (String(F.g) === '2' ? G < 2 : String(G) !== String(F.g)) return false; }
+  if (!tipFMatch(F.tier, e.tier || 'excellent')) return false;
+  if (!tipFMatch(F.k, e.k)) return false;
+  var lg = tipFArr(F.lg);
+  if (lg.length && !lg.some(function (v) { return tipLgIs(v, e); })) return false;
+  if (!tipFMatch(F.half, String(e.half || 1))) return false;
+  if (!tipFMatch(F.res, e.res === 1 ? 'win' : e.res === 0 ? 'loss' : 'wait')) return false;
+  var q = tipFArr(F.q);
+  if (q.length && !q.some(function (v) { return (v === 'in') === tipQualityPass(e); })) return false;
+  var g = tipFArr(F.g);
+  if (g.length) { var G = (e.gh || 0) + (e.ga || 0); if (!g.some(function (v) { return v === '2' ? G >= 2 : String(G) === v; })) return false; }
   return true;
 }
 /* sezioni del pannello: chip(kind, valore, testo) arriva da chi apre il pannello */
@@ -2167,16 +2188,17 @@ function tipEFilterSections(chip, sec, sample, hide) {
 }
 function tipEFilterChips(F, lf, clearAttr) {
   var out = [], x = function (key, label) { out.push('<button type="button" class="tip-lchip on" ' + clearAttr + '="' + key + '">' + U.esc(label) + ' ✕</button>'); };
+  var xs = function (key, arr, lab) { tipFArr(arr).forEach(function (v) { x(key + ':' + v, lab(v)); }); };
   F = F || {}; lf = lf || {};
-  if (F.tier) x('tier', TIP_F_LABEL.tier[F.tier]);
-  if (F.k) x('k', tipKindLabel(F.k));
-  if (F.half) x('half', TIP_F_LABEL.half[F.half]);
-  if (F.res) x('res', TIP_F_LABEL.res[F.res]);
-  if (F.g !== undefined && F.g !== '') x('g', TIP_F_LABEL.g[F.g]);
-  if (F.q) x('q', TIP_F_LABEL.q[F.q]);
-  if (F.lg) x('lg', tipLgLabel(F.lg));
-  if (lf.p) x('p', TIP_PROF[lf.p]);
-  if (lf.r) x('r', TIP_RIT[lf.r]);
+  xs('tier', F.tier, function (v) { return TIP_F_LABEL.tier[v] || v; });
+  xs('k', F.k, tipKindLabel);
+  xs('half', F.half, function (v) { return TIP_F_LABEL.half[v] || v; });
+  xs('res', F.res, function (v) { return TIP_F_LABEL.res[v] || v; });
+  xs('g', F.g, function (v) { return TIP_F_LABEL.g[v] || v; });
+  xs('q', F.q, function (v) { return TIP_F_LABEL.q[v] || v; });
+  xs('lg', F.lg, tipLgLabel);
+  xs('p', lf.p, function (v) { return TIP_PROF[v] || v; });
+  xs('r', lf.r, function (v) { return TIP_RIT[v] || v; });
   return out;
 }
 /* 3.81.0 — pannello filtri compatto: una griglia di pulsanti (sezione + valore scelto); tocchi e si aprono le alternative */
@@ -2201,9 +2223,15 @@ function tipFilterTabsBind(d, list, open) {
   var tabs = d.querySelectorAll('[data-ftab]'), panes = d.querySelectorAll('[data-fpane]');
   var label = function () {
     list.forEach(function (x, i) {
-      var t = tabs[i], p = panes[i], on = p && p.querySelector('.tip-lchip.on'), set, txt;
+      var t = tabs[i], p = panes[i], set, txt;
       if (x.label) { txt = x.label(); set = x.isSet ? x.isSet() : true; }
-      else { txt = on ? on.textContent.replace(/^\s+|\s+$/g, '') : 'Tutti'; var a = on && (on.getAttribute('data-stf') || on.getAttribute('data-arcf') || ''); set = !!(a && a.split(':')[1]); }
+      else {
+        /* selezione multipla: elenco di tutte le voci accese (senza "Tutti") */
+        var ons = p ? Array.prototype.slice.call(p.querySelectorAll('.tip-lchip.on')) : [];
+        var vals = ons.filter(function (o) { var a = o.getAttribute('data-stf') || o.getAttribute('data-arcf') || ''; return !!a.split(':')[1]; });
+        set = vals.length > 0;
+        txt = vals.length ? vals.map(function (o) { return o.textContent.replace(/^\s+|\s+$/g, ''); }).join(' · ') : (ons.length ? ons[0].textContent.replace(/^\s+|\s+$/g, '') : 'Tutti');
+      }
       t.querySelector('small').textContent = txt; t.classList.toggle('set', !!set);
     });
   };
@@ -2248,8 +2276,8 @@ function tipArcFilterBar() {
 function tipArcFilterSheet(openKey) {
   var F = tipUI.arcF = Object.assign({}, tipUI.arcF || {});
   var chip = function (kind, v, t) {
-    var cur = kind === 'p' || kind === 'r' ? ((tipUI.lblF || {})[kind] || '') : (F[kind] == null ? '' : String(F[kind]));
-    return '<button type="button" class="tip-lchip' + (cur === String(v) ? ' on' : '') + '" data-arcf="' + kind + ':' + v + '">' + t + '</button>';
+    var src = kind === 'p' || kind === 'r' ? (tipUI.lblF || {}) : F;
+    return '<button type="button" class="tip-lchip' + (tipFOn(src, kind, v) ? ' on' : '') + '" data-arcf="' + kind + ':' + v + '">' + t + '</button>';
   };
   var list = [], sec = function (t, body) { list.push({ t: t, body: body }); return ''; };
   tipEFilterSections(chip, sec, tipUI.splitSample || '', TIP_LIVE_HIDE);
@@ -2260,8 +2288,10 @@ function tipArcFilterSheet(openKey) {
     b.onclick = function (ev) {
       ev.stopPropagation();
       var kv = b.getAttribute('data-arcf').split(':'), k = kv[0], v = kv[1] || '';
-      if (k === 'p' || k === 'r') { tipUI.lblF = Object.assign({}, tipUI.lblF || {}); tipUI.lblF[k] = v; } else tipUI.arcF[k] = v;
-      d.querySelectorAll('[data-arcf^="' + k + ':"]').forEach(function (x) { x.classList.toggle('on', x === b); });
+      var tgt;
+      if (k === 'p' || k === 'r') { tipUI.lblF = Object.assign({}, tipUI.lblF || {}); tgt = tipUI.lblF; } else tgt = tipUI.arcF;
+      tipFToggle(tgt, k, v);
+      tipFSyncChips(d, 'data-arcf', k, tgt);
     };
   });
   tipFilterTabsBind(d, list, openKey ? TIP_F_SEC[openKey] : '');
@@ -2272,9 +2302,9 @@ document.addEventListener('click', function (ev) {
   var b = ev.target.closest && ev.target.closest('[data-arcfilters],[data-arcclear]');
   if (!b) return;
   if (b.hasAttribute('data-arcfilters')) return tipArcFilterSheet();
-  if (tipLongPressed(b)) return tipArcFilterSheet(b.getAttribute('data-arcclear'));
-  var k = b.getAttribute('data-arcclear');
-  if (k === 'p' || k === 'r') { tipUI.lblF = Object.assign({}, tipUI.lblF || {}); tipUI.lblF[k] = ''; } else { tipUI.arcF = Object.assign({}, tipUI.arcF || {}); tipUI.arcF[k] = ''; }
+  var kv = b.getAttribute('data-arcclear').split(':'), k = kv[0];
+  if (tipLongPressed(b)) return tipArcFilterSheet(k);
+  if (k === 'p' || k === 'r') { tipUI.lblF = Object.assign({}, tipUI.lblF || {}); tipFRemove(tipUI.lblF, k, kv[1]); } else { tipUI.arcF = Object.assign({}, tipUI.arcF || {}); tipFRemove(tipUI.arcF, k, kv[1]); }
   render();
 });
 function tipArchiveSplit(L) {
@@ -2312,15 +2342,19 @@ function tipMemRow(e) {
   var day = (e.date ? tipCap(tipDayLabel(e.date)) : '') + (e.t ? ' ' + new Date(e.t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '');
   var target = corner ? 'angoli ' + (e.cn != null ? e.cn : '?') + ' → +' + (e.need || 1) : sc + ' → ' + goal + '° gol';
   var f = function (txt, cls) { return txt ? '<span' + (cls ? ' class="' + cls + '"' : '') + '>' + txt + '</span>' : ''; };
+  /* 3.93.0 — scheda compatta: il punteggio sta accanto ai nomi (colore diverso) con la freccia verso il bersaglio
+     (es. \"1-0 → 2° gol\"); la % di probabilità sta sotto l'icona stabile / in prova (verde = ottima, giallo = da valutare) */
+  var arrow = corner ? '+' + (e.need || 1) + ' angoli' + (e.cn != null ? ' (ora ' + e.cn + ')' : '') : goal + '° gol';
+  var pct = typeof e.p === 'number' && isFinite(e.p) ? Math.round(e.p * 100) + '%' : '';
   var meta = f(U.esc(TIP_PLAY_SHORT[e.k] || e.k), 'tip-mem-kind') + f(U.esc(day)) + f((e.min || 0) + '’' + (firstHalf ? ' 1T' : '')) +
-    f(corner ? U.esc(sc) + ' · ' + U.esc(target) : U.esc(target)) + f(e.book ? '@' + Number(e.book).toFixed(2) : '') +
+    f(e.book ? '@' + Number(e.book).toFixed(2) : '') +
     f(Array.isArray(e.ft) ? 'finale ' + e.ft[0] + '-' + e.ft[1] : '') +
     f(e.played ? 'tua @' + e.played.q.toFixed(2) + ' · ' + e.played.s + '€' : '');
   /* 3.75.0 — stabile o in prova: sempre nello stesso punto, in alto a destra */
-  var kind = tipSampleIcon(e.trial, 'tip-mem-sample');
+  var kind = '<div class="tip-mem-side">' + tipSampleIcon(e.trial, 'tip-mem-sample') + (pct ? '<small class="tip-mem-pct tip-mem-pct-' + t + '" title="Probabilità stimata">' + pct + '</small>' : '') + '</div>';
   return '<div class="tip-memory-row tip-mem2 tip-memory-' + state + (e.trial ? ' tip-mem-istrial' : '') + '">' + kind +
     '<div class="tip-mem-top"><span class="tip-history-tier tip-history-' + t + '">' + (t === 'try' ? 'DA VALUTARE' : 'OTTIMA') + '</span>' + chips + '</div>' +
-    '<b class="tip-mem-name">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</b>' +
+    '<b class="tip-mem-name">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + ' <span class="tip-mem-sc">' + U.esc(sc) + '</span><span class="tip-mem-arrow">→ ' + U.esc(arrow) + '</span></b>' +
     '<div class="tip-mem-meta"><span class="tip-mem-res tip-mem-res-' + state + '" role="img" aria-label="' + said + '" title="' + said + '">' + icon + '</span>' + meta + '</div></div>';
 }
 function tipExcellentArchive() {
@@ -3633,7 +3667,7 @@ function tipStatLog(anySample) {
   return base.filter(function (e) {
     var d = tipLiveDay(e);
     return d >= R.from && d <= R.to && tipEFilter(F, e) &&
-      (!lf.p || (e.prof || 'nq') === lf.p) && (!lf.r || (e.rit || 'norm') === lf.r);
+      tipFMatch(lf.p, e.prof || 'nq') && tipFMatch(lf.r, e.rit || 'norm');
   }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
 }
 function tipStatCount(arr) {
@@ -3654,14 +3688,14 @@ function tipPreRows(list) {
   list.forEach(function (m) {
     if (m.cancelled || m.date < R.from || m.date > R.to || tipKickoff(m).getTime() < tipStatsFrom()) return;
     var lg = tipLeagueTier(m);
-    if (F.lg && !tipLgIs(F.lg, m)) return;
+    var flg = tipFArr(F.lg);
+    if (flg.length && !flg.some(function (v) { return tipLgIs(v, m); })) return;
     (m.picks || []).forEach(function (p) {
-      if (F.m && p.m !== F.m) return;
+      if (!tipFMatch(F.m, p.m)) return;
       var isTop = !!top[m.id + '|' + p.m];
       var topKnown = !!(m.preIssue && m.preIssue.top != null);
-      if (F.top === 'top' && !isTop) return;
-      if (F.top === 'no' && (!topKnown || isTop)) return;
-      if (F.top === 'unknown' && topKnown) return;
+      var ft = tipFArr(F.top);
+      if (ft.length && !ft.some(function (v) { return v === 'top' ? isTop : v === 'no' ? (topKnown && !isTop) : v === 'unknown' ? !topKnown : false; })) return;
       var o = tipOutcome(m, p).s;
       out.push({ m: m, p: p, top: isTop, topKnown: topKnown, lg: lg, res: o === 'V' ? 1 : o === 'P' ? 0 : null, prob: (p.p || 0) / 100, src: (m.preIssue && m.preIssue.inputs.src) || m.src || 'unknown' });
     });
@@ -3837,9 +3871,9 @@ function tipStatChips() {
     if (F.sample === 'stable') x('sample', 'Solo stabili');
     act = act.concat(tipEFilterChips(F, lf, 'data-stclear'));
   } else {
-    if (F.m) x('m', (TIP_MARKETS.find(function (k) { return k[0] === F.m; }) || [0, F.m])[1]);
-    if (F.lg) x('lg', tipLgLabel(F.lg));
-    if (F.top) x('top', F.top === 'top' ? 'Solo Top' : F.top === 'unknown' ? 'Top non documentata' : 'Fuori Top');
+    tipFArr(F.m).forEach(function (v) { x('m:' + v, (TIP_MARKETS.find(function (k) { return k[0] === v; }) || [0, v])[1]); });
+    tipFArr(F.lg).forEach(function (v) { x('lg:' + v, tipLgLabel(v)); });
+    tipFArr(F.top).forEach(function (v) { x('top:' + v, v === 'top' ? 'Solo Top' : v === 'unknown' ? 'Top non documentata' : 'Fuori Top'); });
   }
   return '<div class="tip-lblf"><button type="button" class="tip-lchip tip-lfbtn" data-stfilters>⚲ Filtri' + (act.length ? ' (' + act.length + ')' : '') + '</button><button type="button" class="tip-lchip on" data-stfopen="period">📅 ' + U.esc(tipStRangeLabel()) + '</button>' + act.join('') + tipArchiveChip() + '</div>';
 }
@@ -3861,8 +3895,8 @@ function tipCalHtml() {
 function tipStatFilterSheet(openKey) {
   var live = (tipUI.stArea || 'live') === 'live';
   var chip = function (kind, v, t) {
-    var cur = kind === 'p' || kind === 'r' ? ((tipUI.lblF || {})[kind] || '') : ((live ? tipUI.stF : tipUI.stPF) || {})[kind] || '';
-    return '<button type="button" class="tip-lchip' + (cur === String(v) ? ' on' : '') + '" data-stf="' + kind + ':' + v + '">' + t + '</button>';
+    var src = kind === 'p' || kind === 'r' ? (tipUI.lblF || {}) : ((live ? tipUI.stF : tipUI.stPF) || {});
+    return '<button type="button" class="tip-lchip' + (tipFOn(src, kind, v) ? ' on' : '') + '" data-stf="' + kind + ':' + v + '">' + t + '</button>';
   };
   var list = [], sec = function (t, body, lab, isSet) { list.push({ t: t, body: body, label: lab, isSet: isSet }); return ''; };
   var quick = '<div class="tip-lfgrid">' + [['Oggi', 0, 0], ['Ieri', 1, 1], ['7 giorni', 6, 0], ['30 giorni', 29, 0], ['Tutto', -1, 0]].map(function (q) { return '<button type="button" class="tip-lchip" data-calq="' + q[1] + ':' + q[2] + '">' + q[0] + '</button>'; }).join('') + '</div>';
@@ -3909,10 +3943,12 @@ function tipStatFilterSheet(openKey) {
     b.onclick = function (ev) {
       ev.stopPropagation();
       var kv = b.getAttribute('data-stf').split(':'), k = kv[0], v = kv[1] || '';
-      if (k === 'p' || k === 'r') { tipUI.lblF = tipUI.lblF || {}; tipUI.lblF[k] = v; }
-      else if (live) { tipUI.stF = tipUI.stF || {}; tipUI.stF[k] = v; }
-      else { tipUI.stPF = tipUI.stPF || {}; tipUI.stPF[k] = v; }
-      d.querySelectorAll('[data-stf^="' + k + ':"]').forEach(function (x) { x.classList.toggle('on', x === b); });
+      var tgt;
+      if (k === 'p' || k === 'r') { tipUI.lblF = tipUI.lblF || {}; tgt = tipUI.lblF; }
+      else if (live) { tipUI.stF = tipUI.stF || {}; tgt = tipUI.stF; }
+      else { tipUI.stPF = tipUI.stPF || {}; tgt = tipUI.stPF; }
+      if (k === 'sample') { tgt[k] = v; d.querySelectorAll('[data-stf^="sample:"]').forEach(function (x) { x.classList.toggle('on', x === b); }); }
+      else { tipFToggle(tgt, k, v); tipFSyncChips(d, 'data-stf', k, tgt); }
     };
   });
   tipFilterTabsBind(d, list, openKey ? TIP_F_SEC[openKey] : '');
@@ -3924,16 +3960,16 @@ document.addEventListener('click', function (ev) {
   if (b && b.hasAttribute('data-stfopen')) return tipStatFilterSheet(b.getAttribute('data-stfopen'));
   if (!b) return;
   if (b.hasAttribute('data-stfilters')) return tipStatFilterSheet();
-  if (b.hasAttribute('data-stclear') && tipLongPressed(b)) return tipStatFilterSheet(b.getAttribute('data-stclear'));
+  if (b.hasAttribute('data-stclear') && tipLongPressed(b)) return tipStatFilterSheet(b.getAttribute('data-stclear').split(':')[0]);
   if (b.dataset.sttab) tipUI.stTab = b.dataset.sttab;
   else if (b.dataset.starea) { tipUI.stArea = b.dataset.starea; tipUI.histN = 10; tipUI.perN = 30; }
   else if (b.hasAttribute('data-hist-more')) tipUI.histN = (tipUI.histN || 10) + 10;
   else if (b.hasAttribute('data-per-more')) tipUI.perN = (tipUI.perN || 30) + 30;
   else {
-    var k = b.dataset.stclear;
-    if (k === 'p' || k === 'r') { tipUI.lblF = tipUI.lblF || {}; tipUI.lblF[k] = ''; }
-    else if ((tipUI.stArea || 'live') === 'live') { tipUI.stF = tipUI.stF || {}; tipUI.stF[k] = ''; }
-    else { tipUI.stPF = tipUI.stPF || {}; tipUI.stPF[k] = ''; }
+    var kv = b.dataset.stclear.split(':'), k = kv[0], v = kv[1];
+    if (k === 'p' || k === 'r') { tipUI.lblF = tipUI.lblF || {}; tipFRemove(tipUI.lblF, k, v); }
+    else if ((tipUI.stArea || 'live') === 'live') { tipUI.stF = tipUI.stF || {}; if (k === 'sample') tipUI.stF[k] = ''; else tipFRemove(tipUI.stF, k, v); }
+    else { tipUI.stPF = tipUI.stPF || {}; tipFRemove(tipUI.stPF, k, v); }
   }
   render();
 });
