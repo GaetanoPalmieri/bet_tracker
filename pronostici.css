@@ -942,3 +942,17 @@ dialog#editor.sheet .sheet-close.tip-sheet-x{background:color-mix(in srgb,var(--
 /* 3.92.0 — Storico: riquadro del periodo prima dei giorni */
 .tip-perdays{margin:16px 4px 8px;font-size:12px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:var(--suite-text-soft)}
 .tip-histday.tip-period>summary b{white-space:nowrap}
+/* 3.94.0 — % colorata nelle schede di Storico e Consigli di oggi: verde = OTTIMA, giallo = DA VALUTARE
+   (prima ".tip-memory-row small" la riportava al grigio) */
+.tip-memory-row.tip-mem2 .tip-mem-pct{font-size:11.5px;font-weight:900;padding:1px 5px;border-radius:6px}
+.tip-memory-row.tip-mem2 .tip-mem-pct-excellent{color:#51e2a4;background:rgba(81,226,164,.14)}
+.tip-memory-row.tip-mem2 .tip-mem-pct-try{color:#ffc16c;background:rgba(255,193,108,.15)}
+:root[data-theme="light"] .tip-memory-row.tip-mem2 .tip-mem-pct-excellent{color:#0e7a50;background:rgba(14,122,80,.1)}
+:root[data-theme="light"] .tip-memory-row.tip-mem2 .tip-mem-pct-try{color:#a35f00;background:rgba(163,95,0,.1)}
+/* 3.94.0 — Esclusi dal filtro qualità */
+.tip-qbox>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tip-qbox .tip-qsum{font-size:12px;font-weight:700;color:var(--suite-text-soft)}
+.tip-qtab th.muted{font-weight:600;font-size:11px}
+.tip-memory-row.tip-mem2 .tip-mem-why{display:block;font-size:11px;font-weight:700;color:#ff9a8a}
+:root[data-theme="light"] .tip-memory-row.tip-mem2 .tip-mem-why{color:#b3261e}
+.tip-qtab th{white-space:nowrap}

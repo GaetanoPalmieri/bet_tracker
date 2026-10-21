@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.92.0
+// Versione app: 3.94.1
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -984,7 +984,9 @@ var TIP_PLAY_NAME = {
   t1w: '1° tempo · aspetta e gioca il gol entro l’intervallo a quota 1.50',
 };
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80',
-  tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80' };
+  tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80', tf1: '+1 1T partita da gol', tf2: '+1 2T partita da gol' };
+TIP_PLAY_NAME.tf1 = 'IN PROVA · partita da gol: +1 gol entro l’intervallo (15’-38’, già almeno 2 gol) · tutti i campionati';
+TIP_PLAY_NAME.tf2 = 'IN PROVA · partita da gol: +1 gol entro la fine (46’-80’, già almeno 3 gol a ritmo da 4+ gol a partita) · tutti i campionati';
 var TIP_CORNER_WIN = { 1: { from: 36, to: 42, end: 45, stop: 2, K: 15, base: 10 }, 2: { from: 82, to: 87, end: 90, stop: 4, K: 27, base: 10 } };
 function tipCornerLineMean(L) {
   if (!U.finite(L) || L <= 0) return null;
@@ -1110,6 +1112,36 @@ function tipLiveFactors(r, x, pr, g) {
   return { fp: fp == null ? null : Math.round(fp * 100) / 100, fav: fav, lgAvg: lgAvg == null ? null : Math.round(lgAvg * 100) / 100, lg: (r && r.lgTier) || 'major',
     mStr: mStr, mLg: mLg, mPr: Math.round(mPr * 100) / 100, R: pr ? pr.R : null, diffFav: diffFav };
 }
+/* 3.94.0 — PARTITA DA GOL (IN PROVA): partite già "pazze", con tanti gol rispetto al minuto, in TUTTI i campionati.
+   1T: 15’-38’ con almeno 2 gol → +1 gol entro l’intervallo. 2T: 46’-80’ con almeno 3 gol e ritmo ≥ 4 gol a partita → +1 gol entro la fine.
+   Stima = modello live (linea h1 / n1, che conta già tiri, xG, punteggio) mescolata 50/50 con il ritmo gol visto in campo
+   (tirato verso i gol attesi prepartita con 30 minuti virtuali, al massimo 2,2 volte le attese, ridotto del 15% perché
+   il ritmo tende a calare). Correzioni: pressione degli ultimi minuti, gol recente (≤10’) o lontano (≥25’), scarto
+   (3+ gol di scarto: chi vince tira i remi in barca), entrambe a segno. Poi la stessa correzione dell’ottimismo sopra il 70%.
+   Campionati: soglie più alte fuori dai maggiori (TIP_LG_EXTRA), come per gli altri segnali.
+   Il FILTRO QUALITÀ non la blocca (TIP_QUALITY_FREE): è pensata proprio per le partite da gol dei campionati "minori". */
+var TIP_FEST = { 1: { from: 15, to: 38, minG: 2, end: 47, green: 0.64, warm: 0.58 }, 2: { from: 46, to: 80, minG: 3, end: 94, pace: 4.0, green: 0.74, warm: 0.67 } };
+function tipFestival(r, min, half, x, pr, g, G) {
+  var W = TIP_FEST[half];
+  if (!W || !r || !r.used || !U.finite(min) || min < W.from || min > W.to || G < W.minG) return null;
+  var pace = G / Math.max(min, 20) * 90;
+  if (W.pace && pace < W.pace) return null;
+  var line = (r.lines || []).find(function (z) { return z.k === (half === 1 ? 'h1' : 'n1'); });
+  if (!line || !(line.p > 0.01 && line.p < 0.995)) return null;
+  var lam0 = U.finite(r.lamPre) ? r.lamPre : U.finite(r.lam) ? r.lam : 2.7, K = 30;
+  var rate = Math.min((G + lam0 / 90 * K) / (min + K), lam0 / 90 * 2.2);
+  var lamObs = Math.max(0.01, rate * Math.max(1, W.end - min) * 0.85), lamMod = -Math.log(1 - line.p);
+  var lam = Math.exp(0.5 * Math.log(lamMod) + 0.5 * Math.log(lamObs));
+  var f = tipLiveFactors(r, x, pr, g);
+  var last = x && U.finite(x.lastGoal) && x.lastGoal <= min ? min - x.lastGoal : null;
+  var mLast = last == null ? 1 : last <= 10 ? 1.05 : last >= 25 ? 0.9 : 1;
+  var diff = Math.abs((g[0] || 0) - (g[1] || 0)), mDiff = diff >= 3 ? 0.9 : diff <= 1 ? 1.04 : 1;
+  var mBoth = (g[0] || 0) > 0 && (g[1] || 0) > 0 ? 1.03 : 1, mult = f.mPr * mLast * mDiff * mBoth;
+  var p = tipLmCal(1 - Math.exp(-lam * mult)), ex = TIP_LG_EXTRA[f.lg] || 0;
+  var rd = function (v, n) { var q = Math.pow(10, n || 2); return Math.round(v * q) / q; };
+  return { k: half === 1 ? 'tf1' : 'tf2', p: p, green: Math.min(0.9, W.green + ex), warm: Math.min(0.85, W.warm + ex),
+    info: { pace: rd(pace, 1), base: rd(line.p, 3), lam0: rd(lam0), lamObs: rd(lamObs), lamMod: rd(lamMod), mPr: f.mPr, mLast: mLast, mDiff: mDiff, mBoth: mBoth, lastAgo: last, lg: f.lg, lgExtra: ex } };
+}
 function tipTrialPlays(r, min, half, x, prev) {
   var out = [], st = x && x.stats, g = (x && x.goals) || [0, 0], G = (g[0] || 0) + (g[1] || 0);
   if (!r || !st || min == null) return out;
@@ -1166,6 +1198,9 @@ function tipTrialPlays(r, min, half, x, prev) {
       out.push(mk('tn2', 1 - Math.pow(1 - nL, mL), 0.62, 0.55, { factors: Object.assign({ base: Math.round(nL * 1000) / 1000, mult: Math.round(mL * 100) / 100, mState: mS }, fL) }));
     }
   }
+  /* 3.94.0 — partita da gol: tutti i campionati, anche quando le giocate stabili parlano già */
+  var fest = tipFestival(r, min, half, x, pr, g, G);
+  if (fest) out.push(mk(fest.k, fest.p, fest.green, fest.warm, { fest: fest.info }));
   /* angoli: 1T 36'-42' (entro l'intervallo), 2T 82'-87' (entro la fine) */
   var corner = tipCornerEstimate(min, x.goals, st, prev, x.addedTime, half, x);
   if (corner) {
@@ -1185,12 +1220,12 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.92.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.94.0',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
     k: x.k, tier: x.green ? 'excellent' : 'try', conditional: !!x.at, costly: !!x.costly, res: (x.at || x.costly || x.lowBook) ? 'skip' : null, min: ctx.min, half: ctx.half, gh: ctx.gh || 0, ga: ctx.ga || 0, p: Math.round((x.evalP == null ? x.p : x.evalP) * 1000) / 1000, rawP: Math.round(x.p * 1000) / 1000,
-    legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }), prof: x.prof, rit: x.rit, lg: x.lg, snap: x.snap, pressure: x.pressure, factors: x.factors, stats: (function () { var d = (tipUI.liveData || {})[m.id]; return d && d.stats ? d.stats : undefined; })(), at: x.at, ts: x.ts, minQ: x.minQ ? Math.round(x.minQ * 100) / 100 : undefined, book: x.book || undefined,
+    legs: x.legs.map(function (l) { return Math.round(l.p * 1000) / 1000; }), prof: x.prof, rit: x.rit, lg: x.lg, snap: x.snap, pressure: x.pressure, factors: x.factors, fest: x.fest, stats: (function () { var d = (tipUI.liveData || {})[m.id]; return d && d.stats ? d.stats : undefined; })(), at: x.at, ts: x.ts, minQ: x.minQ ? Math.round(x.minQ * 100) / 100 : undefined, book: x.book || undefined,
     risk: Math.round(x.cost.risk * 100) / 100, win: Math.round(x.cost.win * 100) / 100, t: Date.now() }));
 }
 function tipPlayThr(k, min) { var t = TIP_PLAY_THR[k]; return t ? tipLmInterp(t, min) / 100 : 1; }
@@ -1476,11 +1511,14 @@ function tipAlertGroup(k) {
   k = String(k || '');
   if (/^th/.test(k)) return 'cor1';
   if (/^tc/.test(k)) return 'cor2';
-  return k === 'tp1' || k === 'tq1' || k === 'tg1' || k.indexOf('t1') === 0 ? 'gol1' : 'gol2';
+  return k === 'tp1' || k === 'tq1' || k === 'tg1' || k === 'tf1' || k.indexOf('t1') === 0 ? 'gol1' : 'gol2';
 }
 var TIP_QUALITY_MINP = 0.65, TIP_QUALITY_LG = { major: 1, 'minor+': 1, 'youth+': 1 };
+/* 3.94.0 — segnali che il filtro qualità non blocca mai (partite da gol: tutti i campionati) */
+var TIP_QUALITY_FREE = { tf1: 1, tf2: 1 };
 function tipQualityPass(e) {
   if (!e) return false;
+  if (TIP_QUALITY_FREE[e.k]) return true;
   var lg = e.lg || tipLeagueTier({ league: e.league, home: e.home, away: e.away });
   if (!TIP_QUALITY_LG[lg]) return false;
   return /^t[ch][12]$/.test(String(e.k || '')) || (e.p || 0) >= TIP_QUALITY_MINP;
@@ -1606,7 +1644,7 @@ async function lgTrack(list: any[], wanted: string[] = []) {
     const row = { af_id: r.afId, league: r.league, home: r.home || null, away: r.away || null,
       kickoff: r.kickoff, last_min: r.elapsed, goals: r.goals, ht: r.ht || null,
       corners: [sd[0]?.c ?? null, sd[1]?.c ?? null], ht_corners: r.htCorners || null, goal_list: Array.isArray(r.goalList) && r.goalList.length === r.goals[0] + r.goals[1] ? r.goalList : null, confirmed: true,
-      confirmed_at: new Date(now).toISOString(), source: "totalcorner", model_version: "3.92.0" };
+      confirmed_at: new Date(now).toISOString(), source: "totalcorner", model_version: "3.94.0" };
     let { error } = await admin.from("pronostici_finali").upsert(row, { onConflict: "af_id" });
     /* senza la migrazione 3.86 la colonna goal_list non c'è: si salva comunque il resto */
     if (error && /goal_list/.test(error.message)) { const { goal_list: _g, ...rest } = row as any; ({ error } = await admin.from("pronostici_finali").upsert(rest, { onConflict: "af_id" })); }
@@ -1702,7 +1740,7 @@ function tipPlayOutcome(e, x) {
     if (!Array.isArray(hc) || hc.length !== 2 || !hc.every(function (n) { return Number.isInteger(n) && n >= 0; }) || e.cn == null || hc[0] + hc[1] < e.cn) return null;
     return hc[0] + hc[1] - e.cn >= (e.need || (e.k === 'th2' ? 2 : 1)) ? 1 : 0;
   }
-  if (e.k === 'tp1' || e.k === 'tq1' || e.k === 'tg1') return HT == null ? null : HT > G ? 1 : 0;
+  if (e.k === 'tp1' || e.k === 'tq1' || e.k === 'tg1' || e.k === 'tf1') return HT == null ? null : HT > G ? 1 : 0;
   if (e.k === 'tq2' || e.k === 'tn2') return FT > G ? 1 : 0;
   if (e.k === 'tp2') return FT > G ? 1 : 0;
   if (e.k === 't2w' || e.k === 't1w') {
@@ -1917,15 +1955,20 @@ Deno.serve(async (req) => {
     return json({ rows: data || [], nextOffset: data?.length === size ? offset + size : null, version: "3.71.0" });
   }
   if (body.action === "diag") {
-    return json({ ver: "3.92.0", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast") });
+    return json({ ver: "3.94.1", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast") });
   }
   if (body.action === "signals") {
-    const since = Number(body.since) || Date.now() - 2 * 86400e3;
-    const { data, error: e2 } = await admin.from("pronostici_segnali").select("data,updated_at").eq("user_id", au.user.id)
-      .gte("updated_at", new Date(since - 60e3).toISOString()).order("updated_at", { ascending: true }).limit(300);
+    /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
+       segnale: quando la chiusura automatica degli esiti ritoccava più di 300 segnali vecchi, la stessa pagina tornava
+       sempre uguale e i segnali nuovi non arrivavano più (consigli di oggi e statistiche ferme). */
+    const size = 500;
+    let q = admin.from("pronostici_segnali").select("data,updated_at").eq("user_id", au.user.id);
+    if (typeof body.cursor === "string" && body.cursor) q = q.gt("updated_at", body.cursor);
+    else q = q.gte("updated_at", new Date((Number(body.since) || Date.now() - 2 * 86400e3) - 60e3).toISOString());
+    const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
-    const rem: any = await getState("bzRemaining");
-    return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null, ver: "3.92.0" });
+    const rows = data || [], rem: any = await getState("bzRemaining");
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "3.94.1" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
