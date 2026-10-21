@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.90.0
+// Versione app: 3.92.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1185,7 +1185,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.90.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.92.0',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -1229,6 +1229,25 @@ function tipLeagueTier(m) {
   return tipLeagueStrong(m) ? 'minor+' : 'minor';
 }
 var TIP_LG_WOMEN = /women|femenin|feminin|frauen|damallsvenskan|toppserien|\bwsl\b|liga f\b|\(w\)|\bw$/i;
+/* 3.91.0 — TOP CAMPIONATI E COPPE: le 5 grandi leghe, Eredivisie, Portogallo, coppe europee e grandi tornei
+   per nazionali. I nomi arrivano in due forme ("England Premier League" dal live, "Premier League" dai pronostici):
+   si accetta il nome esatto, con o senza il Paese davanti, così "Brazil Serie A" o "Premier League 2" restano fuori. */
+var TIP_LG_TOP = [
+  /^(england |english )?premier league$/, /^(spain |spanish )?la ?liga( ea sports)?$/, /^(italy |italian )?serie a$/,
+  /^(germany |german )?bundesliga$/, /^(france |french )?ligue 1( mcdonald'?s)?$/, /^(netherlands |holland |dutch )?eredivisie$/,
+  /^(portugal |portuguese )?(primeira liga|liga portugal( betclic)?)$/,
+  /^(uefa )?champions league$/, /^(uefa )?europa league$/, /^(uefa )?(europa )?conference league$/, /^uefa super cup$/,
+  /^(uefa )?nations league( [a-d])?$/, /^(fifa )?world cup$/, /^world cup qualification (europe|uefa)$/, /^(uefa )?euro( 20\d\d)?$/, /^(uefa )?european championship$/
+];
+function tipLeagueTop(m) {
+  var tier = m && m.lg ? m.lg : tipLeagueTier(m);
+  if (tier === 'women' || tier === 'youth' || tier === 'youth+') return false;
+  /* "Paese · Campionato" (scansione live): il Paese resta, così "Brazil · Serie A" non diventa la Serie A italiana */
+  var raw = String((m && m.league) || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(), parts = raw.split(' · ');
+  if (parts.length === 2 && parts[1].indexOf(parts[0].trim() + ' ') === 0) parts = [parts[1]];
+  var s = parts.join(' ').replace(/\s+/g, ' ').trim();
+  return TIP_LG_TOP.some(function (re) { return re.test(s); });
+}
 var TIP_LG_EXTRA = { major: 0, 'minor+': 0.02, minor: 0.04, 'youth+': 0.03, youth: 0.06, women: 0.06 };
 var TIP_STEP1T_ON = false;
 var TIP_K_OFF = { t1s18: 1, t2u18: 1, tp1: 1, tp2: 1, tc2: 1, th2: 1, tq1: 1 };
@@ -1439,6 +1458,19 @@ async function send(sub: any, payload: unknown) {
     return "error";
   }
 }
+/* 3.91.0 — invio a tutti i telefoni dell'utente; se nessun invio riesce (iscrizione scaduta, chiavi VAPID mancanti)
+   il segnale lo registra, così "Controllo notifiche" nell'app non dice "notificato" quando non è arrivato nulla */
+async function pushAll(u: any, payload: any, e: any) {
+  const res: string[] = [];
+  for (const s of u.subs) res.push(await send(s, payload));
+  const ok = res.filter((r) => r === "ok").length;
+  if (!ok) {
+    const why = !res.length ? "nessun telefono iscritto" : res.includes("novapid") ? "chiavi VAPID mancanti sul server" : res.every((r) => r === "gone") ? "iscrizione del telefono scaduta: riattiva le notifiche" : "invio non riuscito";
+    e.push = { sent: false, why, at: Date.now() };
+    try { await admin.from("pronostici_segnali").update({ data: e, pushed: null, updated_at: new Date().toISOString() }).eq("user_id", u.id).eq("key", e.key); } catch { /* ok */ }
+  }
+  return ok;
+}
 var TIP_ALERT_GROUPS = [['gol1', 'Gol 1° tempo'], ['gol2', 'Gol 2° tempo'], ['cor1', 'Angoli 1° tempo'], ['cor2', 'Angoli 2° tempo']];
 function tipAlertGroup(k) {
   k = String(k || '');
@@ -1471,6 +1503,7 @@ function tipAlertWhy(A, e) {
   if (e.trial ? A.trial === false : A.stable === false) return e.trial ? 'segnali in prova spenti' : 'segnali stabili spenti';
   if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return e.tier === 'excellent' ? 'OTTIME spente' : 'DA VALUTARE spente';
   if (A[tipAlertGroup(e.k)] === false) return 'tipo ' + ((TIP_ALERT_GROUPS.find(function (g) { return g[0] === tipAlertGroup(e.k); }) || [0, ''])[1]).toLowerCase() + ' spento';
+  if (A.top && !tipLeagueTop(e)) return 'escluso da Solo top campionati';
   if (A.quality !== false && !tipQualityPass(e)) return 'escluso da Solo qualità';
   if (A.off && A.off[e.k]) return 'segnale spento negli avvisi';
   return '';
@@ -1573,7 +1606,7 @@ async function lgTrack(list: any[], wanted: string[] = []) {
     const row = { af_id: r.afId, league: r.league, home: r.home || null, away: r.away || null,
       kickoff: r.kickoff, last_min: r.elapsed, goals: r.goals, ht: r.ht || null,
       corners: [sd[0]?.c ?? null, sd[1]?.c ?? null], ht_corners: r.htCorners || null, goal_list: Array.isArray(r.goalList) && r.goalList.length === r.goals[0] + r.goals[1] ? r.goalList : null, confirmed: true,
-      confirmed_at: new Date(now).toISOString(), source: "totalcorner", model_version: "3.90.0" };
+      confirmed_at: new Date(now).toISOString(), source: "totalcorner", model_version: "3.92.0" };
     let { error } = await admin.from("pronostici_finali").upsert(row, { onConflict: "af_id" });
     /* senza la migrazione 3.86 la colonna goal_list non c'è: si salva comunque il resto */
     if (error && /goal_list/.test(error.message)) { const { goal_list: _g, ...rest } = row as any; ({ error } = await admin.from("pronostici_finali").upsert(rest, { onConflict: "af_id" })); }
@@ -1777,7 +1810,8 @@ async function runAlerts() {
       if (!y) continue;
       evaluated++;
       if (y.x.stats && y.x.stats.side && y.min != null) snaps.push({ id: y.m.id, snap: { min: y.min, half: y.half, side: y.x.stats.side, at: now } });
-      if (y.half === 1 && y.min < 15) continue;
+      /* 3.91.0 — prima dei 15' si valutano solo i segnali in prova (gol 1T presto parte dall'8'): prima
+         questo controllo li saltava tutti e "gol 1T presto" dal server non arrivava quasi mai */
       /* 3.68.0 — segnali IN PROVA: salvati come gli altri (senza notifica) */
       try {
         const ctxT = { min: y.min, half: y.half, gh: y.x.goals[0] || 0, ga: y.x.goals[1] || 0 };
@@ -1796,10 +1830,11 @@ async function runAlerts() {
           const { error: tErr } = await admin.from("pronostici_segnali").upsert({ user_id: u.id, key: eT.key, tier: eT.tier, data: eT, updated_at: new Date().toISOString(), pushed: pushT ? eT.tier : null }, { onConflict: "user_id,key" });
           if (!tErr) {
             known.set(eT.key, eT.tier); newSig++;
-            if (pushT) for (const s of u.subs) if ((await send(s, message(eT, tp, upT))) === "ok") sent++;
+            if (pushT) { const n = await pushAll(u, message(eT, tp, upT), eT); sent += n; }
           }
         }
       } catch (e) { console.error("prova", (e as Error).message); }
+      if (y.half === 1 && y.min < 15) continue;
       let plays = tipPlays(y.r, y.min, y.half);
       let best = tipPlayBest(plays);
       if (!best) continue;
@@ -1822,8 +1857,13 @@ async function runAlerts() {
       const whyE = tipAlertWhy(u.prefs, e);
       let pushE: any = !whyE ? e : null, pushX: any = best;
       if (!pushE) {
-        const alt = plays.find((p: any) => p !== best && (p.green || p.warm) && tipAlertWants(u.prefs, { k: p.k, tier: p.green ? "excellent" : "try", trial: false }));
-        if (alt) { pushE = tipPlayEntry(y.m, ctx, alt, x.afId); pushE.t = now; pushX = alt; }
+        /* 3.91.0 — l'alternativa si controlla come segnale completo (probabilità e campionato): prima mancavano e
+           "Solo qualità" la scartava sempre */
+        for (const p of plays) {
+          if (p === best || !(p.green || p.warm)) continue;
+          const cand = tipPlayEntry(y.m, ctx, p, x.afId);
+          if (tipAlertWants(u.prefs, cand)) { pushE = cand; pushE.t = now; pushX = p; break; }
+        }
       }
       const wantPush = !!pushE;
       e.push = { sent: wantPush, why: wantPush ? (pushE === e ? "" : "notificato come " + (TIP_PLAY_SHORT[pushX.k] || pushX.k)) : whyE, at: now };
@@ -1832,7 +1872,7 @@ async function runAlerts() {
       if (insErr) { console.error("segnali", insErr.message); continue; }
       known.set(e.key, e.tier);
       newSig++;
-      if (wantPush) for (const s of u.subs) if ((await send(s, message(pushE, pushX, upgraded))) === "ok") sent++;
+      if (wantPush) { const n = await pushAll(u, message(pushE, pushX, upgraded), e); sent += n; }
     }
     /* storico delle scansioni (serve al modello completo dopo 5 minuti) */
     if (snaps.length) {
@@ -1877,7 +1917,7 @@ Deno.serve(async (req) => {
     return json({ rows: data || [], nextOffset: data?.length === size ? offset + size : null, version: "3.71.0" });
   }
   if (body.action === "diag") {
-    return json({ ver: "3.90.0", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast") });
+    return json({ ver: "3.92.0", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast") });
   }
   if (body.action === "signals") {
     const since = Number(body.since) || Date.now() - 2 * 86400e3;
@@ -1885,7 +1925,7 @@ Deno.serve(async (req) => {
       .gte("updated_at", new Date(since - 60e3).toISOString()).order("updated_at", { ascending: true }).limit(300);
     if (e2) return json({ error: e2.message }, 500);
     const rem: any = await getState("bzRemaining");
-    return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null, ver: "3.90.0" });
+    return json({ signals: (data || []).map((r: any) => r.data), bzRemaining: rem?.v ?? null, ver: "3.92.0" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */

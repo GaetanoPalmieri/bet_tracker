@@ -927,3 +927,6 @@ dialog#editor.sheet .sheet-btn.tip-sheet-reset{width:auto!important;min-width:0!
 dialog#editor.sheet .sheet-btn.tip-sheet-ok{font-size:22px!important;font-weight:900}
 dialog#editor.sheet .sheet-close.tip-sheet-x{background:color-mix(in srgb,var(--bt-down,#e05a5a) 18%,transparent)!important;color:var(--bt-down-text,#ff8a8a)!important}
 .tip-lchip.tip-lp{transform:scale(.96);box-shadow:0 0 0 2px rgba(54,189,165,.6)}
+/* 3.92.0 — Storico: riquadro del periodo prima dei giorni */
+.tip-perdays{margin:16px 4px 8px;font-size:12px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:var(--suite-text-soft)}
+.tip-histday.tip-period>summary b{white-space:nowrap}
