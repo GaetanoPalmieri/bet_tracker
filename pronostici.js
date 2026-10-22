@@ -1746,7 +1746,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.99.7',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.99.8',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2927,10 +2927,11 @@ function tipLivePanel(list) {
   var tab = tipUI.liveTab || 'now';
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
   var S = tipUI.scan;
-  var bar = '<div class="lv-bar"><div class="lv-status"><span class="lv-dot' + (S && Date.now() - S.at < 5 * 60e3 ? ' on' : '') + '"></span><b>LIVE</b><small>' +
-    (S ? 'aggiornato alle ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'in attesa della prima scansione') + ' · ' + nLive + ' partite</small></div>' +
-    /* 3.99.7 — versione della funzione pronostici-avvisi sempre visibile: ⚠ se è più vecchia dell'app */
-    (function () { var v = tipUI.serverVer, need = '3.99.6', old = !v || v === 'vecchia' || v < need; return '<span class="lv-ver' + (old ? ' old' : '') + '" title="Versione della funzione pronostici-avvisi su Supabase">' + (old ? '⚠ server ' : 'server ') + U.esc(v ? (v === 'vecchia' ? 'vecchio' : v) : '?') + '</span>'; })() +
+  /* 3.99.8 — barra su due righe: LIVE + ora, poi partite e versione del server (niente più testo tagliato a destra) */
+  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || sv < '3.99.6';
+  var bar = '<div class="lv-bar"><span class="lv-dot' + (S && Date.now() - S.at < 5 * 60e3 ? ' on' : '') + '"></span>' +
+    '<div class="lv-st"><b>LIVE<span>' + (S ? ' · ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ' · in attesa') + '</span></b>' +
+    '<small>' + nLive + ' partite · <span class="lv-ver2' + (svOld ? ' old' : '') + '" title="Versione della funzione pronostici-avvisi su Supabase">' + (svOld ? '⚠ ' : '') + 'server ' + U.esc(sv ? (sv === 'vecchia' ? 'vecchio' : sv) : '?') + '</span></small></div>' +
     '<button type="button" class="lv-scan" data-scan title="' + (S ? 'Riscansiona ora' : 'Scansiona ora') + '"><span class="lv-scan-ic">↻</span><span>Aggiorna</span></button></div>' +
     '<div class="lv-tabs" role="tablist">' + tb('now', 'Adesso', items.length) + tb('today', 'Oggi', nToday) + tb('all', 'Partite', nLive) + '</div>';
   var allHtml = scanHtml + tipStarPanel(list) +

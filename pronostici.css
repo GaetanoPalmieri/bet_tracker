@@ -1075,3 +1075,12 @@ dialog#editor.sheet .sheet-close.tip-sheet-x{background:color-mix(in srgb,var(--
 /* 3.99.7 — versione del server nella barra Live */
 .lv-ver{flex:none;font-size:10px;font-weight:800;padding:3px 7px;border-radius:999px;background:rgba(24,152,136,.16);color:var(--suite-text-soft);white-space:nowrap}
 .lv-ver.old{background:rgba(242,160,50,.2);color:#ffbd63}
+/* 3.99.8 — barra Live su due righe: niente testo tagliato */
+.lv-bar{display:flex!important;align-items:center;gap:9px;padding:7px 8px 7px 11px!important}
+.lv-bar>.lv-dot{flex:none}
+.lv-st{flex:1 1 auto;min-width:0;display:grid;gap:2px;line-height:1.15}
+.lv-st b{font-size:12px;font-weight:900;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lv-st b span{font-weight:700;letter-spacing:0;color:var(--suite-text-soft);font-size:11px}
+.lv-st small{font-size:10.5px;color:var(--suite-text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lv-ver2{font-weight:800;color:#5fd3b4}
+.lv-ver2.old{color:#ffbd63}
