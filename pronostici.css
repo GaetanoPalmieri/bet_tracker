@@ -956,3 +956,7 @@ dialog#editor.sheet .sheet-close.tip-sheet-x{background:color-mix(in srgb,var(--
 .tip-memory-row.tip-mem2 .tip-mem-why{display:block;font-size:11px;font-weight:700;color:#ff9a8a}
 :root[data-theme="light"] .tip-memory-row.tip-mem2 .tip-mem-why{color:#b3261e}
 .tip-qtab th{white-space:nowrap}
+/* 3.96.0 — giocate di adesso escluse dal filtro qualità (Live, sezione chiusa in fondo) */
+.tip-prow.tip-prow-exc{border-left:4px solid rgba(255,154,138,.55);opacity:.85}
+.tip-prow-exc .tip-mem-why{display:block;font-size:11px;font-weight:700;color:#ff9a8a}
+:root[data-theme="light"] .tip-prow-exc .tip-mem-why{color:#b3261e}

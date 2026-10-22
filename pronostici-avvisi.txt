@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 3.95.3
+// Versione app: 3.99.1
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -954,6 +954,7 @@ function tipScanMatch(x) {
   min = inp.min; half = inp.half; gh = inp.gh; ga = inp.ga;
   var r = tipInplay(m, inp),
     main = r.lines.find(function (y) { return y.k === (r.rem.ht > 0 ? 'h1' : 'n1'); }) || r.lines[0];
+  if (x.liveLine != null) { r.liveLine = x.liveLine; r.preLine = x.preLine; } /* 3.99.0 — per il controllo del mercato nelle giocate stabili */
   return { m: m, x: Object.assign({}, x, { goals: dd.goals || x.goals, elapsed: dd.elapsed, status: dd.status || x.status, stats: dd.stats || x.stats }), min: min, half: half, main: main, r: r };
 }
 function tipIsStar(m) {
@@ -991,13 +992,13 @@ var TIP_PLAY_NAME = {
 };
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80',
   tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80', tf1: '+1 1T partita da gol', tf2: '+1 2T partita da gol',
-  tm1: '🎯 gol 1T', tm2: '🎯 gol 2T', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
-TIP_PLAY_NAME.tm1 = 'MIRATO · gol entro l’intervallo: 15’-18’, 0-0, attacchi pericolosi ≥1,5 al minuto, no femminili (dati: 88%)';
-TIP_PLAY_NAME.tm2 = 'MIRATO · gol entro la fine: 46’-58’, 0-0, una squadra con possesso ≥59% (dati: 94%)';
-TIP_PLAY_NAME.tk1 = 'MIRATO · +1 angolo entro l’intervallo: 33’-36’ con angoli recenti e pressione, oppure 30’-35’ con possesso ≥63%; al massimo 1 gol (dati: 89%)';
-TIP_PLAY_NAME.tk2 = 'MIRATO · +1 angolo entro la fine: 85’-89’, un gol di scarto, max 3 gol, chi perde ha possesso ≥55% (dati: 87%)';
+  tm1: '🎯 prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
+TIP_PLAY_NAME.tm1 = 'MIRATO · prossimo gol entro l’intervallo (10’-38’, qualsiasi punteggio): mercato live ≥68%, linea gol che tiene, tiro in porta negli ultimi minuti; no femminili (registro: 84%, dal 70% 88%)';
+TIP_PLAY_NAME.tm2 = 'MIRATO · prossimo gol entro la fine (46’-80’, qualsiasi punteggio fino a 4 gol): mercato live ≥75% e linea gol che tiene (registro: 88%, dall’82% 91%)';
+TIP_PLAY_NAME.tk1 = 'MIRATO · +1 angolo entro l’intervallo, 34’-36’, con almeno 2 angoli negli ultimi ~10’; riparte dopo ogni angolo (registro: 88%, campione piccolo)';
+TIP_PLAY_NAME.tk2 = 'MIRATO · +1 angolo entro la fine, 82’-83’, al massimo 2 gol e ritmo angoli da 10+ a partita; riparte dopo ogni angolo (registro: 85%, campione piccolo)';
 TIP_PLAY_NAME.tf1 = 'IN PROVA · partita da gol: +1 gol entro l’intervallo (15’-38’, già almeno 2 gol) · tutti i campionati';
-TIP_PLAY_NAME.tf2 = 'IN PROVA · partita da gol: +1 gol entro la fine (46’-80’, già almeno 3 gol a ritmo da 4+ gol a partita) · tutti i campionati';
+TIP_PLAY_NAME.tf2 = 'IN PROVA · partita da gol: +1 gol entro la fine (46’-80’, già almeno 3 gol a ritmo da 4+ gol a partita; dal 60’ al massimo 4 gol) · tutti i campionati';
 var TIP_CORNER_WIN = { 1: { from: 36, to: 42, end: 45, stop: 2, K: 15, base: 10 }, 2: { from: 82, to: 87, end: 90, stop: 4, K: 27, base: 10 } };
 function tipCornerLineMean(L) {
   if (!U.finite(L) || L <= 0) return null;
@@ -1131,12 +1132,14 @@ function tipLiveFactors(r, x, pr, g) {
    (3+ gol di scarto: chi vince tira i remi in barca), entrambe a segno. Poi la stessa correzione dell’ottimismo sopra il 70%.
    Campionati: soglie più alte fuori dai maggiori (TIP_LG_EXTRA), come per gli altri segnali.
    Il FILTRO QUALITÀ non la blocca (TIP_QUALITY_FREE): è pensata proprio per le partite da gol dei campionati "minori". */
-var TIP_FEST = { 1: { from: 15, to: 38, minG: 2, end: 47, green: 0.64, warm: 0.58 }, 2: { from: 46, to: 80, minG: 3, end: 94, pace: 4.0, green: 0.74, warm: 0.67 } };
+var TIP_FEST = { 1: { from: 15, to: 38, minG: 2, end: 47, green: 0.64, warm: 0.58 }, 2: { from: 46, to: 80, minG: 3, end: 94, pace: 4.0, green: 0.74, warm: 0.67, late: 60, lateMaxG: 4 } };
 function tipFestival(r, min, half, x, pr, g, G) {
   var W = TIP_FEST[half];
   if (!W || !r || !r.used || !U.finite(min) || min < W.from || min > W.to || G < W.minG) return null;
   var pace = G / Math.max(min, 20) * 90;
   if (W.pace && pace < W.pace) return null;
+  /* 3.96.0 — 2T dal 60’ con 5 o più gol: 8 vinte su 15 (53%); fino al 59’ o con 3-4 gol 94/106 (89%) */
+  if (half === 2 && min >= W.late && G >= W.lateMaxG + 1) return null;
   var line = (r.lines || []).find(function (z) { return z.k === (half === 1 ? 'h1' : 'n1'); });
   if (!line || !(line.p > 0.01 && line.p < 0.995)) return null;
   var lam0 = U.finite(r.lamPre) ? r.lamPre : U.finite(r.lam) ? r.lam : 2.7, K = 30;
@@ -1153,17 +1156,7 @@ function tipFestival(r, min, half, x, pr, g, G) {
   return { k: half === 1 ? 'tf1' : 'tf2', p: p, green: Math.min(0.9, W.green + ex), warm: Math.min(0.85, W.warm + ex),
     info: { pace: rd(pace, 1), base: rd(line.p, 3), lam0: rd(lam0), lamObs: rd(lamObs), lamMod: rd(lamMod), mPr: f.mPr, mLast: mLast, mDiff: mDiff, mBoth: mBoth, lastAgo: last, lg: f.lg, lgExtra: ex } };
 }
-/* 3.95.0 — SEGNALI MIRATI (🎯, IN PROVA). Regole strette ricavate dal registro del server (pronostici_traccia +
-   pronostici_finali, 20-21/10, ~450 partite) e verificate giorno per giorno; simulate come le fa partire il motore:
-     tm1 gol 1T     15’-18’, 0-0, attacchi pericolosi ≥1,5 al minuto                         21/24 (88%)  13/14 · 8/10
-     tm2 gol 2T     46’-58’, 0-0, una squadra con possesso ≥59%                             31/33 (94%)  18/18 · 13/15
-     tk1 angolo 1T  33’-38’ con ≥1,25 angoli ogni 10’ negli ultimi 6-12’ e att. peric. ≥1,3/min,
-                    oppure 30’-35’ con possesso ≥63% e att. peric. ≥1,2/min                  52/62 (84%)  25/31 · 27/31
-     tk2 angolo fine 85’-89’, un gol di scarto, al massimo 3 gol, chi perde ha possesso ≥55%  20/23 (87%)   8/10 · 12/13
-   Mai con espulsioni. La stima mostrata è la riuscita osservata ridotta di qualche punto (campione piccolo):
-   va ricontrollata con i segnali veri (Statistiche › per tipo). Quota del book degli angoli salvata quando c'è (factors.book). */
-var TIP_TARGET = { tm1: 1, tm2: 1, tk1: 1, tk2: 1 };
-var TIP_TARGET_P = { tm1: 0.85, tm2: 0.88, tk1: 0.83, tk2: 0.85 };
+/* 3.95.0 — segnali mirati: sostituiti dalla 3.98.0 (vedi sotto). */
 function tipLivePrevAt(id, min, half, target, lo, hi) {
   var L = tipLiveHist(id).filter(function (x) { return (x.half || 1) === half && min - x.min >= lo && min - x.min <= hi; });
   L.sort(function (a, b) { return Math.abs(min - a.min - target) - Math.abs(min - b.min - target); });
@@ -1175,40 +1168,113 @@ function tipTargetCornerBook(x, half, cor, min) {
   if (U.finite(o.min) && Math.abs(o.min - min) > 4) return null;
   return Math.abs(o.line - (cor + 0.5)) < 0.01 ? o.over : null; /* linea "angoli attuali + 0,5" = +1 angolo */
 }
-function tipTargetPlays(min, half, x, prev8, g, G, st, sd) {
+/* 3.98.0 — SEGNALI MIRATI RIFATTI SUL MERCATO LIVE. Studio sul registro del server (pronostici_traccia + finali,
+   20-22/10: 521 partite, 8.300 osservazioni) e sui 760 consigli chiusi:
+   - la linea gol LIVE di bet365 (TotalCorner) è quasi perfettamente tarata: per il prossimo gol entro l’intervallo
+     prevede 45% → 44% reale, 55% → 54%, 65% → 65%, 74% → 74%; entro la fine 83% → 86%. Tiri, attacchi pericolosi,
+     possesso e campionato, aggiunti alla linea, NON migliorano la previsione su un giorno nuovo (anzi peggiorano):
+     è anche quello che dice la letteratura (le quote live incorporano già xG e pressione).
+   - i vecchi segnali gol 1T partivano quasi sempre con il mercato sotto il 65%: 52% vinte.
+   Quindi i segnali gol partono dalla probabilità del mercato, a QUALSIASI punteggio:
+     tm1 prossimo gol entro l’intervallo, 10’-38’: mercato ≥68%, linea live che tiene (non scesa oltre il tempo
+         passato) e almeno 1 tiro in porta negli ultimi 5-15’; niente femminili.  ≥65%: 78/100 (78%) · ≥68%: 46/55 (84%) · ≥70%: 29/33 (88%)
+     tm2 prossimo gol entro la fine, 46’-80’: mercato ≥75% (linea live ≥ gol attuali + 1,5), linea che tiene, al massimo
+         4 gol.  ≥75%: 265/301 (88%) · ≥82%: 129/141 (91%), stabile nei 3 giorni
+   Angoli: vedi 3.99.0 (TIP_TK) — finestre 34’-36’ e 82’-83’.
+   Mai con espulsioni. Probabilità mostrata = mercato + il guadagno osservato delle conferme (ridotto). */
+var TIP_TARGET = { tm1: 1, tm2: 1, tk1: 1, tk2: 1 };
+var TIP_TARGET_P = { tk1: 0.84, tk2: 0.82 };
+var TIP_TM = { 1: { from: 10, to: 38, pMin: 0.68, up: 0.07, green: 0.77, warm: 0.75 }, 2: { from: 46, to: 80, pMin: 0.75, up: 0.04, maxG: 4, green: 0.86, warm: 0.79 } };
+function tipLineLam(L) { /* gol attesi da una linea gol asiatica (linea x.5 = +0,17, x.25/x.75 = +0,08: tarato sul registro) */
+  if (!U.finite(L) || L <= 0) return null;
+  var fr = L - Math.floor(L), adj = Math.abs(fr - 0.5) < 0.01 ? 0.17 : Math.abs(fr - 0.25) < 0.01 || Math.abs(fr - 0.75) < 0.01 ? 0.08 : 0;
+  return L + adj;
+}
+/* probabilità del mercato live per il prossimo gol: entro l’intervallo (half 1) o entro la fine (half 2) */
+function tipMktNext(x, min, half, G) {
+  var ll = tipLineLam(x && x.liveLine);
+  if (ll == null || !U.finite(min)) return null;
+  var lam = Math.max(0, ll - G), f = 1;
+  if (half === 1) { var w1 = Math.max(0, 47 - min) * 0.45 / 45; f = w1 / (w1 + 0.55); }
+  var pl = tipLineLam(x && x.preLine);
+  return { p: 1 - Math.exp(-lam * f), lam: lam, ll: x.liveLine, pl: x && x.preLine, keep: pl ? ll / (pl * Math.max(0.3, (94 - min) / 94)) : null };
+}
+function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
+  var W = TIP_TM[half];
+  if (!W || min < W.from || min > W.to || (W.maxG != null && G > W.maxG) || (half === 1 && women)) return null;
+  var M = tipMktNext(x, min, half, G);
+  if (!M || M.p < W.pMin || (M.keep != null && M.keep < 1)) return null;
+  var sot = null, pv = prev8 && min - prev8.min >= 5 && min - prev8.min <= 15 ? prev8 : prev && min - prev.min >= 5 && min - prev.min <= 15 ? prev : null;
+  if (half === 1) {
+    if (!pv || !pv.side) return null;
+    var a = sd[0] || {}, b = sd[1] || {}, pa = pv.side[0] || {}, pb = pv.side[1] || {};
+    if (![a.t, b.t, pa.t, pb.t].every(U.finite)) return null;
+    sot = a.t + b.t - pa.t - pb.t;
+    if (sot < 1) return null;
+  }
+  var rd = function (v) { return v == null ? null : Math.round(v * 1000) / 1000; };
+  return { p: rd(Math.min(0.93, M.p + W.up)), green: W.green, warm: W.warm,
+    o: { rule: '3.98.0', pMkt: rd(M.p), lamRest: rd(M.lam), ll: M.ll, pl: M.pl, keep: rd(M.keep), sotRecent: sot, prevMin: pv ? pv.min : null } };
+}
+/* 3.99.0 — ANGOLI NELLE FINESTRE GIOCABILI (36’ e 82’). Prima (20’-27’, 70’-74’) l’88% era solo tempo che resta:
+   quote troppo basse. Sul registro (20-22/10) +1 angolo entro la fine del tempo:
+     1T: 34’ 76%, 35’ 72%, 36’ 67%, 37’ 54%, 38’ 47% · 2T: 82’-83’ 68%, 84’-85’ 61%, 85’-88’ 54%.
+   Statistiche, ritmo, punteggio, possesso: quasi nessun potere fuori campione (AUC 0,54-0,57). Le sole regole che
+   tengono su tutti e tre i giorni:
+     tk1 34’-36’ con almeno 2 angoli negli ultimi ~10’ (≥1,3 ogni 10’)               38/43 (88%) · 22/25 13/14 3/4
+     tk2 82’-83’ con al massimo 2 gol e ritmo angoli ≥ 10 a partita (≥0,11 al minuto)  29/34 (85%) · 15/16 11/14 3/4
+   Campioni piccoli e regole trovate cercando: la riuscita vera sarà probabilmente qualche punto sotto (stima mostrata
+   84% / 82%). Dopo ogni angolo il segnale può ripartire subito (la chiave contiene gli angoli), se le condizioni tengono.
+   Storico del campionato (TIP_LATE): il server conta, partita per partita, se dopo il 36’/82’ è arrivato l’angolo;
+   con almeno 8 partite un campionato sotto il 60% blocca il segnale, uno sopra l’80% aggiunge 3 punti. */
+var TIP_TK = { 1: { from: 34, to: 36, burstN: 2, p: 0.84 }, 2: { from: 82, to: 83, maxG: 2, pace: 0.11, p: 0.82 } };
+function tipLateCor(x, half) {
+  var L = tipUI.lateCor, lg = String((x && x.league) || '');
+  if (!L || !lg) return null;
+  var base = (L.base && L.base[half]) || (half === 1 ? 0.72 : 0.67), pick = function (o, src) {
+    var n = o && o['n' + half], w = o && o['w' + half];
+    return U.finite(n) && n >= 8 ? { src: src, n: n, w: w, rate: Math.round((w + 3 * base) / (n + 3) * 1000) / 1000 } : null;
+  };
+  return pick(L.lg && L.lg[lg], 'campionato') || pick(L.cty && L.cty[lg.split(' ')[0]], 'paese');
+}
+function tipTargetCorner(min, half, cor, G, sd, prev8, prev, x) {
+  var W = TIP_TK[half];
+  if (!W || cor == null || min < W.from || min > W.to) return null;
+  var o = { rule: '3.99.0' };
+  if (half === 1) {
+    var pv = prev8 && min - prev8.min >= 5 && min - prev8.min <= 15 ? prev8 : prev && min - prev.min >= 5 && min - prev.min <= 15 ? prev : null;
+    if (!pv || !pv.side) return null;
+    var pa = pv.side[0] || {}, pb = pv.side[1] || {};
+    if (!U.finite(pa.c) || !U.finite(pb.c) || cor < pa.c + pb.c) return null;
+    o.recent = cor - pa.c - pb.c; o.prevMin = pv.min; /* almeno 2 angoli negli ultimi 5-15 minuti */
+    if (o.recent < W.burstN) return null;
+  } else {
+    o.pace = Math.round(cor / min * 1000) / 1000;
+    if (G > W.maxG || o.pace < W.pace) return null;
+  }
+  var lc = tipLateCor(x, half);
+  if (lc) { o.late = lc; if (lc.rate < 0.6) return null; }
+  return { p: Math.min(0.9, W.p + (lc && lc.rate >= 0.8 ? 0.03 : 0)), green: 0.82, warm: 0.78, o: o };
+}
+/* 3.99.0 — chiave dei segnali IN PROVA: per gli angoli conta anche quanti ce ne sono (dopo ogni angolo può ripartire) */
+function tipTrialKeyX(x) { return x && /^t[chk][12]$/.test(x.k) && x.cn != null ? '|c' + x.cn : ''; }
+function tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev) {
   var out = [], ok = function (v) { return U.finite(v) && v >= 0; };
   var a = sd[0] || {}, b = sd[1] || {}, tot = function (k) { return ok(a[k]) && ok(b[k]) ? a[k] + b[k] : null; };
   if ((a.red || 0) + (b.red || 0) > 0 || !U.finite(min) || min <= 0) return out;
-  var da = tot('da'), cor = U.finite(st.c) ? st.c : tot('c'), daM = da == null ? null : da / min;
-  var pos = [Number(a.poss), Number(b.poss)];
-  var posOk = pos.every(function (v) { return U.finite(v) && v > 0 && v < 100; }) && !(pos[0] === 50 && pos[1] === 50);
-  var diff = (g[0] || 0) - (g[1] || 0), r2 = function (v) { return v == null ? null : Math.round(v * 100) / 100; };
-  var info = function (o) { return Object.assign({ rule: '3.95.0', daMin: r2(daM), pos: posOk ? pos : null, cor: cor }, o || {}); };
+  var cor = U.finite(st.c) ? st.c : tot('c');
   var add = function (k, o, corner) {
     var bk = corner ? tipTargetCornerBook(x, half, cor, min) : null;
-    var e = { k: k, p: TIP_TARGET_P[k], extra: { factors: info(Object.assign({ book: bk || undefined }, o)) } };
+    var e = { k: k, p: o && o._p ? o._p.p : TIP_TARGET_P[k], extra: { factors: Object.assign({ rule: '3.99.0', cor: cor, book: bk || undefined }, o && o._p ? o._p.o : o || {}) } };
+    if (o && o._p) { e.green = o._p.green; e.warm = o._p.warm; }
     if (corner) { e.extra.cn = cor; e.extra.need = 1; }
     out.push(e);
   };
-  /* 3.95.3 — niente calcio femminile: 1/3 contro 28/32 (88%) nelle altre */
   var women = TIP_LG_WOMEN.test(String((x && x.league) || '') + ' ' + String((x && x.home) || '') + ' ' + String((x && x.away) || ''));
-  if (half === 1 && min >= 15 && min <= 18 && G === 0 && !women && daM != null && daM >= 1.5) add('tm1', {});
-  if (half === 2 && min >= 46 && min <= 58 && G === 0 && posOk && Math.max(pos[0], pos[1]) >= 59) add('tm2', { posMax: Math.max(pos[0], pos[1]) });
-  if (half === 1 && cor != null && daM != null) {
-    var rc = null;
-    if (prev8 && prev8.side && min - prev8.min >= 6 && min - prev8.min <= 12) {
-      var pa = prev8.side[0] || {}, pb = prev8.side[1] || {};
-      if (ok(pa.c) && ok(pb.c) && cor >= pa.c + pb.c) rc = (cor - pa.c - pb.c) / (min - prev8.min) * 10;
-    }
-    /* 3.95.3 — solo fino al 36’ e con al massimo 1 gol: al 37’-38’ 8/13 (62%), con 2+ gol 76%; così 47/53 (89%) */
-    var A = min >= 33 && min <= 36 && daM >= 1.3 && rc != null && rc >= 1.25;
-    var B = min >= 30 && min <= 35 && posOk && Math.max(pos[0], pos[1]) >= 63 && daM >= 1.2;
-    if ((A || B) && G <= 1) add('tk1', { via: A ? 'ritmo angoli' : 'possesso', cornersPer10: r2(rc) }, true);
-  }
-  if (half === 2 && min >= 85 && min <= 89 && Math.abs(diff) === 1 && G <= 3 && posOk && cor != null) {
-    var L = diff > 0 ? 1 : 0;
-    if (pos[L] >= 55) add('tk2', { losingPos: pos[L] }, true);
-  }
+  var tg = tipTargetGoal(min, half, x, G, sd, prev8, prev, women);
+  if (tg) add(half === 1 ? 'tm1' : 'tm2', { _p: tg });
+  var tc = tipTargetCorner(min, half, cor, G, sd, prev8, prev, x);
+  if (tc) add(half === 1 ? 'tk1' : 'tk2', { _p: tc }, true);
   return out;
 }
 function tipTrialPlays(r, min, half, x, prev, prev8) {
@@ -1280,9 +1346,23 @@ function tipTrialPlays(r, min, half, x, prev, prev8) {
     else if (half === 1) { out.push(mk('th1', corner.p1, 0.78, 0.68, extra(1))); out.push(mk('th2', corner.p2, 0.50, 0.40, extra(2))); }
   }
   /* 3.95.0 — segnali mirati: OTTIMA da 82% */
-  tipTargetPlays(min, half, x, prev8, g, G, st, sd).forEach(function (z) { out.push(mk(z.k, z.p, 0.82, 0.78, z.extra)); });
+  tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev).forEach(function (z) { out.push(mk(z.k, z.p, z.green || 0.82, z.warm || 0.78, z.extra)); });
+  /* 3.98.0 — gli altri segnali gol IN PROVA usano la probabilità del mercato live quando c’è (sul registro il modello
+     sovrastimava: segnali 1T con mercato sotto il 65% vinti al 52%); la stima del modello resta in engP */
+  out.forEach(function (z) {
+    var h = TIP_MKT_KIND[z.k]; if (!h) return;
+    var M = tipMktNext(x, min, h, (g[0] || 0) + (g[1] || 0)); if (!M) return;
+    var p = Math.round(M.p * 1000) / 1000, fair = Math.max(1.05, 1 / Math.max(0.02, p)), q = z.book || fair;
+    z.engP = z.p; z.p = p; z.evalP = p; z.legs = [{ l: z.short, p: p }]; z.mktP = p; z.thr = TIP_MKT_WARM[h];
+    z.minQ = Math.round(fair * 100) / 100; z.cost = { stakes: [10], risk: 10, win: 10 * (q - 1), ratio: 1 / (q - 1) };
+    var tier = p >= TIP_MKT_GREEN[h] ? 'excellent' : p >= TIP_MKT_WARM[h] ? 'try' : 'none';
+    z.tier = tier; z.green = tier === 'excellent'; z.warm = tier === 'try';
+  });
   return out.filter(function (z) { return z.tier !== 'none' && !TIP_K_OFF[z.k]; });
 }
+var TIP_MKT_PLAY = { t1s15: 1, t1s18: 1, t1st: 1, t2st3: 2, t2st2: 2, t2u15: 2, t2u18: 2 };
+var TIP_MKT_KIND = { tq1: 1, tg1: 1, tp1: 1, tf1: 1, tq2: 2, tn2: 2, tp2: 2, tf2: 2 };
+var TIP_MKT_GREEN = { 1: 0.75, 2: 0.82 }, TIP_MKT_WARM = { 1: 0.68, 2: 0.75 };
 function tipPlayBest(plays) { return (plays || []).filter(function (x) { return x.green || x.warm; })[0] || null; }
 function tipPlayKey(id, ctx) { return id + '|' + (ctx.half || 1) + '|' + (ctx.gh || 0) + '-' + (ctx.ga || 0); }
 function tipPlayGroup(e) { return e.id + '|' + (e.half || 1) + '|' + (e.gh || 0) + '-' + (e.ga || 0) + (e.trial ? '|' + e.k : ''); }
@@ -1293,7 +1373,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.95.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.99.1',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -1358,7 +1438,7 @@ function tipLeagueTop(m) {
 }
 var TIP_LG_EXTRA = { major: 0, 'minor+': 0.02, minor: 0.04, 'youth+': 0.03, youth: 0.06, women: 0.06 };
 var TIP_STEP1T_ON = false;
-var TIP_K_OFF = { t1s18: 1, t2u18: 1, tp1: 1, tp2: 1, tc2: 1, th2: 1, tq1: 1, th1: 1, tf1: 1 }; /* 3.95.0 — th1 (36’-42’: base 47%, 63% contro 76% previsto) e tf1 (58% contro 71%) spenti: al loro posto 🎯 angolo 1T e 🎯 gol 1T */
+var TIP_K_OFF = { t1s18: 1, t2u18: 1, tp1: 1, tp2: 1, tc2: 1, th2: 1, tq1: 1, th1: 1, tf1: 1, tc1: 1, t1st: 1, t1s15: 1, tf2: 1, tg1: 1, tq2: 1, tn2: 1, t2w: 1, t1w: 1 }; /* 3.99.0 — spenti anche t2w/t1w (aspetta e gioca l’unico: sul registro 10/31, 32%; nei consigli veri mai chiuse) */ /* 3.98.0 — spenti: tg1, tq2, tn2 (con la probabilità del mercato diventano doppioni di 🎯 prossimo gol 1T/2T); tc1 +1 angolo finale (125/170, 74%: dall’82’ il tempo non basta, base 64%), t1st 7/14 e t1s15 22/37 (gol 1T, modello ottimista), tf2 (doppione del nuovo 🎯 gol 2T, che fa meglio: 88% contro 84%) */ /* 3.95.0 — th1 (36’-42’: base 47%, 63% contro 76% previsto) e tf1 (58% contro 71%) spenti: al loro posto 🎯 angolo 1T e 🎯 gol 1T */
 var TIP_K_FLOOR = { t1s15: 0.65, t2u15: 0.63, t1s18: 0.65, t2u18: 0.63, t2st2: 0.63, t2st3: 0.63, t1st: 0.74, t1w: 0.65, t2w: 0.65 };
 var TIP_K_EXTRA = {};
 function tipGreenFloor(x) {
@@ -1418,10 +1498,14 @@ function tipPlays(r, min, half, book) {
   };
   var add = function (k, p, legs, note, thrK, thrMin) {
     if (TIP_K_OFF[k]) return; /* 3.67.0 — giocate sospese */
+    /* 3.99.0 — le giocate stabili sul prossimo gol partono solo se il mercato live è d’accordo (registro: la linea gol
+       live è tarata, il modello no): 1T almeno 68%, 2T almeno 75%. Senza linea live restano come prima. */
+    var hM = TIP_MKT_PLAY[k], M = hM && r.liveLine != null ? tipMktNext({ liveLine: r.liveLine, preLine: r.preLine }, min, hM, r.goals || 0) : null;
+    if (M && M.p < TIP_MKT_WARM[hM]) return;
     var thr = tipPlayThr(thrK || k, thrMin || min), c = cost(legs);
     /* 3.48.0 — step costoso: rischio oltre 2,5 volte la vincita oppure oltre 4 puntate base */
     var x = { k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, legs: legs, thr: thr, note: note || '', cost: c, costly: legs.length > 1 && (c.ratio > 2.5 || c.risk > 4 * base) };
-    x.lg = r.lgTier || 'major'; x.goals = r.goals || 0; x.lead = !!r.lead;
+    x.lg = r.lgTier || 'major'; x.goals = r.goals || 0; x.lead = !!r.lead; if (M) x.mktP = Math.round(M.p * 1000) / 1000;
     var lb = tipLabels(r); x.prof = lb.prof; x.rit = lb.rit;
     /* 3.64.6 — istantanea del modello al momento del consiglio, per il retraining */
     x.snap = { lam: Math.round((r.lam || 0) * 100) / 100, lamPre: U.finite(r.lamPre) ? Math.round(r.lamPre * 100) / 100 : null, F: Math.round((r.F || 0) * 100) / 100, model: r.model, xg: !!r.xg, recent: !!r.recent, thr: Math.round(thr * 1000) / 1000 };
@@ -1443,7 +1527,7 @@ function tipPlays(r, min, half, book) {
         if (ok(a1) && ok(a2) && (!bestS || Math.abs(a1 - a2) < bestS.d)) bestS = { t: t1, a1: a1, a2: a2, d: Math.abs(a1 - a2) }; /* step bilanciati */
       }
       /* 3.66.0 — step 1T sospeso: 50% vinte con 69% previsto, la giocata che faceva perdere di più */
-      if (bestS && TIP_STEP1T_ON) { add('t1st', h1, [{ l: 'gol entro il ' + bestS.t + '’', p: bestS.a1 }, { l: 'se no, entro l’intervallo', p: bestS.a2 }]); out[out.length - 1].ts = [bestS.t, 45]; }
+      if (bestS && TIP_STEP1T_ON) { var n1st = out.length; add('t1st', h1, [{ l: 'gol entro il ' + bestS.t + '’', p: bestS.a1 }, { l: 'se no, entro l’intervallo', p: bestS.a2 }]); if (out.length > n1st) out[out.length - 1].ts = [bestS.t, 45]; }
     }
   }
   if (half === 2 && n1 != null) {
@@ -1464,14 +1548,14 @@ function tipPlays(r, min, half, book) {
     if (1 / n1 < 1.5 && min <= 82) {
       for (var tw = Math.ceil(min) + 3; tw <= 85; tw++) {
         var pc = 1 - (1 - n1) / Math.max(1e-6, 1 - r.pWin(tw));
-        if (pc > 0 && 1 / pc >= 1.5) { add('t2w', pc, [{ l: 'al ' + tw + '’ se ancora nessun gol: altro gol entro la fine', p: pc }], 'se segnano prima non giochi e non perdi niente', 't2u15', tw); out[out.length - 1].at = tw; out[out.length - 1].tier = tipPlayTier(r, min, half, out[out.length - 1]); out[out.length - 1].green = false; out[out.length - 1].warm = out[out.length - 1].tier === 'try'; break; }
+        if (pc > 0 && 1 / pc >= 1.5) { var n0 = out.length; add('t2w', pc, [{ l: 'al ' + tw + '’ se ancora nessun gol: altro gol entro la fine', p: pc }], 'se segnano prima non giochi e non perdi niente', 't2u15', tw); if (out.length > n0) { var wL = out[out.length - 1]; wL.at = tw; wL.tier = tipPlayTier(r, min, half, wL); wL.green = false; wL.warm = wL.tier === 'try'; } break; } /* 3.99.0 — se il tipo è spento add() non aggiunge nulla: prima si modificava la giocata sbagliata */
       }
     }
   }
   if (half === 1 && h1 != null && min >= 10 && min <= 36 && 1 / h1 < 1.5) {
     for (var tw1 = Math.ceil(Math.max(min, 15)) + 2; tw1 <= 40; tw1++) {
       var pc1 = 1 - (1 - h1) / Math.max(1e-6, 1 - r.pWin(tw1));
-      if (pc1 > 0 && 1 / pc1 >= 1.5) { add('t1w', pc1, [{ l: 'al ' + tw1 + '’ se ancora nessun gol: gol entro l’intervallo', p: pc1 }], 'se segnano prima non giochi e non perdi niente', 't1s15', tw1); out[out.length - 1].at = tw1; out[out.length - 1].tier = tipPlayTier(r, min, half, out[out.length - 1]); out[out.length - 1].green = false; out[out.length - 1].warm = out[out.length - 1].tier === 'try'; break; }
+      if (pc1 > 0 && 1 / pc1 >= 1.5) { var n0 = out.length; add('t1w', pc1, [{ l: 'al ' + tw1 + '’ se ancora nessun gol: gol entro l’intervallo', p: pc1 }], 'se segnano prima non giochi e non perdi niente', 't1s15', tw1); if (out.length > n0) { var wL = out[out.length - 1]; wL.at = tw1; wL.tier = tipPlayTier(r, min, half, wL); wL.green = false; wL.warm = wL.tier === 'try'; } break; } /* 3.99.0 — se il tipo è spento add() non aggiunge nulla: prima si modificava la giocata sbagliata */
     }
   }
   /* ordine: prima le ottime; tra queste conta anche il costo (gli step costosi scendono) */
@@ -1586,7 +1670,8 @@ function tipAlertGroup(k) {
   if (/^tc/.test(k) || k === 'tk2') return 'cor2';
   return k === 'tm1' || k === 'tp1' || k === 'tq1' || k === 'tg1' || k === 'tf1' || k.indexOf('t1') === 0 ? 'gol1' : 'gol2';
 }
-var TIP_QUALITY_MINP = 0.65, TIP_QUALITY_LG = { major: 1, 'minor+': 1, 'youth+': 1 };
+/* 3.96.0 — giovanili dei Paesi forti fuori dal filtro qualità: 24/36 (67%) contro l'82% degli altri (dati 19-22/10) */
+var TIP_QUALITY_MINP = 0.65, TIP_QUALITY_LG = { major: 1, 'minor+': 1 };
 /* 3.94.0 — segnali che il filtro qualità non blocca mai (partite da gol: tutti i campionati) */
 var TIP_QUALITY_FREE = { tf1: 1, tf2: 1, tm1: 1, tm2: 1, tk1: 1, tk2: 1 }; /* 3.95.0 — mirati: tutti i campionati */
 function tipQualityPass(e) {
@@ -1667,12 +1752,13 @@ let lgAvgCache: any = null;
 async function snapTrack(list: any[]) {
   const last: any = (await getState("snapAt")) || {};
   const full = !last.t || Date.now() - last.t >= 5.5 * 60e3;
-  if (!full) list = list.filter((r: any) => r.status === "2H" && r.elapsed >= 75);
+  /* 3.99.0 — più fitto anche nel 1° tempo dal 30’ (segnale angoli 34’-36’) */
+  if (!full) list = list.filter((r: any) => (r.status === "2H" && r.elapsed >= 75) || (r.status === "1H" && r.elapsed >= 30));
   const rows = (list || []).filter((r: any) => r && r.afId && (r.status === "1H" || r.status === "2H" || r.status === "HT")).map((r: any) => {
     const sd = r.stats?.side || [{}, {}];
     const pair = (k: string) => [sd[0]?.[k] ?? null, sd[1]?.[k] ?? null];
     return { af_id: r.afId, min: r.status === "HT" ? 45 : r.elapsed, st: r.status, league: r.league, home: r.home, away: r.away,
-      d: { modelVersion: "3.71.0", observedAt: new Date().toISOString(), g: r.goals, c: pair("c"), s: pair("s"), t: pair("t"), da: pair("da"), att: pair("att"), pos: pair("poss"), red: pair("red"), ll: r.liveLine ?? null, pl: r.preLine ?? null, ht: r.ht || null, cl: r.corner || null, hc1: r.htCorners || null } };
+      d: { modelVersion: "3.71.0", observedAt: new Date().toISOString(), g: r.goals, c: pair("c"), s: pair("s"), t: pair("t"), da: pair("da"), att: pair("att"), pos: pair("poss"), red: pair("red"), ll: r.liveLine ?? null, pl: r.preLine ?? null, ht: r.ht || null, cl: r.corner || null, hc1: r.htCorners || null, co: r.cornerOdds || null } }; /* 3.99.0 — co: quote angoli live, per studiare dove il book sbaglia */
   });
   if (rows.length) { const { error } = await admin.from("pronostici_traccia").insert(rows); if (error) { console.error("traccia", error.message); return 0; } }
   const day = new Date().toISOString().slice(0, 10);
@@ -1710,6 +1796,7 @@ async function lgTrack(list: any[], wanted: string[] = []) {
     } catch (e) { console.error("verifica finale", id, (e as Error).message); await tcBlock(e); break; }
   }
   const leagues = new Set<string>();
+  const addedRows: any[] = [];
   let added = 0;
   for (const r of finished) {
     if (!r.resultConfirmed || !r.goals?.every((n: any) => Number.isInteger(n) && n >= 0)) continue;
@@ -1722,7 +1809,7 @@ async function lgTrack(list: any[], wanted: string[] = []) {
     /* senza la migrazione 3.86 la colonna goal_list non c'è: si salva comunque il resto */
     if (error && /goal_list/.test(error.message)) { const { goal_list: _g, ...rest } = row as any; ({ error } = await admin.from("pronostici_finali").upsert(rest, { onConflict: "af_id" })); }
     if (error) { console.error("finali verificati", error.message); continue; }
-    leagues.add(r.league); delete seen[r.afId]; added++;
+    leagues.add(r.league); delete seen[r.afId]; added++; addedRows.push(row);
   }
   // Recompute from unique confirmed matches; repeated checks cannot inflate n.
   const avg: any = (await getState("lgAvgVerified")) || {};
@@ -1737,8 +1824,48 @@ async function lgTrack(list: any[], wanted: string[] = []) {
   await setState("lgSeenVerified", seen);
   await setState("lgAvgVerified", avg);
   lgAvgCache = avg;
+  try { await lateCorAdd(addedRows); } catch (e) { console.error("angoli finali", (e as Error).message); }
   return added;
 }
+
+/* 3.99.0 — STORICO ANGOLI FINALI PER CAMPIONATO E PAESE. A ogni finale verificato si guarda nel registro
+   (pronostici_traccia) la prima istantanea tra il 34’ e il 36’ e tra l’82’ e l’84’: c’è stato almeno un angolo in più
+   entro la fine del tempo? Conteggi n1/w1 (1° tempo) e n2/w2 (finale) per campionato e per Paese (prima parola del
+   nome). Ogni partita si conta una volta sola. Il motore (tipLateCor) li usa da 8 partite in su. */
+async function lateCorAdd(rows: any[]) {
+  const okC = (c: any) => Array.isArray(c) && c.length === 2 && c.every((n: any) => Number.isInteger(n) && n >= 0);
+  const st: any = (await getState("lateCor")) || { base: { 1: 0.72, 2: 0.67 }, lg: {}, cty: {}, done: {} };
+  st.lg = st.lg || {}; st.cty = st.cty || {}; st.done = st.done || {};
+  const todo = (rows || []).filter((r: any) => r && r.af_id && !st.done[r.af_id] && okC(r.corners)).slice(0, 40);
+  if (!todo.length) return 0;
+  const { data, error } = await admin.from("pronostici_traccia").select("af_id,min,st,d,created_at")
+    .in("af_id", todo.map((r: any) => r.af_id))
+    .or("and(st.eq.1H,min.gte.34,min.lte.36),and(st.eq.2H,min.gte.82,min.lte.84)")
+    .order("created_at", { ascending: true }).limit(2000);
+  if (error) throw new Error(error.message);
+  const cOf = (d: any) => d && okC(d.c) ? d.c[0] + d.c[1] : null;
+  const bump = (o: any, key: string, h: number, y: number) => { const t = (o[key] = o[key] || {}); t["n" + h] = (t["n" + h] || 0) + 1; t["w" + h] = (t["w" + h] || 0) + y; };
+  let n = 0;
+  for (const r of todo) {
+    const snaps = (data || []).filter((t: any) => t.af_id === r.af_id);
+    const s1 = snaps.find((t: any) => t.st === "1H"), s2 = snaps.find((t: any) => t.st === "2H");
+    const cty = String(r.league || "").split(" ")[0];
+    const c1 = s1 ? cOf(s1.d) : null, c2 = s2 ? cOf(s2.d) : null;
+    const red = (t: any) => Array.isArray(t?.d?.red) && t.d.red.some((v: any) => v > 0);
+    if (c1 != null && okC(r.ht_corners) && !red(s1) && r.ht_corners[0] + r.ht_corners[1] >= c1) {
+      const y = r.ht_corners[0] + r.ht_corners[1] > c1 ? 1 : 0; bump(st.lg, r.league, 1, y); if (cty) bump(st.cty, cty, 1, y); n++;
+    }
+    if (c2 != null && !red(s2) && r.corners[0] + r.corners[1] >= c2) {
+      const y = r.corners[0] + r.corners[1] > c2 ? 1 : 0; bump(st.lg, r.league, 2, y); if (cty) bump(st.cty, cty, 2, y); n++;
+    }
+    st.done[r.af_id] = Date.now();
+  }
+  for (const k of Object.keys(st.done)) if (Date.now() - st.done[k] > 10 * 86400e3) delete st.done[k];
+  st.t = Date.now();
+  await setState("lateCor", st);
+  return n;
+}
+function lateCorPublic(st: any) { return st ? { base: st.base, lg: st.lg || {}, cty: st.cty || {}, t: st.t } : null; }
 
 /* 3.71.0 — ANGOLI: per le partite nelle finestre (1T 33’-43’, 2T 79’-88’) storico delle squadre dai finali verificati
    (angoli fatti/subiti, ultime 10, anche all'intervallo) e quote angoli live bet365 (al massimo 6 richieste per giro,
@@ -1904,7 +2031,7 @@ async function runAlerts() {
   for (const u of users) {
     /* stato del motore per questo utente: i suoi pronostici, i suoi parametri, lo storico delle scansioni */
     db = { predictions: (u.data?.predictions || []).filter((m: any) => m && m.date && Math.abs(Date.parse(m.date) - now) < 2 * 86400e3), predModel: u.data?.predModel || {} };
-    tipUI = { view: "open", panel: "live", scan: { at: now, list }, liveData: {}, scanLink: {}, step: { s1: 10 }, lgAvg: lgAvgCache || (await getState("lgAvgVerified")) || {} };
+    tipUI = { view: "open", panel: "live", scan: { at: now, list }, liveData: {}, scanLink: {}, step: { s1: 10 }, lgAvg: lgAvgCache || (await getState("lgAvgVerified")) || {}, lateCor: lateCorPublic(await getState("lateCor")) };
     for (const k of Object.keys(__ls)) delete __ls[k];
     const hist = (await getState("hist:" + u.id)) || {};
     __ls["tipLiveHist"] = JSON.stringify(hist);
@@ -1928,7 +2055,7 @@ async function runAlerts() {
         const ctxT = { min: y.min, half: y.half, gh: y.x.goals[0] || 0, ga: y.x.goals[1] || 0 };
         for (const tp of tipTrialPlays(y.r, y.min, y.half, y.x, tipLivePrev(y.m.id, y.min, y.half), tipLivePrevAt(y.m.id, y.min, y.half, 8, 6, 12))) {
           let eT = tipPlayEntry(y.m, ctxT, tp, x.afId);
-          eT.key = tipPlayKey(y.m.id, ctxT) + "|" + tp.k; eT.trial = true; eT.src = "server"; eT.t = now;
+          eT.key = tipPlayKey(y.m.id, ctxT) + "|" + tp.k + tipTrialKeyX(tp); eT.trial = true; eT.src = "server"; eT.t = now;
           if (tp.cn != null) { eT.cn = tp.cn; eT.need = tp.need; eT.lamC = tp.lamC; }
           const wasT = known.get(eT.key);
           const upT = wasT === "try" && eT.tier === "excellent";
@@ -1992,7 +2119,7 @@ async function runAlerts() {
     }
   }
   /* pulizia: segnali più vecchi di 10 giorni */
-  if (new Date(now).getUTCMinutes() < 3) await admin.from("pronostici_segnali").delete().lt("created_at", new Date(now - 10 * 86400e3).toISOString());
+  if (new Date(now).getUTCMinutes() < 3) await admin.from("pronostici_segnali").delete().lt("created_at", new Date(now - 60 * 86400e3).toISOString()); /* 3.99.0 — 60 giorni (prima 10): servono all'export */
   return { users: users.length, live: list.length, evaluated, newSignals: newSig, sent, bzCalls };
 }
 
@@ -2014,7 +2141,7 @@ Deno.serve(async (req) => {
   let body: any = {};
   try { body = await req.json(); } catch { /* vuoto */ }
   if (body.action === "training") {
-    const table = body.kind === "finals" ? "pronostici_finali" : body.kind === "trace" ? "pronostici_traccia" : null;
+    const table = body.kind === "finals" ? "pronostici_finali" : body.kind === "trace" ? "pronostici_traccia" : body.kind === "signals" ? "pronostici_segnali" : null;
     if (!table) return json({ error: "Tipo di registro non valido" }, 400);
     const from = Date.parse(body.from), until = Date.parse(body.until);
     if (!Number.isFinite(from) || !Number.isFinite(until) || until < from || until - from > 45 * 86400e3)
@@ -2023,14 +2150,16 @@ Deno.serve(async (req) => {
     if (offset > 500000) return json({ error: "Registro troppo grande: scegli un periodo più breve" }, 400);
     let query = admin.from(table).select("*").gte("created_at", new Date(from).toISOString()).lte("created_at", new Date(until).toISOString());
     if (body.kind === "finals") query = query.eq("confirmed", true);
-    const { data, error: e } = await query.order(body.kind === "finals" ? "af_id" : "id", { ascending: true }).range(offset, offset + size - 1);
+    /* 3.99.0 — anche i segnali salvati sul server (solo i propri), per non perdere niente nell'export */
+    if (body.kind === "signals") query = admin.from(table).select("key,tier,data,created_at,updated_at").eq("user_id", au.user.id).gte("created_at", new Date(from).toISOString()).lte("created_at", new Date(until).toISOString());
+    const { data, error: e } = await (body.kind === "signals" ? query.order("created_at", { ascending: true }).order("key", { ascending: true }) : query.order(body.kind === "finals" ? "af_id" : "id", { ascending: true })).range(offset, offset + size - 1);
     if (e) return json({ error: e.message }, 500);
     return json({ rows: data || [], nextOffset: data?.length === size ? offset + size : null, version: "3.71.0" });
   }
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "3.95.3", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "3.99.1", cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2043,12 +2172,12 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "3.95.3" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "3.99.1" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
     const c: any = await getState("tcLive");
-    if (c && c.live && Date.now() - c.at < 5 * 60e3) return json({ live: c.live, at: c.at, source: "totalcorner-cache", lgAvg: (await getState("lgAvgVerified")) || {} });
+    if (c && c.live && Date.now() - c.at < 5 * 60e3) return json({ live: c.live, at: c.at, source: "totalcorner-cache", lgAvg: (await getState("lgAvgVerified")) || {}, lateCor: lateCorPublic(await getState("lateCor")) });
     return json({ error: "Dati live non ancora pronti: il giro ogni 2 minuti li aggiorna." }, 503);
   }
   if (body.action === "prematch") {
