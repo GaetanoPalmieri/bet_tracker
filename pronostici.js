@@ -1313,9 +1313,9 @@ var TIP_PLAY_NAME = {
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80',
   tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80', tf1: '+1 1T partita da gol', tf2: '+1 2T partita da gol',
   tm1: '🎯 gol 1T', tm2: '🎯 gol 2T', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
-TIP_PLAY_NAME.tm1 = 'MIRATO · gol entro l’intervallo: 15’-18’, 0-0, attacchi pericolosi ≥1,5 al minuto (dati: 88%)';
+TIP_PLAY_NAME.tm1 = 'MIRATO · gol entro l’intervallo: 15’-18’, 0-0, attacchi pericolosi ≥1,5 al minuto, no femminili (dati: 88%)';
 TIP_PLAY_NAME.tm2 = 'MIRATO · gol entro la fine: 46’-58’, 0-0, una squadra con possesso ≥59% (dati: 94%)';
-TIP_PLAY_NAME.tk1 = 'MIRATO · +1 angolo entro l’intervallo: 33’-38’ con angoli recenti e pressione, oppure 30’-35’ con possesso ≥63% (dati: 84%)';
+TIP_PLAY_NAME.tk1 = 'MIRATO · +1 angolo entro l’intervallo: 33’-36’ con angoli recenti e pressione, oppure 30’-35’ con possesso ≥63%; al massimo 1 gol (dati: 89%)';
 TIP_PLAY_NAME.tk2 = 'MIRATO · +1 angolo entro la fine: 85’-89’, un gol di scarto, max 3 gol, chi perde ha possesso ≥55% (dati: 87%)';
 TIP_PLAY_NAME.tf1 = 'IN PROVA · partita da gol: +1 gol entro l’intervallo (15’-38’, già almeno 2 gol) · tutti i campionati';
 TIP_PLAY_NAME.tf2 = 'IN PROVA · partita da gol: +1 gol entro la fine (46’-80’, già almeno 3 gol a ritmo da 4+ gol a partita) · tutti i campionati';
@@ -1527,7 +1527,9 @@ function tipTargetPlays(min, half, x, prev8, g, G, st, sd) {
     if (corner) { e.extra.cn = cor; e.extra.need = 1; }
     out.push(e);
   };
-  if (half === 1 && min >= 15 && min <= 18 && G === 0 && daM != null && daM >= 1.5) add('tm1', {});
+  /* 3.95.3 — niente calcio femminile: 1/3 contro 28/32 (88%) nelle altre */
+  var women = TIP_LG_WOMEN.test(String((x && x.league) || '') + ' ' + String((x && x.home) || '') + ' ' + String((x && x.away) || ''));
+  if (half === 1 && min >= 15 && min <= 18 && G === 0 && !women && daM != null && daM >= 1.5) add('tm1', {});
   if (half === 2 && min >= 46 && min <= 58 && G === 0 && posOk && Math.max(pos[0], pos[1]) >= 59) add('tm2', { posMax: Math.max(pos[0], pos[1]) });
   if (half === 1 && cor != null && daM != null) {
     var rc = null;
@@ -1535,9 +1537,10 @@ function tipTargetPlays(min, half, x, prev8, g, G, st, sd) {
       var pa = prev8.side[0] || {}, pb = prev8.side[1] || {};
       if (ok(pa.c) && ok(pb.c) && cor >= pa.c + pb.c) rc = (cor - pa.c - pb.c) / (min - prev8.min) * 10;
     }
-    var A = min >= 33 && min <= 38 && daM >= 1.3 && rc != null && rc >= 1.25;
+    /* 3.95.3 — solo fino al 36’ e con al massimo 1 gol: al 37’-38’ 8/13 (62%), con 2+ gol 76%; così 47/53 (89%) */
+    var A = min >= 33 && min <= 36 && daM >= 1.3 && rc != null && rc >= 1.25;
     var B = min >= 30 && min <= 35 && posOk && Math.max(pos[0], pos[1]) >= 63 && daM >= 1.2;
-    if (A || B) add('tk1', { via: A ? 'ritmo angoli' : 'possesso', cornersPer10: r2(rc) }, true);
+    if ((A || B) && G <= 1) add('tk1', { via: A ? 'ritmo angoli' : 'possesso', cornersPer10: r2(rc) }, true);
   }
   if (half === 2 && min >= 85 && min <= 89 && Math.abs(diff) === 1 && G <= 3 && posOk && cor != null) {
     var L = diff > 0 ? 1 : 0;
@@ -2648,7 +2651,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '3.95.2', old = v && (v === 'vecchia' || v < need);
+  var v = tipUI.serverVer, need = '3.95.3', old = v && (v === 'vecchia' || v < need);
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
