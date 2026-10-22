@@ -1072,3 +1072,6 @@ dialog#editor.sheet .sheet-close.tip-sheet-x{background:color-mix(in srgb,var(--
 .lv-bar .lv-scan:active{transform:scale(.97)}
 .lv-bar{padding:7px 8px 7px 12px}
 .lv-status{flex:1 1 auto}
+/* 3.99.7 — versione del server nella barra Live */
+.lv-ver{flex:none;font-size:10px;font-weight:800;padding:3px 7px;border-radius:999px;background:rgba(24,152,136,.16);color:var(--suite-text-soft);white-space:nowrap}
+.lv-ver.old{background:rgba(242,160,50,.2);color:#ffbd63}

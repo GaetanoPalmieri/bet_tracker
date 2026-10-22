@@ -1746,7 +1746,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.99.6',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '3.99.7',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2929,6 +2929,8 @@ function tipLivePanel(list) {
   var S = tipUI.scan;
   var bar = '<div class="lv-bar"><div class="lv-status"><span class="lv-dot' + (S && Date.now() - S.at < 5 * 60e3 ? ' on' : '') + '"></span><b>LIVE</b><small>' +
     (S ? 'aggiornato alle ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'in attesa della prima scansione') + ' · ' + nLive + ' partite</small></div>' +
+    /* 3.99.7 — versione della funzione pronostici-avvisi sempre visibile: ⚠ se è più vecchia dell'app */
+    (function () { var v = tipUI.serverVer, need = '3.99.6', old = !v || v === 'vecchia' || v < need; return '<span class="lv-ver' + (old ? ' old' : '') + '" title="Versione della funzione pronostici-avvisi su Supabase">' + (old ? '⚠ server ' : 'server ') + U.esc(v ? (v === 'vecchia' ? 'vecchio' : v) : '?') + '</span>'; })() +
     '<button type="button" class="lv-scan" data-scan title="' + (S ? 'Riscansiona ora' : 'Scansiona ora') + '"><span class="lv-scan-ic">↻</span><span>Aggiorna</span></button></div>' +
     '<div class="lv-tabs" role="tablist">' + tb('now', 'Adesso', items.length) + tb('today', 'Oggi', nToday) + tb('all', 'Partite', nLive) + '</div>';
   var allHtml = scanHtml + tipStarPanel(list) +
