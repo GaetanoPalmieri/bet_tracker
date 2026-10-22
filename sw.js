@@ -3,30 +3,30 @@
    - Pagina: rete con timeout di 3 secondi, poi la copia salvata (funziona anche offline).
    - File con ?v= e icone: prima la cache; un nuovo rilascio cambia ?v= e quindi l'indirizzo.
    - Il nuovo worker resta in attesa finché l'app non chiede di attivarlo (avviso "Aggiorna"). */
-const VERSION = '3.99.1';
+const VERSION = '3.99.3';
 const PREFIX = 'bet-tracker-';
 const CACHE = PREFIX + VERSION;
 const SHELL = [
   './',
   './index.html',
-  './suite.js?v=3.99.1',
-  './colors.css?v=3.99.1',
-  './base.css?v=3.99.1',
-  './shared.css?v=3.99.1',
-  './app.css?v=3.99.1',
-  './suite.css?v=3.99.1',
-  './suite-tokens.css?v=3.99.1',
-  './vetro.css?v=3.99.1',
-  './shared.js?v=3.99.1',
-  './app.js?v=3.99.1',
-  './pronostici.js?v=3.99.1',
-  './pronostici.css?v=3.99.1',
-  './manifest.webmanifest?v=3.99.1',
-  './favicon.ico?v=3.99.1',
-  './favicon-32.png?v=3.99.1',
-  './apple-touch-icon.png?v=3.99.1',
-  './bet-icon-192.png?v=3.99.1',
-  './bet-icon-512.png?v=3.99.1'
+  './suite.js?v=3.99.3',
+  './colors.css?v=3.99.3',
+  './base.css?v=3.99.3',
+  './shared.css?v=3.99.3',
+  './app.css?v=3.99.3',
+  './suite.css?v=3.99.3',
+  './suite-tokens.css?v=3.99.3',
+  './vetro.css?v=3.99.3',
+  './shared.js?v=3.99.3',
+  './app.js?v=3.99.3',
+  './pronostici.js?v=3.99.3',
+  './pronostici.css?v=3.99.3',
+  './manifest.webmanifest?v=3.99.3',
+  './favicon.ico?v=3.99.3',
+  './favicon-32.png?v=3.99.3',
+  './apple-touch-icon.png?v=3.99.3',
+  './bet-icon-192.png?v=3.99.3',
+  './bet-icon-512.png?v=3.99.3'
 ];
 const NETWORK_TIMEOUT_MS = 3000;
 

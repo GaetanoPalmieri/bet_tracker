@@ -993,10 +993,10 @@ var TIP_PLAY_NAME = {
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80',
   tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80', tf1: '+1 1T partita da gol', tf2: '+1 2T partita da gol',
   tm1: '🎯 prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
-TIP_PLAY_NAME.tm1 = 'MIRATO · prossimo gol entro l’intervallo (10’-38’, qualsiasi punteggio): mercato live ≥68%, linea gol che tiene, tiro in porta negli ultimi minuti; no femminili (registro: 84%, dal 70% 88%)';
-TIP_PLAY_NAME.tm2 = 'MIRATO · prossimo gol entro la fine (46’-80’, qualsiasi punteggio fino a 4 gol): mercato live ≥75% e linea gol che tiene (registro: 88%, dall’82% 91%)';
-TIP_PLAY_NAME.tk1 = 'MIRATO · +1 angolo entro l’intervallo, 34’-36’, con almeno 2 angoli negli ultimi ~10’; riparte dopo ogni angolo (registro: 88%, campione piccolo)';
-TIP_PLAY_NAME.tk2 = 'MIRATO · +1 angolo entro la fine, 82’-83’, al massimo 2 gol e ritmo angoli da 10+ a partita; riparte dopo ogni angolo (registro: 85%, campione piccolo)';
+TIP_PLAY_NAME.tm1 = '🎯 Prossimo gol entro l’intervallo';
+TIP_PLAY_NAME.tm2 = '🎯 Prossimo gol entro la fine';
+TIP_PLAY_NAME.tk1 = '🎯 +1 angolo entro l’intervallo';
+TIP_PLAY_NAME.tk2 = '🎯 +1 angolo entro la fine';
 TIP_PLAY_NAME.tf1 = 'IN PROVA · partita da gol: +1 gol entro l’intervallo (15’-38’, già almeno 2 gol) · tutti i campionati';
 TIP_PLAY_NAME.tf2 = 'IN PROVA · partita da gol: +1 gol entro la fine (46’-80’, già almeno 3 gol a ritmo da 4+ gol a partita; dal 60’ al massimo 4 gol) · tutti i campionati';
 var TIP_CORNER_WIN = { 1: { from: 36, to: 42, end: 45, stop: 2, K: 15, base: 10 }, 2: { from: 82, to: 87, end: 90, stop: 4, K: 27, base: 10 } };
