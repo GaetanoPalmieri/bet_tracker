@@ -1773,7 +1773,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.0.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.0.3',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2910,7 +2910,7 @@ function tipLivePanel(list) {
       if (seen[key] || seen[y.m.id + '|' + e.k]) return;
       seen[key] = 1;
       var it = { P: { m: y.m, r: y.r, min: y.min, half: y.half, sc: g, open: 'data-scan-open="' + U.esc(e.afId) + '"' },
-        pl: { k: e.k, p: e.p, green: e.tier === 'excellent', warm: e.tier === 'try', trial: !!e.trial, cn: e.cn, book: e.book, lowBook: e.lowBook }, prev: null, isNew: (e.t || 0) > now - 4 * 60e3, k: e.k, at: e.min };
+        pl: { k: e.k, p: e.p, green: e.tier === 'excellent', warm: e.tier === 'try', trial: !!e.trial, cn: e.cn, book: e.book, lowBook: e.lowBook, factors: e.factors }, prev: null, isNew: (e.t || 0) > now - 4 * 60e3, k: e.k, at: e.min };
       (byType[e.k] = byType[e.k] || []).push(it); items.push(it);
     });
     items.sort(function (a, b) { return (b.pl.green ? 1 : 0) - (a.pl.green ? 1 : 0) || (b.pl.evalP == null ? b.pl.p : b.pl.evalP) - (a.pl.evalP == null ? a.pl.p : a.pl.evalP); });
@@ -2928,6 +2928,9 @@ function tipLivePanel(list) {
       '<span class="lv-main"><b class="lv-teams">' + (x.isNew ? '<i class="lv-newtag">NUOVA</i>' : '') + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b>' +
       '<span class="lv-sub"><span class="lv-score">' + sc + '</span><span class="lv-target">→ ' + U.esc(target) + '</span><span class="lv-kind">' + U.esc(TIP_PLAY_SHORT[x.k] || x.k) + '</span>' +
       (pl.book ? '<span class="lv-book' + (pl.lowBook ? ' low' : '') + '">@' + pl.book.toFixed(2) + '</span>' : '') + '</span>' +
+      /* 4.0.3 — da dove viene la % (quote vere bet365 o sola linea gol) e quota stimata del book per "un altro gol" (margine ~5%) */
+      (function () { var f = pl.factors || {}; if (corner || !U.finite(f.pMkt)) return ''; var qb = 0.95 / f.pMkt;
+        return '<small class="lv-league lv-src">' + (f.src === 'quote' ? '📈 quote bet365' : '📏 linea gol') + ' · mercato ' + Math.round(f.pMkt * 100) + '% · quota stimata ≈' + qb.toFixed(2) + '</small>'; })() +
       '<small class="lv-league">' + U.esc(P2.m.league || '') + (A ? ' · ' + A.avg.toFixed(1).replace('.', ',') + ' gol/partita' : '') + '</small>' +
       (x.at != null && x.at !== P2.min ? '<small class="lv-league">segnale dato al ' + x.at + '’</small>' : '') +
       (x.prev ? '<small class="lv-prev">già segnalata al ' + x.prev.min + '’ · ' + U.esc(TIP_PLAY_SHORT[x.prev.k] || x.prev.k) + '</small>' : '') + '</span>' +
@@ -3825,15 +3828,25 @@ function tipNav(list) {
     '</div></div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden>';
 }
 /* giorni a scelta rapida, uguali in Top e Partite: Oggi · Domani · Dopodomani · Tutti (con il numero di partite) */
-function tipDayChips(list, allLabel) {
+function tipDayChips(list, allLabel, countFn, unit) { /* 4.0.1 — countFn/unit: in Top si contano le partite in Top, non tutti i pronostici */
   var today = U.local().slice(0, 10), add = function (n) { var d = new Date(today + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toLocaleDateString('sv-SE'); };
   var wd = function (iso) { return tipCap(new Date(iso + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long' })); };
   var opts = [[today, 'Oggi'], [add(1), 'Domani'], [add(2), wd(add(2))], ['all', allLabel || 'Tutti']];
-  var cnt = function (d) { return list.filter(function (m) { return !m.cancelled && (d === 'all' ? m.date >= today : m.date === d); }).length; };
+  var cnt = countFn || function (d) { return list.filter(function (m) { return !m.cancelled && (d === 'all' ? m.date >= today : m.date === d); }).length; };
   return '<div class="tip-days" role="tablist">' + opts.map(function (o) {
     var on = tipUI.day === o[0], n = cnt(o[0]);
-    return '<button type="button" role="tab" class="tip-dayb' + (on ? ' on' : '') + (n ? '' : ' empty') + '" data-tip-day="' + o[0] + '" aria-selected="' + on + '"><b>' + U.esc(o[1]) + '</b><small>' + (o[0] === 'all' ? n + ' partite' : new Date(o[0] + 'T12:00:00').getDate() + ' · ' + n + (n === 1 ? ' partita' : ' partite')) + '</small></button>';
+    return '<button type="button" role="tab" class="tip-dayb' + (on ? ' on' : '') + (n ? '' : ' empty') + '" data-tip-day="' + o[0] + '" aria-selected="' + on + '"><b>' + U.esc(o[1]) + '</b><small>' + (o[0] === 'all' ? n + ' ' + (unit ? unit[1] : 'partite') : new Date(o[0] + 'T12:00:00').getDate() + ' · ' + n + ' ' + (unit ? (n === 1 ? unit[0] : unit[1]) : (n === 1 ? 'partita' : 'partite'))) + '</small></button>';
   }).join('') + '</div>';
+}
+/* 4.0.1 — nelle schede giorno della Top: quante partite sono DAVVERO in Top (prima si contavano tutti i pronostici del giorno) */
+function tipTopDayCount(list) {
+  var today = U.local().slice(0, 10), memo = {};
+  var one = function (d) { if (memo[d] == null) { try { memo[d] = new Set((tipTopFor(d, list).all || []).map(function (c) { return c.m.id; })).size; } catch (e) { memo[d] = 0; } } return memo[d]; };
+  return function (d) {
+    if (d !== 'all') return one(d);
+    var days = {}; list.forEach(function (m) { if (!m.cancelled && m.date >= today) days[m.date] = 1; });
+    return Object.keys(days).reduce(function (n, x) { return n + one(x); }, 0);
+  };
 }
 /* titolo uniforme delle sezioni */
 function tipHead(title, sub) {
@@ -3905,7 +3918,7 @@ function tipsPage() {
   var pn = tipUI.panel;
   if (['home', 'top', 'list', 'live', 'stats'].indexOf(pn) < 0) pn = tipUI.panel = 'home';
   var body = pn === 'stats' ? tipHead('Statistiche', 'Come stanno andando i consigli') + tipStatsPanel(list)
-    : pn === 'top' ? tipHead('Top', 'Le partite più sicure del giorno') + (tipUI.preStale ? '<p class="tip-amber-text tip-hint">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(list, 'Da oggi') + tipTopPanel(list)
+    : pn === 'top' ? tipHead('Top', 'Le partite più sicure del giorno') + (tipUI.preStale ? '<p class="tip-amber-text tip-hint">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(list, 'Da oggi', tipTopDayCount(list), ['in Top', 'in Top']) + tipTopPanel(list)
     : pn === 'live' ? tipLivePanel(list) /* 3.99.3 — la barra di stato della sezione sostituisce l'intestazione */
     : pn === 'list' ? tipHead('Partite', 'Tutti i pronostici, con filtri') + (tipUI.preStale ? '<p class="tip-amber-text tip-hint">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(list, 'Tutti') + tipListPanel(list)
     : tipHubPanel(list);

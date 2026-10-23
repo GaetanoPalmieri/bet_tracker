@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.0.0
+// Versione app: 4.0.4
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -381,6 +381,9 @@ function tcPreMatch(x: any) {
   if (p15 < 0.72 && pht < 0.66) return null;
   const rp = romeParts(ts);
   const odds: any = { gl: f.odds.pre.line };
+  /* 4.0.4 — linea gol prepartita del 1° tempo (per studiare i filtri "gol nel 1° tempo" dal prepartita) */
+  const glh = tcLine(x.p_goal_h ?? x.p_goal_half ?? x.p_hgoal);
+  if (glh != null) odds.glh = glh;
   if (p1x) { odds["1"] = p1x[0]; odds["X"] = p1x[1]; odds["2"] = p1x[2]; }
   const bt = tcNum(Array.isArray(x.p_btts) ? x.p_btts[0] : x.p_btts);
   if (bt && bt > 1) odds.gg = bt;
@@ -406,7 +409,7 @@ async function tcPrematchStep(force = false) {
   let budget = Math.min((liveCache?.length ?? 0) < 40 ? 10 : 6, tcLeft());
   while (budget > 0 && !st.done) {
     const ymd = st.day.replace(/-/g, "");
-    const r = await tcList("/match/schedule", { date: ymd, columns: "odds,goalLine,btts" }, Math.min(budget, 12), st.page);
+    const r = await tcList("/match/schedule", { date: ymd, columns: "odds,goalLine,goalLineHalf,btts" }, Math.min(budget, 12), st.page); /* 4.0.4 — anche la linea gol del 1° tempo */
     budget -= Math.max(1, r.nextPage - st.page);
     /* 3.99.9 — una partita con dati strani non blocca più tutto il giro */
     const keep = r.list.map((x: any) => { try { return tcPreMatch(x); } catch (e) { console.error("prepartita", x?.id, (e as Error).message); return null; } }).filter(Boolean);
@@ -456,15 +459,33 @@ let tcCalls = 0, tcRem: string | null = null, tcOff: number | null = null;
    3 minuti e i pronostici prepartita (che venivano dopo) non avanzavano più (fermi dal 21/10). */
 const TC_RUN_MAX = 26;
 function tcLeft() {
-  const byRun = TC_RUN_MAX - tcCalls, hdr = tcRem != null && isFinite(Number(tcRem)) ? Number(tcRem) - 2 : Infinity;
-  return Math.max(0, Math.min(byRun, hdr));
+  /* 4.0.2 — il ritmo lo regola tcThrottle (5 ogni 10 secondi); qui solo il tetto del giro */
+  return Math.max(0, TC_RUN_MAX - tcCalls);
 }
 const tcNum = (v: any) => (v == null || v === "" ? null : isFinite(Number(v)) ? Number(v) : null);
+/* 4.0.2 — LIMITE VERO DI TOTALCORNER: 30 richieste al minuto contate a finestre di 10 secondi, cioè al massimo 5
+   richieste ogni 10 secondi (documentazione API). Il server le sparava tutte di fila: le pagine live, le quote e il
+   prematch finivano in "troppe richieste" (prematch fermo, partite live perse). Ora si rispetta il ritmo: al massimo
+   5 richieste in 10 secondi, e se TotalCorner dice che non ne restano si aspetta il suo "reset". */
+const tcTimes: number[] = [];
+let tcResetAt = 0;
+async function tcThrottle() {
+  const now = Date.now();
+  while (tcTimes.length && now - tcTimes[0] > 10_500) tcTimes.shift();
+  let wait = tcTimes.length >= 5 ? 10_500 - (now - tcTimes[0]) : 0;
+  if (tcResetAt > now) wait = Math.max(wait, tcResetAt - now);
+  if (wait > 0) await new Promise((r) => setTimeout(r, Math.min(wait, 11_000)));
+  tcTimes.push(Date.now());
+}
 async function tcGet(path: string, params: Record<string, string | number> = {}) {
+  await tcThrottle();
   tcCalls++;
   const qs = Object.entries(params).map(([k, v]) => k + "=" + encodeURIComponent(String(v))).join("&");
   const r = await fetch(TC + path + "?" + (qs ? qs + "&" : "") + "token=" + encodeURIComponent(TC_TOKEN), { headers: { Accept: "application/json" } });
   tcRem = r.headers.get("x-rate-limit-remaining") ?? tcRem;
+  const rst = Number(r.headers.get("x-rate-limit-reset")), remN = Number(r.headers.get("x-rate-limit-remaining"));
+  /* reset: secondi che mancano (o istante in secondi): se non restano richieste si aspetta fino a lì */
+  if (isFinite(remN) && remN <= 0 && isFinite(rst) && rst > 0) tcResetAt = Date.now() + (rst > 1e9 ? Math.max(0, rst * 1000 - Date.now()) : rst * 1000) + 200;
   let j: any = null;
   try { j = await r.json(); } catch { throw new Error("TotalCorner " + r.status + ": risposta non valida"); }
   if (!r.ok || j?.success === 0 || j?.error) {
@@ -582,9 +603,14 @@ function tcIsSim(x: any) {
   return /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(h) && /\([A-Za-z0-9_.\- ]{2,}\)\s*$/.test(a);
 }
 async function tcLive() {
-  const { list } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 6);
+  /* 4.0.1 — fino a 12 pagine (prima 6). Il 22/10 sera il giro vedeva solo ~40 partite vere (il 20/10 alla stessa ora
+     120): le pagine di TotalCorner si riempiono di eSoccer/virtuali, che poi scartiamo, e le partite vere oltre la 6ª
+     pagina sparivano (es. Lincoln Red Imps – Twente persa dal 13' all'intervallo). Conteggi salvati in tcLiveDiag. */
+  const { list, pages } = await tcList("/match/today", { type: "inplay", columns: TC_COLS }, 15);
   tcCalibrate(list);
-  return list.filter((x: any) => !tcIsSim(x)).map(tcFixture).filter((r: any) => r.home && r.away);
+  const real = list.filter((x: any) => !tcIsSim(x));
+  try { await setState("tcLiveDiag", { at: Date.now(), pages, rows: list.length, real: real.length, sim: list.length - real.length }); } catch { /* solo diagnosi */ }
+  return real.map(tcFixture).filter((r: any) => r.home && r.away);
 }
 
 /* ===================== Motore dell'app (generato da pronostici.js) ===================== */
@@ -2346,7 +2372,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.0.0", tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.0.4", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2359,7 +2385,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.0.0" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.0.4" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2371,7 +2397,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.0.0" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.0.4" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
