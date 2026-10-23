@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.0.4
+// Versione app: 4.2.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1795,13 +1795,20 @@ function tipAlertCard() {
     '</section>';
 }
 function message(e: any, x: any, upgraded: boolean) {
-  /* 3.61.0 — notifica essenziale: tipo e colore, partita, risultato e minuto, campionato */
+  /* 4.2.0 — notifica pulita. Titolo (in grassetto): icone, % e LA giocata col numero del gol o dell'angolo;
+     sotto i nomi interi delle squadre (vanno a capo da soli), poi minuto e risultato.
+     Niente più testo MIRATO / IN PROVA / OTTIMA: 🎯 mirato · 🧪 in prova · ◆ stabile · 🟢 ottima · 🟠 da valutare. */
   void x;
-  const lines = [`${e.gh}-${e.ga} al ${e.min}'`, `${e.league || ""}`];
-  lines.unshift((TIP_PLAY_SHORT[e.k] || e.k) + (e.cn != null ? ` · angoli ora ${e.cn}` : "") + (e.book ? ` · quota ${Number(e.book).toFixed(2)}` : e.factors?.book ? ` · ${Math.round((e.p || 0) * 100)}% · quota ${Number(e.factors.book).toFixed(2)}` : ` · ${Math.round((e.p || 0) * 100)}%`));
+  const k = String(e.k || ""), corner = /^t[chk][12]$/.test(k), G = (e.gh || 0) + (e.ga || 0), grp = tipAlertGroup(k);
+  const by = grp === "gol1" || grp === "cor1" ? "entro il 45’" : "entro la fine", need = Number(e.need) || 1;
+  const play = corner ? (e.cn != null ? `${Number(e.cn) + need}° angolo ${by}` : `+${need} angol${need > 1 ? "i" : "o"} ${by}`) : `${G + 1}° gol ${by}`;
+  const ic = (TIP_TARGET[k] ? "🎯" : e.trial ? "🧪" : "◆") + (e.tier === "excellent" ? "🟢" : "🟠");
+  const q = e.book ? Number(e.book) : e.factors?.book ? Number(e.factors.book) : null;
+  const when = `⏱ ${e.min}’${(e.half || 1) === 1 ? " 1T" : ""} · ${e.gh || 0}-${e.ga || 0}` + (corner && e.cn != null ? ` · angoli ${e.cn}` : "") + (q && isFinite(q) ? ` · quota ${q.toFixed(2)}` : "");
+  const extra = TIP_TARGET[k] ? "" : (TIP_PLAY_SHORT[k] || "");
   return {
-    title: `${TIP_TARGET[e.k] ? "🎯 MIRATO · " : e.trial ? "🧪 IN PROVA · " : ""}${e.tier === "excellent" ? "🟢 OTTIMA" : "🟠 DA VALUTARE"} · ${e.home} – ${e.away}`,
-    body: lines.filter(Boolean).join("\n"),
+    title: `${upgraded ? "⬆ " : ""}${ic} ${Math.round((e.p || 0) * 100)}% · ${play}`,
+    body: [`${e.home} – ${e.away}`, when, extra].filter(Boolean).join("\n"),
     upgraded,
     tag: "bet-live-" + (e.afId || e.id) + (e.trial ? "-" + e.k : ""),
     renotify: true,
@@ -2372,7 +2379,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.0.4", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.2.0", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2385,7 +2392,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.0.4" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.2.0" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2397,14 +2404,14 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.0.4" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.2.0" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
     const { data: subs } = await admin.from("push_subscriptions").select("*").eq("app", APP).eq("user_id", au.user.id).eq("enabled", true);
     if (!subs?.length) return json({ error: "Nessun telefono iscritto: attiva prima le notifiche in Altro › Notifiche." });
     let sent = 0;
-    for (const s of subs) if ((await send(s, { title: "🟢 Prova avvisi live", body: "Così arriverà una giocata OTTIMA.\n👉 Tocca per aprire il Live", tag: "bet-live-test", url: "./?live=1" })) === "ok") sent++;
+    for (const s of subs) if ((await send(s, { title: "🎯🟢 84% · 3° angolo entro il 45’", body: "Squadra di casa – Squadra ospite\n⏱ 35’ 1T · 1-0 · angoli 2\n👉 Prova: tocca per aprire Live › Adesso", tag: "bet-live-test", url: "./?live=1" })) === "ok") sent++;
     if (!vapidOk) return json({ error: "Su Supabase mancano i segreti BET_VAPID_PUBLIC_KEY e BET_VAPID_PRIVATE_KEY (GUIDA_NOTIFICHE, passo 2)." });
     return json({ sent });
   }

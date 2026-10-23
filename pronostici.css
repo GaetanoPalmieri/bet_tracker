@@ -1117,3 +1117,109 @@ dialog#editor.sheet .sheet-close.tip-sheet-x{background:color-mix(in srgb,var(--
 .tl-today .ic-btn{width:38px!important;height:38px!important}
 .tl-today .ic-btn svg{width:18px;height:18px}
 @media(max-width:400px){.tl-today .tl-tools .tl-seg2 .tip-smpbtn{font-size:11.5px!important;padding:9px 4px!important}.tl-today .ic-btn{width:34px!important;height:34px!important}}
+
+/* ===== 4.2.0 — menu a tendina (Tutti / Stabili / In prova, Ordina per), pulsanti più alti, statistiche ordinate ===== */
+.dd-wrap{position:relative;z-index:30;flex:none}
+.dd-wrap.open{z-index:40}
+.dd-btn{appearance:none;-webkit-appearance:none;display:inline-flex!important;align-items:center;gap:7px;height:44px!important;min-height:0!important;margin:0!important;padding:0 12px 0 14px!important;border-radius:12px!important;border:1px solid var(--suite-glass-edge)!important;background:color-mix(in srgb,var(--suite-text) 6%,transparent)!important;color:var(--suite-text)!important;font-size:13.5px!important;font-weight:800!important;line-height:1!important;white-space:nowrap;cursor:pointer;box-shadow:none!important}
+.dd-btn .dd-cur{flex:1 1 auto;text-align:left;overflow:hidden;text-overflow:ellipsis}
+.dd-btn .dd-ic{font-size:13px;line-height:1}
+.dd-chev{flex:none;opacity:.75;transition:transform .15s}
+.dd-wrap.open .dd-chev{transform:rotate(180deg)}
+.dd-wrap.on>.dd-btn,.dd-wrap.open>.dd-btn{border-color:rgba(24,152,136,.6)!important;background:rgba(24,152,136,.16)!important}
+.dd-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:210px;padding:6px;border-radius:14px;border:1px solid var(--suite-glass-edge);background:#151c24;box-shadow:0 16px 36px rgba(0,0,0,.5)}
+:root[data-theme="light"] .dd-menu{background:#fff;box-shadow:0 14px 30px rgba(0,0,0,.18)}
+.dd-wrap.open .dd-menu{display:grid;gap:2px;animation:tlIn .14s ease-out}
+.dd-right .dd-menu{left:auto;right:0}
+.dd-title{font-size:10.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--suite-text-soft);padding:6px 10px 4px}
+.dd-opt{appearance:none;-webkit-appearance:none;display:flex!important;align-items:center;gap:10px;width:100%;min-height:44px!important;margin:0!important;padding:0 10px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:var(--suite-text)!important;font-size:14px!important;font-weight:700!important;text-align:left;cursor:pointer;box-shadow:none!important}
+.dd-opt:hover{background:color-mix(in srgb,var(--suite-text) 7%,transparent)!important}
+.dd-opt.on{background:rgba(24,152,136,.18)!important}
+.dd-opt .dd-ic{width:20px;text-align:center;flex:none;font-size:13px}
+.dd-opt .dd-lab{flex:1 1 auto}
+.dd-opt i{font-style:normal;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:rgba(130,140,150,.18);color:var(--suite-text-soft);font-variant-numeric:tabular-nums}
+.dd-tick{width:16px;text-align:center;color:#5fe0ac;flex:none;font-weight:900}
+/* ordina: pulsante tondo come le altre icone */
+.dd-icon>.dd-btn{position:relative;width:44px!important;height:44px!important;padding:0!important;justify-content:center;border-radius:50%!important}
+.ic-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#27c383}
+/* icone più grandi (soprattutto in altezza) */
+.tl-today .ic-btn,.st-toolrow .ic-btn{width:44px!important;height:44px!important}
+.tl-today .ic-btn svg,.st-toolrow .ic-btn svg,.dd-icon svg{width:19px;height:19px}
+.ic-badge{top:-3px;right:-3px;min-width:17px;height:17px;line-height:17px;font-size:10px}
+/* Consigli di oggi: menu a sinistra (largo), icone a destra */
+.tl-today .tl-tools{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+.tl-today .tl-tools .dd-sample{flex:1 1 auto;min-width:0}
+.tl-today .tl-tools .dd-sample>.dd-btn{width:100%}
+.tl-today .ic-row{gap:7px}
+/* Statistiche: riga 1 Riepilogo|Storico + icone, riga 2 cosa stai guardando */
+.st-toolrow{gap:8px;margin:8px 0}
+.st-toolrow .st-seg.st-seg-sm{flex:1 1 auto;min-width:0;display:flex;gap:3px;padding:3px!important;border-radius:13px!important}
+.st-toolrow .st-seg.st-seg-sm .tip-smpbtn{flex:1 1 0;min-width:0;min-height:40px!important;padding:0 8px!important;font-size:13.5px!important;font-weight:800;border-radius:10px!important;white-space:nowrap}
+.st-toolrow .ic-row{gap:7px}
+.st-ctx{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.st-ctx .dd-btn{height:36px!important;border-radius:999px!important;padding:0 10px 0 13px!important;font-size:12.5px!important}
+.st-ctx .tip-lchip{min-height:36px!important;padding:0 12px!important;font-size:12px!important;display:inline-flex!important;align-items:center;border-radius:999px!important;margin:0!important}
+/* riepilogo: 4 numeri chiave + righe con barra */
+.st-sumcard{padding:12px!important}
+.st-hero{display:grid;gap:10px}
+.st-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.st-kpi{display:grid;gap:3px;min-width:0;padding:9px 8px 8px;border-radius:12px;border:1px solid var(--suite-glass-edge);background:color-mix(in srgb,var(--suite-text) 5%,transparent)}
+.st-kpi small{font-size:9.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--suite-text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-kpi b{font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}
+.st-kpi>span{font-size:10px;color:var(--suite-text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-kpi b span{font-size:inherit}
+.st-rows{display:grid}
+.st-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px 12px;padding:10px 2px 9px;border-top:1px solid color-mix(in srgb,var(--suite-text) 8%,transparent)}
+.st-rows>.st-row:first-child{border-top:0}
+.st-l{display:grid;gap:2px;min-width:0}
+.st-l b{font-size:13px;font-weight:800;line-height:1.25}
+.st-l small{font-size:11px;color:var(--suite-text-soft);font-variant-numeric:tabular-nums;line-height:1.3}
+.st-r{display:grid;justify-items:end;gap:2px;text-align:right}
+.st-rate{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+.st-rate.good{color:#61f0b4}.st-rate.bad{color:#ff9297}.st-rate.none{color:var(--suite-text-soft)}
+.st-r small{font-size:10.5px;color:var(--suite-text-soft);white-space:nowrap}
+.st-bar{grid-column:1/-1;position:relative;height:5px;border-radius:999px;background:color-mix(in srgb,var(--suite-text) 9%,transparent);margin-top:4px}
+.st-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#1a9867,#5fe0ac)}
+.st-bar i.bad{background:linear-gradient(90deg,#b8323f,#ff9297)}
+.st-bar em{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;border-radius:2px;background:#fff;opacity:.85}
+.st-tiers{border-top:1px solid color-mix(in srgb,var(--suite-text) 8%,transparent);padding-top:2px}
+.st-hero .tip-mine{margin:0;font-size:12px}
+/* sezioni apribili (per tipo, giorno per giorno, campionato…) */
+details.st-card{padding:0!important}
+.st-card>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:13px 14px;min-height:48px;cursor:pointer}
+.st-card>summary::-webkit-details-marker{display:none}
+.st-card>summary b{font-size:14.5px;font-weight:800}
+.st-card>summary span{margin-left:auto;font-size:11px;font-weight:800;color:var(--suite-text-soft);padding:2px 8px;border-radius:999px;background:rgba(130,140,150,.16)}
+.st-card>summary::after{content:'';flex:none;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);opacity:.6;margin:0 3px 4px 2px;transition:transform .15s}
+.st-card[open]>summary::after{transform:rotate(-135deg);margin:4px 3px 0 2px}
+.st-card>.st-rows{margin:0 14px 10px;border-top:1px solid color-mix(in srgb,var(--suite-text) 8%,transparent)}
+.st-card>.tip-days14{margin:4px 14px 6px}
+.st-card>.tip-hint{margin:0 14px 12px}
+/* giorni e periodo dello Storico: pillole al posto della riga di testo */
+.st-day>summary{display:flex!important;align-items:center;flex-wrap:wrap;gap:6px 10px}
+.st-day>summary>b{display:inline-flex;align-items:baseline;gap:6px;font-size:14px}
+.st-day>summary>b small{font-size:11px;font-weight:700;color:var(--suite-text-soft)}
+.st-pills{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}
+.st-pill{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:11.5px;font-weight:800;font-style:normal;font-variant-numeric:tabular-nums;background:rgba(130,140,150,.14);color:var(--suite-text)}
+.st-pill.st-pr{border:1px solid currentColor;background:transparent}
+.st-pr.good{color:#61f0b4}.st-pr.mid{color:#ffbd63}.st-pr.bad{color:#ff9297}
+.st-pill.positive{color:#61f0b4;background:rgba(26,152,103,.16)}.st-pill.negative{color:#ff9297;background:rgba(207,50,63,.16)}
+.st-pill.muted{color:var(--suite-text-soft)}
+.st-day .st-hero{margin:4px 0 8px}
+.tl-stats .st-hero{gap:8px}
+.tl-stats .st-kpi b{font-size:16px}
+/* Oggi: campionato e nazione sotto i nomi */
+.tip-memory-row.tip-mem2>.tip-mem-lg{display:block;margin-top:-2px;padding-right:40px;font-size:10.5px;color:var(--suite-text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Adesso: chip dei tipi più alti, riga con ora della chiamata */
+.lv-chip{padding:0 13px!important;min-height:34px;font-size:12px!important;display:inline-flex;align-items:center}
+.lv-when{color:var(--suite-text-soft)}
+@media(max-width:400px){.st-kpi{padding:8px 6px 7px}.st-kpi b{font-size:16px}.st-kpi small{font-size:9px}.tl-today .ic-btn,.st-toolrow .ic-btn,.dd-icon>.dd-btn{width:42px!important;height:42px!important}.dd-btn{height:42px!important}.st-toolrow .st-seg.st-seg-sm .tip-smpbtn{font-size:12.5px!important}}
+/* 4.2.0 — riquadri apribili interni (per tipo di segnale, profilo × ritmo, esclusi) con freccia, come le sezioni */
+.tip-split>summary{list-style:none;display:flex;align-items:center;gap:8px;font-weight:800!important;font-size:13px!important;min-height:44px;padding:0!important}
+.tip-split>summary::-webkit-details-marker{display:none}
+.tip-split>summary::after{content:'';flex:none;margin-left:auto;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);opacity:.6;margin-bottom:4px;transition:transform .15s}
+.tip-split[open]>summary::after{transform:rotate(-135deg);margin-bottom:-3px}
+.tip-split>.st-rows{border-top:1px solid color-mix(in srgb,var(--suite-text) 8%,transparent)}
+.tip-split .tip-qsum{margin-left:auto;font-weight:700;font-size:11.5px}
+.tip-split .tip-qsum+*{margin-left:0}
+.tip-qbox>summary::after{margin-left:6px}
