@@ -1773,7 +1773,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.0.3',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.1.0',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2608,7 +2608,7 @@ function tipExcellentArchive() {
   var today0 = U.local().slice(0, 10), smp = tipUI.splitSample || '';
   var all = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip' && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && (e.t || 0) >= tipStatsFrom() && tipLblPass(e.prof || 'nq', e.rit || 'norm') && tipEFilter(tipUI.arcF, e); })
     .slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
-  var Q = tipQSplit(all), arr = tipSampleOf(Q.pass, smp), exc = tipSampleOf(Q.exc, smp), mine = Q.pass.filter(function (e) { return e.played; }).length;
+  var Q = tipQSplit(all), arr = tipSortEntries(tipSampleOf(Q.pass, smp)), exc = tipSampleOf(Q.exc, smp), mine = Q.pass.filter(function (e) { return e.played; }).length;
   var w = arr.filter(function (e) { return e.res === 1; }).length, l = arr.filter(function (e) { return e.res === 0; }).length, wait = arr.filter(function (e) { return e.res == null; }).length;
   var LIM = 10, n = tipUI.todayAll ? arr.length : LIM, open = !!tipUI.todayStats;
   var pill = function (cls, ic, v, t) { return '<span class="tl-pill tl-' + cls + '" title="' + t + '"><i>' + ic + '</i>' + v + '</span>'; };
@@ -2616,8 +2616,11 @@ function tipExcellentArchive() {
   var head = '<div class="tl-head"><div class="tl-title"><b>Consigli di oggi</b><small>' + arr.length + ' segnal' + (arr.length === 1 ? 'e' : 'i') + (mine ? ' · ' + mine + ' giocat' + (mine === 1 ? 'o' : 'i') + ' da te' : '') + '</small></div>' +
     '<div class="tl-kpis">' + pill('win', '✓', w, 'Vinte') + pill('loss', '✕', l, 'Perse') + pill('wait', '◷', wait, 'In attesa') +
     (rate != null ? '<span class="tl-rate ' + (rate >= 80 ? 'good' : rate >= 70 ? 'mid' : 'bad') + '">' + rate + '%</span>' : '') + '</div></div>';
+  /* 4.1.0 — filtri, statistiche e ordina: solo icone, accanto a Totale / Stabili / In prova; i filtri attivi sotto, piccoli */
+  var actF = tipEFilterChips(tipUI.arcF, tipUI.lblF, 'data-arcclear');
   var tools = '<div class="tl-tools">' + tipSampleSeg(smp, 'data-split-sample') +
-    '<button type="button" class="tl-statbtn' + (open ? ' on' : '') + '" data-today-stats aria-expanded="' + open + '">📊 Statistiche</button></div>' + tipArcFilterBar();
+    '<div class="ic-row">' + tipIconBtn('data-arcfilters', '⚲', 'Filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', '📊', 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
+    (actF.length ? '<div class="tip-lblf tip-chips-sm">' + actF.join('') + '</div>' : '');
   var stats = open ? '<div class="tl-stats">' + (Q.pass.length ? tipSampleMatrix(Q.pass, true) + tipArchiveSplit(arr) : '<p class="muted tip-tnone">Ancora nessun esito oggi.</p>') +
     '<p class="muted tip-hint">Vinte–perse, % sulle chiuse, ◷ in attesa. Una voce per partita e punteggio (per gli angoli anche per numero di angoli).' + (tipQOn() ? ' Gli esclusi dal filtro qualità non contano.' : '') + '</p></div>' : '';
   var list = arr.length ? '<div class="tip-tlist tl-list">' + arr.slice(0, n).map(function (e) { return tipMemRow(e); }).join('') + '</div>' +
@@ -4206,7 +4209,7 @@ document.addEventListener('click', function (ev) {
 });
 /* 3.96.0 — 'all' arriva con gli esclusi: matrice, tabelle ed elenco usano solo chi passa, gli esclusi vanno nel loro riquadro */
 function tipDayBody(all, smp, extra, lim, qkey) {
-  var Q = tipQSplit(all), pass = Q.pass, arr = tipSampleOf(pass, smp), exc = tipSampleOf(Q.exc, smp), dk = qkey || 'x', n = lim || ((tipUI.dayN || {})[dk]) || 80;
+  var Q = tipQSplit(all), pass = Q.pass, arr = tipSortEntries(tipSampleOf(pass, smp)), exc = tipSampleOf(Q.exc, smp), dk = qkey || 'x', n = lim || ((tipUI.dayN || {})[dk]) || 80;
   return (pass.length ? tipSampleMatrix(pass, true) : '') + (extra || '') +
     (arr.length ? tipArchiveSplit(arr) + '<div class="tip-tlist">' + arr.slice(0, n).map(function (e) { return tipMemRow(e); }).join('') + '</div>' +
       (arr.length > n ? '<div class="actions"><button type="button" ' + (lim ? 'data-per-more' : 'data-day-more="' + U.esc(dk) + '"') + '>Mostra altri consigli (' + (arr.length - n) + ')</button></div>' : '')
@@ -4297,8 +4300,40 @@ function tipStatChips() {
     tipFArr(F.lg).forEach(function (v) { x('lg:' + v, tipLgLabel(v)); });
     tipFArr(F.top).forEach(function (v) { x('top:' + v, v === 'top' ? 'Solo Top' : v === 'unknown' ? 'Top non documentata' : 'Fuori Top'); });
   }
-  return '<div class="tip-lblf"><button type="button" class="tip-lchip tip-lfbtn" data-stfilters>⚲ Filtri' + (act.length ? ' (' + act.length + ')' : '') + '</button><button type="button" class="tip-lchip on" data-stfopen="period">📅 ' + U.esc(tipStRangeLabel()) + '</button>' + act.join('') + tipArchiveChip() + '</div>';
+  /* 4.1.0 — pulsanti a sola icona accanto allo switch; sotto, piccoli, il periodo e i filtri attivi */
+  tipUI._stIcons = tipIconBtn('data-stfilters', '⚲', 'Filtri', act.length) + tipArchiveIcon() + (live && (tipUI.stTab || 'riep') === 'storico' ? tipSortSelect() : '');
+  return '<div class="tip-lblf tip-chips-sm"><button type="button" class="tip-lchip on" data-stfopen="period">📅 ' + U.esc(tipStRangeLabel()) + '</button>' + act.join('') + '</div>';
 }
+/* 4.1.0 — pulsante rotondo a sola icona (con numerino se ci sono filtri attivi) */
+function tipIconBtn(attr, ic, title, n, on) {
+  return '<button type="button" class="ic-btn' + (n || on ? ' on' : '') + '" ' + attr + ' title="' + U.esc(title) + '" aria-label="' + U.esc(title) + '">' + ic + (n ? '<i class="ic-badge">' + n + '</i>' : '') + '</button>';
+}
+function tipArchiveIcon() {
+  if (!((db.predModel || {}).statsFrom)) return '';
+  return tipIconBtn('data-st-archive', '🗄', tipUI.stArchive ? 'Archivio acceso: tocca per tornare ai dati nuovi' : 'Archivio: dati prima dell’azzeramento e tipi sospesi', 0, tipUI.stArchive);
+}
+/* 4.1.0 — ORDINA PER (Storico statistiche e Consigli di oggi) */
+var TIP_SORTS = [['recent', 'Più recenti'], ['p_desc', '% più alta'], ['p_asc', '% più bassa'], ['min', 'Minuto'], ['res', 'Esito'], ['k', 'Tipo']];
+function tipSortSelect() {
+  var cur = tipUI.sortBy || 'recent';
+  return '<label class="ic-sort" title="Ordina per"><span aria-hidden="true">↕</span><select data-sortby aria-label="Ordina per">' + TIP_SORTS.map(function (o) { return '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>';
+}
+function tipSortEntries(arr) {
+  var k = tipUI.sortBy || 'recent', a = (arr || []).slice(), P = function (e) { return typeof e.p === 'number' ? e.p : 0; }, T = function (e) { return e.t || 0; };
+  var R = function (e) { return e.res === 1 ? 0 : e.res === 0 ? 1 : 2; };
+  if (k === 'p_desc') a.sort(function (x, y) { return P(y) - P(x) || T(y) - T(x); });
+  else if (k === 'p_asc') a.sort(function (x, y) { return P(x) - P(y) || T(y) - T(x); });
+  else if (k === 'min') a.sort(function (x, y) { return ((x.half || 1) - (y.half || 1)) || ((x.min || 0) - (y.min || 0)) || T(y) - T(x); });
+  else if (k === 'res') a.sort(function (x, y) { return R(x) - R(y) || T(y) - T(x); });
+  else if (k === 'k') a.sort(function (x, y) { return String(TIP_PLAY_SHORT[x.k] || x.k).localeCompare(String(TIP_PLAY_SHORT[y.k] || y.k)) || T(y) - T(x); });
+  else a.sort(function (x, y) { return T(y) - T(x); });
+  return a;
+}
+document.addEventListener('change', function (ev) {
+  var sel = ev.target && ev.target.closest && ev.target.closest('select[data-sortby]');
+  if (!sel) return;
+  tipUI.sortBy = sel.value; tipUI.todayAll = false; render();
+});
 function tipCalHtml() {
   var R = tipStRange(), today = tipISO(new Date()), base = tipUI.stCal || today.slice(0, 7);
   var y = Number(base.slice(0, 4)), mo = Number(base.slice(5, 7)) - 1, first = new Date(y, mo, 1), start = (first.getDay() + 6) % 7, n = new Date(y, mo + 1, 0).getDate();
@@ -4453,8 +4488,9 @@ function tipStatsPanel(list) {
   var A = tipUI.stArea || 'live', T = tipUI.stTab || 'riep';
   var seg = function (attr, k, t, cur) { return '<button type="button" class="tip-navb' + (cur === k ? ' on' : '') + '" ' + attr + '="' + k + '"><span>' + t + '</span></button>'; };
   var head = '<div class="tip-nav tip-subnav"><div class="tip-navseg">' + seg('data-starea', 'live', 'Live', A) + seg('data-starea', 'pre', 'Prepartita', A) + seg('data-starea', 'more', 'Altro', A) + '</div></div>';
-  if (A === 'more') return head + (tipArchiveChip() ? '<div class="tip-lblf">' + tipArchiveChip() + '</div>' : '') + tipStatsPre(list);
-  head += '<div class="tip-smpseg tip-mainseg" role="tablist">' + [['riep', 'Riepilogo'], ['storico', 'Storico']].map(function (x) { return '<button type="button" role="tab" aria-selected="' + (T === x[0]) + '" class="tip-smpbtn' + (T === x[0] ? ' on' : '') + '" data-sttab="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' + tipStatChips();
+  if (A === 'more') return head + (tipArchiveIcon() ? '<div class="ic-row st-more-ic">' + tipArchiveIcon() + '</div>' : '') + tipStatsPre(list);
+  var chipsBelow = tipStatChips();
+  head += '<div class="st-toolrow"><div class="tip-smpseg tip-mainseg st-seg-sm" role="tablist">' + [['riep', 'Riepilogo'], ['storico', 'Storico']].map(function (x) { return '<button type="button" role="tab" aria-selected="' + (T === x[0]) + '" class="tip-smpbtn' + (T === x[0] ? ' on' : '') + '" data-sttab="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div><div class="ic-row">' + (tipUI._stIcons || '') + '</div></div>' + chipsBelow;
   var body = A === 'pre' ? (T === 'storico' ? tipStatsPreHistory(list) : tipStatsPreSummary(list)) : (T === 'storico' ? tipStatsLiveHistory() : tipStatsLiveSummary());
   return head + body + '<div class="actions"><button type="button" class="primary" data-retrain>⬇︎ Esporta per il retraining</button></div>';
 }

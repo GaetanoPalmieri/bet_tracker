@@ -1084,3 +1084,21 @@ dialog#editor.sheet .sheet-close.tip-sheet-x{background:color-mix(in srgb,var(--
 .lv-st small{font-size:10.5px;color:var(--suite-text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lv-ver2{font-weight:800;color:#5fd3b4}
 .lv-ver2.old{color:#ffbd63}
+
+/* ===== 4.1.0 — pulsanti a sola icona, ordina per, switch più piccolo ===== */
+.ic-row{display:flex;align-items:center;gap:6px;flex:none}
+.ic-btn{position:relative;appearance:none;width:32px!important;height:32px!important;min-height:0!important;padding:0!important;margin:0!important;border-radius:50%!important;display:inline-flex!important;align-items:center;justify-content:center;font-size:14px!important;line-height:1!important;border:1px solid var(--suite-glass-edge);background:color-mix(in srgb,var(--suite-text) 5%,transparent);color:var(--suite-text);flex:none;cursor:pointer}
+.ic-btn.on{background:rgba(24,152,136,.2);border-color:rgba(24,152,136,.6)!important}
+.ic-badge{position:absolute;top:-4px;right:-4px;min-width:15px;height:15px;padding:0 4px;border-radius:999px;background:#27c383;color:#0d2a20;font-style:normal;font-size:9px;font-weight:900;line-height:15px;text-align:center}
+.ic-sort{position:relative;display:inline-flex;align-items:center;height:32px;border-radius:999px;border:1px solid var(--suite-glass-edge);background:color-mix(in srgb,var(--suite-text) 5%,transparent);padding:0 6px 0 9px;gap:3px;flex:none}
+.ic-sort span{font-size:13px;font-weight:800;color:var(--suite-text-soft)}
+.ic-sort select{appearance:none;-webkit-appearance:none;border:0!important;background:transparent!important;color:var(--suite-text);font-size:11px;font-weight:750;padding:0 2px!important;margin:0;max-width:92px;min-height:0!important;outline:none}
+.tl-today .tl-tools{flex-wrap:nowrap}
+.tl-today .tl-tools .tip-smpseg{flex:1 1 auto;min-width:0}
+.st-toolrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0 4px}
+.st-toolrow .st-seg-sm{flex:0 1 auto;margin:0!important}
+.st-toolrow .st-seg-sm .tip-smpbtn{font-size:11.5px!important;padding:5px 12px!important;min-height:0!important}
+.st-more-ic{margin:6px 0}
+.tip-chips-sm{margin:2px 0 6px!important;gap:4px!important}
+.tip-chips-sm .tip-lchip{font-size:10.5px!important;padding:2px 8px!important;min-height:0!important}
+@media(max-width:400px){.ic-btn{width:30px!important;height:30px!important}.ic-sort select{max-width:74px}.tl-today .tip-smpbtn{padding:4px 8px!important}}
