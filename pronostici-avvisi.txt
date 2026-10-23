@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.2.2
+// Versione app: 4.2.3
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -559,7 +559,9 @@ function tcStatus(x: any) {
 }
 function tcGoals(x: any) {
   return (Array.isArray(x.events) ? x.events : []).filter((e: any) => String(e.tp).toLowerCase() === "g")
-    .map((e: any) => ({ min: tcNum(e.t), side: e.h === "h" ? 0 : e.h === "a" ? 1 : null })).filter((g: any) => g.min != null && g.min >= 0).sort((a: any, b: any) => a.min - b.min);
+    /* 4.2.3 — anche i gol nel recupero ("45+2" → 45, "90+1" → 90): prima si perdevano */
+    .map((e: any) => { const s = String(e.t ?? "").replace(/['’]/g, "").trim(), m = /^(\d+)\s*\+/.exec(s); return { min: m ? Number(m[1]) : tcNum(s), side: e.h === "h" ? 0 : e.h === "a" ? 1 : null }; })
+    .filter((g: any) => g.min != null && g.min >= 0).sort((a: any, b: any) => a.min - b.min);
 }
 function tcStats(x: any) {
   const on = tcPair(x, "shot_on", "shotOn"), off = tcPair(x, "shot_off", "shotOff"), pos = tcPair(x, "possess", "possession"),
@@ -991,7 +993,10 @@ function tipScanMatch(x) {
   var r = tipInplay(m, inp),
     main = r.lines.find(function (y) { return y.k === (r.rem.ht > 0 ? 'h1' : 'n1'); }) || r.lines[0];
   if (x.liveLine != null) { r.liveLine = x.liveLine; r.preLine = x.preLine; r.goalOdds = x.goalOdds; } /* 3.99.0 — per il controllo del mercato nelle giocate stabili */
-  return { m: m, x: Object.assign({}, x, { goals: dd.goals || x.goals, elapsed: dd.elapsed, status: dd.status || x.status, stats: dd.stats || x.stats }), min: min, half: half, main: main, r: r };
+  /* 4.2.3 — salto della linea gol senza gol (rigore, VAR, punteggio in ritardo): vale per TUTTI i segnali, stabili e in prova */
+  var gg = dd.goals || x.goals || [0, 0];
+  r.lineJump = tipLineJump(m.id, min, half, x.liveLine, (gg[0] || 0) + (gg[1] || 0));
+  return { m: m, x: Object.assign({}, x, { goals: dd.goals || x.goals, elapsed: dd.elapsed, status: dd.status || x.status, stats: dd.stats || x.stats, lineJump: r.lineJump }), min: min, half: half, main: main, r: r };
 }
 function tipIsStar(m) {
   if (!m) return false;
@@ -1257,9 +1262,24 @@ function tipMktNext(x, min, half, G) {
   }
   return out;
 }
+/* 4.2.3 — SALTO DI LINEA SENZA GOL: la linea gol live che sale di 0,5+ dall'ultima scansione (1-8 minuti prima) con lo
+   stesso punteggio vuol dire rigore assegnato, VAR o punteggio non ancora aggiornato. Il book (sospeso) prezza il rigore:
+   la nostra % schizza e il segnale partiva sul rigore. Vale in tutti e due i tempi, a ogni scansione.
+   Registro 20-23/10: salti di 0,75+ → gol entro 4' 5 volte su 6. */
+function tipLineJump(id, min, half, ll, G) {
+  if (!U.finite(ll) || !U.finite(min)) return null;
+  var L = tipLiveHist(id).filter(function (s) { return (s.half || 1) === half && U.finite(s.ll) && U.finite(s.g) && min - s.min >= 1 && min - s.min <= 8; });
+  /* confronto con la linea più BASSA degli ultimi 8 minuti con lo stesso punteggio: se il rigore (o il VAR) dura più di una
+     scansione, anche la seconda lo vede (registro: 27 salti in tutta la partita, 1T e 2T dal 1' al 97', 3 in più così) */
+  L = L.filter(function (s) { return s.g === G; });
+  if (!L.length) return null;
+  var lo = Math.min.apply(null, L.map(function (s) { return s.ll; }));
+  return Math.round((ll - lo) * 100) / 100;
+}
 function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var W = TIP_TM[half];
   if (!W || min < W.from || min > W.to || (W.maxG != null && G > W.maxG) || (half === 1 && women)) return null;
+  if (x && U.finite(x.lineJump) && x.lineJump >= 0.5) return null; /* 4.2.3 — rigore / evento in corso: si aspetta */
   var M = tipMktNext(x, min, half, G);
   /* 4.2.1 — tv2: 1-0 / 0-1 a inizio 2T con linea bassa (mercato 60-75%): qui sta la quota (registro 20-22/10: 53/65, 82%, mercato 71%) */
   var lowV = !!M && half === 2 && G === 1 && min <= 52 && M.p >= 0.60 && M.p < W.pMin;
@@ -1383,6 +1403,8 @@ function tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev) {
 function tipTrialPlays(r, min, half, x, prev, prev8) {
   var out = [], st = x && x.stats, g = (x && x.goals) || [0, 0], G = (g[0] || 0) + (g[1] || 0);
   if (!r || !st || min == null) return out;
+  /* 4.2.3 — rigore / VAR / punteggio in ritardo: nessun segnale in prova (gol e angoli) finché la linea non torna normale */
+  if ((U.finite(r.lineJump) && r.lineJump >= 0.5) || (x && U.finite(x.lineJump) && x.lineJump >= 0.5)) return out;
   var sd = st.side || [{}, {}], sum = function (k) { return (sd[0][k] || 0) + (sd[1][k] || 0); };
   var on = U.finite(st.t) ? st.t : sum('t'), cor = U.finite(st.c) ? st.c : sum('c'), da = sum('da');
   var line = function (k) { var l = (r.lines || []).find(function (z) { return z.k === k; }); return l ? l.p : null; };
@@ -1478,7 +1500,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.2',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.3',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -1591,6 +1613,7 @@ function tipLabels(r) {
   return { prof: L == null ? 'nq' : L >= 2.9 ? 'gol' : L < 2.4 ? 'pochi' : 'medio', rit: !r || !r.used ? 'norm' : F >= 1.2 ? 'alto' : F <= 0.85 ? 'basso' : 'norm' };
 }
 function tipPlays(r, min, half, book) {
+  if (r && U.finite(r.lineJump) && r.lineJump >= 0.5) return []; /* 4.2.3 — rigore / evento in corso: nessuna giocata */
   var out = [], Q = TIP_MIN_ODDS, ok = function (p) { return p > 0.02 && 1 / p >= Q; };
   var h1 = (r.lines.find(function (x) { return x.k === 'h1'; }) || {}).p, n1 = (r.lines.find(function (x) { return x.k === 'n1'; }) || {}).p;
   /* 3.34.0 — costo: puntate a step che recuperano le perdite e vincono sempre come il primo step.
@@ -2305,7 +2328,7 @@ async function runAlerts() {
       try { y = tipScanMatch(x); } catch (e) { console.error("motore", x.afId, (e as Error).message); continue; }
       if (!y) continue;
       evaluated++;
-      if (y.x.stats && y.x.stats.side && y.min != null) snaps.push({ id: y.m.id, snap: { min: y.min, half: y.half, side: y.x.stats.side, at: now } });
+      if (y.x.stats && y.x.stats.side && y.min != null) snaps.push({ id: y.m.id, snap: { min: y.min, half: y.half, side: y.x.stats.side, at: now, ll: y.x.liveLine, g: (y.x.goals[0] || 0) + (y.x.goals[1] || 0) } });
       /* 3.91.0 — prima dei 15' si valutano solo i segnali in prova (gol 1T presto parte dall'8'): prima
          questo controllo li saltava tutti e "gol 1T presto" dal server non arrivava quasi mai */
       /* 3.68.0 — segnali IN PROVA: salvati come gli altri (senza notifica) */
@@ -2418,7 +2441,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.2.2", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.2.3", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2431,7 +2454,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.2.2" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.2.3" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2443,7 +2466,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.2.2" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.2.3" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {

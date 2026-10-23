@@ -1228,3 +1228,45 @@ details.st-card{padding:0!important}
 .st-kpi.xs b{font-size:13px}
 .tl-today .tip-lblf.tip-chips-sm{gap:6px!important;margin:0!important}
 .tl-today .tip-lblf.tip-chips-sm .tip-lchip{min-height:36px!important;padding:0 13px!important;font-size:12px!important;display:inline-flex!important;align-items:center;border-radius:999px!important}
+
+/* ===== 4.2.4 — FILTRI PREFERITI ===== */
+.fv-sheet{display:grid;gap:8px}
+.fv-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 2px 4px}
+.fv-top span{font-size:13px;color:var(--suite-text-soft)}.fv-top b{color:var(--suite-text);font-size:15px}
+.fv-all{appearance:none;border:1px solid rgba(242,176,78,.55)!important;background:rgba(242,176,78,.14)!important;color:#ffcf7a!important;border-radius:999px!important;padding:0 14px!important;min-height:38px!important;font-size:12.5px!important;font-weight:800!important;cursor:pointer;margin:0!important}
+.fv-warn{font-size:12px;padding:9px 11px;border-radius:12px;background:rgba(242,160,50,.14);color:#ffbd63}
+.fv-legend{display:flex;justify-content:flex-end;gap:14px;padding:0 6px;font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--suite-text-soft)}
+.fv-legend span{display:inline-flex;align-items:center;gap:4px}
+.fv-legend svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+.fv-grp{margin:8px 2px 0;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--suite-text-soft)}
+.fv-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:10px 10px 10px 12px;border-radius:14px;border:1px solid var(--suite-glass-edge);background:color-mix(in srgb,var(--suite-text) 4%,transparent);opacity:.72;transition:opacity .15s,border-color .15s}
+.fv-row.on{opacity:1;border-color:rgba(242,176,78,.4)}
+.fv-main{display:grid;gap:2px;min-width:0}
+.fv-main b{font-size:14px;font-weight:800;line-height:1.25}
+.fv-main small{font-size:11px;color:var(--suite-text-soft);line-height:1.3}
+.fv-main .fv-desc{font-size:10.5px;opacity:.85}
+.fv-tg{appearance:none;width:44px!important;height:44px!important;min-height:0!important;padding:0!important;margin:0!important;border-radius:50%!important;display:inline-flex!important;align-items:center;justify-content:center;border:1px solid var(--suite-glass-edge)!important;background:color-mix(in srgb,var(--suite-text) 5%,transparent)!important;color:var(--suite-text-soft)!important;font-size:20px!important;line-height:1!important;cursor:pointer;flex:none}
+.fv-tg svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.fv-star.on{color:#ffcf5a!important;border-color:rgba(242,176,78,.6)!important;background:rgba(242,176,78,.16)!important}
+.fv-bell.on{color:#5fe0ac!important;border-color:rgba(24,152,136,.6)!important;background:rgba(24,152,136,.2)!important}
+.fv-tg:disabled{opacity:.35;cursor:default}
+.fv-open{margin-top:4px!important}
+/* Adesso: Preferiti / Tutti */
+.lv-favseg{display:flex;align-items:center;gap:6px}
+.lv-favseg>button[data-now-fav]{appearance:none;flex:1 1 0;min-height:42px!important;margin:0!important;padding:0 10px!important;border-radius:12px!important;border:1px solid var(--suite-glass-edge)!important;background:color-mix(in srgb,var(--suite-text) 4%,transparent)!important;color:var(--suite-text-soft)!important;font-size:13px!important;font-weight:800!important;cursor:pointer;display:inline-flex!important;align-items:center;justify-content:center;gap:6px}
+.lv-favseg>button[data-now-fav] i{font-style:normal;font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(130,140,150,.2);font-variant-numeric:tabular-nums}
+.lv-favseg>button[data-now-fav].on{color:var(--suite-text)!important;border-color:rgba(242,176,78,.55)!important;background:rgba(242,176,78,.14)!important}
+.lv-favseg>button[data-now-fav="0"].on{border-color:rgba(24,152,136,.6)!important;background:rgba(24,152,136,.18)!important}
+.lv-favedit{appearance:none;width:42px!important;height:42px!important;min-height:0!important;margin:0!important;padding:0!important;border-radius:12px!important;border:1px solid var(--suite-glass-edge)!important;background:color-mix(in srgb,var(--suite-text) 4%,transparent)!important;color:var(--suite-text)!important;display:inline-flex!important;align-items:center;justify-content:center;flex:none;cursor:pointer}
+.lv-favedit svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round}
+/* Oggi: riquadro Preferiti */
+.tl-fav{border:1px solid rgba(242,176,78,.45);border-radius:14px;background:linear-gradient(90deg,rgba(242,176,78,.10),transparent 70%);padding:0 12px}
+.tl-fav>summary{list-style:none;display:flex;align-items:center;gap:10px;min-height:48px;cursor:pointer}
+.tl-fav>summary::-webkit-details-marker{display:none}
+.tl-fav>summary::after{content:'';flex:none;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);opacity:.6;margin-bottom:4px;transition:transform .15s}
+.tl-fav[open]>summary::after{transform:rotate(-135deg);margin-bottom:-3px}
+.tl-fav-t{font-size:14px;font-weight:800;color:#ffcf7a}
+.tl-fav-k{margin-left:auto;font-size:12px;font-weight:700;color:var(--suite-text-soft);font-variant-numeric:tabular-nums}
+.tl-fav[open]{padding-bottom:10px}
+.tl-fav .tl-list{margin-bottom:6px}
+.tl-fav-edit{appearance:none;border:0!important;background:none!important;padding:0!important;margin:0!important;min-height:0!important;color:#ffcf7a!important;font-weight:800;font-size:inherit!important;cursor:pointer;text-decoration:underline}

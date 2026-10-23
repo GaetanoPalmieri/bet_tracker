@@ -1,0 +1,16 @@
+Bet Tracker 4.2.4 (app) · server pronostici-avvisi 4.2.3
+
+Sostituisci questi file nella cartella bet_tracker:
+  pronostici.js, pronostici.css, app.js, index.html, sw.js   → app (pubblica come al solito)
+  pronostici-avvisi.txt                                     → funzione Supabase "pronostici-avvisi" (ripubblicala)
+Dopo la pubblicazione, in Live la barra deve dire "server 4.2.3" e in Altro l'app "4.2.4".
+
+Contiene:
+4.2.2  gol 2T: squadra in vantaggio (non giovanili) OTTIMA, pari DA VALUTARE; gol 2T sull'1-0 senza giovanili;
+       nuovo "gol 2T sull'1-0 a quota" (in prova); angolo 1T con la regola della pressione; gol 1T mai OTTIMA;
+       storico quote con 1X2 e handicap prepartita
+4.2.3  rigore / VAR / punteggio in ritardo: se la linea gol sale di 0,5+ senza gol, nessun segnale (tutti i filtri,
+       tutta la partita); gol nel recupero (45+2, 90+1) letti correttamente
+4.2.4  filtri preferiti: pulsante a imbuto in alto (accanto a statistiche e campanella) per scegliere filtro per filtro
+       ★ preferito e 🔔 notifica (di base tutti preferiti con notifica accesa); Live › Adesso con Preferiti / Tutti;
+       riquadro ★ Preferiti in Oggi sotto i pulsanti; le notifiche filtro per filtro non sono più nella campanella
