@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.2.3
+// Versione app: 4.2.5
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -996,6 +996,7 @@ function tipScanMatch(x) {
   /* 4.2.3 — salto della linea gol senza gol (rigore, VAR, punteggio in ritardo): vale per TUTTI i segnali, stabili e in prova */
   var gg = dd.goals || x.goals || [0, 0];
   r.lineJump = tipLineJump(m.id, min, half, x.liveLine, (gg[0] || 0) + (gg[1] || 0));
+  r.score = [gg[0] || 0, gg[1] || 0]; /* 4.2.5 — per le giocate stabili del 2T (solo con una squadra in vantaggio) */
   return { m: m, x: Object.assign({}, x, { goals: dd.goals || x.goals, elapsed: dd.elapsed, status: dd.status || x.status, stats: dd.stats || x.stats, lineJump: r.lineJump }), min: min, half: half, main: main, r: r };
 }
 function tipIsStar(m) {
@@ -1033,11 +1034,11 @@ var TIP_PLAY_NAME = {
 };
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80',
   tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80', tf1: '+1 1T partita da gol', tf2: '+1 2T partita da gol',
-  tm1: '🎯 prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T sull’1-0 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
+  tm1: '🎯 prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T avanti di 1 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
 TIP_PLAY_NAME.tm1 = '🎯 Prossimo gol entro l’intervallo';
 TIP_PLAY_NAME.tm2 = '🎯 Prossimo gol entro la fine';
 TIP_PLAY_NAME.tm3 = '🎯 Gol entro la fine sull’1-0 (2° tempo)';
-TIP_PLAY_NAME.tv2 = '🎯 Gol entro la fine sull’1-0, linea bassa (inizio 2° tempo, quota più alta)';
+TIP_PLAY_NAME.tv2 = '🎯 Gol entro la fine con una squadra avanti di 1, linea bassa (46’-70’, quota più alta)';
 TIP_PLAY_NAME.tk1 = '🎯 +1 angolo entro l’intervallo';
 TIP_PLAY_NAME.tk2 = '🎯 +1 angolo entro la fine';
 TIP_PLAY_NAME.tf1 = 'IN PROVA · partita da gol: +1 gol entro l’intervallo (15’-38’, già almeno 2 gol) · tutti i campionati';
@@ -1282,7 +1283,9 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   if (x && U.finite(x.lineJump) && x.lineJump >= 0.5) return null; /* 4.2.3 — rigore / evento in corso: si aspetta */
   var M = tipMktNext(x, min, half, G);
   /* 4.2.1 — tv2: 1-0 / 0-1 a inizio 2T con linea bassa (mercato 60-75%): qui sta la quota (registro 20-22/10: 53/65, 82%, mercato 71%) */
-  var lowV = !!M && half === 2 && G === 1 && min <= 52 && M.p >= 0.60 && M.p < W.pMin;
+  /* 4.2.5 — "a quota" esteso a ogni vantaggio di 1 (46'-70', mercato 62-75%): registro 20-23/10 186/224 (83%) */
+  var g0 = (x && x.goals) || [0, 0], lead1 = Math.abs((g0[0] || 0) - (g0[1] || 0)) === 1;
+  var lowV = !!M && half === 2 && lead1 && min <= 70 && M.p >= 0.62 && M.p < W.pMin;
   if (!M || (!lowV && (M.p < W.pMin || (M.keep != null && M.keep < 1)))) return null;
   var sot = null, pv = prev8 && min - prev8.min >= 5 && min - prev8.min <= 15 ? prev8 : prev && min - prev.min >= 5 && min - prev.min <= 15 ? prev : null;
   if (half === 1) {
@@ -1319,7 +1322,9 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
        giovanili in vantaggio               59 casi 83% = mercato                          → DA VALUTARE
        (con il mercato da 85% in su restano OTTIMA tutti: 61/64, 95%) */
     else if (M.p < 0.85) {
-      if (diff === 0) { p = Math.min(0.93, M.p); green = 1; }
+      /* 4.2.5 — in parità sotto l'85% il gol arriva MENO di quanto dice il mercato vero (registro 3-9 punti sotto,
+         sera 23/10 51/66, 77%): niente segnale. Da 85% in su restano OTTIMA (19/19). */
+      if (diff === 0) return null;
       else if (!youth) { p = Math.min(0.93, M.p + 0.07); green = 0.85; }
     }
   }
@@ -1370,7 +1375,8 @@ function tipTargetCorner(min, half, cor, G, sd, prev8, prev, x) {
     o.press = press ? (dS >= 3 ? 'forte' : 'media') : null;
     var lc1 = tipLateCor(x, half);
     if (lc1) { o.late = lc1; if (lc1.rate < 0.6) return null; }
-    return { p: press && dS >= 3 ? 0.86 : 0.79, green: 0.82, warm: 0.76, o: o };
+    /* 4.2.5 — dal vivo la sera del 23/10 la regola della pressione ha fatto 35/64 (55%): mai OTTIMA, senza notifica */
+    return { p: press && dS >= 3 ? 0.80 : 0.76, green: 1, warm: 0.74, o: o };
   } else {
     o.pace = Math.round(cor / min * 1000) / 1000;
     if (G > W.maxG || o.pace < W.pace) return null;
@@ -1500,7 +1506,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.3',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.5',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -1614,6 +1620,7 @@ function tipLabels(r) {
 }
 function tipPlays(r, min, half, book) {
   if (r && U.finite(r.lineJump) && r.lineJump >= 0.5) return []; /* 4.2.3 — rigore / evento in corso: nessuna giocata */
+  if (half === 2 && r && Array.isArray(r.score) && r.score[0] === r.score[1]) return []; /* 4.2.5 — 2T in parità: niente giocate stabili (15/24, 62%) */
   var out = [], Q = TIP_MIN_ODDS, ok = function (p) { return p > 0.02 && 1 / p >= Q; };
   var h1 = (r.lines.find(function (x) { return x.k === 'h1'; }) || {}).p, n1 = (r.lines.find(function (x) { return x.k === 'n1'; }) || {}).p;
   /* 3.34.0 — costo: puntate a step che recuperano le perdite e vincono sempre come il primo step.
@@ -1809,7 +1816,7 @@ function tipQualityPass(e) {
   if (!TIP_QUALITY_LG[lg]) return false;
   return /^t[ch][12]$/.test(String(e.k || '')) || (e.p || 0) >= TIP_QUALITY_MINP;
 }
-var TIP_NO_PUSH = { th1: 1 };
+var TIP_NO_PUSH = { th1: 1, tk1: 1 }; /* 4.2.5 — angolo 1T senza notifica */
 function tipKindActive(k) { return !TIP_K_OFF[k] && !(k === 't1st' && !TIP_STEP1T_ON); }
 function tipStatsFrom() { return tipUI.stArchive ? 0 : (((db.predModel || {}).statsFrom) || 0); }
 function tipStatsFromDay() { var f = tipStatsFrom(); return f ? new Date(f).toLocaleDateString('sv-SE') : '0000-00-00'; }
@@ -2441,7 +2448,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.2.3", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.2.5", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2454,7 +2461,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.2.3" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.2.5" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2466,7 +2473,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.2.3" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.2.5" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {

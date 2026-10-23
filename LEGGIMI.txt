@@ -1,16 +1,15 @@
-Bet Tracker 4.2.4 (app) · server pronostici-avvisi 4.2.3
+Bet Tracker 4.2.5 · server pronostici-avvisi 4.2.5
 
 Sostituisci questi file nella cartella bet_tracker:
   pronostici.js, pronostici.css, app.js, index.html, sw.js   → app (pubblica come al solito)
   pronostici-avvisi.txt                                     → funzione Supabase "pronostici-avvisi" (ripubblicala)
-Dopo la pubblicazione, in Live la barra deve dire "server 4.2.3" e in Altro l'app "4.2.4".
+Dopo la pubblicazione: in Live la barra deve dire "server 4.2.5", in Altro l'app "4.2.5".
 
-Contiene:
-4.2.2  gol 2T: squadra in vantaggio (non giovanili) OTTIMA, pari DA VALUTARE; gol 2T sull'1-0 senza giovanili;
-       nuovo "gol 2T sull'1-0 a quota" (in prova); angolo 1T con la regola della pressione; gol 1T mai OTTIMA;
-       storico quote con 1X2 e handicap prepartita
-4.2.3  rigore / VAR / punteggio in ritardo: se la linea gol sale di 0,5+ senza gol, nessun segnale (tutti i filtri,
-       tutta la partita); gol nel recupero (45+2, 90+1) letti correttamente
-4.2.4  filtri preferiti: pulsante a imbuto in alto (accanto a statistiche e campanella) per scegliere filtro per filtro
-       ★ preferito e 🔔 notifica (di base tutti preferiti con notifica accesa); Live › Adesso con Preferiti / Tutti;
-       riquadro ★ Preferiti in Oggi sotto i pulsanti; le notifiche filtro per filtro non sono più nella campanella
+Contiene anche le versioni precedenti. Il server risultava ancora alla 4.2.2: con questo file prende anche la 4.2.3.
+4.2.3  rigore / VAR / punteggio in ritardo: nessun segnale se la linea gol sale di 0,5+ senza gol (tutti i filtri);
+       gol nel recupero (45+2, 90+1) letti correttamente
+4.2.4  (app già pubblicata) filtri preferiti (pulsante a imbuto in alto), Adesso › Preferiti / Tutti, riquadro Preferiti in Oggi
+4.2.5  gol 2T in parità sotto l'85% di mercato: niente segnale
+       "gol 2T avanti di 1 a quota" (prima: solo 1-0 al 46'-52'): ogni vantaggio di 1, 46'-70', mercato 62-75%
+       angolo 1T: mai OTTIMA e senza notifica
+       giocate stabili del 2T solo con una squadra in vantaggio
