@@ -1111,3 +1111,9 @@ dialog#editor.sheet .sheet-close.tip-sheet-x{background:color-mix(in srgb,var(--
 .tl-today .tl-tools .tip-smpbtn{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px!important;padding:5px 6px!important;min-height:0!important}
 .tl-today .ic-row{gap:5px}
 .tl-today .ic-btn{width:30px!important;height:30px!important}
+/* 4.1.2 — Consigli di oggi: solo Stabili / In prova, pulsanti più grandi (soprattutto in altezza) */
+.tl-today .tl-tools .tl-seg2{flex:1 1 auto;min-width:0;display:flex;gap:4px;padding:3px!important}
+.tl-today .tl-tools .tl-seg2 .tip-smpbtn{flex:1 1 0;min-width:0;white-space:nowrap;font-size:12.5px!important;font-weight:800;padding:10px 8px!important;min-height:40px!important;border-radius:10px!important;overflow:visible}
+.tl-today .ic-btn{width:38px!important;height:38px!important}
+.tl-today .ic-btn svg{width:18px;height:18px}
+@media(max-width:400px){.tl-today .tl-tools .tl-seg2 .tip-smpbtn{font-size:11.5px!important;padding:9px 4px!important}.tl-today .ic-btn{width:34px!important;height:34px!important}}

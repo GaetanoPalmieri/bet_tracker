@@ -1773,7 +1773,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.1.1',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.1.2',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2618,7 +2618,12 @@ function tipExcellentArchive() {
     (rate != null ? '<span class="tl-rate ' + (rate >= 80 ? 'good' : rate >= 70 ? 'mid' : 'bad') + '">' + rate + '%</span>' : '') + '</div></div>';
   /* 4.1.0 — filtri, statistiche e ordina: solo icone, accanto a Totale / Stabili / In prova; i filtri attivi sotto, piccoli */
   var actF = tipEFilterChips(tipUI.arcF, tipUI.lblF, 'data-arcclear');
-  var tools = '<div class="tl-tools">' + tipSampleSeg(smp, 'data-split-sample') +
+  /* 4.1.2 — niente "Totale": Stabili e In prova si accendono e spengono (nessuno acceso = tutti) */
+  var seg2 = '<div class="tip-smpseg tl-seg2" role="group" aria-label="Campione">' + [['stable', '◆ Stabili'], ['trial', '🧪 In prova']].map(function (x) {
+    var on = smp === x[0];
+    return '<button type="button" aria-pressed="' + on + '" class="tip-smpbtn' + (on ? ' on' : '') + (x[0] === 'trial' ? ' trial' : '') + '" data-split-sample="' + (on ? '' : x[0]) + '">' + x[1] + '</button>';
+  }).join('') + '</div>';
+  var tools = '<div class="tl-tools">' + seg2 +
     '<div class="ic-row">' + tipIconBtn('data-arcfilters', TIP_IC_FILTER, 'Filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
     (actF.length ? '<div class="tip-lblf tip-chips-sm">' + actF.join('') + '</div>' : '');
   var stats = open ? '<div class="tl-stats">' + (Q.pass.length ? tipSampleMatrix(Q.pass, true) + tipArchiveSplit(arr) : '<p class="muted tip-tnone">Ancora nessun esito oggi.</p>') +
