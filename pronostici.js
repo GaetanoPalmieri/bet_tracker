@@ -1773,7 +1773,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.1.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.1.1',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2619,7 +2619,7 @@ function tipExcellentArchive() {
   /* 4.1.0 — filtri, statistiche e ordina: solo icone, accanto a Totale / Stabili / In prova; i filtri attivi sotto, piccoli */
   var actF = tipEFilterChips(tipUI.arcF, tipUI.lblF, 'data-arcclear');
   var tools = '<div class="tl-tools">' + tipSampleSeg(smp, 'data-split-sample') +
-    '<div class="ic-row">' + tipIconBtn('data-arcfilters', '⚲', 'Filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', '📊', 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
+    '<div class="ic-row">' + tipIconBtn('data-arcfilters', TIP_IC_FILTER, 'Filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
     (actF.length ? '<div class="tip-lblf tip-chips-sm">' + actF.join('') + '</div>' : '');
   var stats = open ? '<div class="tl-stats">' + (Q.pass.length ? tipSampleMatrix(Q.pass, true) + tipArchiveSplit(arr) : '<p class="muted tip-tnone">Ancora nessun esito oggi.</p>') +
     '<p class="muted tip-hint">Vinte–perse, % sulle chiuse, ◷ in attesa. Una voce per partita e punteggio (per gli angoli anche per numero di angoli).' + (tipQOn() ? ' Gli esclusi dal filtro qualità non contano.' : '') + '</p></div>' : '';
@@ -4301,10 +4301,13 @@ function tipStatChips() {
     tipFArr(F.top).forEach(function (v) { x('top:' + v, v === 'top' ? 'Solo Top' : v === 'unknown' ? 'Top non documentata' : 'Fuori Top'); });
   }
   /* 4.1.0 — pulsanti a sola icona accanto allo switch; sotto, piccoli, il periodo e i filtri attivi */
-  tipUI._stIcons = tipIconBtn('data-stfilters', '⚲', 'Filtri', act.length) + tipArchiveIcon() + (live && (tipUI.stTab || 'riep') === 'storico' ? tipSortSelect() : '');
+  tipUI._stIcons = tipIconBtn('data-stfilters', TIP_IC_FILTER, 'Filtri', act.length) + tipArchiveIcon() + (live && (tipUI.stTab || 'riep') === 'storico' ? tipSortSelect() : '');
   return '<div class="tip-lblf tip-chips-sm"><button type="button" class="tip-lchip on" data-stfopen="period">📅 ' + U.esc(tipStRangeLabel()) + '</button>' + act.join('') + '</div>';
 }
 /* 4.1.0 — pulsante rotondo a sola icona (con numerino se ci sono filtri attivi) */
+var TIP_IC_FILTER = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg>';
+var TIP_IC_SORT = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg>';
+var TIP_IC_STATS = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-7"/></svg>';
 function tipIconBtn(attr, ic, title, n, on) {
   return '<button type="button" class="ic-btn' + (n || on ? ' on' : '') + '" ' + attr + ' title="' + U.esc(title) + '" aria-label="' + U.esc(title) + '">' + ic + (n ? '<i class="ic-badge">' + n + '</i>' : '') + '</button>';
 }
@@ -4313,10 +4316,13 @@ function tipArchiveIcon() {
   return tipIconBtn('data-st-archive', '🗄', tipUI.stArchive ? 'Archivio acceso: tocca per tornare ai dati nuovi' : 'Archivio: dati prima dell’azzeramento e tipi sospesi', 0, tipUI.stArchive);
 }
 /* 4.1.0 — ORDINA PER (Storico statistiche e Consigli di oggi) */
-var TIP_SORTS = [['recent', 'Più recenti'], ['p_desc', '% più alta'], ['p_asc', '% più bassa'], ['min', 'Minuto'], ['res', 'Esito'], ['k', 'Tipo']];
+var TIP_LSORTS = [['recent', 'Più recenti'], ['p_desc', '% più alta'], ['p_asc', '% più bassa'], ['min', 'Minuto'], ['res', 'Esito'], ['k', 'Tipo']];
 function tipSortSelect() {
   var cur = tipUI.sortBy || 'recent';
-  return '<label class="ic-sort" title="Ordina per"><span aria-hidden="true">↕</span><select data-sortby aria-label="Ordina per">' + TIP_SORTS.map(function (o) { return '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>';
+  /* 4.1.1 — solo icona: il menu è invisibile sopra l'icona (si apre toccandola). Prima il nome TIP_SORTS era già usato
+     dall'ordinamento di Partite e mostrava le voci sbagliate ("Ora di inizio"). */
+  var lab = (TIP_LSORTS.find(function (o) { return o[0] === cur; }) || TIP_LSORTS[0])[1];
+  return '<label class="ic-btn ic-sort2' + (cur !== 'recent' ? ' on' : '') + '" title="Ordina per: ' + U.esc(lab) + '">' + TIP_IC_SORT + '<select data-sortby aria-label="Ordina per">' + TIP_LSORTS.map(function (o) { return '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>';
 }
 function tipSortEntries(arr) {
   var k = tipUI.sortBy || 'recent', a = (arr || []).slice(), P = function (e) { return typeof e.p === 'number' ? e.p : 0; }, T = function (e) { return e.t || 0; };
