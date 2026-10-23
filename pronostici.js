@@ -1773,7 +1773,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.1',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2080,10 +2080,13 @@ function tipIdCheckOnce() {
    ripartono da adesso. NIENTE viene cancellato: consigli, pronostici e registri restano per export/retraining e si
    rivedono con 🗄 Archivio. */
 function tipStatsResetOnce() {
+  /* 4.2.1 — spento: l'azzeramento del 22/10 è già nei dati sincronizzati. Su un'app appena reinstallata (dati non ancora
+     arrivati dalla sincronizzazione) rimetteva la partenza delle statistiche a "adesso" e nascondeva i consigli. */
+  /* se la reinstallazione l'aveva già spostata a oggi, torna alla partenza del 22/10 (una volta sola) */
   var pm = db.predModel || {};
-  if ((pm.statsFrom && pm.statsReset399) || tipUI._stReset) return;
-  tipUI._stReset = true;
-  setTimeout(function () { mutate(function (d) { d.predModel = d.predModel || {}; if (!d.predModel.statsReset399) { d.predModel.statsFromPrev = d.predModel.statsFrom || null; d.predModel.statsFrom = Date.now(); d.predModel.statsReset399 = true; } }); }, 0);
+  if (tipUI._stFix || pm.statsFix421 || !pm.statsFrom || pm.statsFrom < Date.parse('2026-10-23T00:00:00+02:00')) return;
+  tipUI._stFix = true;
+  setTimeout(function () { mutate(function (d) { d.predModel = d.predModel || {}; if (!d.predModel.statsFix421 && d.predModel.statsFrom >= Date.parse('2026-10-23T00:00:00+02:00')) { d.predModel.statsFrom = Date.parse('2026-10-22T12:00:00+02:00'); d.predModel.statsFix421 = true; } }); }, 0);
 }
 function tipClosedStats() { var f = tipStatsFrom(); return tipClosed().filter(function (r) { return tipKickoff(r.m).getTime() >= f; }); }
 /* 3.66.0 — soglia minima per tipo di giocata legata alla QUOTA che si va a cercare:
@@ -2439,12 +2442,13 @@ function tipTierSub(arr, a) {
 function tipStHero(L, smp, extra) {
   L = L || [];
   var c = tipStatCount(L);
-  var tile = function (lab, val, sub, cls) { return '<div class="st-kpi"><small>' + lab + '</small><b class="' + (cls || '') + '">' + val + '</b><span>' + (sub || '&nbsp;') + '</span></div>'; };
+  /* 4.2.1 — numeri lunghi (es. 452–136) più piccoli: non escono più dal riquadro */
+  var tile = function (lab, val, sub, cls) { var n = String(val).replace(/<[^>]+>/g, '').length; return '<div class="st-kpi' + (n >= 8 ? ' xs' : n >= 6 ? ' sm' : '') + '"><small>' + lab + '</small><b class="' + (cls || '') + '">' + val + '</b><span>' + (sub || '&nbsp;') + '</span></div>'; };
   var kp = '<div class="st-kpis">' +
     tile('Centrati', c.n ? Math.round(c.rate) + '%' : '—', c.n ? 'prev. ' + Math.round(c.exp) + '%' : 'nessun esito', c.n ? (c.rate >= c.exp - 2 ? 'positive' : 'negative') : '') +
     tile('Esiti', c.w + c.l ? tipWL2(c) : '—', 'vinte–perse') +
     tile('In attesa', String(c.a), c.a ? 'da chiudere' : 'nessuna') +
-    tile('€ teorico', c.n ? (c.pl >= 0 ? '+' : '') + Math.round(c.pl) + '€' : '—', 'puntata base', c.n ? (c.pl >= 0 ? 'positive' : 'negative') : '') + '</div>';
+    tile('Saldo €', c.n ? (c.pl >= 0 ? '+' : '') + Math.round(c.pl) + '€' : '—', 'teorico', c.n ? (c.pl >= 0 ? 'positive' : 'negative') : '') + '</div>';
   var rows = [['<span class="positive">OTTIME</span>', L.filter(function (e) { return (e.tier || 'excellent') === 'excellent'; })], ['<span class="tip-amber-text">DA VALUTARE</span>', L.filter(function (e) { return e.tier === 'try'; })]];
   if (!smp) {
     var st = L.filter(function (e) { return !e.trial; }), tr = L.filter(function (e) { return e.trial; });
@@ -5678,3 +5682,18 @@ setTimeout(function () {
 }, 700);
 /* 3.50.0 — Pronostici è la prima scheda dell'app: appena caricato questo file si disegna */
 try { if (typeof tab !== 'undefined' && tab === 'tips') render(); } catch (e) { /* ok */ }
+
+/* 4.2.1 — all'apertura e al ritorno nell'app i dati della sincronizzazione arrivano dopo il primo disegno: si ridisegna
+   la pagina dei Pronostici qualche secondo dopo (prima comparivano solo cambiando scheda o toccando Archivio) */
+(function () {
+  var again = function () {
+    [1200, 3500, 8000].forEach(function (ms) {
+      setTimeout(function () {
+        try { if (typeof tab !== 'undefined' && tab === 'tips' && !document.querySelector('dialog[open]') && !document.querySelector('.dd-wrap.open')) render(); } catch (e) { /* ok */ }
+      }, ms);
+    });
+  };
+  again();
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') again(); });
+  window.addEventListener('pageshow', function (ev) { if (ev.persisted) again(); });
+})();

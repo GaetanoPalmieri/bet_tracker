@@ -1223,3 +1223,8 @@ details.st-card{padding:0!important}
 .tip-split .tip-qsum{margin-left:auto;font-weight:700;font-size:11.5px}
 .tip-split .tip-qsum+*{margin-left:0}
 .tip-qbox>summary::after{margin-left:6px}
+/* 4.2.1 — riquadri del riepilogo con numeri lunghi; filtri attivi di Consigli di oggi più alti */
+.st-kpi.sm b{font-size:15px}
+.st-kpi.xs b{font-size:13px}
+.tl-today .tip-lblf.tip-chips-sm{gap:6px!important;margin:0!important}
+.tl-today .tip-lblf.tip-chips-sm .tip-lchip{min-height:36px!important;padding:0 13px!important;font-size:12px!important;display:inline-flex!important;align-items:center;border-radius:999px!important}
