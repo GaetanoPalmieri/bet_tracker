@@ -1578,7 +1578,7 @@ function tipAsianLam(L, G, o, u) {
    sotto l'85% 455 segnali, vinti 78,9% (stima 80,5%). Prima: OTTIMA 87-90% mostrata, vinte 83-90% a seconda del giorno. */
 var TIP_CAL = {
   1: { linea: [0.051, 0.912], quote: [-0.019, 0.987], sel: 0.05, cap: 0.80 },
-  2: { linea: [0.211, 0.902], quote: [0.008, 0.955], sel: 0.02, cap: 0.95 }
+  2: { linea: [0.211, 0.902], quote: [0.008, 0.955], sel: 0, cap: 0.95 } /* 4.2.9 — 2T senza bonus: su 995 segnali veri 22-24/10 la stima senza bonus è giusta (83,1% stimato, 83,1% vinti); il pomeriggio del 24/10 con il +2 le OTTIME hanno fatto 83% contro 88% mostrato */
 };
 var TIP_CAL_ADJ = { /* [pari, avanti di 1, avanti di 2+] */
   1: { top7: [-0.016, -0.011, 0.012], first: [-0.018, 0.008, -0.024], lower: [-0.019, 0.022, 0.002], cup: [0.046, -0.001, -0.004],
@@ -1586,7 +1586,9 @@ var TIP_CAL_ADJ = { /* [pari, avanti di 1, avanti di 2+] */
   2: { top7: [-0.010, -0.007, 0.028], first: [0.027, -0.018, 0], lower: [-0.028, -0.035, -0.019], cup: [0.016, -0.004, 0.029],
        'minor+': [-0.025, 0.046, 0.009], minor: [-0.007, 0.023, 0.001], 'youth+': [-0.038, -0.022, -0.025], youth: [0.010, -0.008, 0.011], women: [-0.020, -0.003, 0.018] }
 };
-var TIP_GOAL_GREEN = 0.85, TIP_GOAL_WARM = { 1: 0.70, 2: 0.74 };
+/* 4.2.9 — OTTIMA da 87% (era 85%): segnali veri 22-24/10, stima ≥87% 142 segnali vinti 93% (ogni giorno 87-96%), stima 85-87%
+   158 segnali vinti 87%. Meno segnali e quelli che restano vincono di più. */
+var TIP_GOAL_GREEN = 0.87, TIP_GOAL_WARM = { 1: 0.70, 2: 0.74 };
 function tipGoalProb(M, half, lgG, diff) {
   var C = TIP_CAL[half] || TIP_CAL[2], ab = C[M.src === 'quote' ? 'quote' : 'linea'], m = Math.max(0.01, Math.min(0.995, M.p));
   var base = 1 / (1 + Math.exp(-(ab[0] + ab[1] * Math.log(m / (1 - m)))));
@@ -1908,7 +1910,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.8',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.9',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
