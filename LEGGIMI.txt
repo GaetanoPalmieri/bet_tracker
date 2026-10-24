@@ -1,15 +1,18 @@
-Bet Tracker 4.2.5 · server pronostici-avvisi 4.2.5
+Bet Tracker 4.2.7 · server pronostici-avvisi 4.2.7
 
-Sostituisci questi file nella cartella bet_tracker:
+Sostituisci nella cartella bet_tracker:
   pronostici.js, pronostici.css, app.js, index.html, sw.js   → app (pubblica come al solito)
   pronostici-avvisi.txt                                     → funzione Supabase "pronostici-avvisi" (ripubblicala)
-Dopo la pubblicazione: in Live la barra deve dire "server 4.2.5", in Altro l'app "4.2.5".
+Dopo: in Live la barra deve dire "server 4.2.7", in Altro l'app "4.2.7".
 
-Contiene anche le versioni precedenti. Il server risultava ancora alla 4.2.2: con questo file prende anche la 4.2.3.
-4.2.3  rigore / VAR / punteggio in ritardo: nessun segnale se la linea gol sale di 0,5+ senza gol (tutti i filtri);
-       gol nel recupero (45+2, 90+1) letti correttamente
-4.2.4  (app già pubblicata) filtri preferiti (pulsante a imbuto in alto), Adesso › Preferiti / Tutti, riquadro Preferiti in Oggi
-4.2.5  gol 2T in parità sotto l'85% di mercato: niente segnale
-       "gol 2T avanti di 1 a quota" (prima: solo 1-0 al 46'-52'): ogni vantaggio di 1, 46'-70', mercato 62-75%
-       angolo 1T: mai OTTIMA e senza notifica
-       giocate stabili del 2T solo con una squadra in vantaggio
+4.2.7 — campionati divisi per gruppi (archivio quote bet365 16-22/10 + segnali veri 19-24/10):
+  serie minori dei Paesi forti (Championship, Serie B, Ligue 2, 2./3. Liga, Segunda, Superettan,
+  dilettanti inglesi, USL...): niente segnali gol e niente giocate stabili
+  coppe internazionali (Champions, Europa, Conference, Libertadores, Sudamericana, AFC, CAF, CONCACAF): niente segnali gol
+  primi 7 campionati e altre prime divisioni: DA VALUTARE con la % del mercato (come 4.2.6)
+  campionati minori con una squadra avanti: OTTIMA (come 4.2.6)
+
+Consigli di oggi › 📊 › "Azzera le statistiche di oggi":
+  da quel momento contano solo i consigli nuovi (intestazione, statistiche, Preferiti);
+  l'elenco resta intero, i consigli di prima stanno in fondo più chiari. "Annulla" torna indietro.
+  Vale fino a mezzanotte. Storico, statistiche generali e partite passate non cambiano.

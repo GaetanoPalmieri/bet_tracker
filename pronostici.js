@@ -1159,6 +1159,8 @@ function tipScanMatch(x) {
   /* 4.2.3 — salto della linea gol senza gol (rigore, VAR, punteggio in ritardo): vale per TUTTI i segnali, stabili e in prova */
   var gg = dd.goals || x.goals || [0, 0];
   r.lineJump = tipLineJump(m.id, min, half, x.liveLine, (gg[0] || 0) + (gg[1] || 0));
+  r.score = [gg[0] || 0, gg[1] || 0]; /* 4.2.5 — per le giocate stabili del 2T (solo con una squadra in vantaggio) */
+  r.lgG = tipLgGroup(x.league, tipLeagueTier({ league: x.league, home: x.home, away: x.away })); /* 4.2.7 */
   return { m: m, x: Object.assign({}, x, { goals: dd.goals || x.goals, elapsed: dd.elapsed, status: dd.status || x.status, stats: dd.stats || x.stats, lineJump: r.lineJump }), min: min, half: half, main: main, r: r };
 }
 /* ---------- 3.20.0 — Preferiti ---------- */
@@ -1321,11 +1323,11 @@ var TIP_PLAY_NAME = {
 };
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80',
   tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80', tf1: '+1 1T partita da gol', tf2: '+1 2T partita da gol',
-  tm1: '🎯 prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T sull’1-0 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
+  tm1: '🎯 prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T avanti di 1 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
 TIP_PLAY_NAME.tm1 = '🎯 Prossimo gol entro l’intervallo'; /* 3.99.2 — regole e numeri nei commenti del motore, non nel testo */
 TIP_PLAY_NAME.tm2 = '🎯 Prossimo gol entro la fine';
 TIP_PLAY_NAME.tm3 = '🎯 Gol entro la fine sull’1-0 (2° tempo)';
-TIP_PLAY_NAME.tv2 = '🎯 Gol entro la fine sull’1-0, linea bassa (inizio 2° tempo, quota più alta)'; /* 3.99.2 — regole e numeri nei commenti del motore, non nel testo */
+TIP_PLAY_NAME.tv2 = '🎯 Gol entro la fine con una squadra avanti di 1, linea bassa (46’-70’, campionati minori, quota più alta)'; /* 3.99.2 — regole e numeri nei commenti del motore, non nel testo */
 TIP_PLAY_NAME.tk1 = '🎯 +1 angolo entro l’intervallo'; /* 3.99.2 — regole e numeri nei commenti del motore, non nel testo */
 TIP_PLAY_NAME.tk2 = '🎯 +1 angolo entro la fine'; /* 3.99.2 — regole e numeri nei commenti del motore, non nel testo */
 TIP_PLAY_NAME.tf1 = 'IN PROVA · partita da gol: +1 gol entro l’intervallo (15’-38’, già almeno 2 gol) · tutti i campionati';
@@ -1580,13 +1582,30 @@ function tipLineJump(id, min, half, ll, G) {
   var lo = Math.min.apply(null, L.map(function (s) { return s.ll; }));
   return Math.round((ll - lo) * 100) / 100;
 }
+/* 4.2.7 — GRUPPI DI CAMPIONATO per i segnali gol (archivio quote bet365 16-22/10, ~2.900 partite).
+   Il tier "maggiori" è largo: dentro ci sono anche serie minori dei Paesi forti (il nome contiene Premier League,
+   Serie B, 3. Liga…) e le coppe internazionali, che vanno SOTTO il mercato vero. */
+var TIP_LG_TOP7 = /^(england |english )?premier league$|^(spain |spanish )?la ?liga( ea sports)?$|^(italy |italian )?serie a$|^(germany |german )?bundesliga( i)?$|^(france |french )?ligue 1( mcdonald'?s)?$|^(netherlands |holland |dutch )?eredivisie$|^(portugal |portuguese )?(primeira liga|liga portugal( betclic)?)$/i;
+var TIP_LG_LOWER = /championship|league one|league two|serie b|serie c|ligue 2|2\. ?liga|3\. ?liga|bundesliga ii|2\. bundesliga|segunda|primera division rfef|eerste divisie|keuken|superettan|division [1-3]|super league 2|national league|southern|northern|isthmian|\busl\b|second|liga 2|liga ii|challenge league/i;
+var TIP_LG_INTCUP = /champions league|europa league|conference league|libertadores|sudamericana|\bafc\b|\bcaf\b|concacaf|club world cup/i;
+function tipLgGroup(league, tier) {
+  /* nomi in due forme: "England Premier League" (live) e "England · Premier League" (scansione): si uniscono */
+  var lg = String(league || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s*·\s*/g, ' ').trim();
+  if (TIP_LG_INTCUP.test(lg)) return 'cup';
+  if (tier !== 'major') return tier || 'minor';
+  if (TIP_LG_TOP7.test(lg)) return 'top7';
+  if (TIP_LG_LOWER.test(lg)) return 'lower';
+  return 'first';
+}
 function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var W = TIP_TM[half];
   if (!W || min < W.from || min > W.to || (W.maxG != null && G > W.maxG) || (half === 1 && women)) return null;
   if (x && U.finite(x.lineJump) && x.lineJump >= 0.5) return null; /* 4.2.3 — rigore / evento in corso: si aspetta */
   var M = tipMktNext(x, min, half, G);
   /* 4.2.1 — tv2: 1-0 / 0-1 a inizio 2T con linea bassa (mercato 60-75%): qui sta la quota (registro 20-22/10: 53/65, 82%, mercato 71%) */
-  var lowV = !!M && half === 2 && G === 1 && min <= 52 && M.p >= 0.60 && M.p < W.pMin;
+  /* 4.2.5 — "a quota" esteso a ogni vantaggio di 1 (46'-70', mercato 62-75%): registro 20-23/10 186/224 (83%) */
+  var g0 = (x && x.goals) || [0, 0], lead1 = Math.abs((g0[0] || 0) - (g0[1] || 0)) === 1;
+  var lowV = !!M && half === 2 && lead1 && min <= 70 && M.p >= 0.62 && M.p < W.pMin;
   if (!M || (!lowV && (M.p < W.pMin || (M.keep != null && M.keep < 1)))) return null;
   var sot = null, pv = prev8 && min - prev8.min >= 5 && min - prev8.min <= 15 ? prev8 : prev && min - prev.min >= 5 && min - prev.min <= 15 ? prev : null;
   if (half === 1) {
@@ -1608,24 +1627,31 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var g = (x && x.goals) || [0, 0], diff = Math.abs((g[0] || 0) - (g[1] || 0)), lgN = String((x && x.league) || '');
   var uefa = /UEFA|Europa League|Conference League|Champions League/i.test(lgN), tier = tipLeagueTier({ league: lgN, home: x && x.home, away: x && x.away }), major = tier === 'major', youth = /^youth/.test(String(tier || ''));
   var recent = x && U.finite(x.lastGoal) && min - x.lastGoal >= 0 && min - x.lastGoal <= 6;
+  /* 4.2.7 — serie minori dei Paesi forti e coppe internazionali: sotto il mercato vero in tutti e due i tempi → niente segnali gol */
+  var lgG = tipLgGroup(lgN, tier);
+  if (lgG === 'lower' || lgG === 'cup') return null;
   var k = half === 1 ? 'tm1' : 'tm2', p = Math.min(0.93, M.p + W.up), green = W.green, warm = W.warm;
   if (half === 1 && G > 0) green = 1;
+  /* 4.2.6 — archivio quote bet365 16-22/10 (~2.900 partite): il vantaggio sul mercato c'è solo nei campionati minori
+     con una squadra avanti. Maggiori, giovanili e femminili sono al livello del mercato o sotto; la parità è sotto. */
+  var minorLg = tier === 'minor' || tier === 'minor+';
   if (half === 2) {
     if (lowV) {
-      if (recent || major || uefa) return null;
-      k = 'tv2'; p = Math.min(0.85, M.p + 0.10); green = 1; warm = 0.70;
+      if (recent || !minorLg || uefa) return null; /* 4.2.6 — "a quota" solo nei minori: minor+ 75%, minor 72% (mercato ~70%) */
+      k = 'tv2'; p = Math.min(0.85, M.p + 0.05); green = 1; warm = 0.66;
     } else if (uefa && M.p < 0.85) return null;
     /* 4.2.1 — giovanili fuori dal gol 2T sull'1-0 (registro: 12/16, 75%, contro 46/49, 94%, degli altri) */
-    else if (G === 1 && !recent && !major && !uefa && !youth && min <= 70) { k = 'tm3'; p = Math.min(0.93, M.p + 0.07); green = 0.8; }
+    else if (G === 1 && !recent && minorLg && !uefa && min <= 70) { k = 'tm3'; p = Math.min(0.93, M.p + 0.04); green = 0.8; } /* 4.2.6 — solo minori: 86% (mercato 82%) */
     /* 4.2.2 — 2T, conta se il punteggio è in parità (registro 20-23/10, mercato 75-85%):
        squadra in vantaggio, non giovanili  ~150 casi 90% (mercato 82%); il 23/10 dal vivo 20/20 → OTTIMA
        pari (0-0, 1-1, 2-2)                 71 casi 82% = mercato; il 23/10 dal vivo 14/21  → DA VALUTARE, % del mercato
        giovanili in vantaggio               59 casi 83% = mercato                          → DA VALUTARE
        (con il mercato da 85% in su restano OTTIMA tutti: 61/64, 95%) */
-    else if (M.p < 0.85) {
-      if (diff === 0) { p = Math.min(0.93, M.p); green = 1; }
-      else if (!youth) { p = Math.min(0.93, M.p + 0.07); green = 0.85; }
-    }
+    /* 4.2.5 — in parità sotto l'85% il gol arriva MENO di quanto dice il mercato vero: niente segnale.
+       4.2.6 — anche da 85% in su la parità resta sotto il mercato (minori 81% contro 88%): solo DA VALUTARE. */
+    else if (diff === 0) { if (M.p < 0.85) return null; p = Math.min(0.93, M.p); green = 1; warm = 0.74; }
+    else if (minorLg) { p = Math.min(0.93, M.p + 0.04); green = 0.85; } /* minori con una squadra avanti: OTTIMA da 81% */
+    else { p = Math.min(0.93, M.p); green = 1; warm = 0.74; } /* maggiori, giovanili, femminili: DA VALUTARE, % del mercato */
   }
   return { k: k, p: rd(p), green: green, warm: warm,
     book: M.book, o: { rule: '4.0.0', pMkt: rd(M.p), src: M.src, oddsLine: M.oddsLine, pOver: M.pOver, lamRest: rd(M.lam), ll: M.ll, pl: M.pl, keep: rd(M.keep), sotRecent: sot, prevMin: pv ? pv.min : null, recentGoal: !!recent, uefa: uefa || undefined } };
@@ -1674,7 +1700,8 @@ function tipTargetCorner(min, half, cor, G, sd, prev8, prev, x) {
     o.press = press ? (dS >= 3 ? 'forte' : 'media') : null;
     var lc1 = tipLateCor(x, half);
     if (lc1) { o.late = lc1; if (lc1.rate < 0.6) return null; }
-    return { p: press && dS >= 3 ? 0.86 : 0.79, green: 0.82, warm: 0.76, o: o };
+    /* 4.2.5 — dal vivo la sera del 23/10 la regola della pressione ha fatto 35/64 (55%): mai OTTIMA, senza notifica */
+    return { p: press && dS >= 3 ? 0.80 : 0.76, green: 1, warm: 0.74, o: o };
   } else {
     o.pace = Math.round(cor / min * 1000) / 1000;
     if (G > W.maxG || o.pace < W.pace) return null;
@@ -1822,7 +1849,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.4',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.7',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2232,6 +2259,8 @@ function tipLabelChips(prof, rit) {
 }
 function tipPlays(r, min, half, book) {
   if (r && U.finite(r.lineJump) && r.lineJump >= 0.5) return []; /* 4.2.3 — rigore / evento in corso: nessuna giocata */
+  if (half === 2 && r && Array.isArray(r.score) && r.score[0] === r.score[1]) return []; /* 4.2.5 — 2T in parità: niente giocate stabili (15/24, 62%) */
+  if (r && (r.lgG === 'lower' || r.lgG === 'cup')) return []; /* 4.2.7 — serie minori dei Paesi forti e coppe: dal vivo 2T 11/23 (48%) */
   var out = [], Q = TIP_MIN_ODDS, ok = function (p) { return p > 0.02 && 1 / p >= Q; };
   var h1 = (r.lines.find(function (x) { return x.k === 'h1'; }) || {}).p, n1 = (r.lines.find(function (x) { return x.k === 'n1'; }) || {}).p;
   /* 3.34.0 — costo: puntate a step che recuperano le perdite e vincono sempre come il primo step.
@@ -2796,6 +2825,17 @@ function tipFavSheet() {
   d.addEventListener('close', function () { render(); });
 }
 document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('[data-fav-open]')) tipFavSheet(); });
+/* 4.2.7 — AZZERAMENTO DELLE STATISTICHE DI OGGI (solo Consigli di oggi): da quel momento contano solo i consigli nuovi,
+   per vedere subito come vanno le regole appena pubblicate. Vale fino a mezzanotte; storico, statistiche generali ed
+   elenchi passati non cambiano. */
+function tipTodayFrom() { var r = (db.predModel || {}).todayReset; return r && r.date === U.local().slice(0, 10) ? r.t || 0 : 0; }
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-today-reset],[data-today-reset-undo]');
+  if (!b) return;
+  var undo = b.hasAttribute('data-today-reset-undo');
+  mutate(function (d) { d.predModel = d.predModel || {}; if (undo) delete d.predModel.todayReset; else d.predModel.todayReset = { date: U.local().slice(0, 10), t: Date.now() }; });
+  U.toast(undo ? 'Statistiche di oggi di nuovo intere.' : 'Statistiche di oggi azzerate: contano solo i consigli da adesso.');
+});
 function tipExcellentArchive() {
   /* 3.55.0 — solo i consigli di oggi (00:00-23:59) e niente monitoraggi; tutto resta salvato per statistiche e retraining.
      3.99.2 — sezione rifatta: intestazione compatta con vinte/perse/in attesa e %, statistiche dietro il pulsante 📊,
@@ -2804,11 +2844,15 @@ function tipExcellentArchive() {
   var all = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip' && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && (e.t || 0) >= tipStatsFrom() && tipLblPass(e.prof || 'nq', e.rit || 'norm') && tipEFilter(tipUI.arcF, e); })
     .slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
   var Q = tipQSplit(all), arr = tipSortEntries(tipSampleOf(Q.pass, smp)), exc = tipSampleOf(Q.exc, smp), mine = Q.pass.filter(function (e) { return e.played; }).length;
-  var w = arr.filter(function (e) { return e.res === 1; }).length, l = arr.filter(function (e) { return e.res === 0; }).length, wait = arr.filter(function (e) { return e.res == null; }).length;
+  /* 4.2.7 — con l'azzeramento: conteggi e statistiche solo dei consigli dopo quell'ora; l'elenco resta intero (prima i nuovi) */
+  var cut = tipTodayFrom(), isNew = function (e) { return !cut || (e.t || 0) >= cut; };
+  var arrS = cut ? arr.filter(isNew) : arr, arrOld = cut ? arr.filter(function (e) { return !isNew(e); }) : [];
+  var cutLbl = cut ? new Date(cut).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
+  var w = arrS.filter(function (e) { return e.res === 1; }).length, l = arrS.filter(function (e) { return e.res === 0; }).length, wait = arrS.filter(function (e) { return e.res == null; }).length;
   var LIM = 10, n = tipUI.todayAll ? arr.length : LIM, open = !!tipUI.todayStats;
   var pill = function (cls, ic, v, t) { return '<span class="tl-pill tl-' + cls + '" title="' + t + '"><i>' + ic + '</i>' + v + '</span>'; };
   var rate = w + l ? Math.round(w / (w + l) * 100) : null;
-  var head = '<div class="tl-head"><div class="tl-title"><b>Consigli di oggi</b><small>' + arr.length + ' segnal' + (arr.length === 1 ? 'e' : 'i') + (mine ? ' · ' + mine + ' giocat' + (mine === 1 ? 'o' : 'i') + ' da te' : '') + '</small></div>' +
+  var head = '<div class="tl-head"><div class="tl-title"><b>Consigli di oggi</b><small>' + (cut ? arrS.length + ' dalle ' + cutLbl + ' · ' + arr.length + ' in tutto' : arr.length + ' segnal' + (arr.length === 1 ? 'e' : 'i')) + (mine ? ' · ' + mine + ' giocat' + (mine === 1 ? 'o' : 'i') + ' da te' : '') + '</small></div>' +
     '<div class="tl-kpis">' + pill('win', '✓', w, 'Vinte') + pill('loss', '✕', l, 'Perse') + pill('wait', '◷', wait, 'In attesa') +
     (rate != null ? '<span class="tl-rate ' + (rate >= 80 ? 'good' : rate >= 70 ? 'mid' : 'bad') + '">' + rate + '%</span>' : '') + '</div></div>';
   /* 4.1.0 — filtri, statistiche e ordina: solo icone, accanto a Totale / Stabili / In prova; i filtri attivi sotto, piccoli */
@@ -2819,15 +2863,22 @@ function tipExcellentArchive() {
     '<div class="ic-row">' + tipIconBtn('data-arcfilters', TIP_IC_FILTER, 'Filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
     (actF.length ? '<div class="tip-lblf tip-chips-sm">' + actF.join('') + '</div>' : '');
   /* 4.2.4 — riquadro PREFERITI: aperto mostra solo i consigli di oggi dei filtri preferiti (stessa scelta Tutti/Stabili/In prova e stessi filtri) */
-  var favL = arr.filter(function (e) { return tipFavOn(e.k); }), Cf = tipFavCount();
-  var fw = favL.filter(function (e) { return e.res === 1; }).length, fl = favL.filter(function (e) { return e.res === 0; }).length, fr = fw + fl ? Math.round(fw / (fw + fl) * 100) : null;
+  var favL = arr.filter(function (e) { return tipFavOn(e.k); }), favS = favL.filter(isNew), Cf = tipFavCount();
+  var fw = favS.filter(function (e) { return e.res === 1; }).length, fl = favS.filter(function (e) { return e.res === 0; }).length, fr = fw + fl ? Math.round(fw / (fw + fl) * 100) : null;
   var favBox = '<details class="tl-fav"' + (tipUI.todayFavOpen ? ' open' : '') + ' ontoggle="tipUI.todayFavOpen=this.open"><summary><span class="tl-fav-t">★ Preferiti</span>' +
-    '<span class="tl-fav-k">' + favL.length + ' segnal' + (favL.length === 1 ? 'e' : 'i') + (fw + fl ? ' · <b class="positive">' + fw + '</b>–<b class="negative">' + fl + '</b> · ' + fr + '%' : '') + '</span></summary>' +
-    (favL.length ? '<div class="tip-tlist tl-list">' + favL.map(function (e) { return tipMemRow(e); }).join('') + '</div>' : '<p class="muted tip-tnone">Nessun consiglio dei filtri preferiti oggi.</p>') +
+    '<span class="tl-fav-k">' + favS.length + ' segnal' + (favS.length === 1 ? 'e' : 'i') + (cut ? ' dalle ' + cutLbl : '') + (fw + fl ? ' · <b class="positive">' + fw + '</b>–<b class="negative">' + fl + '</b> · ' + fr + '%' : '') + '</span></summary>' +
+    (favL.length ? '<div class="tip-tlist tl-list">' + favS.concat(favL.filter(function (e) { return !isNew(e); })).map(function (e) { return cut && !isNew(e) ? '<div class="tl-before">' + tipMemRow(e) + '</div>' : tipMemRow(e); }).join('') + '</div>' : '<p class="muted tip-tnone">Nessun consiglio dei filtri preferiti oggi.</p>') +
     '<p class="muted tip-hint">' + (Cf.fav === Cf.all ? 'Tutti i filtri sono preferiti. ' : Cf.fav + ' filtri preferiti su ' + Cf.all + '. ') + '<button type="button" class="tl-fav-edit" data-fav-open>Scegli i preferiti ›</button></p></details>';
-  var stats = open ? '<div class="tl-stats">' + (arr.length ? tipStHero(arr, smp) + tipArchiveSplit(arr) : '<p class="muted tip-tnone">Ancora nessun esito oggi.</p>') +
-    '<p class="muted tip-hint">Vinte–perse, % sulle chiuse, ◷ in attesa. Una voce per partita e punteggio (per gli angoli anche per numero di angoli).' + (tipQOn() ? ' Gli esclusi dal filtro qualità non contano.' : '') + '</p></div>' : '';
-  var list = arr.length ? '<div class="tip-tlist tl-list">' + arr.slice(0, n).map(function (e) { return tipMemRow(e); }).join('') + '</div>' +
+  var resetBar = '<div class="tl-reset">' + (cut ? '<span>Statistiche dalle <b>' + cutLbl + '</b> · ' + arrOld.length + ' consigli di prima esclusi</span><button type="button" class="tl-reset-btn" data-today-reset-undo>Annulla</button><button type="button" class="tl-reset-btn" data-today-reset>↺ Di nuovo</button>'
+      : '<span>Vuoi vedere solo come vanno i consigli da adesso?</span><button type="button" class="tl-reset-btn main" data-today-reset>↺ Azzera le statistiche di oggi</button>') + '</div>';
+  var stats = open ? '<div class="tl-stats">' + resetBar + (arrS.length ? tipStHero(arrS, smp) + tipArchiveSplit(arrS) : '<p class="muted tip-tnone">' + (cut ? 'Ancora nessun consiglio dalle ' + cutLbl + '.' : 'Ancora nessun esito oggi.') + '</p>') +
+    '<p class="muted tip-hint">Vinte–perse, % sulle chiuse, ◷ in attesa. Una voce per partita e punteggio (per gli angoli anche per numero di angoli).' + (tipQOn() ? ' Gli esclusi dal filtro qualità non contano.' : '') + ' L’azzeramento vale solo qui e fino a mezzanotte: storico e statistiche generali restano intere.</p></div>' : '';
+  /* 4.2.7 — con l'azzeramento: prima i consigli nuovi, poi una riga "prima delle hh:mm" e i vecchi più chiari */
+  var ordered = cut ? arrS.concat(arrOld) : arr;
+  var list = arr.length ? '<div class="tip-tlist tl-list">' + ordered.slice(0, n).map(function (e, i) {
+      var div = cut && i === arrS.length ? '<div class="tl-cut">Prima dell’azzeramento delle ' + cutLbl + ' · non contano nelle statistiche di oggi</div>' : '';
+      return div + (cut && !isNew(e) ? '<div class="tl-before">' + tipMemRow(e) + '</div>' : tipMemRow(e));
+    }).join('') + '</div>' +
       (arr.length > LIM ? '<button type="button" class="tl-more" data-today-more>' + (tipUI.todayAll ? 'Mostra solo gli ultimi ' + LIM : 'Mostra gli altri ' + (arr.length - LIM)) + '</button>' : '')
     : '<p class="muted tip-tnone">Nessun consiglio' + (smp === 'trial' ? ' in prova' : smp === 'stable' ? ' stabile' : '') + ' oggi con questa selezione.</p>';
   return '<section class="card tip-top tip-live-section tip-archive tl-today">' + head + tools + favBox + stats + list + tipQualityBox(arr, exc, 'oggi') + '</section>';
@@ -2925,7 +2976,7 @@ function tipAlertGroup(k) {
    21 vinte su 28 (75%) contro 44 su 84 (52%). Campione piccolo e di un solo giorno: il filtro decide solo
    le notifiche; tutti i segnali restano registrati e le statistiche confrontano chi passa e chi no. */
 /* 3.79.0 — +1 angolo 1T: registrato e nelle Statistiche, ma niente notifiche e niente sezione Live */
-var TIP_NO_PUSH = { th1: 1 }, TIP_LIVE_HIDE = { th1: 1 };
+var TIP_NO_PUSH = { th1: 1, tk1: 1 }, TIP_LIVE_HIDE = { th1: 1 }; /* 4.2.5 — angolo 1T senza notifica */
 /* 3.89.0 — analisi del 21/10 (423 consigli chiusi): stabili con p ≥ 65% e campionato forte 23/27 (85%), tutto il resto ~50%.
    Soglia portata da 62% a 65%. */
 /* 3.96.0 — analisi del 22/10 (454 consigli chiusi, 19-22/10): le giovanili dei Paesi forti dentro il filtro facevano

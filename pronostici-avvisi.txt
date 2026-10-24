@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.2.5
+// Versione app: 4.2.7
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -997,6 +997,7 @@ function tipScanMatch(x) {
   var gg = dd.goals || x.goals || [0, 0];
   r.lineJump = tipLineJump(m.id, min, half, x.liveLine, (gg[0] || 0) + (gg[1] || 0));
   r.score = [gg[0] || 0, gg[1] || 0]; /* 4.2.5 — per le giocate stabili del 2T (solo con una squadra in vantaggio) */
+  r.lgG = tipLgGroup(x.league, tipLeagueTier({ league: x.league, home: x.home, away: x.away })); /* 4.2.7 */
   return { m: m, x: Object.assign({}, x, { goals: dd.goals || x.goals, elapsed: dd.elapsed, status: dd.status || x.status, stats: dd.stats || x.stats, lineJump: r.lineJump }), min: min, half: half, main: main, r: r };
 }
 function tipIsStar(m) {
@@ -1038,7 +1039,7 @@ var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T',
 TIP_PLAY_NAME.tm1 = '🎯 Prossimo gol entro l’intervallo';
 TIP_PLAY_NAME.tm2 = '🎯 Prossimo gol entro la fine';
 TIP_PLAY_NAME.tm3 = '🎯 Gol entro la fine sull’1-0 (2° tempo)';
-TIP_PLAY_NAME.tv2 = '🎯 Gol entro la fine con una squadra avanti di 1, linea bassa (46’-70’, quota più alta)';
+TIP_PLAY_NAME.tv2 = '🎯 Gol entro la fine con una squadra avanti di 1, linea bassa (46’-70’, campionati minori, quota più alta)';
 TIP_PLAY_NAME.tk1 = '🎯 +1 angolo entro l’intervallo';
 TIP_PLAY_NAME.tk2 = '🎯 +1 angolo entro la fine';
 TIP_PLAY_NAME.tf1 = 'IN PROVA · partita da gol: +1 gol entro l’intervallo (15’-38’, già almeno 2 gol) · tutti i campionati';
@@ -1277,6 +1278,21 @@ function tipLineJump(id, min, half, ll, G) {
   var lo = Math.min.apply(null, L.map(function (s) { return s.ll; }));
   return Math.round((ll - lo) * 100) / 100;
 }
+/* 4.2.7 — GRUPPI DI CAMPIONATO per i segnali gol (archivio quote bet365 16-22/10, ~2.900 partite).
+   Il tier "maggiori" è largo: dentro ci sono anche serie minori dei Paesi forti (il nome contiene Premier League,
+   Serie B, 3. Liga…) e le coppe internazionali, che vanno SOTTO il mercato vero. */
+var TIP_LG_TOP7 = /^(england |english )?premier league$|^(spain |spanish )?la ?liga( ea sports)?$|^(italy |italian )?serie a$|^(germany |german )?bundesliga( i)?$|^(france |french )?ligue 1( mcdonald'?s)?$|^(netherlands |holland |dutch )?eredivisie$|^(portugal |portuguese )?(primeira liga|liga portugal( betclic)?)$/i;
+var TIP_LG_LOWER = /championship|league one|league two|serie b|serie c|ligue 2|2\. ?liga|3\. ?liga|bundesliga ii|2\. bundesliga|segunda|primera division rfef|eerste divisie|keuken|superettan|division [1-3]|super league 2|national league|southern|northern|isthmian|\busl\b|second|liga 2|liga ii|challenge league/i;
+var TIP_LG_INTCUP = /champions league|europa league|conference league|libertadores|sudamericana|\bafc\b|\bcaf\b|concacaf|club world cup/i;
+function tipLgGroup(league, tier) {
+  /* nomi in due forme: "England Premier League" (live) e "England · Premier League" (scansione): si uniscono */
+  var lg = String(league || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s*·\s*/g, ' ').trim();
+  if (TIP_LG_INTCUP.test(lg)) return 'cup';
+  if (tier !== 'major') return tier || 'minor';
+  if (TIP_LG_TOP7.test(lg)) return 'top7';
+  if (TIP_LG_LOWER.test(lg)) return 'lower';
+  return 'first';
+}
 function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var W = TIP_TM[half];
   if (!W || min < W.from || min > W.to || (W.maxG != null && G > W.maxG) || (half === 1 && women)) return null;
@@ -1307,26 +1323,31 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var g = (x && x.goals) || [0, 0], diff = Math.abs((g[0] || 0) - (g[1] || 0)), lgN = String((x && x.league) || '');
   var uefa = /UEFA|Europa League|Conference League|Champions League/i.test(lgN), tier = tipLeagueTier({ league: lgN, home: x && x.home, away: x && x.away }), major = tier === 'major', youth = /^youth/.test(String(tier || ''));
   var recent = x && U.finite(x.lastGoal) && min - x.lastGoal >= 0 && min - x.lastGoal <= 6;
+  /* 4.2.7 — serie minori dei Paesi forti e coppe internazionali: sotto il mercato vero in tutti e due i tempi → niente segnali gol */
+  var lgG = tipLgGroup(lgN, tier);
+  if (lgG === 'lower' || lgG === 'cup') return null;
   var k = half === 1 ? 'tm1' : 'tm2', p = Math.min(0.93, M.p + W.up), green = W.green, warm = W.warm;
   if (half === 1 && G > 0) green = 1;
+  /* 4.2.6 — archivio quote bet365 16-22/10 (~2.900 partite): il vantaggio sul mercato c'è solo nei campionati minori
+     con una squadra avanti. Maggiori, giovanili e femminili sono al livello del mercato o sotto; la parità è sotto. */
+  var minorLg = tier === 'minor' || tier === 'minor+';
   if (half === 2) {
     if (lowV) {
-      if (recent || major || uefa) return null;
-      k = 'tv2'; p = Math.min(0.85, M.p + 0.10); green = 1; warm = 0.70;
+      if (recent || !minorLg || uefa) return null; /* 4.2.6 — "a quota" solo nei minori: minor+ 75%, minor 72% (mercato ~70%) */
+      k = 'tv2'; p = Math.min(0.85, M.p + 0.05); green = 1; warm = 0.66;
     } else if (uefa && M.p < 0.85) return null;
     /* 4.2.1 — giovanili fuori dal gol 2T sull'1-0 (registro: 12/16, 75%, contro 46/49, 94%, degli altri) */
-    else if (G === 1 && !recent && !major && !uefa && !youth && min <= 70) { k = 'tm3'; p = Math.min(0.93, M.p + 0.07); green = 0.8; }
+    else if (G === 1 && !recent && minorLg && !uefa && min <= 70) { k = 'tm3'; p = Math.min(0.93, M.p + 0.04); green = 0.8; } /* 4.2.6 — solo minori: 86% (mercato 82%) */
     /* 4.2.2 — 2T, conta se il punteggio è in parità (registro 20-23/10, mercato 75-85%):
        squadra in vantaggio, non giovanili  ~150 casi 90% (mercato 82%); il 23/10 dal vivo 20/20 → OTTIMA
        pari (0-0, 1-1, 2-2)                 71 casi 82% = mercato; il 23/10 dal vivo 14/21  → DA VALUTARE, % del mercato
        giovanili in vantaggio               59 casi 83% = mercato                          → DA VALUTARE
        (con il mercato da 85% in su restano OTTIMA tutti: 61/64, 95%) */
-    else if (M.p < 0.85) {
-      /* 4.2.5 — in parità sotto l'85% il gol arriva MENO di quanto dice il mercato vero (registro 3-9 punti sotto,
-         sera 23/10 51/66, 77%): niente segnale. Da 85% in su restano OTTIMA (19/19). */
-      if (diff === 0) return null;
-      else if (!youth) { p = Math.min(0.93, M.p + 0.07); green = 0.85; }
-    }
+    /* 4.2.5 — in parità sotto l'85% il gol arriva MENO di quanto dice il mercato vero: niente segnale.
+       4.2.6 — anche da 85% in su la parità resta sotto il mercato (minori 81% contro 88%): solo DA VALUTARE. */
+    else if (diff === 0) { if (M.p < 0.85) return null; p = Math.min(0.93, M.p); green = 1; warm = 0.74; }
+    else if (minorLg) { p = Math.min(0.93, M.p + 0.04); green = 0.85; } /* minori con una squadra avanti: OTTIMA da 81% */
+    else { p = Math.min(0.93, M.p); green = 1; warm = 0.74; } /* maggiori, giovanili, femminili: DA VALUTARE, % del mercato */
   }
   return { k: k, p: rd(p), green: green, warm: warm,
     book: M.book, o: { rule: '4.0.0', pMkt: rd(M.p), src: M.src, oddsLine: M.oddsLine, pOver: M.pOver, lamRest: rd(M.lam), ll: M.ll, pl: M.pl, keep: rd(M.keep), sotRecent: sot, prevMin: pv ? pv.min : null, recentGoal: !!recent, uefa: uefa || undefined } };
@@ -1506,7 +1527,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.5',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.7',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -1621,6 +1642,7 @@ function tipLabels(r) {
 function tipPlays(r, min, half, book) {
   if (r && U.finite(r.lineJump) && r.lineJump >= 0.5) return []; /* 4.2.3 — rigore / evento in corso: nessuna giocata */
   if (half === 2 && r && Array.isArray(r.score) && r.score[0] === r.score[1]) return []; /* 4.2.5 — 2T in parità: niente giocate stabili (15/24, 62%) */
+  if (r && (r.lgG === 'lower' || r.lgG === 'cup')) return []; /* 4.2.7 — serie minori dei Paesi forti e coppe: dal vivo 2T 11/23 (48%) */
   var out = [], Q = TIP_MIN_ODDS, ok = function (p) { return p > 0.02 && 1 / p >= Q; };
   var h1 = (r.lines.find(function (x) { return x.k === 'h1'; }) || {}).p, n1 = (r.lines.find(function (x) { return x.k === 'n1'; }) || {}).p;
   /* 3.34.0 — costo: puntate a step che recuperano le perdite e vincono sempre come il primo step.
@@ -2448,7 +2470,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.2.5", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.2.7", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2461,7 +2483,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.2.5" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.2.7" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2473,7 +2495,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.2.5" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.2.7" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
