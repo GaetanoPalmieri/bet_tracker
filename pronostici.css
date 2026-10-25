@@ -1279,3 +1279,9 @@ details.st-card{padding:0!important}
 .tl-reset-btn:active{transform:scale(.97)}
 .tl-cut{margin:8px 2px 6px;padding-top:8px;border-top:1px dashed var(--suite-glass-edge);font-size:10.5px;letter-spacing:.02em;opacity:.65}
 .tl-before{opacity:.5}
+
+/* 4.3.7 — livello delle notifiche per filtro */
+.fv-tier{order:5;grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:3px;border-radius:12px;background:color-mix(in srgb,var(--suite-text) 5%,transparent)}
+.fv-tier-b{appearance:none;min-height:34px!important;padding:0 6px!important;margin:0!important;border:0!important;border-radius:9px!important;background:transparent!important;color:var(--suite-text-soft)!important;font:inherit;font-size:11px!important;font-weight:800!important;letter-spacing:.3px}
+.fv-tier-b.on{background:rgba(24,152,136,.25)!important;color:#5fe0ac!important}
+.fv-tier-b:disabled{opacity:.35}

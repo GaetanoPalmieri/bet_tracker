@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.3.6
+// Versione app: 4.3.9
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1418,7 +1418,10 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var Pg = tipGoalProb(M, half, lgG, diff), p = Pg.p, green = TIP_GOAL_GREEN, warm = TIP_GOAL_WARM[half] || 0.74;
   /* 4.3.1 — 🎯 gol 2T sull'1-0: dal vivo 22-25/10 vince 147 su 169 (87%) contro 85,5% stimato: +2 punti, così la % è quella vera
      e quando arriva all'87% torna OTTIMA. Vince uguale da OTTIMA e da DA VALUTARE (87%): il livello qui conta poco. */
-  if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.6 — femminili e serie minori dei Paesi forti (in prova): sempre DA VALUTARE */ /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
+  /* 4.3.6 — femminili e serie minori dei Paesi forti (in prova): sempre DA VALUTARE.
+     4.3.8 — tolta la regola del minuto della 4.3.7: con i segnali del 25/10 dal 50' in poi 14/14, in totale 46'-49' 88% (223) e
+     dal 50' 86% (44), nessuna differenza vera. Negli altri campionati l'1-0 è sempre OTTIMA. */
+  if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
   return { k: k, p: rd(p), green: green, warm: warm,
     book: M.book, o: { rule: '4.2.8', pMkt: rd(M.p), pCal: rd(Pg.base), adj: rd(Pg.adj), lgG: lgG, src: M.src, oddsLine: M.oddsLine, pOver: M.pOver, lamRest: rd(M.lam), ll: M.ll, pl: M.pl, keep: rd(M.keep), sotRecent: sot, prevMin: pv ? pv.min : null, recentGoal: !!recent, uefa: uefa || undefined } };
 }
@@ -1568,7 +1571,10 @@ function tipTrialPlays(r, min, half, x, prev, prev8) {
     else if (half === 1) { out.push(mk('th1', corner.p1, 0.78, 0.68, extra(1))); out.push(mk('th2', corner.p2, 0.50, 0.40, extra(2))); }
   }
   /* 3.95.0 — segnali mirati: OTTIMA da 82% */
-  tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev).forEach(function (z) { out.push(mk(z.k, z.p, z.green || 0.82, z.warm || 0.78, z.extra)); });
+  /* 4.3.9 — prossimo gol 2T con ritmo basso (partita più lenta del previsto): dal vivo 22-25/10 25/36 (69%) contro 84% del mercato,
+     sotto ogni giorno (80 · 60 · 67) → non parte. 1-0 e "a quota" non cambiano. */
+  var ritT = tipLabels(r).rit;
+  tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev).forEach(function (z) { if (z.k === 'tm2' && ritT === 'basso') return; out.push(mk(z.k, z.p, z.green || 0.82, z.warm || 0.78, z.extra)); });
   /* 3.98.0 — gli altri segnali gol IN PROVA usano la probabilità del mercato live quando c’è (sul registro il modello
      sovrastimava: segnali 1T con mercato sotto il 65% vinti al 52%); la stima del modello resta in engP */
   out.forEach(function (z) {
@@ -1608,7 +1614,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.3.6',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.3.9',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -1938,7 +1944,10 @@ function tipAlertWhy(A, e) {
   if (TIP_NO_PUSH[e.k]) return 'tipo senza notifiche';
   if (!tipKindActive(e.k)) return 'tipo sospeso';
   if (tipIsTrial(e) ? A.trial === false : A.stable === false) return tipIsTrial(e) ? 'segnali in prova spenti' : 'segnali stabili spenti';
-  if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return e.tier === 'excellent' ? 'OTTIME spente' : 'DA VALUTARE spente';
+  /* 4.3.7 — per ogni filtro si può scegliere OTTIME, DA VALUTARE o entrambe (A.tierK); senza scelta valgono quelle generali */
+  var TK = A.tierK && A.tierK[e.k];
+  if (TK) { if (TK === 'excellent' && e.tier !== 'excellent') return 'DA VALUTARE spente per questo filtro'; if (TK === 'try' && e.tier === 'excellent') return 'OTTIME spente per questo filtro'; }
+  else if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return e.tier === 'excellent' ? 'OTTIME spente' : 'DA VALUTARE spente';
   if (A[tipAlertGroup(e.k)] === false) return 'tipo ' + ((TIP_ALERT_GROUPS.find(function (g) { return g[0] === tipAlertGroup(e.k); }) || [0, ''])[1]).toLowerCase() + ' spento';
   if (A.top && !tipLeagueTop(e)) return 'escluso da Solo top campionati';
   if (A.quality !== false && !tipQualityPass(e)) return 'escluso da Solo qualità';
@@ -2554,7 +2563,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.3.6", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.3.9", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2567,7 +2576,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.3.6" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.3.9" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2579,7 +2588,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.3.6" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.3.9" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {

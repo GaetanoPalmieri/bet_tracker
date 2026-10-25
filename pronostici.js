@@ -1733,7 +1733,10 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var Pg = tipGoalProb(M, half, lgG, diff), p = Pg.p, green = TIP_GOAL_GREEN, warm = TIP_GOAL_WARM[half] || 0.74;
   /* 4.3.1 — 🎯 gol 2T sull'1-0: dal vivo 22-25/10 vince 147 su 169 (87%) contro 85,5% stimato: +2 punti, così la % è quella vera
      e quando arriva all'87% torna OTTIMA. Vince uguale da OTTIMA e da DA VALUTARE (87%): il livello qui conta poco. */
-  if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.6 — femminili e serie minori dei Paesi forti (in prova): sempre DA VALUTARE */ /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
+  /* 4.3.6 — femminili e serie minori dei Paesi forti (in prova): sempre DA VALUTARE.
+     4.3.8 — tolta la regola del minuto della 4.3.7: con i segnali del 25/10 dal 50' in poi 14/14, in totale 46'-49' 88% (223) e
+     dal 50' 86% (44), nessuna differenza vera. Negli altri campionati l'1-0 è sempre OTTIMA. */
+  if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
   return { k: k, p: rd(p), green: green, warm: warm,
     book: M.book, o: { rule: '4.2.8', pMkt: rd(M.p), pCal: rd(Pg.base), adj: rd(Pg.adj), lgG: lgG, src: M.src, oddsLine: M.oddsLine, pOver: M.pOver, lamRest: rd(M.lam), ll: M.ll, pl: M.pl, keep: rd(M.keep), sotRecent: sot, prevMin: pv ? pv.min : null, recentGoal: !!recent, uefa: uefa || undefined } };
 }
@@ -1883,7 +1886,10 @@ function tipTrialPlays(r, min, half, x, prev, prev8) {
     else if (half === 1) { out.push(mk('th1', corner.p1, 0.78, 0.68, extra(1))); out.push(mk('th2', corner.p2, 0.50, 0.40, extra(2))); }
   }
   /* 3.95.0 — segnali mirati: OTTIMA da 82% */
-  tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev).forEach(function (z) { out.push(mk(z.k, z.p, z.green || 0.82, z.warm || 0.78, z.extra)); });
+  /* 4.3.9 — prossimo gol 2T con ritmo basso (partita più lenta del previsto): dal vivo 22-25/10 25/36 (69%) contro 84% del mercato,
+     sotto ogni giorno (80 · 60 · 67) → non parte. 1-0 e "a quota" non cambiano. */
+  var ritT = tipLabels(r).rit;
+  tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev).forEach(function (z) { if (z.k === 'tm2' && ritT === 'basso') return; out.push(mk(z.k, z.p, z.green || 0.82, z.warm || 0.78, z.extra)); });
   /* 3.98.0 — gli altri segnali gol IN PROVA usano la probabilità del mercato live quando c’è (sul registro il modello
      sovrastimava: segnali 1T con mercato sotto il 65% vinti al 52%); la stima del modello resta in engP */
   out.forEach(function (z) {
@@ -1930,7 +1936,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.3.6',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.3.9',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2871,6 +2877,12 @@ function tipFavHtml() {
     var desc = String(TIP_PLAY_NAME[k] || '').replace(/^IN PROVA · /, '').replace(/^🎯\s*/, '');
     return '<div class="fv-row' + (fav ? ' on' : '') + '"><div class="fv-main"><b>' + U.esc(TIP_PLAY_SHORT[k] || k) + '</b>' +
       '<small>' + (TIP_TRIAL[k] ? '🧪 in prova' : '◆ stabile') + ' · ' + stat(k) + '</small>' + (desc ? '<small class="fv-desc">' + U.esc(desc) + '</small>' : '') + '</div>' +
+      (noPush ? '' : (function () {
+        /* 4.3.7 — livello delle notifiche per questo filtro: OTTIME, DA VALUTARE o entrambe (di base quelle generali) */
+        var TK = (A.tierK || {})[k] || (A.amber ? (A.excellent === false ? 'try' : 'both') : 'excellent');
+        var b = function (v, t) { return '<button type="button" class="fv-tier-b' + (TK === v ? ' on' : '') + '" data-tierk="' + k + ':' + v + '"' + (push ? '' : ' disabled') + '>' + t + '</button>'; };
+        return '<div class="fv-tier" role="group" aria-label="Notifiche per livello">' + b('excellent', 'OTTIME') + b('try', 'DA VALUTARE') + b('both', 'Entrambe') + '</div>';
+      })()) +
       '<button type="button" class="fv-tg fv-star' + (fav ? ' on' : '') + '" data-fav-k="' + k + '" aria-pressed="' + fav + '" aria-label="' + (fav ? 'Togli dai preferiti' : 'Metti nei preferiti') + '">' + (fav ? '★' : '☆') + '</button>' +
       '<button type="button" class="fv-tg fv-bell' + (push ? ' on' : '') + '" data-push-k="' + k + '" aria-pressed="' + push + '"' + (noPush ? ' disabled' : '') + ' aria-label="' + (noPush ? 'Senza notifiche' : push ? 'Spegni la notifica' : 'Accendi la notifica') + '">' + TIP_IC.bell + '</button></div>';
   };
@@ -2898,6 +2910,9 @@ function tipFavSheet() {
     });
     d.querySelectorAll('[data-push-k]').forEach(function (b) {
       b.onclick = function () { var k = b.getAttribute('data-push-k'); mutate(function (n) { var A = prefs(n); if (A.off[k]) delete A.off[k]; else A.off[k] = 1; }); redraw(); };
+    });
+    d.querySelectorAll('[data-tierk]').forEach(function (b) {
+      b.onclick = function () { var v = b.getAttribute('data-tierk').split(':'); mutate(function (n) { var A = prefs(n); A.tierK = Object.assign({}, A.tierK || {}); A.tierK[v[0]] = v[1]; }); redraw(); };
     });
     d.querySelectorAll('[data-fav-all]').forEach(function (b) {
       b.onclick = function () { mutate(function (n) { var A = prefs(n); n.predModel.favOff = {}; A.off = {}; }); redraw(); };
@@ -3097,7 +3112,10 @@ function tipAlertWhy(A, e) {
   if (TIP_NO_PUSH[e.k]) return 'tipo senza notifiche';
   if (!tipKindActive(e.k)) return 'tipo sospeso';
   if (tipIsTrial(e) ? A.trial === false : A.stable === false) return tipIsTrial(e) ? 'segnali in prova spenti' : 'segnali stabili spenti';
-  if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return e.tier === 'excellent' ? 'OTTIME spente' : 'DA VALUTARE spente';
+  /* 4.3.7 — per ogni filtro si può scegliere OTTIME, DA VALUTARE o entrambe (A.tierK); senza scelta valgono quelle generali */
+  var TK = A.tierK && A.tierK[e.k];
+  if (TK) { if (TK === 'excellent' && e.tier !== 'excellent') return 'DA VALUTARE spente per questo filtro'; if (TK === 'try' && e.tier === 'excellent') return 'OTTIME spente per questo filtro'; }
+  else if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return e.tier === 'excellent' ? 'OTTIME spente' : 'DA VALUTARE spente';
   if (A[tipAlertGroup(e.k)] === false) return 'tipo ' + ((TIP_ALERT_GROUPS.find(function (g) { return g[0] === tipAlertGroup(e.k); }) || [0, ''])[1]).toLowerCase() + ' spento';
   if (A.top && !tipLeagueTop(e)) return 'escluso da Solo top campionati';
   if (A.quality !== false && !tipQualityPass(e)) return 'escluso da Solo qualità';
@@ -4161,7 +4179,7 @@ function tipNav(list) {
       tool('alerts', TIP_IC.bell, 'Avvisi', '', 'data-tip-alerts', A.on ? ' armed' : '') +
       tool('file', TIP_IC.file, 'Aggiorna', '', 'data-tip-sheet', tipUI.loading || tipUI.preBusy ? ' busy' : '');
     box.querySelectorAll('[data-tip-panel]').forEach(function (b) { b.onclick = function () { tipUI.panel = b.dataset.tipPanel; render(); window.scrollTo(0, 0); }; });
-    box.querySelectorAll('[data-tip-alerts]').forEach(function (b) { b.onclick = tipAlertSheet; });
+    box.querySelectorAll('[data-tip-alerts]').forEach(tipBellBind);
     box.querySelectorAll('[data-tip-fav]').forEach(function (b) { b.onclick = tipFavSheet; });
     box.querySelectorAll('[data-tip-sheet]').forEach(function (b) { b.onclick = tipFileSheet; });
   }, 0);
@@ -4221,6 +4239,23 @@ function tipHubPanel(list) {
     card('stats', TIP_IC.stats, 'Resoconto', rep ? 'ultimo giorno' : '', statBody);
 }
 /* avvisi: dalla campanella della barra */
+/* 4.3.7 — CAMPANELLA: un tocco accende/spegne tutte le notifiche, tenendo premuto (mezzo secondo) si apre il pannello degli avvisi */
+function tipBellBind(b) {
+  var timer = null, long = false;
+  var start = function () { long = false; clearTimeout(timer); timer = setTimeout(function () { long = true; try { if (navigator.vibrate) navigator.vibrate(30); } catch (x) { /* ok */ } tipAlertSheet(); }, 550); };
+  var stop = function () { clearTimeout(timer); };
+  b.addEventListener('pointerdown', start);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (t) { b.addEventListener(t, stop); });
+  b.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
+  b.style.webkitTouchCallout = 'none'; b.style.userSelect = 'none';
+  b.onclick = function (ev) {
+    ev.preventDefault();
+    if (long) { long = false; return; }
+    var on = !tipAlertPrefs().on;
+    mutate(function (n) { n.predModel = n.predModel || {}; var A = n.predModel.alerts = Object.assign({ on: false, amber: false, stars: false }, n.predModel.alerts || {}); A.on = on; A.at = Date.now(); });
+    U.toast(on ? '🔔 Notifiche accese · tieni premuto per le impostazioni' : '🔕 Notifiche spente · tieni premuto per le impostazioni');
+  };
+}
 function tipAlertSheet() {
   var inner = function () { return tipAlertCard().replace(/<div class="tip-top-head">.*?<\/div>/, ''); };
   var html = sheetHead('Avvisi sul telefono') + '<div class="tip-sheet tip-alertsheet">' + inner() + '</div>';
@@ -5924,9 +5959,7 @@ function bindTips() {
   main.querySelectorAll('[data-tip-sheet]').forEach(function (b) {
     b.onclick = tipFileSheet;
   });
-  main.querySelectorAll('[data-tip-alerts]').forEach(function (b) {
-    b.onclick = tipAlertSheet;
-  });
+  main.querySelectorAll('[data-tip-alerts]').forEach(tipBellBind);
   main.querySelectorAll('[data-tip-reset]').forEach(function (b) {
     b.onclick = function () {
       tipUI.view = 'open';
