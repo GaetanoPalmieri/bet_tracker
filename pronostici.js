@@ -1344,7 +1344,19 @@ TIP_PLAY_NAME.th1 = 'IN PROVA · almeno 1 angolo in più entro l’intervallo (d
 TIP_PLAY_NAME.th2 = 'IN PROVA · almeno 2 angoli in più entro l’intervallo (dal 36’)';
 /* 3.68.0 — SEGNALI IN PROVA: regole provvisorie, niente notifiche, tracciati a parte (una voce per partita, punteggio e tipo).
    Servono a misurare quanto vincono prima di tararli con i dati registrati sul server. */
-var TIP_TRIAL = { tp1: 1, tp2: 1, tq1: 1, tq2: 1, tg1: 1, tn2: 1, tc1: 1, tc2: 1, th1: 1, th2: 1, tf1: 1, tf2: 1, tm1: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1 };
+var TIP_TRIAL = { tp1: 1, tp2: 1, tq1: 1, tq2: 1, tg1: 1, tn2: 1, tc1: 1, tc2: 1, th1: 1, th2: 1, tf1: 1, tf2: 1, tk1: 1, tk2: 1, tm1: 1, tv2: 1 }; /* 4.3.4 — stabili: tm2, tm3 */
+/* 4.3.3 — SEGNALI 🎯 GOL PASSATI A STABILI: prossimo gol 1T, prossimo gol 2T, gol 2T sull'1-0 e avanti di 1 a quota. Dal vivo
+   22-25/10 la % mostrata è giusta (stima e vinte entro 1-2 punti) e i risultati reggono tutti i giorni. Restano IN PROVA gli
+   angoli e l'1-0 nei femminili e nelle serie minori dei Paesi forti (appena aggiunto, 4.3.2). Nel registro il campo trial
+   resta com'era (serve a tenere separati i segnali della stessa partita): stabile o in prova si legge con tipIsTrial. */
+var TIP_STABLE_K = { tm2: 1, tm3: 1 }; /* 4.3.4 — prossimo gol 1T e avanti di 1 a quota restano in prova */
+function tipIsTrial(e) {
+  if (!e || !e.trial) return false;
+  if (!TIP_STABLE_K[e.k]) return true;
+  var g = e.factors && e.factors.lgG;
+  return e.k === 'tm3' && (g === 'women' || g === 'lower');
+}
+
 /* 3.71.0 — ANGOLI 1° e 2° tempo (IN PROVA). Finestre: 1T 36’-42’ (+1/+2 entro l’intervallo), 2T 82’-87’ (+1/+2 entro la fine).
    Ritmo atteso = quote pre-partita della linea angoli (se c’è) + storico delle due squadre (angoli fatti/subiti, ultime 10
    partite verificate) + media del campionato; poi si corregge con gli angoli già visti, l’andamento recente e il punteggio.
@@ -1535,7 +1547,8 @@ var TIP_TARGET = { tm1: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1 };
 var TIP_TARGET_P = { tk1: 0.84, tk2: 0.82 };
 /* 4.2.2 — gol 1T mai OTTIMA: con le quote vere bet365 del 1° tempo (2.528 momenti, 20-22/10) il mercato è esatto entro 1-2 punti
    e le statistiche live non aggiungono nulla fuori campione (56% contro 66% di base): oltre il 75% non si va */
-var TIP_TM = { 1: { from: 10, to: 38, pMin: 0.68, up: 0.07, green: 1, warm: 0.75 }, 2: { from: 46, to: 80, pMin: 0.75, up: 0.03, maxG: 4, green: 0.88, warm: 0.78 } };
+/* 4.3.5 — prossimo gol 1T solo con mercato ≥70%: sotto vinceva 74% (74 segnali), da 70% in su 81% (174), uguale nei due periodi */
+var TIP_TM = { 1: { from: 10, to: 38, pMin: 0.70, up: 0.07, green: 1, warm: 0.75 }, 2: { from: 46, to: 80, pMin: 0.75, up: 0.03, maxG: 4, green: 0.88, warm: 0.78 } };
 function tipLineLam(L) { /* gol attesi da una linea gol asiatica (linea x.5 = +0,17, x.25/x.75 = +0,08: tarato sul registro) */
   if (!U.finite(L) || L <= 0) return null;
   var fr = L - Math.floor(L), adj = Math.abs(fr - 0.5) < 0.01 ? 0.17 : Math.abs(fr - 0.25) < 0.01 || Math.abs(fr - 0.75) < 0.01 ? 0.08 : 0;
@@ -1589,6 +1602,7 @@ var TIP_CAL_ADJ = { /* [pari, avanti di 1, avanti di 2+] */
 /* 4.2.9 — OTTIMA da 87% (era 85%): segnali veri 22-24/10, stima ≥87% 142 segnali vinti 93% (ogni giorno 87-96%), stima 85-87%
    158 segnali vinti 87%. Meno segnali e quelli che restano vincono di più. */
 var TIP_GOAL_GREEN = 0.87, TIP_GOAL_WARM = { 1: 0.70, 2: 0.74 };
+var TIP_TM3_UP = 0.02; /* 4.3.1 — correzione del gol 2T sull'1-0 (vedi tipTargetGoal) */
 function tipGoalProb(M, half, lgG, diff) {
   var C = TIP_CAL[half] || TIP_CAL[2], ab = C[M.src === 'quote' ? 'quote' : 'linea'], m = Math.max(0.01, Math.min(0.995, M.p));
   var base = 1 / (1 + Math.exp(-(ab[0] + ab[1] * Math.log(m / (1 - m)))));
@@ -1689,7 +1703,10 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var recent = x && U.finite(x.lastGoal) && min - x.lastGoal >= 0 && min - x.lastGoal <= 6;
   /* 4.2.7 — serie minori dei Paesi forti e coppe internazionali: sotto il mercato vero in tutti e due i tempi → niente segnali gol */
   var lgG = tipLgGroup(lgN, tier);
-  if (lgG === 'lower' || lgG === 'cup') return null;
+  /* 4.3.2 — gol 2T sull'1-0 anche nei femminili e nelle serie minori dei Paesi forti (archivio 9-22/10: 196 partite, 83% contro
+     81% del mercato, come i minori). Le serie minori dei Paesi forti restano fuori da tutti gli altri segnali gol. */
+  var tm3Ok = half === 2 && !lowV && G === 1 && !recent && !uefa && min <= 70 && (tier === 'minor' || tier === 'minor+' || tier === 'women' || lgG === 'lower');
+  if (lgG === 'cup' || (lgG === 'lower' && !tm3Ok)) return null;
   var k = half === 1 ? 'tm1' : 'tm2';
   /* 4.2.6 — archivio quote bet365 16-22/10 (~2.900 partite): il vantaggio sul mercato c'è solo nei campionati minori
      con una squadra avanti. Maggiori, giovanili e femminili sono al livello del mercato o sotto; la parità è sotto.
@@ -1701,7 +1718,7 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
       k = 'tv2';
     } else if (uefa && M.p < 0.85) return null;
     /* 4.2.1 — giovanili fuori dal gol 2T sull'1-0 (registro: 12/16, 75%, contro 46/49, 94%, degli altri) */
-    else if (G === 1 && !recent && minorLg && !uefa && min <= 70) k = 'tm3'; /* 4.2.6 — solo minori: 86% (mercato 82%) */
+    else if (tm3Ok) k = 'tm3'; /* 4.2.6 — solo minori: 86% (mercato 82%) */
     /* 4.2.2 — 2T, conta se il punteggio è in parità (registro 20-23/10, mercato 75-85%):
        squadra in vantaggio, non giovanili  ~150 casi 90% (mercato 82%); il 23/10 dal vivo 20/20 → OTTIMA
        pari (0-0, 1-1, 2-2)                 71 casi 82% = mercato; il 23/10 dal vivo 14/21  → DA VALUTARE, % del mercato
@@ -1714,6 +1731,9 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   /* 4.2.8 — % tarata (mercato vero + gruppo e punteggio + selezione) e una sola regola per tutti: OTTIMA da 85%,
      DA VALUTARE da 74% nel 2T e da 70% nel 1T */
   var Pg = tipGoalProb(M, half, lgG, diff), p = Pg.p, green = TIP_GOAL_GREEN, warm = TIP_GOAL_WARM[half] || 0.74;
+  /* 4.3.1 — 🎯 gol 2T sull'1-0: dal vivo 22-25/10 vince 147 su 169 (87%) contro 85,5% stimato: +2 punti, così la % è quella vera
+     e quando arriva all'87% torna OTTIMA. Vince uguale da OTTIMA e da DA VALUTARE (87%): il livello qui conta poco. */
+  if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.6 — femminili e serie minori dei Paesi forti (in prova): sempre DA VALUTARE */ /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
   return { k: k, p: rd(p), green: green, warm: warm,
     book: M.book, o: { rule: '4.2.8', pMkt: rd(M.p), pCal: rd(Pg.base), adj: rd(Pg.adj), lgG: lgG, src: M.src, oddsLine: M.oddsLine, pOver: M.pOver, lamRest: rd(M.lam), ll: M.ll, pl: M.pl, keep: rd(M.keep), sotRecent: sot, prevMin: pv ? pv.min : null, recentGoal: !!recent, uefa: uefa || undefined } };
 }
@@ -1804,7 +1824,7 @@ function tipTrialPlays(r, min, half, x, prev, prev8) {
     var fair = Math.max(1.05, 1 / Math.max(0.02, p)), book = extra && U.finite(extra.book) && extra.book > 1 ? extra.book : null, q = book || fair;
     var tier = p >= green ? 'excellent' : p >= warm ? 'try' : 'none';
     /* quota vera sotto la quota giusta: niente OTTIMA */
-    if (book && book < fair && tier === 'excellent') tier = 'try';
+    if (book && book < fair && tier === 'excellent' && k !== 'tm3') tier = 'try'; /* 4.3.4 — l'1-0 ha un solo livello */
     return Object.assign({ k: k, name: TIP_PLAY_NAME[k], short: TIP_PLAY_SHORT[k], p: p, evalP: p, legs: [{ l: TIP_PLAY_SHORT[k], p: p }], thr: warm, trial: true,
       cost: { stakes: [10], risk: 10, win: 10 * (q - 1), ratio: 1 / (q - 1) }, minQ: Math.round(fair * 100) / 100, green: tier === 'excellent', warm: tier === 'try',
       tier: tier, lg: r.lgTier || 'major', goals: G, book: book || undefined, lowBook: book ? book < fair : undefined }, tipLabels(r), extra || {});
@@ -1910,7 +1930,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.2.9',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.3.6',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2035,7 +2055,7 @@ function tipReportFor(date) {
   var day = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.date === date && tipStatsOk(e) && tipQShown(e); });
   var by = {}, tot = { n: 0, w: 0, p: 0, pl: 0, risk: 0 }, trial = { n: 0, w: 0, p: 0, pl: 0, risk: 0 }, mine = { n: 0, w: 0, pl: 0, st: 0 };
   [false, true].forEach(function (isT) {
-    var L = tipPlayDedup(day.filter(function (e) { return !!e.trial === isT; })).filter(function (e) { return e.res != null && (!e.tier || e.tier === 'excellent'); });
+    var L = tipPlayDedup(day.filter(function (e) { return !!tipIsTrial(e) === isT; })).filter(function (e) { return e.res != null && (!e.tier || e.tier === 'excellent'); });
     L.forEach(function (e) {
       if (e.res === 'skip') return;
       var b = by[e.k] = by[e.k] || { n: 0, w: 0, p: 0, pl: 0 }, T = isT ? trial : tot;
@@ -2165,7 +2185,7 @@ var TIP_LG_WOMEN = /women|femenin|feminin|frauen|damallsvenskan|toppserien|\bwsl
    si accetta il nome esatto, con o senza il Paese davanti, così "Brazil Serie A" o "Premier League 2" restano fuori. */
 var TIP_LG_TOP = [
   /^(england |english )?premier league$/, /^(spain |spanish )?la ?liga( ea sports)?$/, /^(italy |italian )?serie a$/,
-  /^(germany |german )?bundesliga$/, /^(france |french )?ligue 1( mcdonald'?s)?$/, /^(netherlands |holland |dutch )?eredivisie$/,
+  /^(germany |german )?bundesliga( i)?$/, /* 4.3.0 — TotalCorner la chiama "Germany Bundesliga I" */ /^(france |french )?ligue 1( mcdonald'?s)?$/, /^(netherlands |holland |dutch )?eredivisie$/,
   /^(portugal |portuguese )?(primeira liga|liga portugal( betclic)?)$/,
   /^(uefa )?champions league$/, /^(uefa )?europa league$/, /^(uefa )?(europa )?conference league$/, /^uefa super cup$/,
   /^(uefa )?nations league( [a-d])?$/, /^(fifa )?world cup$/, /^world cup qualification (europe|uefa)$/, /^(uefa )?euro( 20\d\d)?$/, /^(uefa )?european championship$/
@@ -2510,7 +2530,7 @@ document.addEventListener('click', function (ev) {
 /* 3.60.0 — spaccato per tipo di segnale · 3.62.0 — e per profilo × ritmo */
 /* 3.79.0 — riepilogo a matrice e selettore Totale / Stabili / In prova, uguali nel Live e nelle Statistiche */
 var TIP_SAMPLES = [['', 'Totale'], ['stable', '◆ Stabili'], ['trial', '🧪 In prova']];
-function tipSampleOf(L, smp) { return !smp ? L : L.filter(function (e) { return smp === 'trial' ? !!e.trial : !e.trial; }); }
+function tipSampleOf(L, smp) { return !smp ? L : L.filter(function (e) { return smp === 'trial' ? !!tipIsTrial(e) : !tipIsTrial(e); }); }
 function tipSampleSeg(cur, attr) {
   return '<div class="tip-smpseg" role="tablist" aria-label="Campione">' + TIP_SAMPLES.map(function (x) {
     return '<button type="button" role="tab" aria-selected="' + (cur === x[0]) + '" class="tip-smpbtn' + (cur === x[0] ? ' on' : '') + (x[0] === 'trial' ? ' trial' : '') + '" ' + attr + '="' + x[0] + '">' + x[1] + '</button>';
@@ -2527,7 +2547,7 @@ function tipSampleMatrix(L, money) {
     if (!c.all) return '<td class="tip-smx-empty">—</td>';
     return '<td><b><span class="positive">' + c.w + '</span><i>–</i><span class="negative">' + c.l + '</span></b><small>' + (c.n ? Math.round(c.w / c.n * 100) + '%' : '—') + (c.wait ? ' · ' + c.wait + ' ◷' : '') + '</small></td>';
   };
-  var cols = [L.filter(function (e) { return !e.trial; }), L.filter(function (e) { return e.trial; }), L];
+  var cols = [L.filter(function (e) { return !tipIsTrial(e); }), L.filter(function (e) { return tipIsTrial(e); }), L];
   var tiers = [['OTTIME', 'excellent', 'positive'], ['DA VALUTARE', 'try', 'tip-amber-text']];
   var row = function (label, cls, fn) { return '<tr><th class="' + cls + '">' + label + '</th>' + cols.map(function (a) { return cell(a.filter(fn)); }).join('') + '</tr>'; };
   var body = tiers.map(function (t) { return row(t[0], t[2], function (e) { return (e.tier || 'excellent') === t[1]; }); }).join('') +
@@ -2593,7 +2613,7 @@ function tipStHero(L, smp, extra) {
     tile('Saldo €', c.n ? (c.pl >= 0 ? '+' : '') + Math.round(c.pl) + '€' : '—', 'teorico', c.n ? (c.pl >= 0 ? 'positive' : 'negative') : '') + '</div>';
   var rows = [['<span class="positive">OTTIME</span>', L.filter(function (e) { return (e.tier || 'excellent') === 'excellent'; })], ['<span class="tip-amber-text">DA VALUTARE</span>', L.filter(function (e) { return e.tier === 'try'; })]];
   if (!smp) {
-    var st = L.filter(function (e) { return !e.trial; }), tr = L.filter(function (e) { return e.trial; });
+    var st = L.filter(function (e) { return !tipIsTrial(e); }), tr = L.filter(function (e) { return tipIsTrial(e); });
     if (st.length && tr.length) rows.push(['◆ Stabili', st], ['🧪 In prova', tr]);
   }
   var body = rows.filter(function (r) { return r[1].length; }).map(function (r) { var x = tipStatCount(r[1]); return tipStRow(r[0], x, tipWL2(x) + (x.a ? ' · ' + x.a + ' ◷' : '')); }).join('');
@@ -2819,8 +2839,8 @@ function tipMemRow(e, opt) {
     f(Array.isArray(e.ft) ? 'finale ' + e.ft[0] + '-' + e.ft[1] : '') +
     f(e.played ? 'tua @' + e.played.q.toFixed(2) + ' · ' + e.played.s + '€' : '');
   /* 3.75.0 — stabile o in prova: sempre nello stesso punto, in alto a destra */
-  var kind = '<div class="tip-mem-side">' + tipSampleIcon(e.trial, 'tip-mem-sample') + (pct ? '<small class="tip-mem-pct tip-mem-pct-' + t + '" title="Probabilità stimata">' + pct + '</small>' : '') + '</div>';
-  return '<div class="tip-memory-row tip-mem2 tip-memory-' + state + (e.trial ? ' tip-mem-istrial' : '') + '">' + kind +
+  var kind = '<div class="tip-mem-side">' + tipSampleIcon(tipIsTrial(e), 'tip-mem-sample') + (pct ? '<small class="tip-mem-pct tip-mem-pct-' + t + '" title="Probabilità stimata">' + pct + '</small>' : '') + '</div>';
+  return '<div class="tip-memory-row tip-mem2 tip-memory-' + state + (tipIsTrial(e) ? ' tip-mem-istrial' : '') + '">' + kind +
     '<div class="tip-mem-top"><span class="tip-history-tier tip-history-' + t + '">' + (t === 'try' ? 'DA VALUTARE' : 'OTTIMA') + '</span>' + chips + '</div>' +
     '<b class="tip-mem-name">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + ' <span class="tip-mem-sc">' + U.esc(sc) + '</span><span class="tip-mem-arrow">→ ' + U.esc(arrow) + '</span></b>' +
     /* 4.2.0 — campionato e nazione come in "Adesso" */
@@ -2921,7 +2941,7 @@ function tipExcellentArchive() {
   /* 4.1.0 — filtri, statistiche e ordina: solo icone, accanto a Totale / Stabili / In prova; i filtri attivi sotto, piccoli */
   var actF = tipEFilterChips(tipUI.arcF, tipUI.lblF, 'data-arcclear');
   /* 4.2.0 — Tutti / Stabili / In prova in un menu a tendina (di base Tutti, sempre scritto sul pulsante) */
-  var nSt = Q.pass.filter(function (e) { return !e.trial; }).length;
+  var nSt = Q.pass.filter(function (e) { return !tipIsTrial(e); }).length;
   var tools = '<div class="tl-tools">' + tipSampleDD(smp, 'data-split-sample', { '': Q.pass.length, stable: nSt, trial: Q.pass.length - nSt }) +
     '<div class="ic-row">' + tipIconBtn('data-arcfilters', TIP_IC_FILTER, 'Filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
     (actF.length ? '<div class="tip-lblf tip-chips-sm">' + actF.join('') + '</div>' : '');
@@ -2969,7 +2989,7 @@ function tipFreshNotify() {
   var nw = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.t > last && e.tier === 'excellent' && e.res == null && tipAlertWants(Object.assign({}, tipAlertPrefs(), { on: true }), e); }); /* 3.73.0 — stessi filtri degli avvisi */
   if (!nw.length) return;
   var e = nw[nw.length - 1];
-  U.toast((e.trial ? '🧪 IN PROVA · ' : '') + '🟢 ' + (nw.length > 1 ? nw.length + ' nuove OTTIME · ' : 'Nuova OTTIMA · ') + e.home + ' – ' + e.away + ' ' + e.min + '’ · ' + (TIP_PLAY_SHORT[e.k] || e.k) + ' ' + Math.round(e.p * 100) + '%');
+  U.toast((tipIsTrial(e) ? '🧪 IN PROVA · ' : '') + '🟢 ' + (nw.length > 1 ? nw.length + ' nuove OTTIME · ' : 'Nuova OTTIMA · ') + e.home + ' – ' + e.away + ' ' + e.min + '’ · ' + (TIP_PLAY_SHORT[e.k] || e.k) + ' ' + Math.round(e.p * 100) + '%');
   try { if (navigator.vibrate) navigator.vibrate([120, 60, 120]); } catch (x) { /* ok */ }
 }
 async function tipAutoScan(force) {
@@ -3076,7 +3096,7 @@ function tipAlertWhy(A, e) {
   if (!A || !A.on) return 'avvisi spenti';
   if (TIP_NO_PUSH[e.k]) return 'tipo senza notifiche';
   if (!tipKindActive(e.k)) return 'tipo sospeso';
-  if (e.trial ? A.trial === false : A.stable === false) return e.trial ? 'segnali in prova spenti' : 'segnali stabili spenti';
+  if (tipIsTrial(e) ? A.trial === false : A.stable === false) return tipIsTrial(e) ? 'segnali in prova spenti' : 'segnali stabili spenti';
   if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return e.tier === 'excellent' ? 'OTTIME spente' : 'DA VALUTARE spente';
   if (A[tipAlertGroup(e.k)] === false) return 'tipo ' + ((TIP_ALERT_GROUPS.find(function (g) { return g[0] === tipAlertGroup(e.k); }) || [0, ''])[1]).toLowerCase() + ' spento';
   if (A.top && !tipLeagueTop(e)) return 'escluso da Solo top campionati';
@@ -3208,7 +3228,7 @@ function tipLivePanel(list) {
     var y = e.afId ? rowsBy[e.afId] : null;
     var it = { e: e, k: e.k, isNew: t > nowT - 2 * 60e3,
       P: { m: { home: e.home, away: e.away, league: e.league || (y && y.m.league) || '' }, min: e.min, half: e.half || 1, sc: [e.gh || 0, e.ga || 0], y: y, open: y ? 'data-scan-open="' + U.esc(e.afId) + '"' : '' },
-      pl: { k: e.k, p: e.p, green: (e.tier || 'excellent') === 'excellent', warm: e.tier === 'try', trial: !!e.trial, cn: e.cn, book: e.book, lowBook: e.lowBook, factors: e.factors } };
+      pl: { k: e.k, p: e.p, green: (e.tier || 'excellent') === 'excellent', warm: e.tier === 'try', trial: !!tipIsTrial(e), cn: e.cn, book: e.book, lowBook: e.lowBook, factors: e.factors } };
     nextExp = nextExp ? Math.min(nextExp, t + NOW_MS) : t + NOW_MS;
     if (!tipQShown(e)) { nowExc.push(it); return; }
     items.push(it);
@@ -4122,7 +4142,7 @@ function tipCard(m, sortKey) {
 function tipNav(list) {
   var P = tipUI.panel, nLive = list.filter(tipIsLiveNow).length, A = tipAlertPrefs(), now = Date.now(), nOtt = 0, cur = tipLiveNowPlays();
   if (cur) nOtt = cur.filter(function (x) { return x.tier === 'excellent'; }).length;
-  else (((db.predModel || {}).playLog) || []).forEach(function (e) { if (e.tier === 'excellent' && e.res == null && e.t > now - 20 * 60e3 && !e.conditional && !e.costly && !e.trial && tipQShown(e)) nOtt++; });
+  else (((db.predModel || {}).playLog) || []).forEach(function (e) { if (e.tier === 'excellent' && e.res == null && e.t > now - 20 * 60e3 && !e.conditional && !e.costly && !tipIsTrial(e) && tipQShown(e)) nOtt++; });
   var it = function (k, ic, label, badge) {
     return '<button type="button" class="tip-navb' + (P === k ? ' on' : '') + '" data-tip-panel="' + k + '" aria-label="' + label + '"' + (P === k ? ' aria-current="page"' : '') + '>' + ic + '<span>' + label + '</span>' + (badge ? '<b class="tip-badge">' + badge + '</b>' : '') + '</button>';
   };
@@ -4348,7 +4368,7 @@ function tipLiveDay(e) { return new Date(e.t || 0).toLocaleDateString('sv-SE'); 
 /* consigli live chiudibili (niente ingressi futuri, step costosi, monitoraggi) */
 function tipLiveAll(trial) {
   return tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) {
-    return !!e.trial === !!trial && tipStatsOk(e) && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip';
+    return !!tipIsTrial(e) === !!trial && tipStatsOk(e) && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip';
   });
 }
 function tipStatLog(anySample) {
@@ -4478,7 +4498,7 @@ function tipDayHead(all) {
     var w = a.filter(function (e) { return e.res === 1; }).length, l = a.filter(function (e) { return e.res === 0; }).length;
     return '<b class="positive">' + w + '</b>–<b class="negative">' + l + '</b>';
   };
-  var c = tipStatCount(all), st = all.filter(function (e) { return !e.trial; }), tr = all.filter(function (e) { return e.trial; });
+  var c = tipStatCount(all), st = all.filter(function (e) { return !tipIsTrial(e); }), tr = all.filter(function (e) { return tipIsTrial(e); });
   return (st.length ? '◆ ' + wl(st) : '') + (st.length && tr.length ? ' · ' : '') + (tr.length ? '🧪 ' + wl(tr) : '') +
     (c.n ? ' · <span class="' + (c.pl >= 0 ? 'positive' : 'negative') + '">' + (c.pl >= 0 ? '+' : '') + Math.round(c.pl) + '€</span>' : '') + (c.a ? ' · ' + c.a + ' ◷' : '');
 }
@@ -4626,7 +4646,7 @@ function tipStatChips() {
   tipUI._stIcons = tipIconBtn('data-stfilters', TIP_IC_FILTER, 'Filtri', act.length) + tipArchiveIcon() + (live && (tipUI.stTab || 'riep') === 'storico' ? tipSortSelect() : '');
   /* 4.2.0 — seconda riga: cosa stai guardando (menu Tutti / Stabili / In prova, periodo, filtri attivi) */
   var dd = '';
-  if (live) { var QS = tipQSplit(tipStatLog(true)).pass, nS = QS.filter(function (e) { return !e.trial; }).length; dd = tipSampleDD(F.sample || '', 'data-st-sample', { '': QS.length, stable: nS, trial: QS.length - nS }); }
+  if (live) { var QS = tipQSplit(tipStatLog(true)).pass, nS = QS.filter(function (e) { return !tipIsTrial(e); }).length; dd = tipSampleDD(F.sample || '', 'data-st-sample', { '': QS.length, stable: nS, trial: QS.length - nS }); }
   return '<div class="st-ctx">' + dd + '<button type="button" class="tip-lchip on st-period" data-stfopen="period">📅 ' + U.esc(tipStRangeLabel()) + '</button>' + act.join('') + '</div>';
 }
 /* 4.1.0 — pulsante rotondo a sola icona (con numerino se ci sono filtri attivi) */
