@@ -1203,3 +1203,13 @@ dialog#editor.day-sheet .sheet-note { margin-top: 8px !important; }
 .wk-day.has.down { background: color-mix(in srgb, var(--bt-down) min(100%, calc(var(--a) + 30%)), transparent); }
 .wk-day.has.up b, .wk-day.has.down b, .wk-day.has.up span, .wk-day.has.down span { color: #fff; }
 .wk-day.has.up small, .wk-day.has.down small { color: rgba(255,255,255,.85); }
+
+/* 4.8.2 — iPhone, app sulla Home (iOS 26): la pagina non scorre più come documento ma dentro il body.
+   Con lo scorrimento sul documento Safari calcolava male l'altezza all'apertura e la barra in basso saliva
+   lasciando una striscia sotto. html fermo e alto quanto lo schermo, body che scorre. */
+html { height: 100% !important; overflow: hidden !important; }
+body {
+  height: 100% !important; min-height: 0 !important;
+  overflow-x: hidden !important; overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+}

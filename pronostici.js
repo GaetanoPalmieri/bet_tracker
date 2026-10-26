@@ -3342,7 +3342,9 @@ function tipLvRow(e, o) {
   var reach = '';
   if (o.reach && TIP_WAIT_SRC[e.k] && e.res == null) { var Q = tipWaitQ(); reach = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, (e.half || 1) === 1 || e.k === 'tm1' ? 1 : 2, Q), Q, true); }
   var meta = [hm, U.esc(e.league || ''), Array.isArray(e.ft) && e.res != null ? 'finale ' + e.ft[0] + '-' + e.ft[1] : ''].filter(Boolean).join(' · ');
-  var open = o.attr ? 'button type="button" ' + o.attr : 'div';
+  /* 4.8.1 — ogni riga si apre nella scheda del segnale (Adesso, Oggi e Statistiche) */
+  var lvId = U.esc(String(e.key || e.id || '') + '§' + (e.k || '') + '§' + (e.t || 0));
+  var open = 'button type="button" data-lv-open="' + lvId + '"';
   return '<' + open + ' class="lv2 lv2-' + (wait ? 'qr' : t) + (trial ? ' lv2-trial' : '') + (o.isNew ? ' lv2-new' : '') + (o.showRes ? ' lv2-' + st : '') + '"' + (o.showRes && st !== 'wait' ? ' aria-label="' + (st === 'win' ? 'Vinta' : 'Persa') + '"' : '') + '>' +
     '<span class="lv2-min"><b>' + (e.min != null ? e.min + '’' : '–') + '</b><small>' + (half === 1 ? '1T' : '2T') + '</small></span>' +
     '<span class="lv2-main">' + filt + '<span class="lv2-teams">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</span>' +
@@ -3350,8 +3352,67 @@ function tipLvRow(e, o) {
     (meta ? '<span class="lv2-meta">' + meta + '</span>' : '') + (reach ? '<span class="lv2-early">' + reach + '</span>' : '') + '</span>' +
     '<span class="lv2-side">' + (pc != null ? '<b class="lv2-pct">' + pc + '%</b>' : '') + '<i class="lv2-tier">' + (wait ? 'BOOK' : t === 'try' ? 'DA VALUTARE' : 'OTTIMA') + '</i>' + (QI ? '<i class="lv2-min">min ' + QI.min.toFixed(2) + '</i>' : '') + '</span>' +
     /* 4.8.0 — vinta / persa: sfondo verde o rosso tenue (non più la spunta) */
-    '</' + (o.attr ? 'button' : 'div') + '>';
+    '</button>';
 }
+/* 4.8.1 — SCHEDA DEL SEGNALE: tocchi una riga del Live e vedi tutto quello che serve in poche righe (prima in Adesso
+   si apriva il vecchio pannello dei dati live, grande e poco chiaro; in Oggi non si apriva niente). */
+function tipLvFind(id) {
+  var a = String(id || '').split('§'), L = ((db.predModel || {}).playLog) || [];
+  for (var i = L.length - 1; i >= 0; i--) {
+    var e = L[i];
+    if (e && String(e.key || e.id || '') === a[0] && String(e.k || '') === a[1] && String(e.t || 0) === a[2]) return e;
+  }
+  return null;
+}
+function tipSignalSheet(e) {
+  if (!e) return;
+  var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e), half = (e.half || 0) === 1 || e.k === 'tm1' ? 1 : 2;
+  var srcK = wait ? e.fromK : e.k, fName = String(TIP_PLAY_NAME[srcK] || TIP_LV_KIND[srcK] || TIP_PLAY_SHORT[srcK] || srcK || '').replace(/^🎯\s*/, '').replace(/^IN PROVA · /, '');
+  var pc = typeof e.p === 'number' && isFinite(e.p) ? Math.round(e.p * 100) : null;
+  var hm = e.t ? new Date(e.t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
+  var tierT = wait ? 'Prezzo del book' : e.tier === 'try' ? 'Da valutare' : 'Ottima';
+  var lvl = wait ? '<i class="lv2-lvl qr">⏳<em>BOOK</em></i>' : trial ? '<i class="lv2-lvl trial">🧪<em>IN PROVA</em></i>' : '<i class="lv2-lvl stable">🛡<em>STABILE</em></i>';
+  var resBox = e.res === 1 ? '<div class="sg-res win">✓ Vinta' + (Array.isArray(e.ft) ? ' · finale ' + e.ft[0] + '-' + e.ft[1] : '') + '</div>'
+    : e.res === 0 ? '<div class="sg-res loss">✕ Persa' + (Array.isArray(e.ft) ? ' · finale ' + e.ft[0] + '-' + e.ft[1] : '') + '</div>'
+    : '<div class="sg-res wait">◷ In attesa dell’esito</div>';
+  /* com'è adesso la partita (dall'ultima scansione) */
+  var y = null; (tipUI.scanRows || []).forEach(function (r) { if (r && r.x && e.afId && r.x.afId === e.afId) y = r; });
+  var nowTxt = y && y.x && Array.isArray(y.x.goals) ? (y.x.status === 'HT' ? 'Intervallo' : y.x.status === 'FT' ? 'Finita' : (y.min != null ? y.min + '’' : '')) + ' · ' + y.x.goals[0] + '-' + y.x.goals[1] : '';
+  var row = function (l, v, cls) { return v === '' || v == null ? '' : '<div class="sg-row"><span>' + l + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</b></div>'; };
+  var QI = !wait && TIP_TARGET[e.k] && !/^t[ck]/.test(e.k) ? tipQuotaInfo(e) : null;
+  var target = /^t[chk][12]$/.test(e.k) ? '+1 angolo entro ' + (half === 1 ? 'l’intervallo' : 'la fine') : 'Un altro gol entro ' + (half === 1 ? 'l’intervallo' : 'la fine');
+  var info = row('Deve succedere', target) +
+    row('Al segnale', (e.min != null ? e.min + '’ ' + (half === 1 ? '1T' : '2T') : '') + ' · ' + (e.gh || 0) + '-' + (e.ga || 0) + (hm ? ' · alle ' + hm : '')) +
+    (nowTxt && e.res == null ? row('Adesso', nowTxt) : '') +
+    (wait ? row('Quota raggiunta', e.q ? Number(e.q).toFixed(2) + (e.qEst ? ' (stimata)' : ' bet365') : '') + row('Segnale di partenza', (e.fromMin != null ? e.fromMin + '’' : '') + (e.fromP ? ' · ' + Math.round(e.fromP * 100) + '%' : '')) : '') +
+    (QI ? row('Quota minima', QI.min.toFixed(2)) + row('Quota bet365', QI.q ? QI.q.toFixed(2) + (QI.est ? ' (ricavata)' : '') : 'non disponibile', QI.ok ? 'positive' : '') + (QI.q ? row('Valore', QI.ok ? '💰 sì, +' + Math.round(QI.value * 100) + '%' : 'no (' + Math.round(QI.value * 100) + '%)', QI.ok ? 'positive' : 'muted') : '') : '');
+  var early = '';
+  if (TIP_WAIT_SRC[e.k] && e.res == null) { var Qw = tipWaitQ(); early = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, half, Qw), Qw, false); }
+  var st = e.stats && Array.isArray(e.stats.side) ? e.stats.side : null, stats = '';
+  if (st) {
+    var sr = function (l, k) { var a = st[0] && st[0][k], b = st[1] && st[1][k]; return a == null && b == null ? '' : '<div class="sg-st"><b>' + (a == null ? '–' : a) + '</b><span>' + l + '</span><b>' + (b == null ? '–' : b) + '</b></div>'; };
+    stats = sr('Tiri', 's') + sr('Tiri in porta', 't') + sr('Attacchi pericolosi', 'da') + sr('Angoli', 'c') + sr('Possesso %', 'poss');
+    if (stats) stats = '<h3 class="sheet-section">Statistiche al segnale</h3><div class="sg-stats"><div class="sg-st sg-sth"><b>' + U.esc(e.home || 'Casa') + '</b><span></span><b>' + U.esc(e.away || 'Ospiti') + '</b></div>' + stats + '</div>';
+  }
+  var d = sheetModal(
+    sheetHead(U.esc(e.home || '') + ' – ' + U.esc(e.away || ''), { sub: U.esc(e.league || '') }) +
+    '<div class="sg-sheet' + (wait ? ' sg-qr' : e.tier === 'try' ? ' sg-try' : ' sg-ok') + '">' +
+    '<div class="sg-filt">' + lvl + '<b>' + U.esc(fName) + '</b></div>' +
+    '<div class="sg-hero"><div><small>' + (wait ? 'Quota raggiunta' : 'Giocata') + '</small><b>' + U.esc(tipBetLabel(e)) + '</b></div><div class="sg-pct">' + (pc != null ? '<b>' + pc + '%</b>' : '') + '<small>' + tierT + '</small></div></div>' +
+    resBox +
+    (early ? '<p class="sg-early">' + U.esc(early) + '</p>' : '') +
+    '<div class="sg-rows">' + info + '</div>' + stats +
+    (wait ? '<p class="sheet-note">Quota raggiunta: la quota bet365 del prossimo gol è arrivata alla tua soglia. La % è quella del book, non è un consiglio: è contata a parte.</p>' : '') +
+    '</div>',
+  );
+  return d;
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-lv-open]');
+  if (!b) return;
+  ev.preventDefault();
+  tipSignalSheet(tipLvFind(b.getAttribute('data-lv-open')));
+});
 /* numero sul tasto Live della barra in basso: OTTIME dei filtri preferiti negli ultimi 5 minuti */
 function tipLiveBadge() {
   var now = Date.now(), n = 0;
@@ -3450,7 +3511,7 @@ function tipLivePanel(list) {
   var lvBar = '<div class="lv2-bar"><div class="lv2-seg" role="tablist"><button type="button" role="tab" aria-selected="' + favMode + '" class="' + (favMode ? 'on' : '') + '" data-now-fav="1">★ Preferiti <i>' + nFavNow + '</i></button>' +
     '<button type="button" role="tab" aria-selected="' + !favMode + '" class="' + (!favMode ? 'on' : '') + '" data-now-fav="0">Tutti <i>' + nAllNow + '</i></button></div></div>' + (lblN ? tipLblFilterBar() : '');
   var nowHtml = lvBar +
-    (shown.length ? '<div class="lv2-list">' + shown.slice(0, nShow).map(function (x) { return tipLvRow(x.e, { isNew: x.isNew, attr: x.P.open, showRes: x.e.res != null, reach: true }); }).join('') + '</div>' +
+    (shown.length ? '<div class="lv2-list">' + shown.slice(0, nShow).map(function (x) { return tipLvRow(x.e, { isNew: x.isNew, showRes: x.e.res != null, reach: true }); }).join('') + '</div>' +
       (shown.length > LIM ? '<button type="button" class="tl-more" data-lv-more>' + (tipUI.lvAll ? 'Mostra solo i primi ' + LIM : 'Mostra gli altri ' + (shown.length - LIM)) + '</button>' : '')
       : '<div class="lv-empty"><b>' + (qrMode ? 'Nessuna quota raggiunta' : 'Nessun segnale') + (favMode ? ' dei filtri preferiti' : '') + ' negli ultimi 5 minuti</b><small>' + (favMode && nAllNow ? nAllNow + ' in Tutti. ' : '') + 'Il controllo è automatico ogni 2 minuti: un segnale resta qui per 5 minuti, poi lo trovi in Oggi.</small></div>');
   /* 3.96.0 — giocate di adesso escluse dal filtro qualità: chiuse in fondo, con il motivo */
@@ -3471,9 +3532,12 @@ function tipLivePanel(list) {
   /* 3.99.8 — barra su due righe: LIVE + ora, poi partite e versione del server (niente più testo tagliato a destra) */
   var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || sv < '4.0.0';
   var svTxt = sv ? (sv === 'vecchia' ? 'vecchio' : sv) : '';
-  var bar = '<div class="lv2-status"><span class="lv-dot' + (S && Date.now() - S.at < 5 * 60e3 ? ' on' : '') + '"></span><span class="lv2-st">' + (S ? 'Aggiornato alle ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'In attesa del controllo') + ' · ' + nLive + ' partite' +
-    (svTxt ? ' · <span class="' + (svOld ? 'lv2-warn' : 'lv2-ver') + '">' + (svOld ? '⚠ ' : '') + 'server ' + U.esc(svTxt) + '</span>' : '') + '</span>' +
-    '<button type="button" class="lv2-ref" data-scan aria-label="Aggiorna adesso">↻</button></div>' +
+  /* 4.8.1 — STATO IN EVIDENZA: riquadro in cima con l'ora dell'ultimo controllo (ambra se più vecchio di 5 minuti) e un
+     pulsante "Aggiorna" grande, che durante il controllo gira senza cambiare larghezza (prima la scritta veniva tagliata). */
+  var fresh = S && Date.now() - S.at < 5 * 60e3, agoM = S ? Math.max(0, Math.round((Date.now() - S.at) / 60e3)) : null;
+  var bar = '<div class="lv2-status lv2-statusx' + (fresh ? ' fresh' : ' stale') + '"><span class="lv-dot' + (fresh ? ' on' : '') + '"></span><span class="lv2-st"><b>' + (S ? 'Aggiornato alle ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'In attesa del controllo') + '</b>' +
+    '<small>' + (S ? (agoM < 1 ? 'adesso' : agoM + ' min fa') + ' · ' : '') + nLive + ' partite live' + (svTxt ? ' · <span class="' + (svOld ? 'lv2-warn' : 'lv2-ver') + '">' + (svOld ? '⚠ ' : '') + 'server ' + U.esc(svTxt) + '</span>' : '') + '</small></span>' +
+    '<button type="button" class="lv2-ref lv2-refx" data-scan aria-label="Aggiorna adesso"><i aria-hidden="true">↻</i><span>Aggiorna</span></button></div>' +
     '<div class="lv-tabs lv2-tabs" role="tablist">' + tb('now', 'Adesso', items.length) + tb('today', 'Oggi', nToday) + tb('all', 'Partite', nLive) + '</div>' +
     (tab === 'all' ? '' : (function () {
       var a = tab === 'today' ? nTodaySig : nNowSig, b = tab === 'today' ? nTodayQr : nNowQr;
@@ -6228,9 +6292,11 @@ function bindTips() {
   if (scb) scb.onclick = async function () {
     var pill = scb.classList.contains('lv-scan');
     scb.disabled = true;
-    if (pill) { scb.classList.add('busy'); scb.innerHTML = '<span class="lv-scan-ic">↻</span><span>Aggiorno…</span>'; } else scb.textContent = 'Scansiono…';
+    var refx = scb.classList.contains('lv2-refx');
+    if (refx) scb.classList.add('busy');
+    else if (pill) { scb.classList.add('busy'); scb.innerHTML = '<span class="lv-scan-ic">↻</span><span>Aggiorno…</span>'; } else scb.textContent = 'Scansiono…';
     try { await tipScanFetch(); tipSignalsPull(true); render(); setTimeout(tipFreshNotify, 120); }
-    catch (e) { U.toast(tipFnErr(e)); scb.disabled = false; scb.classList.remove('busy'); if (pill) scb.innerHTML = '<span class="lv-scan-ic">↻</span><span>Riprova</span>'; else scb.textContent = '🔎 Riprova scansione'; }
+    catch (e) { U.toast(tipFnErr(e)); scb.disabled = false; scb.classList.remove('busy'); if (refx) return; if (pill) scb.innerHTML = '<span class="lv-scan-ic">↻</span><span>Riprova</span>'; else scb.textContent = '🔎 Riprova scansione'; }
   };
   main.querySelectorAll('[data-tip-star]').forEach(function (b) {
     b.onclick = function (e) { e.stopPropagation(); e.preventDefault(); tipToggleStar(b.dataset.tipStar); render(); };

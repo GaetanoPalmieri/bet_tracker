@@ -1,5 +1,27 @@
-const APP_VERSION = '4.8.0';
+const APP_VERSION = '4.8.2';
 ('use strict');
+/* 4.8.2 — BARRA IN BASSO SU IPHONE. Con l'app sulla Home, iOS 26 sbaglia l'altezza dello schermo quando a scorrere è
+   la pagina intera: la barra fissa sale e sotto resta una striscia di un altro colore. Ora la pagina (html) è ferma e
+   scorre il body (vedi suite.css): è la soluzione indicata per questo errore di Safari. window.scrollTo continua a
+   funzionare perché porta in cima anche il body. */
+(function () {
+  try {
+    var orig = window.scrollTo.bind(window);
+    window.scrollTo = function (x, y) {
+      try {
+        if (document.body) {
+          if (x && typeof x === 'object') document.body.scrollTo(x);
+          else document.body.scrollTo(x || 0, y || 0);
+        }
+      } catch (e) {
+        /* ok */
+      }
+      return orig.apply(window, arguments);
+    };
+  } catch (e) {
+    /* ok */
+  }
+})();
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
   labels = { pending: 'In corso', won: 'Vinta', lost: 'Persa', void: 'Annullata', cashout: 'Cash out' };
@@ -4348,9 +4370,6 @@ function fixBottomBar() {
   const nav = document.querySelector('nav.tabbar'),
     ae = document.activeElement;
   if (!nav || (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))) return; /* con la tastiera aperta non si tocca */
-  const y = window.scrollY;
-  window.scrollTo(0, y + 1);
-  window.scrollTo(0, y);
   nav.style.display = 'none';
   void nav.offsetHeight;
   nav.style.display = '';
