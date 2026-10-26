@@ -1485,3 +1485,21 @@ nav.tabbar.tabbar-bottom button[data-badge]:not([data-badge=""])::after{content:
 :root[data-theme="light"] .sg-pct b{color:#0e7a50}:root[data-theme="light"] .sg-try .sg-pct b{color:#8a5200}:root[data-theme="light"] .sg-qr .sg-pct b{color:#1a62b3}
 :root[data-theme="light"] .sg-res.win{color:#0e7a50}:root[data-theme="light"] .sg-res.loss{color:#b3261e}
 :root[data-theme="light"] .sg-early{color:#8a5200}:root[data-theme="light"] .sg-row b.positive{color:#0e7a50}
+
+/* 4.8.3 — riepilogo del filtro nella scheda del segnale */
+.fr-boxes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fr-box{display:grid;gap:2px;padding:10px 12px;border-radius:14px;border:1px solid var(--suite-glass-edge);background:color-mix(in srgb,var(--suite-text) 4%,transparent)}
+.fr-box small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--suite-text-soft)}
+.fr-box b{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.fr-box span{font-size:12px;color:var(--suite-text-soft)}
+.fr-box em{font-style:normal;font-size:11px;color:var(--suite-text-soft);opacity:.8}
+.fr-days{display:grid;gap:2px;margin-top:4px}
+.fr-day{display:grid;grid-template-columns:72px 1fr 44px 42px;gap:8px;align-items:center;font-size:12.5px;padding:4px 2px}
+.fr-day span:first-child{color:var(--suite-text-soft);text-transform:capitalize}
+.fr-day b{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.fr-bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:color-mix(in srgb,var(--suite-text) 8%,transparent)}
+.fr-bar i{display:block;height:100%}.fr-bar i.w{background:#2fbf8f}.fr-bar i.l{background:#e5534b}
+.fr-box b.good,.fr-p.good{color:#5fe0ac}.fr-box b.mid,.fr-p.mid{color:#ffc56b}.fr-box b.bad,.fr-p.bad{color:#ff8a80}
+:root[data-theme="light"] .fr-box b.good,:root[data-theme="light"] .fr-p.good{color:#0e7a50}
+:root[data-theme="light"] .fr-box b.mid,:root[data-theme="light"] .fr-p.mid{color:#8a5200}
+:root[data-theme="light"] .fr-box b.bad,:root[data-theme="light"] .fr-p.bad{color:#b3261e}

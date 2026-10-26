@@ -3364,6 +3364,32 @@ function tipLvFind(id) {
   }
   return null;
 }
+/* 4.8.3 — RIEPILOGO DEL FILTRO nella scheda del segnale: come è andato oggi e giorno per giorno (stesse voci di Oggi:
+   niente esclusi dal filtro qualità, niente annullati). Per le quote raggiunte: solo quelle nate dallo stesso filtro.
+   Lo storico è quello salvato sul telefono (gli ultimi giorni) e parte dall'eventuale azzeramento delle statistiche. */
+function tipFilterRecap(e) {
+  var wait = !!TIP_WAIT_K[e.k], today = U.local().slice(0, 10), from = tipStatsFrom();
+  var L = tipPlayDedup(((db.predModel || {}).playLog) || []).filter(function (x) {
+    if (!x || x.k !== e.k || (wait && x.fromK !== e.fromK)) return false;
+    return !x.conditional && !x.costly && x.res !== 'skip' && (x.t || 0) >= from && tipQShown(x);
+  });
+  if (!L.length) return '';
+  var days = {};
+  L.forEach(function (x) { var d = new Date(x.t || 0).toLocaleDateString('sv-SE'); var g = days[d] = days[d] || { w: 0, l: 0, o: 0 }; if (x.res === 1) g.w++; else if (x.res === 0) g.l++; else g.o++; });
+  var tot = { w: 0, l: 0, o: 0 }; Object.keys(days).forEach(function (d) { tot.w += days[d].w; tot.l += days[d].l; tot.o += days[d].o; });
+  var pct = function (g) { return g.w + g.l ? Math.round(g.w / (g.w + g.l) * 100) : null; };
+  var cls = function (p) { return p == null ? '' : p >= 80 ? 'good' : p >= 70 ? 'mid' : 'bad'; };
+  var box = function (lbl, g, sub) { var p = pct(g); return '<div class="fr-box"><small>' + lbl + '</small><b class="' + cls(p) + '">' + (p == null ? '—' : p + '%') + '</b><span>' + g.w + (g.w === 1 ? ' vinta · ' : ' vinte · ') + g.l + (g.l === 1 ? ' persa' : ' perse') + (g.o ? ' · ' + g.o + ' in attesa' : '') + '</span>' + (sub ? '<em>' + sub + '</em>' : '') + '</div>'; };
+  var dk = Object.keys(days).sort().reverse(), td = days[today] || { w: 0, l: 0, o: 0 };
+  var rows = dk.slice(0, 10).map(function (d) {
+    var g = days[d], p = pct(g), n = g.w + g.l;
+    return '<div class="fr-day"><span>' + (d === today ? 'Oggi' : new Date(d + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'numeric' })) + '</span>' +
+      '<span class="fr-bar">' + (n ? '<i class="w" style="width:' + Math.round(g.w / n * 100) + '%"></i><i class="l" style="width:' + Math.round(g.l / n * 100) + '%"></i>' : '') + '</span>' +
+      '<b>' + g.w + '–' + g.l + '</b><b class="fr-p ' + cls(p) + '">' + (p == null ? '—' : p + '%') + '</b></div>';
+  }).join('');
+  return '<h3 class="sheet-section">Com’è andato questo filtro</h3><div class="fr-boxes">' + box('Oggi', td) + box('Storico', tot, dk.length + (dk.length === 1 ? ' giorno' : ' giorni')) + '</div>' +
+    '<div class="fr-days">' + rows + '</div>' + (dk.length > 10 ? '<p class="sheet-note">Ultimi 10 giorni su ' + dk.length + '.</p>' : '');
+}
 function tipSignalSheet(e) {
   if (!e) return;
   var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e), half = (e.half || 0) === 1 || e.k === 'tm1' ? 1 : 2;
@@ -3401,7 +3427,7 @@ function tipSignalSheet(e) {
     '<div class="sg-hero"><div><small>' + (wait ? 'Quota raggiunta' : 'Giocata') + '</small><b>' + U.esc(tipBetLabel(e)) + '</b></div><div class="sg-pct">' + (pc != null ? '<b>' + pc + '%</b>' : '') + '<small>' + tierT + '</small></div></div>' +
     resBox +
     (early ? '<p class="sg-early">' + U.esc(early) + '</p>' : '') +
-    '<div class="sg-rows">' + info + '</div>' + stats +
+    '<div class="sg-rows">' + info + '</div>' + tipFilterRecap(e) + stats +
     (wait ? '<p class="sheet-note">Quota raggiunta: la quota bet365 del prossimo gol è arrivata alla tua soglia. La % è quella del book, non è un consiglio: è contata a parte.</p>' : '') +
     '</div>',
   );
