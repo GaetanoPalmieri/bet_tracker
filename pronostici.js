@@ -3320,38 +3320,42 @@ function tipBetLabel(e) {
   return 'Over ' + (G + 0.5).toFixed(1) + (first ? ' 1T' : '');
 }
 var TIP_LV_KIND = { tm1: 'prossimo gol 1T', tm2: 'prossimo gol 2T', tm3: 'gol 2T sull’1-0', tv2: 'avanti di 1' };
+/* 4.9.0 — ETICHETTE UGUALI PER TUTTI: livello (OTTIMA / DA VALUTARE / PREZZO BOOK), stato del filtro (STABILE / IN PROVA)
+   e valore (💰) sono etichette dello stesso tipo, una accanto all'altra. Il filtro che ha generato il segnale è il titolo. */
+function tipLvTags(e, QI) {
+  var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e), tg = function (c, t) { return '<i class="tg ' + c + '">' + t + '</i>'; };
+  return '<span class="lv2-tags">' + (wait ? tg('tg-book', 'PREZZO BOOK') : e.tier === 'try' ? tg('tg-try', 'DA VALUTARE') : tg('tg-ok', 'OTTIMA')) +
+    (wait ? '' : trial ? tg('tg-trial', 'IN PROVA') : tg('tg-stable', 'STABILE')) + (QI && QI.ok ? tg('tg-val', '💰 VALORE') : '') + '</span>';
+}
+function tipLvFilterName(e) {
+  var wait = !!TIP_WAIT_K[e.k], k = wait ? e.fromK : e.k;
+  var n = String(TIP_LV_KIND[k] || TIP_PLAY_SHORT[k] || k || '').replace(/^🎯\s*/, '');
+  n = n ? n.charAt(0).toUpperCase() + n.slice(1) : '';
+  return wait ? 'Quota raggiunta · ' + n.toLowerCase() : n;
+}
 function tipLvRow(e, o) {
   o = o || {};
   var t = e.tier === 'try' ? 'try' : 'excellent', half = (e.half || 0) === 1 || e.k === 'tm1' ? 1 : 2;
   var pc = typeof e.p === 'number' && isFinite(e.p) ? Math.round(e.p * 100) : null;
   var st = e.res === 1 ? 'win' : e.res === 0 ? 'loss' : 'wait';
   var hm = e.t ? new Date(e.t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
-  var wait = !!TIP_WAIT_K[e.k];
-  var QI = !wait && TIP_TARGET[e.k] && !/^t[ck]/.test(e.k) ? tipQuotaInfo(e) : null; /* 4.7.0 — quota minima e quota vera */
-  var kind = wait ? '⏳ quota ' + (e.q ? Number(e.q).toFixed(2) + (e.qEst ? ' stim.' : '') : '') : TIP_LV_KIND[e.k] || String(TIP_PLAY_SHORT[e.k] || e.k || '').replace(/^🎯\s*/, '');
-  /* 4.8.0 — IL FILTRO IN EVIDENZA: riga colorata con il filtro che ha generato il segnale (per le quote raggiunte, il
-     segnale da cui nascono) e davanti l'icona del livello: 🛡 STABILE, 🧪 IN PROVA, ⏳ PREZZO BOOK. */
-  var srcK = wait ? e.fromK : e.k;
-  var fName = String(TIP_LV_KIND[srcK] || TIP_PLAY_SHORT[srcK] || srcK || '').replace(/^🎯\s*/, '');
-  var trial = !wait && tipIsTrial(e);
-  var lvl = wait ? '<i class="lv2-lvl qr" title="Quota raggiunta: prezzo del book, non è un consiglio">⏳<em>BOOK</em></i>'
-    : trial ? '<i class="lv2-lvl trial" title="Filtro in prova">🧪<em>IN PROVA</em></i>' : '<i class="lv2-lvl stable" title="Filtro stabile">🛡<em>STABILE</em></i>';
-  var filt = '<span class="lv2-filt">' + lvl + '<b>' + U.esc(fName ? fName.charAt(0).toUpperCase() + fName.slice(1) : '') + '</b>' + '</span>';
-  if (wait && e.fromMin != null) kind += ' · segnale al ' + e.fromMin + '’';
-  /* 4.6.0 — nei segnali gol di Adesso: probabilità di arrivare alla tua quota senza gol (dal prezzo al segnale) */
+  var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e);
+  var QI = !wait && TIP_TARGET[e.k] && !/^t[ck]/.test(e.k) ? tipQuotaInfo(e) : null;
   var reach = '';
   if (o.reach && TIP_WAIT_SRC[e.k] && e.res == null) { var Q = tipWaitQ(); reach = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, (e.half || 1) === 1 || e.k === 'tm1' ? 1 : 2, Q), Q, true); }
-  var meta = [hm, U.esc(e.league || ''), Array.isArray(e.ft) && e.res != null ? 'finale ' + e.ft[0] + '-' + e.ft[1] : ''].filter(Boolean).join(' · ');
-  /* 4.8.1 — ogni riga si apre nella scheda del segnale (Adesso, Oggi e Statistiche) */
+  var meta = [hm, U.esc(e.league || ''), Array.isArray(e.ft) && e.res != null ? 'finale ' + e.ft[0] + '-' + e.ft[1] : '', wait && e.fromMin != null ? 'segnale al ' + e.fromMin + '’' : ''].filter(Boolean).join(' · ');
+  var quote = wait ? (e.q ? '<i class="lv2-q">@' + Number(e.q).toFixed(2) + (e.qEst ? '≈' : '') + '</i>' : '')
+    : QI && QI.q ? '<i class="lv2-q' + (QI.ok ? ' val' : QI.value < 0 ? ' low' : '') + '">@' + QI.q.toFixed(2) + (QI.est ? '≈' : '') + '</i>' : '';
   var lvId = U.esc(String(e.key || e.id || '') + '§' + (e.k || '') + '§' + (e.t || 0));
-  var open = 'button type="button" data-lv-open="' + lvId + '"';
-  return '<' + open + ' class="lv2 lv2-' + (wait ? 'qr' : t) + (trial ? ' lv2-trial' : '') + (o.isNew ? ' lv2-new' : '') + (o.showRes ? ' lv2-' + st : '') + '"' + (o.showRes && st !== 'wait' ? ' aria-label="' + (st === 'win' ? 'Vinta' : 'Persa') + '"' : '') + '>' +
+  return '<button type="button" data-lv-open="' + lvId + '" class="lv2 lv2-' + (wait ? 'qr' : t) + (trial ? ' lv2-trial' : '') + (o.isNew ? ' lv2-new' : '') + (o.showRes ? ' lv2-' + st : '') + '"' + (o.showRes && st !== 'wait' ? ' aria-label="' + (st === 'win' ? 'Vinta' : 'Persa') + '"' : '') + '>' +
     '<span class="lv2-min"><b>' + (e.min != null ? e.min + '’' : '–') + '</b><small>' + (half === 1 ? '1T' : '2T') + '</small></span>' +
-    '<span class="lv2-main">' + filt + '<span class="lv2-teams">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</span>' +
-    '<span class="lv2-bet"><i class="lv2-sc">' + (e.gh || 0) + '-' + (e.ga || 0) + '</i><b>' + U.esc(tipBetLabel(e)) + '</b>' + (QI && QI.q ? '<i class="lv2-q' + (QI.ok ? ' val' : QI.value < 0 ? ' low' : '') + '">@' + QI.q.toFixed(2) + (QI.est ? '≈' : '') + (QI.ok ? ' 💰' : '') + '</i>' : '') + (wait ? '<small>' + U.esc(kind) + '</small>' : '') + '</span>' +
+    '<span class="lv2-main"><b class="lv2-fname">' + U.esc(tipLvFilterName(e)) + '</b>' +
+    '<span class="lv2-teams">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</span>' +
+    '<span class="lv2-bet"><i class="lv2-sc">' + (e.gh || 0) + '-' + (e.ga || 0) + '</i><b>' + U.esc(tipBetLabel(e)) + '</b>' + quote + '</span>' +
+    tipLvTags(e, QI) +
     (meta ? '<span class="lv2-meta">' + meta + '</span>' : '') + (reach ? '<span class="lv2-early">' + reach + '</span>' : '') + '</span>' +
-    '<span class="lv2-side">' + (pc != null ? '<b class="lv2-pct">' + pc + '%</b>' : '') + '<i class="lv2-tier">' + (wait ? 'BOOK' : t === 'try' ? 'DA VALUTARE' : 'OTTIMA') + '</i>' + (QI ? '<i class="lv2-min">min ' + QI.min.toFixed(2) + '</i>' : '') + '</span>' +
-    /* 4.8.0 — vinta / persa: sfondo verde o rosso tenue (non più la spunta) */
+    '<span class="lv2-side">' + (pc != null ? '<b class="lv2-pct">' + pc + '%</b>' : '') + (QI ? '<i class="lv2-mq">min ' + QI.min.toFixed(2) + '</i>' : '') +
+    (o.showRes && st !== 'wait' ? '<i class="lv2-out">' + (st === 'win' ? 'VINTA' : 'PERSA') + '</i>' : '') + '</span>' +
     '</button>';
 }
 /* 4.8.1 — SCHEDA DEL SEGNALE: tocchi una riga del Live e vedi tutto quello che serve in poche righe (prima in Adesso
@@ -3423,7 +3427,7 @@ function tipSignalSheet(e) {
   var d = sheetModal(
     sheetHead(U.esc(e.home || '') + ' – ' + U.esc(e.away || ''), { sub: U.esc(e.league || '') }) +
     '<div class="sg-sheet' + (wait ? ' sg-qr' : e.tier === 'try' ? ' sg-try' : ' sg-ok') + '">' +
-    '<div class="sg-filt">' + lvl + '<b>' + U.esc(fName) + '</b></div>' +
+    '<div class="sg-filt"><b>' + U.esc(fName) + '</b>' + tipLvTags(e, QI) + '</div>' +
     '<div class="sg-hero"><div><small>' + (wait ? 'Quota raggiunta' : 'Giocata') + '</small><b>' + U.esc(tipBetLabel(e)) + '</b></div><div class="sg-pct">' + (pc != null ? '<b>' + pc + '%</b>' : '') + '<small>' + tierT + '</small></div></div>' +
     resBox +
     (early ? '<p class="sg-early">' + U.esc(early) + '</p>' : '') +

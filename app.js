@@ -1,4 +1,4 @@
-const APP_VERSION = '4.8.3';
+const APP_VERSION = '4.9.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -1873,30 +1873,7 @@ function settleForm(b) {
   };
 }
 function transactionForm(sign, t, day) {
-  const when = t ? new Date(t.date) : day && day !== dToday() ? new Date(day + 'T12:00:00') : new Date();
-  const d = sheetModal(
-    sheetHead(t ? 'Modifica movimento' : sign < 0 ? 'Prelievo' : 'Deposito', { form: 'tx-form', sub: sign < 0 ? 'Soldi tolti dal conto di gioco' : 'Soldi versati sul conto di gioco' }) +
-      `<form id="tx-form" class="sheet-form"><div class="sheet-group sheet-amount ${sign < 0 ? 'tone-out' : 'tone-in'}"><label class="sheet-field"><span>Importo (€)</span><div class="sheet-amount-row"><em aria-hidden="true">${sign < 0 ? '−' : '+'}</em><input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0,00" value="${t ? Math.abs(t.amount) : ''}"></div></label></div><div class="sheet-group"><label class="sheet-field"><span>Data e ora</span><input name="date" type="datetime-local" required value="${U.local(when)}"></label>${sign < 0 ? `<p class="sheet-calc">Disponibile ora: <b>${U.money(balance() - (t?.amount || 0))}</b></p>` : ''}</div><p class="error" id="error"></p></form>`,
-  );
-  d.querySelector('form').onsubmit = (e) => {
-    e.preventDefault();
-    const f = new FormData(e.target),
-      amount = U.round(sign * Number(f.get('amount')));
-    if (sign < 0 && balance() - (t?.amount || 0) + amount < 0)
-      return (d.querySelector('#error').textContent = 'Saldo insufficiente.');
-    const obj = {
-      id: t?.id || U.uid(),
-      account: db.accounts[0].id,
-      amount,
-      date: new Date(f.get('date')).toISOString(),
-    };
-    if (
-      mutate(
-        (n) => (n.transactions = t ? n.transactions.map((x) => (x.id === t.id ? obj : x)) : [...n.transactions, obj]),
-      )
-    )
-      d.close();
-  };
+  return moneySheet(sign < 0 ? 'withdraw' : 'deposit', { t: t || null, date: day });
 }
 function initialForm() {
   const d = sheetModal(
@@ -2736,19 +2713,6 @@ function saldoParts() {
     wdWin = U.round(Math.min(wd, Math.max(res, 0)));
   return { dep: dep, wd: wd, cur: cur, res: res, wdWin: wdWin, wdCap: U.round(wd - wdWin), capital: U.round(dep - (wd - wdWin)) };
 }
-function saldoModulesHtml() {
-  var P = saldoParts();
-  var tile = function (cls, label, val, note) {
-    return '<div class="sm-tile ' + cls + '"><small>' + label + '</small><b>' + val + '</b>' + (note ? '<span>' + note + '</span>' : '') + '</div>';
-  };
-  return (
-    '<div class="saldo-mod">' +
-    tile('sm-dep', 'Saldo totale', U.money(P.dep), 'versato') +
-    tile('sm-res ' + sClass(P.res), 'Vinto / perso', sMoney(P.res), 'dai giorni segnati') +
-    tile('sm-wd', 'Prelevato', P.wd ? '−' + U.money(P.wd) : U.money(0), P.wd ? (P.wdCap > 0.004 ? 'vincite ' + U.money(P.wdWin) + ' · capitale ' + U.money(P.wdCap) : 'tutto dalle vincite') : 'nessun prelievo') +
-    '</div><p class="saldo-mod-eq">' + U.money(P.dep) + ' <i>' + (P.res < 0 ? '−' : '+') + '</i> ' + U.money(Math.abs(P.res)) + ' <i>−</i> ' + U.money(P.wd) + ' <i>=</i> <b>' + U.money(P.cur) + '</b> sul conto</p>'
-  );
-}
 function diaryPage(which) {
   /* 3.0.0 — Home: saldo, segna il giorno, depositi/prelievi, calendario e quattro numeri.
      Statistiche: tutto il resto, solo sul saldo. */
@@ -2760,56 +2724,8 @@ function diaryPage(which) {
     series.find(function (p) {
       return p.date === today;
     }) || null;
-  var flowsAfter = last
-    ? U.round(
-        realFlows()
-          .filter(function (t) {
-            return dayKey(t.date) > last.date;
-          })
-          .reduce(function (n, t) {
-            return n + t.amount;
-          }, 0),
-      )
-    : 0;
 
   if (which !== 'stats') {
-    var chip = todayEntry
-      ? '<span class="diary-chip ok">✓ Segnato oggi</span>'
-      : '<span class="diary-chip todo">Da segnare oggi</span>';
-    var sub = '';
-    if (todayEntry && todayEntry.delta != null)
-      sub +=
-        '<span>Oggi <b class="' +
-        sClass(todayEntry.delta) +
-        '">' +
-        sMoney(todayEntry.delta) +
-        '</b>' +
-        (todayEntry.moved ? ' · ' + (todayEntry.moved > 0 ? 'depositati ' : 'prelevati ') + U.money(Math.abs(todayEntry.moved)) + ' esclusi' : '') +
-        '</span>';
-    else if (last)
-      sub += '<span>Ultimo segnato: <b>' + dLabel(last.date) + '</b> · ' + U.money(last.balance) + '</span>';
-    else sub += '<span>Segna ogni sera il saldo che hai: vedrai se la giornata è andata in positivo o in negativo.</span>';
-    if (Math.abs(flowsAfter) >= 0.005)
-      sub +=
-        '<span>Dopo l’ultimo saldo: ' +
-        (flowsAfter > 0 ? 'depositati <b>' : 'prelevati <b>') +
-        U.money(Math.abs(flowsAfter)) +
-        '</b> (non contano come vincita o perdita)</span>';
-    var hero =
-      '<section class="card hero diary-hero"><div class="row"><small>SUL CONTO ORA</small>' +
-      chip +
-      '</div><div class="big">' +
-      U.money(cur) +
-      '</div><div class="diary-hero-sub">' +
-      sub +
-      '</div>' +
-      saldoModulesHtml() +
-      '<button type="button" class="primary diary-record" data-diary-edit="' +
-      today +
-      '">' +
-      (todayEntry ? '✎ Aggiorna il saldo di oggi' : '＋ Segna il saldo di oggi') +
-      '</button><div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tx="deposit"><span aria-hidden="true">↓</span>Deposito</button><button type="button" class="flow-btn out" data-tx="withdraw"><span aria-hidden="true">↑</span>Prelievo</button></div></section>';
-
     var kpi = function (label, ch) {
       return (
         '<div class="card diary-kpi"><small>' +
@@ -2844,7 +2760,7 @@ function diaryPage(which) {
       '<section class="card diary-card"><h2>Calendario</h2><p class="muted diary-hint">Verde guadagno, rosso perdita: depositi e prelievi sono già esclusi. ↓ deposito · ↑ prelievo. Tocca un giorno per i dettagli.</p>' +
       diaryCalendar(series) +
       '</section>';
-    return hero + agenda + kpis;
+    return saldoHomeHtml() + agenda + kpis;
   }
 
   /* ---------- Statistiche ---------- */
@@ -3432,167 +3348,317 @@ function bindDiaryExtra() {
 }
 
 /* ---------- Segna / correggi un giorno ---------- */
-function diaryForm(date) {
-  var today = dToday();
-  if (!date || date > today) date = today;
-  var existing = diaryOn(date);
-  var latestIfSaved = diaryIsLatest(date);
-  var suggested = existing
-    ? existing.balance
-    : latestIfSaved
-      ? balance()
-      : (
-          diarySeries()
-            .filter(function (p) {
-              return p.date < date;
-            })
-            .pop() || {}
-        ).balance || balance();
-  var d = sheetModal(
-    sheetHead(existing ? 'Correggi saldo' : 'Segna saldo', { form: 'diary-form', del: existing ? 'diary-delete' : '' }) +
-      '<form id="diary-form" class="diary-form sheet-form"><div class="sheet-group sheet-amount"><label class="sheet-field" for="diary-value"><span>Saldo a fine giornata (€)</span><input id="diary-value" name="value" type="number" inputmode="decimal" step="0.01" required value="' +
-      U.round(suggested) +
-      '"></label></div><div class="sheet-group"><label class="sheet-field" for="diary-date"><span>Giorno</span><input id="diary-date" name="date" type="date" max="' +
-      today +
-      '" required value="' +
-      date +
-      '"></label>' +
-      '<label class="sheet-field" for="diary-note"><span>Nota (facoltativa)</span><input id="diary-note" name="note" type="text" maxlength="140" placeholder="es. giornata di Champions" value="' +
-      U.esc((existing && existing.note) || '') +
-      '"></label></div>' +
-      '<div class="sheet-group"><label class="sheet-field" for="diary-wd"><span>Hai prelevato oggi? (€, facoltativo)</span><input id="diary-wd" name="wd" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label><p class="sheet-note" id="diary-wd-note">Es. versi 100, vinci 15 e prelevi i 15: scrivi saldo 100 e prelievo 15. Il giorno risulta +15 e il saldo totale resta 100.</p></div>' +
-      '<div class="diary-effect sheet-box" id="diary-effect"></div><p class="error" id="diary-error"></p>' +
-      '</form>',
+/* =====================================================================
+   4.9.0 — SALDO RIPENSATO: un solo pannello per Aggiorna saldo, Prelievo e Deposito.
+   - Il prelievo chiede anche "quanto resta sul conto": se resta lo stesso saldo di prima i soldi tolti erano vincite.
+     Il saldo del giorno viene aggiornato subito, così puoi prelevare più volte nella stessa giornata
+     (100 € → vinci 30 → prelevi 30 → resta 100: oggi +30; di nuovo +30 → prelevi → resta 100: oggi +60).
+   - Il deposito, se il giorno ha già un saldo segnato, lo alza della stessa cifra (non è una vincita).
+   - Il risultato del giorno si vede mentre scrivi.
+   ===================================================================== */
+function msDayFlows(day, skipId) {
+  return U.round(
+    realFlows()
+      .filter(function (t) {
+        return dayKey(t.date) === day && t.id !== skipId;
+      })
+      .reduce(function (n, t) {
+        return n + t.amount;
+      }, 0),
   );
+}
+/* saldo di riferimento del giorno prima (ultimo segnato prima di "day", o saldo iniziale) e movimenti nel mezzo */
+function msPrevOf(day) {
+  var ser = diarySeries(),
+    prev = null;
+  for (var k = ser.length - 1; k >= 0; k--)
+    if (ser[k].date < day) {
+      prev = ser[k];
+      break;
+    }
+  if (!prev && ser.start && ser.start.date < day) prev = ser.start;
+  if (!prev && hasStart() && startDate() < day) prev = { date: startDate(), balance: U.round(db.accounts[0].initial), start: true };
+  return prev;
+}
+function msBetween(prev, day, skipId) {
+  var s = startDate();
+  return U.round(
+    realFlows()
+      .filter(function (t) {
+        var k = dayKey(t.date);
+        return t.id !== skipId && (!prev || k > prev.date) && k < day && (!s || k >= s);
+      })
+      .reduce(function (n, t) {
+        return n + t.amount;
+      }, 0),
+  );
+}
+/* saldo sul conto in quel giorno prima del movimento: saldo segnato del giorno, altrimenti quello calcolato */
+function msBalanceOn(day, skip) {
+  var e = diaryOn(day);
+  if (e) return U.round(e.balance);
+  if (day >= dToday() || diaryIsLatest(day)) return U.round(balance() - (skip ? skip.amount : 0));
+  var prev = msPrevOf(day);
+  return prev ? U.round(prev.balance + msBetween(prev, day) + msDayFlows(day, skip && skip.id)) : U.round(balance());
+}
+function msDayLabel(day) {
+  var t = dToday();
+  if (day === t) return 'oggi';
+  if (day === dAdd(t, -1)) return 'ieri';
+  return dLabel(day);
+}
+function moneySheet(kind, o) {
+  o = o || {};
+  var today = dToday(),
+    t = o.t || null,
+    isSaldo = kind === 'saldo',
+    isWd = kind === 'withdraw',
+    day = t ? dayKey(t.date) : o.date && o.date <= today ? o.date : today;
+  var existing = isSaldo ? diaryOn(day) : null;
+  var startBal = isSaldo ? null : msBalanceOn(day, t);
+  var title = isSaldo ? (existing ? 'Correggi il saldo' : 'Aggiorna il saldo') : t ? (isWd ? 'Modifica prelievo' : 'Modifica deposito') : isWd ? 'Prelievo' : 'Deposito';
+  var del = (isSaldo && existing) || t ? 'ms-del' : '';
+  var amtLbl = isSaldo ? 'Quanto hai sul conto?' : isWd ? 'Quanto hai prelevato?' : 'Quanto hai versato?';
+  var amtVal = isSaldo ? (existing ? existing.balance : msBalanceOn(day)) : t ? Math.abs(t.amount) : '';
+  var leftVal = isWd ? (t && U.finite(t.left) ? t.left : t ? (diaryOn(day) || {}).balance : startBal) : null;
+  var dayChip = function (d, lbl) {
+    return '<button type="button" class="ms-chip' + (day === d ? ' on' : '') + '" data-ms-day="' + d + '">' + lbl + '</button>';
+  };
+  var yest = dAdd(today, -1);
+  var otherOn = day !== today && day !== yest;
+  var html =
+    sheetHead(title, { form: 'ms-form', del: del }) +
+    '<form id="ms-form" class="ms ms-' + kind + '" autocomplete="off">' +
+    '<label class="ms-amt"><span>' + amtLbl + '</span><span class="ms-amt-row">' + (isSaldo ? '' : '<em>' + (isWd ? '−' : '+') + '</em>') +
+    '<input name="amt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0" required value="' + (amtVal === '' ? '' : U.round(amtVal)) + '"><i>€</i></span></label>' +
+    (isWd
+      ? '<div class="ms-left"><span class="ms-lbl">Quanto resta sul conto?</span>' +
+        '<div class="ms-opts"><button type="button" class="ms-opt" data-ms-left="win"><b>Erano vincite</b><small>resta ' + U.money(startBal) + '</small></button>' +
+        '<button type="button" class="ms-opt" data-ms-left="cap"><b>Tolti dal saldo</b><small data-ms-capv>resta ' + U.money(startBal) + '</small></button></div>' +
+        '<label class="ms-line"><span>Resta sul conto</span><input name="left" type="number" inputmode="decimal" step="0.01" min="0" required value="' + U.round(leftVal) + '"><i>€</i></label></div>'
+      : '') +
+    '<div class="ms-when"><span class="ms-lbl">Giorno</span><div class="ms-chips">' + dayChip(today, 'Oggi') + dayChip(yest, 'Ieri') +
+    '<button type="button" class="ms-chip' + (otherOn ? ' on' : '') + '" data-ms-other>' + (otherOn ? dShort(day) : 'Altro…') + '</button></div>' +
+    '<input type="date" name="day" class="ms-date" max="' + today + '" value="' + day + '"' + (otherOn ? '' : ' hidden') + '></div>' +
+    (isSaldo ? '<label class="ms-line ms-note"><span>Nota</span><input name="note" type="text" maxlength="140" placeholder="facoltativa" value="' + U.esc((existing && existing.note) || '') + '"></label>' : '') +
+    '<div class="ms-out" id="ms-out"></div><p class="error" id="ms-err"></p></form>';
+  var d = sheetModal(html);
+  d.classList.add('ms-sheet');
   var f = d.querySelector('form'),
-    eff = d.querySelector('#diary-effect');
-  var explain = function () {
-    /* 3.0.0 — anteprima del risultato del giorno, depositi e prelievi esclusi */
-    var dt = f.elements.date.value,
-      v = Number(f.elements.value.value),
-      wdNew = Math.max(0, Number(f.elements.wd.value) || 0);
-    var dayWd = dt
-      ? U.round(
-          realFlows()
-            .filter(function (t) {
-              return t.amount < 0 && dayKey(t.date) === dt;
-            })
-            .reduce(function (n, t) {
-              return n - t.amount;
-            }, 0),
-        )
-      : 0;
-    var wn = d.querySelector('#diary-wd-note');
-    if (wn && dayWd > 0.004) wn.textContent = 'Già segnati ' + U.money(dayWd) + ' di prelievi in questo giorno: scrivi qui solo un prelievo in più.';
-    if (!dt || dt > today || !U.finite(v) || f.elements.value.value === '') {
-      eff.innerHTML = '';
-      return;
-    }
-    var ser = diarySeries(),
-      prev = null;
-    for (var k = ser.length - 1; k >= 0; k--)
-      if (ser[k].date < dt && (!existing || ser[k].id !== existing.id)) {
-        prev = ser[k];
-        break;
-      }
-    if (!prev && ser.start && ser.start.date < dt) prev = ser.start;
-    if (!prev) {
-      eff.innerHTML = '<p class="muted">Primo giorno segnato: da qui partono i conti. Se avevi un saldo di partenza, impostalo in Altro › Saldo iniziale.</p>';
-      return;
-    }
-    var moved = U.round(
-      realFlows()
-        .filter(function (t) {
-          var k2 = dayKey(t.date);
-          return k2 > prev.date && k2 <= dt && (!startDate() || k2 >= startDate());
-        })
-        .reduce(function (n, t) {
-          return n + t.amount;
-        }, 0),
-    );
-    moved = U.round(moved - wdNew);
-    var res = U.round(v - prev.balance - moved);
-    eff.innerHTML =
-      '<p>Risultato ' +
-      (dt === today ? 'di oggi' : 'del giorno') +
-      ': <b class="' +
-      sClass(res) +
-      '">' +
-      sMoney(res) +
-      '</b></p><p class="muted">' +
-      (prev.start ? 'Rispetto al saldo iniziale ' : 'Rispetto al ' + dShort(prev.date) + ' ') +
-      '(' +
-      U.money(prev.balance) +
-      ')' +
-      (Math.abs(moved) >= 0.005 ? ', ' + (moved > 0 ? 'depositi ' : 'prelievi ') + U.money(Math.abs(moved)) + ' esclusi.' : '.') +
-      '</p>';
+    out = d.querySelector('#ms-out'),
+    err = d.querySelector('#ms-err');
+  var curDay = function () {
+    return f.elements.day.value || today;
   };
-  f.addEventListener('input', explain);
-  explain();
-  f.onsubmit = function (e) {
-    e.preventDefault();
-    var dt = f.elements.date.value,
-      v = Number(f.elements.value.value),
-      note = String(f.elements.note.value || '')
-        .trim()
-        .slice(0, 140);
-    var err = d.querySelector('#diary-error');
-    if (!dt || dt > today) {
-      err.textContent = 'Scegli oggi o un giorno passato.';
-      return;
-    }
-    if (!U.finite(v)) {
-      err.textContent = 'Scrivi un importo valido.';
-      return;
-    }
-    var other = diaryOn(dt);
-    if (existing && other && other.id !== existing.id) {
-      err.textContent = 'Quel giorno è già segnato: aprilo dall’agenda per correggerlo.';
-      return;
-    }
-    var wdv = U.round(Math.max(0, Number(f.elements.wd.value) || 0));
-    if (diarySave(existing, dt, v, note, wdv)) {
-      d.close();
-      U.toast(wdv ? 'Saldo e prelievo segnati' : 'Saldo segnato');
-    }
+  var leftMode = null;
+  /* l'importo grande è largo quanto le cifre, con l'€ subito accanto */
+  var fit = function () {
+    var v = String(f.elements.amt.value || f.elements.amt.placeholder || '0');
+    f.elements.amt.style.setProperty('width', Math.max(1.6, v.length * 0.62 + 0.5) + 'em', 'important');
   };
-  var del = d.querySelector('#diary-delete');
-  if (del)
-    del.onclick = async function () {
-      var latest = diaryIsLatest(existing.date);
-      var ok = await U.confirm({
-        title: 'Eliminare il saldo di questo giorno?',
-        text: 'Depositi e prelievi restano.',
+  var refresh = function () {
+    fit();
+    var dd = curDay(),
+      a = Number(f.elements.amt.value),
+      ok = f.elements.amt.value !== '' && U.finite(a) && a >= 0;
+    if (!isSaldo) startBal = msBalanceOn(dd, t);
+    if (isWd) {
+      d.querySelector('[data-ms-left="win"] small').textContent = 'resta ' + U.money(startBal);
+      d.querySelector('[data-ms-capv]').textContent = 'resta ' + U.money(Math.max(0, startBal - (ok ? a : 0)));
+      if (leftMode === 'win') f.elements.left.value = U.round(startBal);
+      if (leftMode === 'cap') f.elements.left.value = U.round(Math.max(0, startBal - (ok ? a : 0)));
+      var lv = Number(f.elements.left.value);
+      d.querySelectorAll('[data-ms-left]').forEach(function (b) {
+        var target = b.dataset.msLeft === 'win' ? startBal : Math.max(0, startBal - (ok ? a : 0));
+        b.classList.toggle('on', ok && Math.abs(lv - target) < 0.005);
       });
-      if (!ok) return;
-      if (
-        mutate(function (n) {
-          n.diary = (n.diary || []).filter(function (x) {
-            return x.id !== existing.id;
-          });
-          if (latest)
-            n.transactions = n.transactions.filter(function (t) {
-              return !(t.kind === 'adjust' && t.diaryId === existing.id);
-            });
-        })
-      ) {
+    }
+    if (!ok) {
+      out.innerHTML = '';
+      return;
+    }
+    /* risultato del giorno dopo il salvataggio */
+    var prev = msPrevOf(dd),
+      flowsDay = msDayFlows(dd, t && t.id) + (isSaldo ? 0 : (isWd ? -1 : 1) * a),
+      dayBal;
+    if (isSaldo) dayBal = a;
+    else if (isWd) dayBal = Number(f.elements.left.value);
+    else {
+      var e0 = diaryOn(dd);
+      dayBal = e0 ? U.round(e0.balance + a - (t ? Math.abs(t.amount) : 0)) : null;
+    }
+    var lbl = msDayLabel(dd);
+    if (!prev || dayBal == null || !U.finite(dayBal)) {
+      out.innerHTML = isSaldo
+        ? '<p class="ms-hint">Primo giorno segnato: da qui partono i conti.</p>'
+        : '<div class="ms-res"><span>Sul conto dopo</span><b>' + U.money(U.round(startBal + (isWd ? -a : a))) + '</b></div>';
+      return;
+    }
+    var res = U.round(dayBal - prev.balance - msBetween(prev, dd, t && t.id) - flowsDay);
+    var dayTx = realFlows().filter(function (x) { return dayKey(x.date) === dd && (!t || x.id !== t.id); });
+    var wdD = U.round(dayTx.filter(function (x) { return x.amount < 0; }).reduce(function (n, x) { return n - x.amount; }, 0) + (isWd ? a : 0)),
+      depD = U.round(dayTx.filter(function (x) { return x.amount > 0; }).reduce(function (n, x) { return n + x.amount; }, 0) + (kind === 'deposit' ? a : 0));
+    out.innerHTML =
+      '<div class="ms-res ' + sClass(res) + '"><span>Risultato di ' + lbl + '</span><b>' + sMoney(res) + '</b></div>' +
+      '<p class="ms-hint">' + (prev.start ? 'Rispetto al saldo iniziale' : 'Rispetto a ' + (prev.date === dAdd(dd, -1) ? 'ieri' : dShort(prev.date))) + ' (' + U.money(prev.balance) + ')' +
+      (wdD || depD ? '; non contano ' + [wdD ? 'prelievi ' + U.money(wdD) : '', depD ? 'depositi ' + U.money(depD) : ''].filter(Boolean).join(' e ') : '') + '.</p>';
+  };
+  d.querySelectorAll('[data-ms-day]').forEach(function (b) {
+    b.onclick = function () {
+      f.elements.day.value = b.dataset.msDay;
+      f.elements.day.hidden = true;
+      d.querySelectorAll('.ms-chip').forEach(function (x) {
+        x.classList.toggle('on', x === b);
+      });
+      d.querySelector('[data-ms-other]').textContent = 'Altro…';
+      if (isSaldo) {
+        var ex = diaryOn(b.dataset.msDay);
+        f.elements.amt.value = U.round(ex ? ex.balance : msBalanceOn(b.dataset.msDay));
+      }
+      refresh();
+    };
+  });
+  d.querySelector('[data-ms-other]').onclick = function () {
+    var inp = f.elements.day;
+    inp.hidden = false;
+    d.querySelectorAll('.ms-chip').forEach(function (x) {
+      x.classList.toggle('on', x.hasAttribute('data-ms-other'));
+    });
+    try {
+      inp.showPicker();
+    } catch (e) {
+      inp.focus();
+    }
+  };
+  f.elements.day.addEventListener('change', function () {
+    var v = f.elements.day.value;
+    d.querySelector('[data-ms-other]').textContent = v ? dShort(v) : 'Altro…';
+    refresh();
+  });
+  d.querySelectorAll('[data-ms-left]').forEach(function (b) {
+    b.onclick = function () {
+      leftMode = b.dataset.msLeft;
+      refresh();
+    };
+  });
+  f.addEventListener('input', function (ev) {
+    if (ev.target && ev.target.name === 'left') leftMode = null;
+    refresh();
+  });
+  if (isWd && !t) leftMode = 'win';
+  refresh();
+  if (!t && !existing)
+    setTimeout(function () {
+      try {
+        f.elements.amt.focus();
+        f.elements.amt.select();
+      } catch (e) {
+        /* ok */
+      }
+    }, 60);
+  f.onsubmit = function (ev) {
+    ev.preventDefault();
+    err.textContent = '';
+    var dd = curDay(),
+      a = U.round(Number(f.elements.amt.value));
+    if (!dd || dd > today) return (err.textContent = 'Scegli oggi o un giorno passato.');
+    if (!U.finite(a) || a < 0 || (!isSaldo && a <= 0)) return (err.textContent = 'Scrivi un importo valido.');
+    if (isSaldo) {
+      var other = diaryOn(dd);
+      if (diarySave(other || existing || null, dd, a, String(f.elements.note.value || '').trim().slice(0, 140))) {
         d.close();
-        U.toast('Giorno eliminato');
+        U.toast('Saldo aggiornato');
+      }
+      return;
+    }
+    var left = isWd ? U.round(Number(f.elements.left.value)) : null;
+    if (isWd && (!U.finite(left) || left < 0)) return (err.textContent = 'Scrivi quanto resta sul conto.');
+    var when = t && dayKey(t.date) === dd ? new Date(t.date) : dd === today ? new Date() : new Date(dd + 'T20:00:00');
+    var ok = mutate(function (n) {
+      var old = t ? n.transactions.find(function (x) { return x.id === t.id; }) : null;
+      var obj = { id: t ? t.id : U.uid(), account: n.accounts[0].id, amount: isWd ? -a : a, date: when.toISOString() };
+      if (isWd) obj.left = left;
+      n.transactions = t ? n.transactions.map(function (x) { return x.id === t.id ? obj : x; }) : n.transactions.concat([obj]);
+      n.diary = n.diary || [];
+      var e = n.diary.find(function (x) { return x.date === dd; });
+      if (isWd) {
+        /* il saldo del giorno diventa quello rimasto sul conto */
+        if (!e) n.diary.push((e = { id: U.uid(), date: dd, balance: 0 }));
+        e.balance = left;
+        e.updatedAt = new Date().toISOString();
+      } else if (e) {
+        /* deposito in un giorno già segnato: il saldo sale della stessa cifra */
+        e.balance = U.round(e.balance + a - (old && dayKey(old.date) === dd ? old.amount : 0));
+        e.updatedAt = new Date().toISOString();
+      }
+    });
+    if (ok) {
+      d.close();
+      U.toast(isWd ? 'Prelievo segnato' : 'Deposito segnato');
+    }
+  };
+  var delB = d.querySelector('#ms-del');
+  if (delB)
+    delB.onclick = async function () {
+      if (isSaldo) {
+        if (!(await U.confirm({ title: 'Eliminare il saldo di questo giorno?', text: 'Depositi e prelievi restano.' }))) return;
+        if (mutate(function (n) { n.diary = (n.diary || []).filter(function (x) { return x.id !== existing.id; }); })) {
+          d.close();
+          U.toast('Saldo del giorno eliminato');
+        }
+        return;
+      }
+      if (!(await U.confirm({ title: 'Eliminare questo movimento?', text: 'Il saldo segnato del giorno non cambia.', detail: (isWd ? 'Prelievo' : 'Deposito') + ' · ' + U.money(Math.abs(t.amount)) + ' · ' + U.date(t.date) }))) return;
+      if (mutate(function (n) { n.transactions = n.transactions.filter(function (x) { return x.id !== t.id; }); })) {
+        d.close();
+        U.toast('Movimento eliminato');
       }
     };
+  return d;
+}
+function diaryForm(date) {
+  return moneySheet('saldo', { date: date });
+}
+/* 4.9.0 — pagina Saldo: in alto quanto hai sul conto e il risultato di oggi, sotto i tre numeri (versato, vinto/perso,
+   prelevato) in una riga, tre pulsanti, poi i movimenti di oggi in ordine di orario. */
+function saldoHomeHtml() {
+  var P = saldoParts(),
+    today = dToday(),
+    series = diarySeries(),
+    te = series.find(function (p) { return p.date === today; }) || null,
+    last = series[series.length - 1] || null;
+  var todayRes = te && te.delta != null ? te.delta : null;
+  var mv = dayMovements(today);
+  var wdToday = U.round(mv.filter(function (x) { return x.t.amount < 0; }).reduce(function (n, x) { return n - x.t.amount; }, 0));
+  var sub = todayRes != null
+    ? '<span class="sd-today ' + sClass(todayRes) + '">Oggi <b>' + sMoney(todayRes) + '</b></span>'
+    : '<span class="sd-today">' + (last ? 'Ultimo saldo ' + (last.date === dAdd(today, -1) ? 'ieri' : dShort(last.date)) + ' · ' + U.money(last.balance) : 'Segna il primo saldo per iniziare') + '</span>';
+  if (wdToday) sub += '<span class="sd-wd">↑ prelevati oggi ' + U.money(wdToday) + '</span>';
+  var hero =
+    '<section class="card sd-hero"><div class="sd-top"><small>Sul conto</small>' +
+    (te ? '<span class="sd-chip ok">✓ Aggiornato oggi</span>' : '<span class="sd-chip todo">Da aggiornare oggi</span>') + '</div>' +
+    '<div class="sd-big">' + U.money(P.cur) + '</div><div class="sd-sub">' + sub + '</div>' +
+    '<div class="sd-strip"><div><small>Versato</small><b>' + U.money(P.dep) + '</b></div><div><small>Vinto / perso</small><b class="' + sClass(P.res) + '">' + sMoney(P.res) + '</b></div><div><small>Prelevato</small><b>' + U.money(P.wd) + '</b></div></div>' +
+    '<div class="sd-actions"><button type="button" class="sd-main" data-ms="saldo">✎ Aggiorna saldo</button><button type="button" class="sd-btn out" data-ms="withdraw"><span aria-hidden="true">↑</span>Prelievo</button><button type="button" class="sd-btn in" data-ms="deposit"><span aria-hidden="true">↓</span>Deposito</button></div></section>';
+  /* movimenti di oggi */
+  var hm = function (iso) { return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }); };
+  var items = mv.map(function (x) {
+    var a = x.t.amount, out = a < 0;
+    var note = out && U.finite(x.t.left) ? 'resta ' + U.money(x.t.left) : '';
+    return { at: x.at, html: '<button type="button" class="sd-ev ' + (out ? 'out' : 'in') + '" data-ms-tx="' + x.t.id + '"><span class="sd-ev-ic" aria-hidden="true">' + (out ? '↑' : '↓') + '</span><span class="sd-ev-m"><b>' + (out ? 'Prelievo' : 'Deposito') + '</b><small>' + hm(x.at) + (note ? ' · ' + note : '') + '</small></span><strong>' + (out ? '−' : '+') + U.money(Math.abs(a)) + '</strong></button>' };
+  });
+  if (te) items.push({ at: te.updatedAt || today + 'T23:59:00', html: '<button type="button" class="sd-ev bal" data-ms="saldo"><span class="sd-ev-ic" aria-hidden="true">✎</span><span class="sd-ev-m"><b>Saldo di oggi</b><small>' + (te.updatedAt ? 'aggiornato alle ' + hm(te.updatedAt) : 'segnato') + (te.note ? ' · ' + U.esc(te.note) : '') + '</small></span><strong>' + U.money(te.balance) + '</strong></button>' });
+  items.sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
+  var day =
+    '<section class="card sd-day"><div class="sd-day-h"><h2>Oggi</h2>' + (todayRes != null ? '<b class="' + sClass(todayRes) + '">' + sMoney(todayRes) + '</b>' : '') + '</div>' +
+    (items.length ? '<div class="sd-evs">' + items.map(function (x) { return x.html; }).join('') + '</div>' : '<p class="muted sd-empty">Nessun movimento oggi. Hai vinto e prelevato? Usa <b>Prelievo</b>: scrivi quanto hai tolto e quanto resta sul conto.</p>') +
+    '</section>';
+  return hero + day;
 }
 
-function diarySave(existing, date, value, note, wd) {
+function diarySave(existing, date, value, note) {
   return mutate(function (n) {
     n.diary = n.diary || [];
-    /* 4.8.0 — prelievo segnato insieme al saldo del giorno: movimento normale (non conta come vincita o perdita) */
-    if (wd > 0)
-      n.transactions.push({
-        id: U.uid(),
-        account: n.accounts[0].id,
-        amount: -U.round(wd),
-        date: (date === dToday() ? new Date() : new Date(date + 'T20:00:00')).toISOString(),
-      });
     var e = existing
       ? n.diary.find(function (x) {
           return x.id === existing.id;
@@ -3755,93 +3821,53 @@ function dayFlowSign(date) {
   return n > 0.004 ? 'in' : n < -0.004 ? 'out' : dayHasMovements(date) ? 'mix' : '';
 }
 function openDayPanel(date) {
+  /* 4.9.0 — giorno del calendario: risultato in grande, poi saldo e movimenti in elenco (niente riquadri) */
   var list = dayMovements(date);
-  var ser = diarySeries(),
-    entry =
-      ser.find(function (p) {
-        return p.date === date;
-      }) || null;
-  if (!list.length && !entry) return diaryForm(date);
-  var time = function (iso) {
+  var entry =
+    diarySeries().find(function (p) {
+      return p.date === date;
+    }) || null;
+  if (!list.length && !entry) return moneySheet('saldo', { date: date });
+  var hm = function (iso) {
     return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
   };
-  var dep = 0,
-    wd = 0;
-  var cards = list
+  var res = entry && entry.delta != null ? entry.delta : null;
+  var rows = list
     .map(function (x) {
-      var a = x.t.amount;
-      if (a >= 0) dep += a;
-      else wd += -a;
+      var a = x.t.amount,
+        out = a < 0;
       return (
-        '<div class="day-card ' +
-        (a >= 0 ? 'tone-in' : 'tone-out') +
-        '"><div class="day-card-top"><span class="day-ic" aria-hidden="true">' +
-        (a >= 0 ? '↓' : '↑') +
-        '</span><div class="day-card-title"><b>' +
-        (a >= 0 ? 'Deposito' : 'Prelievo') +
-        '</b><small>' +
-        time(x.at) +
-        '</small></div><strong class="' +
-        (a >= 0 ? 'positive' : 'negative') +
-        '">' +
-        (a >= 0 ? '+' : '−') +
-        U.money(Math.abs(a)) +
-        '</strong><button type="button" class="day-edit" data-day-tx="' +
-        x.t.id +
-        '" aria-label="Modifica">✎</button></div></div>'
+        '<button type="button" class="sd-ev ' + (out ? 'out' : 'in') + '" data-day-tx="' + x.t.id + '"><span class="sd-ev-ic" aria-hidden="true">' + (out ? '↑' : '↓') + '</span><span class="sd-ev-m"><b>' + (out ? 'Prelievo' : 'Deposito') + '</b><small>' + hm(x.at) + (out && U.finite(x.t.left) ? ' · resta ' + U.money(x.t.left) : '') + '</small></span><strong>' + (out ? '−' : '+') + U.money(Math.abs(a)) + '</strong></button>'
       );
     })
     .join('');
-  var res = entry && entry.delta != null ? entry.delta : null;
-  var tiles =
-    '<div class="sheet-tiles three"><div><small>Saldo segnato</small><b>' +
-    (entry ? U.money(entry.balance) : '—') +
-    '</b></div><div><small>Depositi / prelievi</small><b class="' +
-    (dep - wd > 0.004 ? 'positive' : dep - wd < -0.004 ? 'negative' : '') +
-    '">' +
-    (dep || wd ? (dep - wd >= 0 ? '+' : '−') + U.money(Math.abs(dep - wd)) : '—') +
-    '</b></div><div><small>Risultato</small><b class="' +
-    (res != null ? (res < 0 ? 'negative' : res > 0 ? 'positive' : '') : '') +
-    '">' +
-    (res != null ? sMoney(res) : '—') +
-    '</b></div></div>';
-  var expl =
-    entry && entry.prev
-      ? '<p class="sheet-note">Risultato = ' +
-        U.money(entry.balance) +
-        ' − ' +
-        U.money(entry.prev.balance) +
-        (entry.prev.start ? ' (saldo iniziale)' : ' (' + dShort(entry.prev.date) + ')') +
-        (Math.abs(entry.moved) >= 0.005 ? ' ' + (entry.moved > 0 ? '−' : '+') + ' ' + U.money(Math.abs(entry.moved)) + (entry.moved > 0 ? ' depositati' : ' prelevati') : '') +
-        '</p>'
-      : '';
+  if (entry)
+    rows =
+      '<button type="button" class="sd-ev bal" id="day-diary"><span class="sd-ev-ic" aria-hidden="true">✎</span><span class="sd-ev-m"><b>Saldo del giorno</b><small>' + (entry.note ? U.esc(entry.note) : 'tocca per correggere') + '</small></span><strong>' + U.money(entry.balance) + '</strong></button>' + rows;
   var title = dParse(date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
   var d = sheetModal(
-    sheetHead(title.charAt(0).toUpperCase() + title.slice(1), {
-      sub: entry ? (entry.note ? U.esc(entry.note) : 'Saldo segnato') : 'Saldo non segnato',
-    }) +
-      tiles +
-      expl +
-      (cards ? '<h3 class="sheet-section">Depositi e prelievi</h3><div class="day-list">' + cards + '</div>' : '') +
-      '<button type="button" class="sheet-wide day-diary-btn primary" id="day-diary">' +
-      IC('edit', '✎') +
-      '<span>' +
-      (entry ? 'Correggi il saldo del giorno' : 'Segna il saldo del giorno') +
-      '</span></button><div class="sheet-actions-row"><button type="button" class="sheet-wide" id="day-dep">↓ Deposito</button><button type="button" class="sheet-wide" id="day-wd">↑ Prelievo</button></div>',
+    sheetHead(title.charAt(0).toUpperCase() + title.slice(1)) +
+      '<div class="ms day-ms">' +
+      (res != null
+        ? '<div class="ms-res ' + sClass(res) + '"><span>Risultato del giorno</span><b>' + sMoney(res) + '</b></div><p class="ms-hint">Rispetto a ' + (entry.prev.start ? 'saldo iniziale' : dShort(entry.prev.date)) + ' (' + U.money(entry.prev.balance) + '); depositi e prelievi non contano.</p>'
+        : '<p class="ms-hint">' + (entry ? 'Primo giorno segnato.' : 'Saldo del giorno non segnato.') + '</p>') +
+      '<div class="sd-evs">' + rows + '</div>' +
+      '<div class="sd-actions">' + (entry ? '' : '<button type="button" class="sd-main" id="day-diary2">✎ Segna il saldo del giorno</button>') +
+      '<button type="button" class="sd-btn out" id="day-wd"><span aria-hidden="true">↑</span>Prelievo</button><button type="button" class="sd-btn in" id="day-dep"><span aria-hidden="true">↓</span>Deposito</button></div></div>',
   );
-  d.classList.add('day-sheet');
-  d.querySelector('#day-diary').onclick = function () {
-    d.close();
-    diaryForm(date);
+  d.classList.add('day-sheet', 'ms-sheet');
+  var go = function (fn) {
+    return function () {
+      d.close();
+      fn();
+    };
   };
-  d.querySelector('#day-dep').onclick = function () {
-    d.close();
-    transactionForm(1, null, date);
-  };
-  d.querySelector('#day-wd').onclick = function () {
-    d.close();
-    transactionForm(-1, null, date);
-  };
+  ['#day-diary', '#day-diary2'].forEach(function (q) {
+    var b = d.querySelector(q);
+    if (b) b.onclick = go(function () { moneySheet('saldo', { date: date }); });
+  });
+  d.querySelector('#day-dep').onclick = go(function () { moneySheet('deposit', { date: date }); });
+  d.querySelector('#day-wd').onclick = go(function () { moneySheet('withdraw', { date: date }); });
   d.querySelectorAll('[data-day-tx]').forEach(function (b) {
     b.onclick = function () {
       var t = db.transactions.find(function (x) {
@@ -3849,7 +3875,7 @@ function openDayPanel(date) {
       });
       if (!t) return;
       d.close();
-      transactionForm(t.amount < 0 ? -1 : 1, t);
+      moneySheet(t.amount < 0 ? 'withdraw' : 'deposit', { t: t });
     };
   });
 }
@@ -3857,6 +3883,20 @@ function openDayPanel(date) {
 /* ---------- Eventi ---------- */
 function bindDiary() {
   bindDiaryExtra();
+  /* 4.9.0 — pannello unico Aggiorna saldo / Prelievo / Deposito */
+  main.querySelectorAll('[data-ms]').forEach(function (b) {
+    b.onclick = function () {
+      moneySheet(b.dataset.ms);
+    };
+  });
+  main.querySelectorAll('[data-ms-tx]').forEach(function (b) {
+    b.onclick = function () {
+      var t = db.transactions.find(function (x) {
+        return x.id === b.dataset.msTx;
+      });
+      if (t) moneySheet(t.amount < 0 ? 'withdraw' : 'deposit', { t: t });
+    };
+  });
   main.querySelectorAll('[data-diary-edit]').forEach(function (b) {
     b.onclick = function () {
       diaryForm(b.dataset.diaryEdit);

@@ -2123,21 +2123,82 @@ button.button-tap {
 .vs-rows .vs-gap span { color: var(--suite-text); }
 .vs-note { margin: 4px 0 0; }
 
-/* 4.8.0 — Saldo a moduli: saldo totale (versato), vinto/perso, prelevato */
-.saldo-mod{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0 4px}
-.saldo-mod .sm-tile{display:grid;gap:2px;padding:9px 10px;border-radius:14px;border:1px solid var(--suite-glass-edge,rgba(255,255,255,.1));background:color-mix(in srgb,var(--suite-text,#fff) 4%,transparent);min-width:0}
-.saldo-mod .sm-tile small{font-size:10.5px;font-weight:700;letter-spacing:.02em;color:var(--suite-text-soft,#9fb0ab);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.saldo-mod .sm-tile b{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
-.saldo-mod .sm-tile span{font-size:10.5px;color:var(--suite-text-soft,#9fb0ab);line-height:1.25}
-.saldo-mod .sm-dep{border-color:rgba(242,176,78,.45);background:color-mix(in srgb,#f2b04e 10%,transparent)}
-.saldo-mod .sm-dep b{color:#ffcf7a}
-.saldo-mod .sm-res.positive b{color:#5fe0ac}.saldo-mod .sm-res.negative b{color:#ff8a80}
-.saldo-mod .sm-wd b{color:#8cc2ff}
-:root[data-theme="light"] .saldo-mod .sm-dep b{color:#9a5b00}
-:root[data-theme="light"] .saldo-mod .sm-res.positive b{color:#0e7a50}
-:root[data-theme="light"] .saldo-mod .sm-res.negative b{color:#c0392b}
-:root[data-theme="light"] .saldo-mod .sm-wd b{color:#1a62b3}
-.saldo-mod-eq{margin:4px 2px 10px;font-size:11.5px;color:var(--suite-text-soft,#9fb0ab);font-variant-numeric:tabular-nums}
-.saldo-mod-eq i{font-style:normal;opacity:.7;margin:0 2px}
-.saldo-mod-eq b{color:var(--suite-text,#fff)}
-@media (max-width:360px){.saldo-mod .sm-tile b{font-size:14px}.saldo-mod .sm-tile{padding:8px}}
+/* ===================== 4.9.0 — Saldo ripensato ===================== */
+main .card.sd-hero{display:grid;gap:12px;padding:18px 18px 16px!important}
+.sd-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sd-top small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--suite-text-soft)}
+.sd-chip{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px}
+.sd-chip.ok{background:rgba(47,191,143,.16);color:#5fe0ac}.sd-chip.todo{background:rgba(242,176,78,.16);color:#ffcf7a}
+.sd-big{font-family:var(--suite-font-display);font-size:44px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.sd-sub{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;margin-top:-4px}
+.sd-today{font-size:14px;color:var(--suite-text-soft)}
+.sd-today b{font-size:17px;font-weight:800}
+.sd-today.positive b{color:#5fe0ac}.sd-today.negative b{color:#ff8a80}
+.sd-wd{font-size:12.5px;color:#8cc2ff;font-weight:600}
+.sd-strip{display:grid;grid-template-columns:repeat(3,1fr);padding:10px 0;border-top:1px solid var(--suite-glass-edge);border-bottom:1px solid var(--suite-glass-edge)}
+.sd-strip>div{display:grid;gap:2px;padding:0 10px;min-width:0}
+.sd-strip>div+div{border-left:1px solid var(--suite-glass-edge)}
+.sd-strip>div:first-child{padding-left:0}
+.sd-strip small{font-size:11px;color:var(--suite-text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sd-strip b{font-size:15.5px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sd-strip b.positive{color:#5fe0ac}.sd-strip b.negative{color:#ff8a80}
+.sd-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sd-actions .sd-main{grid-column:1/-1;min-height:48px!important;border:0!important;border-radius:14px!important;background:var(--suite-amber-grad)!important;color:var(--suite-on-amber)!important;font:inherit;font-size:15.5px!important;font-weight:800!important;box-shadow:0 8px 20px -8px rgba(232,147,44,.6)!important}
+.sd-actions .sd-btn{min-height:44px!important;display:flex!important;align-items:center;justify-content:center;gap:6px;border-radius:13px!important;border:1px solid var(--suite-glass-edge)!important;background:color-mix(in srgb,var(--suite-text) 4%,transparent)!important;color:var(--suite-text)!important;font:inherit;font-size:14.5px!important;font-weight:700!important}
+.sd-btn span{font-weight:900}.sd-btn.out span{color:#ff8a80}.sd-btn.in span{color:#5fe0ac}
+main .card.sd-day{display:grid;gap:8px}
+.sd-day-h{display:flex;align-items:baseline;justify-content:space-between}
+.sd-day-h h2{margin:0}.sd-day-h b{font-size:16px;font-weight:800}
+.sd-day-h b.positive{color:#5fe0ac}.sd-day-h b.negative{color:#ff8a80}
+.sd-evs{display:grid}
+.sd-ev{appearance:none;display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:10px;width:100%;margin:0!important;padding:10px 2px!important;min-height:0!important;border:0!important;border-radius:0!important;background:transparent!important;color:var(--suite-text)!important;font:inherit;text-align:left;box-shadow:none!important}
+.sd-ev+.sd-ev{border-top:1px solid var(--suite-glass-edge)!important}
+.sd-ev-ic{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:15px}
+.sd-ev.out .sd-ev-ic{background:rgba(229,83,75,.15);color:#ff8a80}.sd-ev.in .sd-ev-ic{background:rgba(47,191,143,.15);color:#5fe0ac}.sd-ev.bal .sd-ev-ic{background:rgba(242,176,78,.15);color:#ffcf7a}
+.sd-ev-m{display:grid;gap:1px;min-width:0}.sd-ev-m b{font-size:14px;font-weight:700}.sd-ev-m small{font-size:12px;color:var(--suite-text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sd-ev strong{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.sd-ev.out strong{color:#ff8a80}.sd-ev.in strong{color:#5fe0ac}
+.sd-empty{margin:0;font-size:13px;line-height:1.45}
+:root[data-theme="light"] .sd-chip.ok,:root[data-theme="light"] .sd-today.positive b,:root[data-theme="light"] .sd-strip b.positive,:root[data-theme="light"] .sd-day-h b.positive,:root[data-theme="light"] .sd-ev.in strong,:root[data-theme="light"] .sd-ev.in .sd-ev-ic,:root[data-theme="light"] .sd-btn.in span{color:#0e7a50}
+:root[data-theme="light"] .sd-today.negative b,:root[data-theme="light"] .sd-strip b.negative,:root[data-theme="light"] .sd-day-h b.negative,:root[data-theme="light"] .sd-ev.out strong,:root[data-theme="light"] .sd-ev.out .sd-ev-ic,:root[data-theme="light"] .sd-btn.out span{color:#b3261e}
+:root[data-theme="light"] .sd-chip.todo,:root[data-theme="light"] .sd-ev.bal .sd-ev-ic{color:#8a5200}
+:root[data-theme="light"] .sd-wd{color:#1a62b3}
+
+/* pannello Aggiorna saldo / Prelievo / Deposito: niente riquadri, un importo grande e righe semplici */
+dialog#editor.sheet.ms-sheet .ms{display:grid;gap:18px;padding-top:4px}
+dialog#editor.sheet .ms-amt{display:grid;justify-items:center;gap:6px;margin:0!important;padding:6px 0 2px}
+dialog#editor.sheet .ms-amt>span:first-child{font-size:13.5px;font-weight:600;color:var(--suite-text-soft)}
+dialog#editor.sheet .ms-amt-row{display:flex;align-items:baseline;justify-content:center;gap:6px;width:100%}
+dialog#editor.sheet .ms-amt-row em{font-style:normal;font-size:34px;font-weight:800}
+dialog#editor.sheet .ms-withdraw .ms-amt-row em{color:#ff8a80}dialog#editor.sheet .ms-deposit .ms-amt-row em{color:#5fe0ac}
+dialog#editor.sheet .ms-amt-row i{font-style:normal;font-size:28px;font-weight:700;color:var(--suite-text-soft)}
+dialog#editor.sheet .ms-amt input{max-width:75%;height:auto!important;min-height:0!important;padding:2px 0!important;border:0!important;border-bottom:2px solid var(--suite-glass-edge)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;text-align:center;font-family:var(--suite-font-display);font-size:44px!important;font-weight:800;letter-spacing:-.02em;color:var(--suite-text)!important;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+dialog#editor.sheet .ms-amt input:focus{outline:none;border-bottom-color:#f2b04e!important}
+dialog#editor.sheet .ms input[type=number]::-webkit-inner-spin-button,dialog#editor.sheet .ms input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+dialog#editor.sheet .ms-lbl{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--suite-text-soft);margin-bottom:8px}
+dialog#editor.sheet .ms-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+dialog#editor.sheet .ms-opt{display:grid;gap:2px;justify-items:start;text-align:left;margin:0!important;min-height:0!important;padding:10px 12px!important;border-radius:13px!important;border:1.5px solid var(--suite-glass-edge)!important;background:transparent!important;color:var(--suite-text)!important;font:inherit;box-shadow:none!important}
+dialog#editor.sheet .ms-opt b{font-size:14px;font-weight:800}dialog#editor.sheet .ms-opt small{font-size:12px;color:var(--suite-text-soft)}
+dialog#editor.sheet .ms-opt.on{border-color:#f2b04e!important;background:rgba(242,176,78,.10)!important}
+dialog#editor.sheet .ms-line{display:flex!important;align-items:center;gap:10px;margin:0!important;padding:10px 0;border-top:1px solid var(--suite-glass-edge);border-bottom:1px solid var(--suite-glass-edge);font-size:14px!important;color:var(--suite-text-soft)}
+dialog#editor.sheet .ms-line span{flex:1}
+dialog#editor.sheet .ms-line i{font-style:normal;font-weight:700}
+dialog#editor.sheet .ms-line input{width:9ch!important;flex:0 0 auto;height:auto!important;min-height:0!important;padding:4px 0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;text-align:right;font-size:18px!important;font-weight:800;color:var(--suite-text)!important}
+dialog#editor.sheet .ms-note input{width:auto!important;flex:2;font-size:15px!important;font-weight:500}
+dialog#editor.sheet .ms-line input:focus{outline:none}
+dialog#editor.sheet .ms-chips{display:flex;gap:6px;flex-wrap:wrap}
+dialog#editor.sheet .ms-chip{margin:0!important;min-height:36px!important;padding:0 16px!important;border-radius:999px!important;border:1px solid var(--suite-glass-edge)!important;background:transparent!important;color:var(--suite-text)!important;font:inherit;font-size:14px!important;font-weight:700!important;box-shadow:none!important}
+dialog#editor.sheet .ms-chip.on{background:var(--suite-teal-grad)!important;color:#fff!important;border-color:transparent!important}
+dialog#editor.sheet .ms-date{margin-top:8px!important}
+dialog#editor.sheet .ms-out:empty{display:none}
+dialog#editor.sheet .ms-res{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--suite-text) 5%,transparent)}
+dialog#editor.sheet .ms-res span{font-size:14px;font-weight:600;color:var(--suite-text-soft)}
+dialog#editor.sheet .ms-res b{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+dialog#editor.sheet .ms-res.positive{background:rgba(47,191,143,.13)}dialog#editor.sheet .ms-res.positive b{color:#5fe0ac}
+dialog#editor.sheet .ms-res.negative{background:rgba(229,83,75,.12)}dialog#editor.sheet .ms-res.negative b{color:#ff8a80}
+dialog#editor.sheet .ms-hint{margin:6px 2px 0!important;font-size:12px;color:var(--suite-text-soft);line-height:1.4}
+:root[data-theme="light"] dialog#editor.sheet .ms-res.positive b,:root[data-theme="light"] dialog#editor.sheet .ms-deposit .ms-amt-row em{color:#0e7a50}
+:root[data-theme="light"] dialog#editor.sheet .ms-res.negative b,:root[data-theme="light"] dialog#editor.sheet .ms-withdraw .ms-amt-row em{color:#b3261e}
+dialog#editor.sheet .ms-date[hidden]{display:none!important}
+dialog#editor.sheet .day-ms{display:grid;gap:12px}
+dialog#editor.sheet .day-ms .sd-actions{margin-top:4px}

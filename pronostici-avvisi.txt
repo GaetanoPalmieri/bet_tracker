@@ -2036,6 +2036,14 @@ function tipWaitText(i: any, Q: number, short?: boolean) {
   if (short) return '⚡ gol prima ' + Math.round(i.early * 100) + '% · ' + q + (i.late ? ' solo nel finale' : ' al ' + i.at + '’'); /* nella riga del Live */
   return '⚡ gol prima di ' + q + ': ' + Math.round(i.early * 100) + '% · ' + (i.late ? q + ' solo nel finale' : q + ' verso il ' + i.at + '’');
 }
+/* 4.9.0 — IL FILTRO IN EVIDENZA NELLA NOTIFICA: il titolo comincia con il filtro che ha generato il segnale, poi % e
+   livello (OTTIMA / DA VALUTARE) e, se il filtro è in prova, "in prova". Sotto: la giocata, le squadre, il campionato,
+   minuto/risultato/quote. Le quote raggiunte dicono da quale filtro nascono. */
+const TIP_FILTER_NAME: any = { tm1: "Prossimo gol 1T", tm2: "Prossimo gol 2T", tm3: "Gol 2T sull’1-0", tv2: "Avanti di 1 a quota", tk1: "Angolo 1T", tk2: "Angolo finale" };
+function tipFilterName(k: string) {
+  const n = TIP_FILTER_NAME[k] || String(TIP_PLAY_SHORT[k] || k || "").replace(/^🎯\s*/, "");
+  return n ? n.charAt(0).toUpperCase() + n.slice(1) : "";
+}
 function message(e: any, x: any, upgraded: boolean, A?: any) {
   /* 4.2.0 — notifica pulita. Titolo (in grassetto): icone, % e LA giocata col numero del gol o dell'angolo;
      sotto i nomi interi delle squadre (vanno a capo da soli), poi minuto e risultato.
@@ -2049,10 +2057,11 @@ function message(e: any, x: any, upgraded: boolean, A?: any) {
   const q = QI && QI.q ? QI.q : e.book ? Number(e.book) : e.factors?.book ? Number(e.factors.book) : null;
   const when = `⏱ ${e.min}’${(e.half || 1) === 1 ? " 1T" : ""} · ${e.gh || 0}-${e.ga || 0}` + (corner && e.cn != null ? ` · angoli ${e.cn}` : "") + (q && isFinite(q) ? ` · quota ${q.toFixed(2)}${QI && QI.est ? "≈" : ""}${QI && QI.ok ? " 💰" : ""}` : "") + (QI ? ` · minima ${QI.min.toFixed(2)}` : "");
   /* 4.2.1 — anche il segnale che ha chiamato la giocata (accanto a minuto e risultato) e il campionato con la nazione */
-  const sig = String(TIP_PLAY_SHORT[k] || k).replace(/^🎯\s*/, "");
+  void ic;
+  const lvl = e.tier === "excellent" ? "🟢 OTTIMA" : "🟠 DA VALUTARE";
   return {
-    title: `${upgraded ? "⬆ " : ""}${ic} ${Math.round((e.p || 0) * 100)}% · ${play}`,
-    body: [`${e.home} – ${e.away}`, e.league ? `🏆 ${e.league}` : "", `${when} · ${sig}`,
+    title: `${upgraded ? "⬆ " : ""}${tipFilterName(k)} · ${Math.round((e.p || 0) * 100)}% ${lvl}${tipIsTrial(e) ? " · in prova" : ""}`,
+    body: [`👉 ${play}`, `${e.home} – ${e.away}`, e.league ? `🏆 ${e.league}` : "", when,
       /* 4.6.1 — gol presto: dal prezzo del book al segnale */
       TIP_WAIT_SRC[k] && A && !A.qOff ? tipWaitText(tipWaitInfo(Number(e.factors?.pMkt || e.p), Number(e.min), (e.half || 1) === 1 || k === "tm1" ? 1 : 2, tipWaitQ(A)), tipWaitQ(A)) : ""].filter(Boolean).join("\n"),
     upgraded,
@@ -2474,8 +2483,8 @@ function tipWaitQ(A: any) { const q = Number(A && A.qMin); return isFinite(q) &&
 function messageQ(e: any) {
   const G = (e.gh || 0) + (e.ga || 0), first = (e.half || 1) === 1;
   return {
-    title: `⏳ Quota ${Number(e.q).toFixed(2)}${e.qEst ? " (stimata)" : ""} · Over ${(G + 0.5).toFixed(1)}${first ? " 1T" : ""}`,
-    body: [`${e.home} – ${e.away}`, e.league ? `🏆 ${e.league}` : "", `⏱ ${e.min}’${first ? " 1T" : ""} · ${e.gh || 0}-${e.ga || 0} · vince ~${Math.round((e.p || 0) * 100)}% (prezzo del book)`].filter(Boolean).join("\n"),
+    title: `⏳ Quota raggiunta · ${tipFilterName(e.fromK)} · ${Number(e.q).toFixed(2)}${e.qEst ? " (stimata)" : ""}`,
+    body: [`👉 Over ${(G + 0.5).toFixed(1)}${first ? " 1T" : ""} a quota ${Number(e.q).toFixed(2)}`, `${e.home} – ${e.away}`, e.league ? `🏆 ${e.league}` : "", `⏱ ${e.min}’${first ? " 1T" : ""} · ${e.gh || 0}-${e.ga || 0} · vince ~${Math.round((e.p || 0) * 100)}% (prezzo del book)`].filter(Boolean).join("\n"),
     tag: "bet-live-" + (e.afId || e.id) + "-q", renotify: true, url: "./?live=" + encodeURIComponent(e.afId || ""),
   };
 }
@@ -2703,7 +2712,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.7.1", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.9.0", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2716,7 +2725,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.7.1" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.9.0" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2728,7 +2737,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.7.1" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.9.0" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
