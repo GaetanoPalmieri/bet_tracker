@@ -18,7 +18,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.7.1
+// Versione app: 4.12.0
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1239,7 +1239,10 @@ var TIP_TARGET_P = { tk1: 0.84, tk2: 0.82 };
 /* 4.2.2 — gol 1T mai OTTIMA: con le quote vere bet365 del 1° tempo (2.528 momenti, 20-22/10) il mercato è esatto entro 1-2 punti
    e le statistiche live non aggiungono nulla fuori campione (56% contro 66% di base): oltre il 75% non si va */
 /* 4.3.5 — prossimo gol 1T solo con mercato ≥70%: sotto vinceva 74% (74 segnali), da 70% in su 81% (174), uguale nei due periodi */
-var TIP_TM = { 1: { from: 10, to: 38, pMin: 0.70, up: 0.07, green: 1, warm: 0.75 }, 2: { from: 46, to: 80, pMin: 0.75, up: 0.03, maxG: 4, green: 0.88, warm: 0.78 } };
+/* 4.11.1 — prossimo gol 2T fino a 5 gol in partita (era 4). Archivio bet365 2-22/10, prezzo ≥75%: con 5 gol 86,1% contro 84,0%
+   del prezzo (310 segnali; +2 / +4 / 0 nei tre periodi), dal vivo 20-26/10 84,6% contro 84,4%; fino a 4 gol 82,3% contro 82,4%.
+   Con 6 o più gol 81,4% contro 84,3% (199; dal vivo 80,5% contro 84%) e con 6 gol e 2 di scarto (4-2) 73% contro 83% → restano fuori. */
+var TIP_TM = { 1: { from: 10, to: 38, pMin: 0.70, up: 0.07, green: 1, warm: 0.75 }, 2: { from: 46, to: 80, pMin: 0.75, up: 0.03, maxG: 5, green: 0.88, warm: 0.78 } };
 function tipLineLam(L) { /* gol attesi da una linea gol asiatica (linea x.5 = +0,17, x.25/x.75 = +0,08: tarato sul registro) */
   if (!U.finite(L) || L <= 0) return null;
   var fr = L - Math.floor(L), adj = Math.abs(fr - 0.5) < 0.01 ? 0.17 : Math.abs(fr - 0.25) < 0.01 || Math.abs(fr - 0.75) < 0.01 ? 0.08 : 0;
@@ -1286,13 +1289,16 @@ var TIP_CAL = {
 };
 var TIP_CAL_ADJ = { /* [pari, avanti di 1, avanti di 2+] */
   1: { top7: [-0.016, -0.011, 0.012], first: [-0.018, 0.008, -0.024], lower: [-0.019, 0.022, 0.002], cup: [0.046, -0.001, -0.004],
-       'minor+': [0.028, -0.004, -0.001], minor: [-0.023, 0.008, 0.001], 'youth+': [0.024, 0.025, 0.015], youth: [-0.006, 0.011, -0.013], women: [-0.002, -0.022, -0.043] },
+       'minor+': [-0.012, -0.044, -0.041], minor: [-0.023, 0.008, 0.001], 'youth+': [0.024, 0.025, 0.015], youth: [-0.006, 0.011, -0.013], women: [-0.002, -0.022, -0.043] },
   2: { top7: [-0.010, -0.007, 0.028], first: [0.027, -0.018, 0], lower: [-0.028, -0.035, -0.019], cup: [0.016, -0.004, 0.029],
        'minor+': [-0.025, 0.046, 0.009], minor: [-0.007, 0.023, 0.001], 'youth+': [-0.038, -0.022, -0.025], youth: [0.010, -0.008, 0.011], women: [-0.020, -0.003, 0.018] }
 };
 /* 4.2.9 — OTTIMA da 87% (era 85%): segnali veri 22-24/10, stima ≥87% 142 segnali vinti 93% (ogni giorno 87-96%), stima 85-87%
    158 segnali vinti 87%. Meno segnali e quelli che restano vincono di più. */
-var TIP_GOAL_GREEN = 0.87, TIP_GOAL_WARM = { 1: 0.70, 2: 0.74 };
+/* 4.12.0 — RIANALISI DELLO STORICO (archivio bet365 2-22/10 + segnali veri 23-26/10, regole 4.11.1):
+   prossimo gol 1T con stima 70-75% vince 68,8% sull'archivio (stima 73,6%; 170) e 56,5% dal vivo (23) → si parte da 75%.
+   1T nei minori dei Paesi forti −4 punti (archivio −4,4: −8 / −4 / −3; dal vivo −10 su 36) → TIP_CAL_ADJ[1]['minor+'] −0,04. */
+var TIP_GOAL_GREEN = 0.87, TIP_GOAL_WARM = { 1: 0.75, 2: 0.74 };
 var TIP_TM3_UP = 0.02; /* 4.3.1 — correzione del gol 2T sull'1-0 (vedi tipTargetGoal) */
 function tipGoalProb(M, half, lgG, diff) {
   var C = TIP_CAL[half] || TIP_CAL[2], ab = C[M.src === 'quote' ? 'quote' : 'linea'], m = Math.max(0.01, Math.min(0.995, M.p));
@@ -1653,7 +1659,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.10.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.12.0',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2515,7 +2521,7 @@ async function quotaWatch(u: any, list: any[], now: number, known: Map<string, a
     const real = M.src === "quote", q = M.book && M.book > 1 ? M.book : 0.95 / M.p;
     out.watch.push({ afId: e.afId, half, G, Q });
     if (q < Q + (real ? 0 : 0.10)) continue;
-    const r: any = { schemaVersion: 2, engineVersion: "4.10.0", key, id: e.id, afId: e.afId, home: e.home, away: e.away, league: e.league, lg: e.lg, date: e.date, time: e.time,
+    const r: any = { schemaVersion: 2, engineVersion: "4.12.0", key, id: e.id, afId: e.afId, home: e.home, away: e.away, league: e.league, lg: e.lg, date: e.date, time: e.time,
       k: half === 1 ? "tr1" : "tr2", fromK: e.k, fromKey: e.key, fromMin: e.min, fromP: e.p, tier: "try", trial: true, conditional: false, costly: false, res: null,
       min: x.elapsed, half, gh, ga, p: Math.round(M.p * 1000) / 1000, q: Math.round(q * 100) / 100, qEst: !real, qMin: Q, minQ: Math.round(q * 100) / 100,
       book: M.book || null, factors: { pMkt: M.p, src: M.src, ll: M.ll, oddsLine: M.oddsLine || null, lgG: e.factors?.lgG || e.lg || null },
@@ -2719,7 +2725,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.10.0", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.12.0", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2732,7 +2738,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.10.0" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.12.0" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2744,7 +2750,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.10.0" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.12.0" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
