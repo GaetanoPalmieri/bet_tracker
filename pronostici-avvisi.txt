@@ -2060,7 +2060,7 @@ function message(e: any, x: any, upgraded: boolean, A?: any) {
   void ic;
   const lvl = e.tier === "excellent" ? "🟢 OTTIMA" : "🟠 DA VALUTARE";
   return {
-    title: `${upgraded ? "⬆ " : ""}${tipFilterName(k)} · ${Math.round((e.p || 0) * 100)}% ${lvl}${tipIsTrial(e) ? " · in prova" : ""}`,
+    title: `${upgraded ? "⬆ " : ""}${tipIsTrial(e) ? "🧪" : "🛡️"} ${tipFilterName(k)} · ${Math.round((e.p || 0) * 100)}% ${lvl}`, /* 4.9.1 — 🛡 stabile · 🧪 in prova */
     body: [`👉 ${play}`, `${e.home} – ${e.away}`, e.league ? `🏆 ${e.league}` : "", when,
       /* 4.6.1 — gol presto: dal prezzo del book al segnale */
       TIP_WAIT_SRC[k] && A && !A.qOff ? tipWaitText(tipWaitInfo(Number(e.factors?.pMkt || e.p), Number(e.min), (e.half || 1) === 1 || k === "tm1" ? 1 : 2, tipWaitQ(A)), tipWaitQ(A)) : ""].filter(Boolean).join("\n"),
@@ -2712,7 +2712,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.9.0", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.9.1", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2725,7 +2725,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.9.0" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.9.1" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2737,7 +2737,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.9.0" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.9.1" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {

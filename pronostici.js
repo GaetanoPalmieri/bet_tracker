@@ -3325,7 +3325,12 @@ var TIP_LV_KIND = { tm1: 'prossimo gol 1T', tm2: 'prossimo gol 2T', tm3: 'gol 2T
 function tipLvTags(e, QI) {
   var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e), tg = function (c, t) { return '<i class="tg ' + c + '">' + t + '</i>'; };
   return '<span class="lv2-tags">' + (wait ? tg('tg-book', 'PREZZO BOOK') : e.tier === 'try' ? tg('tg-try', 'DA VALUTARE') : tg('tg-ok', 'OTTIMA')) +
-    (wait ? '' : trial ? tg('tg-trial', 'IN PROVA') : tg('tg-stable', 'STABILE')) + (QI && QI.ok ? tg('tg-val', '💰 VALORE') : '') + '</span>';
+    (QI && QI.ok ? tg('tg-val', '💰 VALORE') : '') + '</span>';
+}
+/* 4.9.1 — stabile / in prova: non è un'etichetta ma un'icona nell'angolo della scheda (🛡 stabile, 🧪 in prova) */
+function tipLvCorner(e) {
+  if (TIP_WAIT_K[e.k]) return '';
+  return tipIsTrial(e) ? '<i class="lv2-corner trial" role="img" aria-label="Filtro in prova" title="Filtro in prova">🧪</i>' : '<i class="lv2-corner stable" role="img" aria-label="Filtro stabile" title="Filtro stabile">🛡️</i>';
 }
 function tipLvFilterName(e) {
   var wait = !!TIP_WAIT_K[e.k], k = wait ? e.fromK : e.k;
@@ -3348,6 +3353,7 @@ function tipLvRow(e, o) {
     : QI && QI.q ? '<i class="lv2-q' + (QI.ok ? ' val' : QI.value < 0 ? ' low' : '') + '">@' + QI.q.toFixed(2) + (QI.est ? '≈' : '') + '</i>' : '';
   var lvId = U.esc(String(e.key || e.id || '') + '§' + (e.k || '') + '§' + (e.t || 0));
   return '<button type="button" data-lv-open="' + lvId + '" class="lv2 lv2-' + (wait ? 'qr' : t) + (trial ? ' lv2-trial' : '') + (o.isNew ? ' lv2-new' : '') + (o.showRes ? ' lv2-' + st : '') + '"' + (o.showRes && st !== 'wait' ? ' aria-label="' + (st === 'win' ? 'Vinta' : 'Persa') + '"' : '') + '>' +
+    tipLvCorner(e) +
     '<span class="lv2-min"><b>' + (e.min != null ? e.min + '’' : '–') + '</b><small>' + (half === 1 ? '1T' : '2T') + '</small></span>' +
     '<span class="lv2-main"><b class="lv2-fname">' + U.esc(tipLvFilterName(e)) + '</b>' +
     '<span class="lv2-teams">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</span>' +
@@ -3427,7 +3433,7 @@ function tipSignalSheet(e) {
   var d = sheetModal(
     sheetHead(U.esc(e.home || '') + ' – ' + U.esc(e.away || ''), { sub: U.esc(e.league || '') }) +
     '<div class="sg-sheet' + (wait ? ' sg-qr' : e.tier === 'try' ? ' sg-try' : ' sg-ok') + '">' +
-    '<div class="sg-filt"><b>' + U.esc(fName) + '</b>' + tipLvTags(e, QI) + '</div>' +
+    '<div class="sg-filt">' + tipLvCorner(e) + '<b>' + U.esc(fName) + '</b>' + tipLvTags(e, QI) + '</div>' +
     '<div class="sg-hero"><div><small>' + (wait ? 'Quota raggiunta' : 'Giocata') + '</small><b>' + U.esc(tipBetLabel(e)) + '</b></div><div class="sg-pct">' + (pc != null ? '<b>' + pc + '%</b>' : '') + '<small>' + tierT + '</small></div></div>' +
     resBox +
     (early ? '<p class="sg-early">' + U.esc(early) + '</p>' : '') +
