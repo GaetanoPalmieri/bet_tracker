@@ -1036,8 +1036,14 @@ var TIP_PLAY_NAME = {
 };
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80',
   tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80', tf1: '+1 1T partita da gol', tf2: '+1 2T partita da gol',
-  tm1: '🎯 prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T avanti di 1 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
+  tm1: '🎯 prossimo gol 1T', tm1s: '⭐ prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T avanti di 1 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
 TIP_PLAY_NAME.tm1 = '🎯 Prossimo gol entro l’intervallo';
+/* 4.10.0 — ⭐ PROSSIMO GOL 1T: lo stesso segnale quando la stima è 80% o più (dal vivo 91/108, 84%, contro 78% di tutti i
+   1T; quota media ~1.25). È un filtro a parte (statistiche, preferiti, notifiche); il "prossimo gol 1T" senza stella
+   resta per le stime sotto l'80%. Stessa partita e stesso punteggio = una sola voce: la chiave è quella del 1T. */
+TIP_PLAY_NAME.tm1s = '⭐ Prossimo gol entro l’intervallo, stima 80% o più';
+var TIP_TM1_STAR = 0.80;
+function tipKeyK(k) { return k === 'tm1s' ? 'tm1' : k; }
 TIP_PLAY_NAME.tm2 = '🎯 Prossimo gol entro la fine';
 TIP_PLAY_NAME.tm3 = '🎯 Gol entro la fine sull’1-0 (2° tempo)';
 TIP_PLAY_NAME.tv2 = '🎯 Gol entro la fine con una squadra avanti di 1, linea bassa (46’-70’, campionati minori, quota più alta)';
@@ -1228,7 +1234,7 @@ function tipTargetCornerBook(x, half, cor, min) {
          4 gol.  ≥75%: 265/301 (88%) · ≥82%: 129/141 (91%), stabile nei 3 giorni
    Angoli: vedi 3.99.0 (TIP_TK) — finestre 34’-36’ e 82’-83’.
    Mai con espulsioni. Probabilità mostrata = mercato + il guadagno osservato delle conferme (ridotto). */
-var TIP_TARGET = { tm1: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1 };
+var TIP_TARGET = { tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1 };
 var TIP_TARGET_P = { tk1: 0.84, tk2: 0.82 };
 /* 4.2.2 — gol 1T mai OTTIMA: con le quote vere bet365 del 1° tempo (2.528 momenti, 20-22/10) il mercato è esatto entro 1-2 punti
    e le statistiche live non aggiungono nulla fuori campione (56% contro 66% di base): oltre il 75% non si va */
@@ -1452,6 +1458,7 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
      4.3.8 — tolta la regola del minuto della 4.3.7: con i segnali del 25/10 dal 50' in poi 14/14, in totale 46'-49' 88% (223) e
      dal 50' 86% (44), nessuna differenza vera. Negli altri campionati l'1-0 è sempre OTTIMA. */
   if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
+  if (k === 'tm1' && rd(p) >= TIP_TM1_STAR) k = 'tm1s'; /* 4.10.0 — ⭐ prossimo gol 1T */
   return { k: k, p: rd(p), green: green, warm: warm,
     book: M.book, o: { rule: '4.2.8', pMkt: rd(M.p),
       /* 4.7.0 — quota bet365 del prossimo gol: vera (linea gol+0,5) o ricavata dalle quote vere della linea asiatica */
@@ -1638,7 +1645,7 @@ function tipIsTrial(e) {
   var g = e.factors && e.factors.lgG;
   return e.k === 'tm3' && (g === 'women' || g === 'lower');
 }
-function tipPlayGroup(e) { return e.id + '|' + (e.half || 1) + '|' + (e.gh || 0) + '-' + (e.ga || 0) + (e.trial ? '|' + e.k : ''); }
+function tipPlayGroup(e) { return e.id + '|' + (e.half || 1) + '|' + (e.gh || 0) + '-' + (e.ga || 0) + (e.trial ? '|' + tipKeyK(e.k) : ''); }
 function tipPlayFind(id, ctx) {
   var g = tipPlayKey(id, ctx);
   return (((db.predModel || {}).playLog) || []).filter(function (e) { return !e.trial && tipPlayGroup(e) === g; })
@@ -1646,7 +1653,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.7.1',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.10.0',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -1954,18 +1961,18 @@ function tipQuotaInfo(e) {
   return { min: min, q: q, est: est, value: q ? q / min - 1 : null, ok: !!q && q >= min * (1 + TIP_VALUE_MARGIN) };
 }
 function tipHasValue(e) { var i = tipQuotaInfo(e); return !!(i && i.ok); }
-var TIP_TARGET_SRV: any = { tm1: 1, tm2: 1, tm3: 1, tv2: 1 };
+var TIP_TARGET_SRV: any = { tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1 };
 var TIP_ALERT_GROUPS = [['gol1', 'Gol 1° tempo'], ['gol2', 'Gol 2° tempo'], ['cor1', 'Angoli 1° tempo'], ['cor2', 'Angoli 2° tempo']];
 function tipAlertGroup(k) {
   k = String(k || '');
   if (/^th/.test(k) || k === 'tk1') return 'cor1';
   if (/^tc/.test(k) || k === 'tk2') return 'cor2';
-  return k === 'tm1' || k === 'tr1' || k === 'tp1' || k === 'tq1' || k === 'tg1' || k === 'tf1' || k.indexOf('t1') === 0 ? 'gol1' : 'gol2';
+  return k === 'tm1' || k === 'tm1s' || k === 'tr1' || k === 'tp1' || k === 'tq1' || k === 'tg1' || k === 'tf1' || k.indexOf('t1') === 0 ? 'gol1' : 'gol2';
 }
 /* 3.96.0 — giovanili dei Paesi forti fuori dal filtro qualità: 24/36 (67%) contro l'82% degli altri (dati 19-22/10) */
 var TIP_QUALITY_MINP = 0.65, TIP_QUALITY_LG = { major: 1, 'minor+': 1 };
 /* 3.94.0 — segnali che il filtro qualità non blocca mai (partite da gol: tutti i campionati) */
-var TIP_QUALITY_FREE = { tf1: 1, tf2: 1, tm1: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1, tr1: 1, tr2: 1 }; /* 3.95.0 — mirati: tutti i campionati */
+var TIP_QUALITY_FREE = { tf1: 1, tf2: 1, tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1, tr1: 1, tr2: 1 }; /* 3.95.0 — mirati: tutti i campionati */
 function tipQualityPass(e) {
   if (!e) return false;
   if (TIP_QUALITY_FREE[e.k]) return true;
@@ -2039,7 +2046,7 @@ function tipWaitText(i: any, Q: number, short?: boolean) {
 /* 4.9.0 — IL FILTRO IN EVIDENZA NELLA NOTIFICA: il titolo comincia con il filtro che ha generato il segnale, poi % e
    livello (OTTIMA / DA VALUTARE) e, se il filtro è in prova, "in prova". Sotto: la giocata, le squadre, il campionato,
    minuto/risultato/quote. Le quote raggiunte dicono da quale filtro nascono. */
-const TIP_FILTER_NAME: any = { tm1: "Prossimo gol 1T", tm2: "Prossimo gol 2T", tm3: "Gol 2T sull’1-0", tv2: "Avanti di 1 a quota", tk1: "Angolo 1T", tk2: "Angolo finale" };
+const TIP_FILTER_NAME: any = { tm1: "Prossimo gol 1T", tm1s: "⭐ Prossimo gol 1T", tm2: "Prossimo gol 2T", tm3: "Gol 2T sull’1-0", tv2: "Avanti di 1 a quota", tk1: "Angolo 1T", tk2: "Angolo finale" };
 function tipFilterName(k: string) {
   const n = TIP_FILTER_NAME[k] || String(TIP_PLAY_SHORT[k] || k || "").replace(/^🎯\s*/, "");
   return n ? n.charAt(0).toUpperCase() + n.slice(1) : "";
@@ -2063,7 +2070,7 @@ function message(e: any, x: any, upgraded: boolean, A?: any) {
     title: `${upgraded ? "⬆ " : ""}${tipIsTrial(e) ? "🧪" : "🛡️"} ${tipFilterName(k)} · ${Math.round((e.p || 0) * 100)}% ${lvl}`, /* 4.9.1 — 🛡 stabile · 🧪 in prova */
     body: [`👉 ${play}`, `${e.home} – ${e.away}`, e.league ? `🏆 ${e.league}` : "", when,
       /* 4.6.1 — gol presto: dal prezzo del book al segnale */
-      TIP_WAIT_SRC[k] && A && !A.qOff ? tipWaitText(tipWaitInfo(Number(e.factors?.pMkt || e.p), Number(e.min), (e.half || 1) === 1 || k === "tm1" ? 1 : 2, tipWaitQ(A)), tipWaitQ(A)) : ""].filter(Boolean).join("\n"),
+      TIP_WAIT_SRC[k] && A && !A.qOff ? tipWaitText(tipWaitInfo(Number(e.factors?.pMkt || e.p), Number(e.min), (e.half || 1) === 1 || k === "tm1" || k === "tm1s" ? 1 : 2, tipWaitQ(A)), tipWaitQ(A)) : ""].filter(Boolean).join("\n"),
     upgraded,
     tag: "bet-live-" + (e.afId || e.id) + (e.trial ? "-" + e.k : ""),
     renotify: true,
@@ -2422,7 +2429,7 @@ function tipPlayOutcome(e, x) {
     if (!Array.isArray(hc) || hc.length !== 2 || !hc.every(function (n) { return Number.isInteger(n) && n >= 0; }) || e.cn == null || hc[0] + hc[1] < e.cn) return null;
     return hc[0] + hc[1] - e.cn >= (e.need || (e.k === 'th2' ? 2 : 1)) ? 1 : 0;
   }
-  if (e.k === 'tp1' || e.k === 'tq1' || e.k === 'tg1' || e.k === 'tf1' || e.k === 'tm1' || e.k === 'tr1') return HT == null ? null : HT > G ? 1 : 0; /* 4.6.0 — tr1: quota raggiunta 1T */
+  if (e.k === 'tp1' || e.k === 'tq1' || e.k === 'tg1' || e.k === 'tf1' || e.k === 'tm1' || e.k === 'tm1s' || e.k === 'tr1') return HT == null ? null : HT > G ? 1 : 0; /* 4.6.0 — tr1: quota raggiunta 1T */
   if (e.k === 'tq2' || e.k === 'tn2') return FT > G ? 1 : 0;
   if (e.k === 'tp2') return FT > G ? 1 : 0;
   if (e.k === 't2w' || e.k === 't1w') {
@@ -2478,7 +2485,7 @@ async function settleSignals() {
    La % è quella del book in quel momento: archivio bet365 (3.603 segnali del genere, 2-22/10) → aspettando 1.50 si entra
    36 volte su 100 (63 volte segnano prima) e poi si vince il 61% (prezzo 63%). Non vince di più: evita di stare a guardare.
    Una voce per partita, tempo e punteggio. Con la sola linea gol (senza quote vere) serve 0,10 in più sulla soglia. */
-const TIP_WAIT_SRC: any = { tm1: 1, tm2: 1, tm3: 1, tv2: 1 };
+const TIP_WAIT_SRC: any = { tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1 };
 function tipWaitQ(A: any) { const q = Number(A && A.qMin); return isFinite(q) && q >= 1.2 && q <= 3 ? q : 1.5; }
 function messageQ(e: any) {
   const G = (e.gh || 0) + (e.ga || 0), first = (e.half || 1) === 1;
@@ -2494,7 +2501,7 @@ async function quotaWatch(u: any, list: any[], now: number, known: Map<string, a
   for (const e of originals.values()) {
     if (!e || !TIP_WAIT_SRC[e.k] || (e.tier !== "excellent" && e.tier !== "try") || e.conditional || e.costly || e.res != null) continue;
     if (!e.t || now - e.t > 100 * 60e3 || typeof e.afId !== "string") continue;
-    const half = e.half || (e.k === "tm1" ? 1 : 2), gh = e.gh || 0, ga = e.ga || 0;
+    const half = e.half || (e.k === "tm1" || e.k === "tm1s" ? 1 : 2), gh = e.gh || 0, ga = e.ga || 0;
     const key = e.id + "|" + half + "|" + gh + "-" + ga + "|q";
     if (known.has(key) || seen.has(key)) continue;
     seen.add(key);
@@ -2508,7 +2515,7 @@ async function quotaWatch(u: any, list: any[], now: number, known: Map<string, a
     const real = M.src === "quote", q = M.book && M.book > 1 ? M.book : 0.95 / M.p;
     out.watch.push({ afId: e.afId, half, G, Q });
     if (q < Q + (real ? 0 : 0.10)) continue;
-    const r: any = { schemaVersion: 2, engineVersion: "4.7.1", key, id: e.id, afId: e.afId, home: e.home, away: e.away, league: e.league, lg: e.lg, date: e.date, time: e.time,
+    const r: any = { schemaVersion: 2, engineVersion: "4.10.0", key, id: e.id, afId: e.afId, home: e.home, away: e.away, league: e.league, lg: e.lg, date: e.date, time: e.time,
       k: half === 1 ? "tr1" : "tr2", fromK: e.k, fromKey: e.key, fromMin: e.min, fromP: e.p, tier: "try", trial: true, conditional: false, costly: false, res: null,
       min: x.elapsed, half, gh, ga, p: Math.round(M.p * 1000) / 1000, q: Math.round(q * 100) / 100, qEst: !real, qMin: Q, minQ: Math.round(q * 100) / 100,
       book: M.book || null, factors: { pMkt: M.p, src: M.src, ll: M.ll, oddsLine: M.oddsLine || null, lgG: e.factors?.lgG || e.lg || null },
@@ -2600,7 +2607,7 @@ async function runAlerts() {
         const ctxT = { min: y.min, half: y.half, gh: y.x.goals[0] || 0, ga: y.x.goals[1] || 0 };
         for (const tp of tipTrialPlays(y.r, y.min, y.half, y.x, tipLivePrev(y.m.id, y.min, y.half), tipLivePrevAt(y.m.id, y.min, y.half, 8, 6, 12))) {
           let eT = tipPlayEntry(y.m, ctxT, tp, x.afId);
-          eT.key = tipPlayKey(y.m.id, ctxT) + "|" + tp.k + tipTrialKeyX(tp); eT.trial = true; eT.src = "server"; eT.t = now;
+          eT.key = tipPlayKey(y.m.id, ctxT) + "|" + tipKeyK(tp.k) + tipTrialKeyX(tp); eT.trial = true; eT.src = "server"; eT.t = now;
           if (tp.cn != null) { eT.cn = tp.cn; eT.need = tp.need; eT.lamC = tp.lamC; }
           const wasT = known.get(eT.key);
           const upT = wasT === "try" && eT.tier === "excellent";
@@ -2712,7 +2719,7 @@ Deno.serve(async (req) => {
   if (body.action === "diag") {
     const tp: any = (await getState("tcpre")) || {};
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
-    return json({ ver: "4.9.1", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.10.0", tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2725,7 +2732,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.9.1" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.10.0" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2737,7 +2744,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.9.1" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.10.0" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {

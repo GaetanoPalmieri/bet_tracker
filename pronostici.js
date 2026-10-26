@@ -1323,8 +1323,14 @@ var TIP_PLAY_NAME = {
 };
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80',
   tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80', tf1: '+1 1T partita da gol', tf2: '+1 2T partita da gol',
-  tm1: '🎯 prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T avanti di 1 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
-TIP_PLAY_NAME.tm1 = '🎯 Prossimo gol entro l’intervallo'; /* 3.99.2 — regole e numeri nei commenti del motore, non nel testo */
+  tm1: '🎯 prossimo gol 1T', tm1s: '⭐ prossimo gol 1T', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T avanti di 1 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
+TIP_PLAY_NAME.tm1 = '🎯 Prossimo gol entro l’intervallo';
+/* 4.10.0 — ⭐ PROSSIMO GOL 1T: lo stesso segnale quando la stima è 80% o più (dal vivo 91/108, 84%, contro 78% di tutti i
+   1T; quota media ~1.25). È un filtro a parte (statistiche, preferiti, notifiche); il "prossimo gol 1T" senza stella
+   resta per le stime sotto l'80%. Stessa partita e stesso punteggio = una sola voce: la chiave è quella del 1T. */
+TIP_PLAY_NAME.tm1s = '⭐ Prossimo gol entro l’intervallo, stima 80% o più';
+var TIP_TM1_STAR = 0.80;
+function tipKeyK(k) { return k === 'tm1s' ? 'tm1' : k; } /* 3.99.2 — regole e numeri nei commenti del motore, non nel testo */
 TIP_PLAY_NAME.tm2 = '🎯 Prossimo gol entro la fine';
 TIP_PLAY_NAME.tm3 = '🎯 Gol entro la fine sull’1-0 (2° tempo)';
 TIP_PLAY_NAME.tv2 = '🎯 Gol entro la fine con una squadra avanti di 1, linea bassa (46’-70’, campionati minori, quota più alta)'; /* 3.99.2 — regole e numeri nei commenti del motore, non nel testo */
@@ -1344,7 +1350,7 @@ TIP_PLAY_NAME.th1 = 'IN PROVA · almeno 1 angolo in più entro l’intervallo (d
 TIP_PLAY_NAME.th2 = 'IN PROVA · almeno 2 angoli in più entro l’intervallo (dal 36’)';
 /* 3.68.0 — SEGNALI IN PROVA: regole provvisorie, niente notifiche, tracciati a parte (una voce per partita, punteggio e tipo).
    Servono a misurare quanto vincono prima di tararli con i dati registrati sul server. */
-var TIP_TRIAL = { tp1: 1, tp2: 1, tq1: 1, tq2: 1, tg1: 1, tn2: 1, tc1: 1, tc2: 1, th1: 1, th2: 1, tf1: 1, tf2: 1, tk1: 1, tk2: 1, tm1: 1, tv2: 1 }; /* 4.3.4 — stabili: tm2, tm3 */
+var TIP_TRIAL = { tp1: 1, tp2: 1, tq1: 1, tq2: 1, tg1: 1, tn2: 1, tc1: 1, tc2: 1, th1: 1, th2: 1, tf1: 1, tf2: 1, tk1: 1, tk2: 1, tm1: 1, tm1s: 1, tv2: 1 }; /* 4.3.4 — stabili: tm2, tm3 */
 /* 4.3.3 — SEGNALI 🎯 GOL PASSATI A STABILI: prossimo gol 1T, prossimo gol 2T, gol 2T sull'1-0 e avanti di 1 a quota. Dal vivo
    22-25/10 la % mostrata è giusta (stima e vinte entro 1-2 punti) e i risultati reggono tutti i giorni. Restano IN PROVA gli
    angoli e l'1-0 nei femminili e nelle serie minori dei Paesi forti (appena aggiunto, 4.3.2). Nel registro il campo trial
@@ -1367,7 +1373,7 @@ function tipQuotaInfo(e) {
   return { min: min, q: q, est: est, value: q ? q / min - 1 : null, ok: !!q && q >= min * (1 + TIP_VALUE_MARGIN) };
 }
 function tipHasValue(e) { var i = tipQuotaInfo(e); return !!(i && i.ok); }
-var TIP_WAIT_K = { tr1: 1, tr2: 1 }, TIP_WAIT_SRC = { tm1: 1, tm2: 1, tm3: 1, tv2: 1 };
+var TIP_WAIT_K = { tr1: 1, tr2: 1 }, TIP_WAIT_SRC = { tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1 };
 var TIP_WAIT_NAME = { tr1: '⏳ quota raggiunta 1T', tr2: '⏳ quota raggiunta 2T' };
 function tipWaitQ(A) { var q = Number((A || tipAlertPrefs()).qMin); return isFinite(q) && q >= 1.2 && q <= 3 ? q : 1.5; }
 /* probabilità di arrivare alla quota Q senza gol, dal prezzo al segnale (intensità costante fino alla fine):
@@ -1588,7 +1594,7 @@ function tipTargetCornerBook(x, half, cor, min) {
          4 gol.  ≥75%: 265/301 (88%) · ≥82%: 129/141 (91%), stabile nei 3 giorni
    Angoli: vedi 3.99.0 (TIP_TK) — finestre 34’-36’ e 82’-83’.
    Mai con espulsioni. Probabilità mostrata = mercato + il guadagno osservato delle conferme (ridotto). */
-var TIP_TARGET = { tm1: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1 };
+var TIP_TARGET = { tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1 };
 var TIP_TARGET_P = { tk1: 0.84, tk2: 0.82 };
 /* 4.2.2 — gol 1T mai OTTIMA: con le quote vere bet365 del 1° tempo (2.528 momenti, 20-22/10) il mercato è esatto entro 1-2 punti
    e le statistiche live non aggiungono nulla fuori campione (56% contro 66% di base): oltre il 75% non si va */
@@ -1812,6 +1818,7 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
      4.3.8 — tolta la regola del minuto della 4.3.7: con i segnali del 25/10 dal 50' in poi 14/14, in totale 46'-49' 88% (223) e
      dal 50' 86% (44), nessuna differenza vera. Negli altri campionati l'1-0 è sempre OTTIMA. */
   if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
+  if (k === 'tm1' && rd(p) >= TIP_TM1_STAR) k = 'tm1s'; /* 4.10.0 — ⭐ prossimo gol 1T */
   return { k: k, p: rd(p), green: green, warm: warm,
     book: M.book, o: { rule: '4.2.8', pMkt: rd(M.p),
       /* 4.7.0 — quota bet365 del prossimo gol: vera (linea gol+0,5) o ricavata dalle quote vere della linea asiatica */
@@ -1987,7 +1994,7 @@ var TIP_MKT_KIND = { tq1: 1, tg1: 1, tp1: 1, tf1: 1, tq2: 2, tn2: 2, tp2: 2, tf2
 var TIP_MKT_GREEN = { 1: 0.75, 2: 0.82 }, TIP_MKT_WARM = { 1: 0.68, 2: 0.75 };
 function tipTrialLogAdd(m, ctx, trials, lid) {
   (trials || []).forEach(function (x) {
-    var key = tipPlayKey(m.id, ctx) + '|' + x.k + tipTrialKeyX(x);
+    var key = tipPlayKey(m.id, ctx) + '|' + tipKeyK(x.k) + tipTrialKeyX(x);
     tipUI._pl = tipUI._pl || {};
     if (tipUI._pl[key] === 'excellent' || tipUI._pl[key] === x.tier) return;
     var old = (((db.predModel || {}).playLog) || []).find(function (e) { return e.key === key; });
@@ -2005,7 +2012,7 @@ function tipTrialLogAdd(m, ctx, trials, lid) {
    Dopo un gol (punteggio diverso) è una giocata nuova. */
 function tipPlayBest(plays) { return (plays || []).filter(function (x) { return x.green || x.warm; })[0] || null; }
 function tipPlayKey(id, ctx) { return id + '|' + (ctx.half || 1) + '|' + (ctx.gh || 0) + '-' + (ctx.ga || 0); }
-function tipPlayGroup(e) { return e.id + '|' + (e.half || 1) + '|' + (e.gh || 0) + '-' + (e.ga || 0) + (e.trial ? '|' + e.k : ''); }
+function tipPlayGroup(e) { return e.id + '|' + (e.half || 1) + '|' + (e.gh || 0) + '-' + (e.ga || 0) + (e.trial ? '|' + tipKeyK(e.k) : ''); }
 function tipPlayFind(id, ctx) {
   var g = tipPlayKey(id, ctx);
   return (((db.predModel || {}).playLog) || []).filter(function (e) { return !e.trial && tipPlayGroup(e) === g; })
@@ -2013,7 +2020,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.7.1',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.10.0',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2048,6 +2055,7 @@ function tipPlayQueue(op) {
 }
 /* o: { e: voce } (nuova o aggiornamento da DA VALUTARE a OTTIMA) oppure { played: {...}, e: voce se manca } */
 function tipPlayApply(L, o) {
+  tipStarFix(o.e);
   var g = tipPlayGroup(o.e), cur = L.filter(function (z) { return tipPlayGroup(z) === g; })
     .sort(function (a, b) { return (a.tier === 'try' ? 1 : 0) - (b.tier === 'try' ? 1 : 0) || (a.t || 0) - (b.t || 0); })[0];
   if (o.played) {
@@ -2119,7 +2127,7 @@ function tipPlayOutcome(e, x) {
     if (!Array.isArray(hc) || hc.length !== 2 || !hc.every(function (n) { return Number.isInteger(n) && n >= 0; }) || e.cn == null || hc[0] + hc[1] < e.cn) return null;
     return hc[0] + hc[1] - e.cn >= (e.need || (e.k === 'th2' ? 2 : 1)) ? 1 : 0;
   }
-  if (e.k === 'tp1' || e.k === 'tq1' || e.k === 'tg1' || e.k === 'tf1' || e.k === 'tm1' || e.k === 'tr1') return HT == null ? null : HT > G ? 1 : 0; /* 4.6.0 — tr1: quota raggiunta 1T */
+  if (e.k === 'tp1' || e.k === 'tq1' || e.k === 'tg1' || e.k === 'tf1' || e.k === 'tm1' || e.k === 'tm1s' || e.k === 'tr1') return HT == null ? null : HT > G ? 1 : 0; /* 4.6.0 — tr1: quota raggiunta 1T */
   if (e.k === 'tq2' || e.k === 'tn2') return FT > G ? 1 : 0;
   if (e.k === 'tp2') return FT > G ? 1 : 0;
   if (e.k === 't2w' || e.k === 't1w') {
@@ -2302,6 +2310,20 @@ function tipStatsFromDay() { var f = tipStatsFrom(); return f ? new Date(f).toLo
 function tipStatsOk(e) { return !e.idBad && (!!tipUI.stArchive || ((e.t || 0) >= tipStatsFrom() && tipKindActive(e.k))); }
 /* 3.90.0 — una volta: segnali agganciati alla partita sbagliata (nome simile, identificativo diverso da quello del
    pronostico). Escono da statistiche e storico: dati live di una partita, forza prepartita di un'altra. */
+/* 4.10.0 — ⭐ prossimo gol 1T anche per i segnali già registrati (e per quelli che arrivano dal server vecchio):
+   un "prossimo gol 1T" con stima 80% o più diventa ⭐. Una volta sullo storico salvato, poi a ogni segnale nuovo. */
+function tipStarFix(e) { if (e && e.k === 'tm1' && typeof e.p === 'number' && e.p >= TIP_TM1_STAR - 1e-9) e.k = 'tm1s'; return e; }
+function tipStarMigrateOnce() {
+  if (((db.predModel || {}).star410) || tipUI._star410) return;
+  tipUI._star410 = true;
+  mutate(function (d) {
+    d.predModel = d.predModel || {};
+    var n = 0;
+    (d.predModel.playLog || []).forEach(function (e) { if (e && e.k === 'tm1' && tipStarFix(e).k === 'tm1s') n++; });
+    d.predModel.star410 = { at: Date.now(), n: n };
+  });
+}
+setTimeout(function () { try { tipStarMigrateOnce(); } catch (e) { /* ok */ } }, 400);
 function tipIdCheckOnce() {
   if (((db.predModel || {}).idCheck390) || tipUI._idChk) return;
   tipUI._idChk = true;
@@ -2904,7 +2926,7 @@ function tipMemRow(e, opt) {
   var t = e.tier || 'excellent', sc = (e.gh || 0) + '-' + (e.ga || 0), goal = (e.gh || 0) + (e.ga || 0) + 1;
   var state = e.res === 1 ? 'win' : e.res === 0 ? 'loss' : e.res === 'skip' ? 'skip' : 'wait';
   var icon = { win: '✓', loss: '✕', skip: '–', wait: '◷' }[state], said = { win: 'Vinta', loss: 'Persa', skip: 'Solo monitoraggio', wait: 'In attesa' }[state];
-  var corner = /^t[chk][12]$/.test(e.k), firstHalf = (e.half || 0) === 1 || e.k.charAt(1) === 'h' || e.k === 'tk1' || e.k === 'tm1' || e.k === 'tq1' || e.k === 'tp1' || e.k === 'tg1' || e.k === 'tf1' || e.k.indexOf('t1') === 0;
+  var corner = /^t[chk][12]$/.test(e.k), firstHalf = (e.half || 0) === 1 || e.k.charAt(1) === 'h' || e.k === 'tk1' || e.k === 'tm1' || e.k === 'tm1s' || e.k === 'tq1' || e.k === 'tp1' || e.k === 'tg1' || e.k === 'tf1' || e.k.indexOf('t1') === 0;
   var lbl = function (cls, txt) { return '<i class="tip-lbl ' + cls + '">' + U.esc(txt) + '</i>'; };
   var chips = (e.prof ? lbl('tip-lbl-' + e.prof, TIP_PROF[e.prof] || e.prof) : '') + (e.rit ? lbl('tip-lbl-r' + e.rit, TIP_RIT[e.rit] || e.rit) : '') +
     (e.lg && e.lg !== 'major' ? lbl('', TIP_LG_NAME[e.lg] || e.lg) : '') +
@@ -3156,7 +3178,7 @@ function tipAlertGroup(k) {
   k = String(k || '');
   if (/^th/.test(k) || k === 'tk1') return 'cor1';
   if (/^tc/.test(k) || k === 'tk2') return 'cor2';
-  return k === 'tm1' || k === 'tr1' || k === 'tp1' || k === 'tq1' || k === 'tg1' || k === 'tf1' || k.indexOf('t1') === 0 ? 'gol1' : 'gol2';
+  return k === 'tm1' || k === 'tm1s' || k === 'tr1' || k === 'tp1' || k === 'tq1' || k === 'tg1' || k === 'tf1' || k.indexOf('t1') === 0 ? 'gol1' : 'gol2';
 }
 /* 3.78.0 — FILTRO QUALITÀ (analisi del 20/10 su 84 consigli chiusi, quasi tutti del 19/10):
    probabilità promessa ≥ 62% e campionato forte (maggiori, minori di Paesi forti, giovanili di Paesi forti) →
@@ -3174,7 +3196,7 @@ var TIP_NO_PUSH = Object.assign({}, TIP_CORNER_K), TIP_LIVE_HIDE = Object.assign
    (le partite da gol e i mirati passano sempre). */
 var TIP_QUALITY_MINP = 0.65, TIP_QUALITY_LG = { major: 1, 'minor+': 1 };
 /* 3.94.0 — segnali che il filtro qualità non blocca mai (partite da gol: tutti i campionati) */
-var TIP_QUALITY_FREE = { tf1: 1, tf2: 1, tm1: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1, tr1: 1, tr2: 1 }; /* 3.95.0 — mirati: tutti i campionati */
+var TIP_QUALITY_FREE = { tf1: 1, tf2: 1, tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1, tk1: 1, tk2: 1, tr1: 1, tr2: 1 }; /* 3.95.0 — mirati: tutti i campionati */
 function tipQualityPass(e) {
   if (!e) return false;
   if (TIP_QUALITY_FREE[e.k]) return true;
@@ -3311,15 +3333,15 @@ async function tipAlertTest() {
    occupava 6-7 righe (fonte della %, mercato, quota stimata, NUOVA, tipo...) e la sezione era piena di pulsanti. */
 function tipTabOn() { return typeof tab !== 'undefined' && (tab === 'tips' || tab === 'live' || tab === 'stats'); } /* schede che si ridisegnano con i dati dei pronostici */
 function tipPronTab() { return typeof tab !== 'undefined' && (tab === 'tips' || tab === 'live'); }
-var TIP_OVER_K = { tm1: 1, tm2: 1, tm3: 1, tv2: 1, t2u15: 1, t2u18: 1, t1s15: 1, t1s18: 1, tr1: 1, tr2: 1 };
+var TIP_OVER_K = { tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1, t2u15: 1, t2u18: 1, t1s15: 1, t1s18: 1, tr1: 1, tr2: 1 };
 function tipBetLabel(e) {
   var k = e.k || '', G = (e.gh || 0) + (e.ga || 0);
   if (/^t[chk][12]$/.test(k)) return '+1 angolo' + (e.cn != null ? ' (ora ' + e.cn + ')' : '');
   if (!TIP_OVER_K[k]) return String(TIP_PLAY_SHORT[k] || k).replace(/^🎯\s*/, '');
-  var first = (e.half || 0) === 1 || k === 'tm1' || k.indexOf('t1') === 0;
+  var first = (e.half || 0) === 1 || k === 'tm1' || k === 'tm1s' || k.indexOf('t1') === 0;
   return 'Over ' + (G + 0.5).toFixed(1) + (first ? ' 1T' : '');
 }
-var TIP_LV_KIND = { tm1: 'prossimo gol 1T', tm2: 'prossimo gol 2T', tm3: 'gol 2T sull’1-0', tv2: 'avanti di 1' };
+var TIP_LV_KIND = { tm1: 'prossimo gol 1T', tm1s: '⭐ Prossimo gol 1T', tm2: 'prossimo gol 2T', tm3: 'gol 2T sull’1-0', tv2: 'avanti di 1' };
 /* 4.9.0 — ETICHETTE UGUALI PER TUTTI: livello (OTTIMA / DA VALUTARE / PREZZO BOOK), stato del filtro (STABILE / IN PROVA)
    e valore (💰) sono etichette dello stesso tipo, una accanto all'altra. Il filtro che ha generato il segnale è il titolo. */
 function tipLvTags(e, QI) {
@@ -3336,18 +3358,18 @@ function tipLvFilterName(e) {
   var wait = !!TIP_WAIT_K[e.k], k = wait ? e.fromK : e.k;
   var n = String(TIP_LV_KIND[k] || TIP_PLAY_SHORT[k] || k || '').replace(/^🎯\s*/, '');
   n = n ? n.charAt(0).toUpperCase() + n.slice(1) : '';
-  return wait ? 'Quota raggiunta · ' + n.toLowerCase() : n;
+  return wait ? 'Quota raggiunta · ' + n.charAt(0).toLowerCase() + n.slice(1) : n;
 }
 function tipLvRow(e, o) {
   o = o || {};
-  var t = e.tier === 'try' ? 'try' : 'excellent', half = (e.half || 0) === 1 || e.k === 'tm1' ? 1 : 2;
+  var t = e.tier === 'try' ? 'try' : 'excellent', half = (e.half || 0) === 1 || e.k === 'tm1' || e.k === 'tm1s' ? 1 : 2;
   var pc = typeof e.p === 'number' && isFinite(e.p) ? Math.round(e.p * 100) : null;
   var st = e.res === 1 ? 'win' : e.res === 0 ? 'loss' : 'wait';
   var hm = e.t ? new Date(e.t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
   var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e);
   var QI = !wait && TIP_TARGET[e.k] && !/^t[ck]/.test(e.k) ? tipQuotaInfo(e) : null;
   var reach = '';
-  if (o.reach && TIP_WAIT_SRC[e.k] && e.res == null) { var Q = tipWaitQ(); reach = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, (e.half || 1) === 1 || e.k === 'tm1' ? 1 : 2, Q), Q, true); }
+  if (o.reach && TIP_WAIT_SRC[e.k] && e.res == null) { var Q = tipWaitQ(); reach = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, (e.half || 1) === 1 || e.k === 'tm1' || e.k === 'tm1s' ? 1 : 2, Q), Q, true); }
   var meta = [hm, U.esc(e.league || ''), Array.isArray(e.ft) && e.res != null ? 'finale ' + e.ft[0] + '-' + e.ft[1] : '', wait && e.fromMin != null ? 'segnale al ' + e.fromMin + '’' : ''].filter(Boolean).join(' · ');
   var quote = wait ? (e.q ? '<i class="lv2-q">@' + Number(e.q).toFixed(2) + (e.qEst ? '≈' : '') + '</i>' : '')
     : QI && QI.q ? '<i class="lv2-q' + (QI.ok ? ' val' : QI.value < 0 ? ' low' : '') + '">@' + QI.q.toFixed(2) + (QI.est ? '≈' : '') + '</i>' : '';
@@ -3402,7 +3424,7 @@ function tipFilterRecap(e) {
 }
 function tipSignalSheet(e) {
   if (!e) return;
-  var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e), half = (e.half || 0) === 1 || e.k === 'tm1' ? 1 : 2;
+  var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e), half = (e.half || 0) === 1 || e.k === 'tm1' || e.k === 'tm1s' ? 1 : 2;
   var srcK = wait ? e.fromK : e.k, fName = String(TIP_PLAY_NAME[srcK] || TIP_LV_KIND[srcK] || TIP_PLAY_SHORT[srcK] || srcK || '').replace(/^🎯\s*/, '').replace(/^IN PROVA · /, '');
   var pc = typeof e.p === 'number' && isFinite(e.p) ? Math.round(e.p * 100) : null;
   var hm = e.t ? new Date(e.t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -3518,7 +3540,7 @@ function tipLivePanel(list) {
   var card = function (x) {
     var P2 = x.P, pl = x.pl, pc = Math.round((pl.evalP == null ? pl.p : pl.evalP) * 100), sc = P2.sc ? P2.sc[0] + '-' + P2.sc[1] : '?-?';
     var corner = /^t[chk][12]$/.test(x.k), G = P2.sc ? (P2.sc[0] || 0) + (P2.sc[1] || 0) : 0;
-    var target = corner ? '+1 angolo' + (pl.cn != null ? ' · ora ' + pl.cn : '') : (G + 1) + '° gol' + (P2.half === 1 || x.k.indexOf('t1') === 0 || x.k === 'tm1' ? ' entro il 45’' : ' entro la fine');
+    var target = corner ? '+1 angolo' + (pl.cn != null ? ' · ora ' + pl.cn : '') : (G + 1) + '° gol' + (P2.half === 1 || x.k.indexOf('t1') === 0 || x.k === 'tm1' || x.k === 'tm1s' ? ' entro il 45’' : ' entro la fine');
     var A = tipLgAvgOf(P2.m.league);
     return '<button type="button" class="lv-card ' + (pl.green ? 'lv-hot' : 'lv-warm') + (x.isNew ? ' lv-new' : '') + '" ' + P2.open + '>' +
       '<span class="lv-min"><b>' + P2.min + '’</b><small>' + (P2.half === 1 ? '1T' : '2T') + '</small></span>' +

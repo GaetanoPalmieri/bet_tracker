@@ -1534,3 +1534,4 @@ nav.tabbar.tabbar-bottom button[data-badge]:not([data-badge=""])::after{content:
 .sg-filt{position:relative;padding-left:0}
 .sg-filt .lv2-corner{position:static;width:auto;height:auto;padding:6px 9px;border-radius:10px;border:1px solid var(--suite-glass-edge);font-size:18px;justify-self:start}
 .lv2-corner{font-size:14px;width:28px;height:26px}
+.lv2.lv2-trial,.lv2.lv2-win.lv2-trial,.lv2.lv2-loss.lv2-trial{border-style:solid!important}
