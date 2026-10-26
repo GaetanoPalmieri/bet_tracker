@@ -1406,3 +1406,41 @@ nav.tabbar.tabbar-bottom button[data-badge]:not([data-badge=""])::after{content:
 .lv2-min{font-style:normal;font-size:9.5px;font-weight:700;color:var(--suite-text-soft);white-space:nowrap}
 .lv2-qv{color:#5fe0ac}
 :root[data-theme="light"] .lv2-q.val,:root[data-theme="light"] .lv2-qv{color:#0e7a50}
+
+/* 4.8.0 — Live: filtro in evidenza, livello (stabile / in prova / prezzo book) in primo piano, vinta/persa col colore */
+.lv2-filt{display:flex;align-items:center;gap:6px;min-width:0;margin-bottom:1px}
+.lv2-filt b{font-size:12px;font-weight:800;letter-spacing:.01em;padding:2px 8px;border-radius:7px;background:rgba(47,191,143,.16);color:#7ff0c0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.lv2-try .lv2-filt b{background:rgba(242,176,78,.16);color:#ffcf7a}
+.lv2-qr .lv2-filt b{background:rgba(90,169,255,.16);color:#8cc2ff}
+.lv2-filt small{font-size:10.5px;color:var(--suite-text-soft);white-space:nowrap}
+.lv2-lvl{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-style:normal;font-size:15px;line-height:1;padding:2px 7px 2px 5px;border-radius:999px;border:1px solid currentColor}
+.lv2-lvl em{font-style:normal;font-size:9px;font-weight:900;letter-spacing:.04em}
+.lv2-lvl.stable{color:#5fe0ac;background:rgba(47,191,143,.10)}
+.lv2-lvl.trial{color:#c89bff;background:rgba(160,110,255,.14)}
+.lv2-lvl.qr{color:#8cc2ff;background:rgba(90,169,255,.10)}
+.lv2.lv2-trial{border-style:dashed!important;border-left-style:solid!important}
+.lv2.lv2-win{background:rgba(47,191,143,.15)!important;border-color:rgba(47,191,143,.38)!important;opacity:1}
+.lv2.lv2-loss{background:rgba(229,83,75,.15)!important;border-color:rgba(229,83,75,.38)!important;opacity:1}
+.lv2.lv2-win.lv2-trial,.lv2.lv2-loss.lv2-trial{border-style:dashed!important}
+.lv2-res{display:none}
+:root[data-theme="light"] .lv2-filt b{color:#0e7a50;background:rgba(47,191,143,.14)}
+:root[data-theme="light"] .lv2-try .lv2-filt b{color:#8a5200;background:rgba(242,176,78,.18)}
+:root[data-theme="light"] .lv2-qr .lv2-filt b{color:#1a62b3}
+:root[data-theme="light"] .lv2-lvl.stable{color:#0e7a50}
+:root[data-theme="light"] .lv2-lvl.trial{color:#6a3fc2}
+:root[data-theme="light"] .lv2-lvl.qr{color:#1a62b3}
+:root[data-theme="light"] .lv2.lv2-win{background:rgba(47,191,143,.14)!important}
+:root[data-theme="light"] .lv2.lv2-loss{background:rgba(229,83,75,.12)!important}
+/* switch Giocate da fare / Quota raggiunta */
+.lv2-mode{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;border-radius:12px;background:color-mix(in srgb,var(--suite-text) 5%,transparent)}
+.lv2-mode button{appearance:none;min-height:36px!important;padding:0 8px!important;margin:0!important;border:0!important;border-radius:9px!important;background:transparent!important;color:var(--suite-text-soft)!important;font:inherit;font-size:13px!important;font-weight:800!important;white-space:nowrap}
+.lv2-mode button i{font-style:normal;opacity:.8;margin-left:3px;font-variant-numeric:tabular-nums}
+.lv2-mode button.sig.on{background:rgba(47,191,143,.20)!important;color:#7ff0c0!important}
+.lv2-mode button.qr.on{background:rgba(90,169,255,.20)!important;color:#8cc2ff!important}
+:root[data-theme="light"] .lv2-mode button.sig.on{color:#0e7a50!important}
+:root[data-theme="light"] .lv2-mode button.qr.on{color:#1a62b3!important}
+
+/* 4.8.0 — "nuovo" non più verde (il verde ora vuol dire vinta): bordo ambra */
+.lv2.lv2-new:not(.lv2-win):not(.lv2-loss){background:color-mix(in srgb,var(--suite-text) 3%,transparent)!important;box-shadow:0 0 0 1.5px rgba(242,176,78,.55)!important}
+.lv2.lv2-win{background:rgba(47,191,143,.20)!important}
+.lv2.lv2-loss{background:rgba(229,83,75,.18)!important}

@@ -3025,8 +3025,10 @@ function tipExcellentArchive() {
   /* 4.2.7 — con l'azzeramento: conteggi e statistiche solo dei consigli dopo quell'ora; l'elenco resta intero (prima i nuovi) */
   var cut = tipTodayFrom(), isNew = function (e) { return !cut || (e.t || 0) >= cut; };
   /* 4.6.0 — le quote raggiunte restano nell'elenco ma non nei conteggi (sono contate a parte) */
-  var waitT = arr.filter(function (e) { return TIP_WAIT_K[e.k] && isNew(e); }), arrAll = arr;
-  arr = arr.filter(function (e) { return !TIP_WAIT_K[e.k]; });
+  /* 4.8.0 — con lo switch: o solo le giocate o solo le quote raggiunte (con i loro conteggi) */
+  var qrMode = tipUI.lvMode === 'qr', waitT = [];
+  arr = arr.filter(function (e) { return qrMode ? !!TIP_WAIT_K[e.k] : !TIP_WAIT_K[e.k]; });
+  var arrAll = arr;
   var arrS = cut ? arr.filter(isNew) : arr, arrOld = cut ? arr.filter(function (e) { return !isNew(e); }) : [];
   var cutLbl = cut ? new Date(cut).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
   var w = arrS.filter(function (e) { return e.res === 1; }).length, l = arrS.filter(function (e) { return e.res === 0; }).length, wait = arrS.filter(function (e) { return e.res == null; }).length;
@@ -3064,7 +3066,7 @@ function tipExcellentArchive() {
       return div + (cut && !isNew(e) ? '<div class="tl-before">' + tipLvRow(e, { showRes: true }) + '</div>' : tipLvRow(e, { showRes: true }));
     }).join('') + '</div>' +
       (ordered.length > LIM ? '<button type="button" class="tl-more" data-today-more>' + (tipUI.todayAll ? 'Mostra solo gli ultimi ' + LIM : 'Mostra gli altri ' + (ordered.length - LIM)) + '</button>' : '')
-    : '<p class="muted tip-tnone">Nessun consiglio' + (smp === 'trial' ? ' in prova' : smp === 'stable' ? ' stabile' : '') + ' oggi con questa selezione.</p>';
+    : '<p class="muted tip-tnone">' + (qrMode ? 'Nessuna quota raggiunta oggi con questa selezione.' : 'Nessun consiglio' + (smp === 'trial' ? ' in prova' : smp === 'stable' ? ' stabile' : '') + ' oggi con questa selezione.') + '</p>';
   return '<section class="tl-today lv2-today">' + head + tools + favBox + stats + list + tipQualityBox(arr, exc, 'oggi') + '</section>';
 }
 document.addEventListener('click', function (ev) {
@@ -3327,18 +3329,27 @@ function tipLvRow(e, o) {
   var wait = !!TIP_WAIT_K[e.k];
   var QI = !wait && TIP_TARGET[e.k] && !/^t[ck]/.test(e.k) ? tipQuotaInfo(e) : null; /* 4.7.0 — quota minima e quota vera */
   var kind = wait ? '⏳ quota ' + (e.q ? Number(e.q).toFixed(2) + (e.qEst ? ' stim.' : '') : '') : TIP_LV_KIND[e.k] || String(TIP_PLAY_SHORT[e.k] || e.k || '').replace(/^🎯\s*/, '');
+  /* 4.8.0 — IL FILTRO IN EVIDENZA: riga colorata con il filtro che ha generato il segnale (per le quote raggiunte, il
+     segnale da cui nascono) e davanti l'icona del livello: 🛡 STABILE, 🧪 IN PROVA, ⏳ PREZZO BOOK. */
+  var srcK = wait ? e.fromK : e.k;
+  var fName = String(TIP_LV_KIND[srcK] || TIP_PLAY_SHORT[srcK] || srcK || '').replace(/^🎯\s*/, '');
+  var trial = !wait && tipIsTrial(e);
+  var lvl = wait ? '<i class="lv2-lvl qr" title="Quota raggiunta: prezzo del book, non è un consiglio">⏳<em>BOOK</em></i>'
+    : trial ? '<i class="lv2-lvl trial" title="Filtro in prova">🧪<em>IN PROVA</em></i>' : '<i class="lv2-lvl stable" title="Filtro stabile">🛡<em>STABILE</em></i>';
+  var filt = '<span class="lv2-filt">' + lvl + '<b>' + U.esc(fName ? fName.charAt(0).toUpperCase() + fName.slice(1) : '') + '</b>' + '</span>';
+  if (wait && e.fromMin != null) kind += ' · segnale al ' + e.fromMin + '’';
   /* 4.6.0 — nei segnali gol di Adesso: probabilità di arrivare alla tua quota senza gol (dal prezzo al segnale) */
   var reach = '';
   if (o.reach && TIP_WAIT_SRC[e.k] && e.res == null) { var Q = tipWaitQ(); reach = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, (e.half || 1) === 1 || e.k === 'tm1' ? 1 : 2, Q), Q, true); }
-  var meta = [hm, tipIsTrial(e) ? '🧪 prova' : '', U.esc(e.league || ''), Array.isArray(e.ft) && e.res != null ? 'finale ' + e.ft[0] + '-' + e.ft[1] : ''].filter(Boolean).join(' · ');
+  var meta = [hm, U.esc(e.league || ''), Array.isArray(e.ft) && e.res != null ? 'finale ' + e.ft[0] + '-' + e.ft[1] : ''].filter(Boolean).join(' · ');
   var open = o.attr ? 'button type="button" ' + o.attr : 'div';
-  return '<' + open + ' class="lv2 lv2-' + (wait ? 'qr' : t) + (o.isNew ? ' lv2-new' : '') + (o.showRes ? ' lv2-' + st : '') + '">' +
+  return '<' + open + ' class="lv2 lv2-' + (wait ? 'qr' : t) + (trial ? ' lv2-trial' : '') + (o.isNew ? ' lv2-new' : '') + (o.showRes ? ' lv2-' + st : '') + '"' + (o.showRes && st !== 'wait' ? ' aria-label="' + (st === 'win' ? 'Vinta' : 'Persa') + '"' : '') + '>' +
     '<span class="lv2-min"><b>' + (e.min != null ? e.min + '’' : '–') + '</b><small>' + (half === 1 ? '1T' : '2T') + '</small></span>' +
-    '<span class="lv2-main"><span class="lv2-teams">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</span>' +
-    '<span class="lv2-bet"><i class="lv2-sc">' + (e.gh || 0) + '-' + (e.ga || 0) + '</i><b>' + U.esc(tipBetLabel(e)) + '</b>' + (QI && QI.q ? '<i class="lv2-q' + (QI.ok ? ' val' : QI.value < 0 ? ' low' : '') + '">@' + QI.q.toFixed(2) + (QI.est ? '≈' : '') + (QI.ok ? ' 💰' : '') + '</i>' : '') + '<small>' + U.esc(kind) + '</small></span>' +
+    '<span class="lv2-main">' + filt + '<span class="lv2-teams">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</span>' +
+    '<span class="lv2-bet"><i class="lv2-sc">' + (e.gh || 0) + '-' + (e.ga || 0) + '</i><b>' + U.esc(tipBetLabel(e)) + '</b>' + (QI && QI.q ? '<i class="lv2-q' + (QI.ok ? ' val' : QI.value < 0 ? ' low' : '') + '">@' + QI.q.toFixed(2) + (QI.est ? '≈' : '') + (QI.ok ? ' 💰' : '') + '</i>' : '') + (wait ? '<small>' + U.esc(kind) + '</small>' : '') + '</span>' +
     (meta ? '<span class="lv2-meta">' + meta + '</span>' : '') + (reach ? '<span class="lv2-early">' + reach + '</span>' : '') + '</span>' +
-    '<span class="lv2-side">' + (pc != null ? '<b class="lv2-pct">' + pc + '%</b>' : '') + '<i class="lv2-tier">' + (wait ? 'PREZZO BOOK' : t === 'try' ? 'DA VALUTARE' : 'OTTIMA') + '</i>' + (QI ? '<i class="lv2-min">min ' + QI.min.toFixed(2) + '</i>' : '') + '</span>' +
-    (o.showRes && st !== 'wait' ? '<i class="lv2-res" role="img" aria-label="' + { win: 'vinta', loss: 'persa', wait: 'in attesa' }[st] + '">' + { win: '✓', loss: '✕', wait: '◷' }[st] + '</i>' : '') +
+    '<span class="lv2-side">' + (pc != null ? '<b class="lv2-pct">' + pc + '%</b>' : '') + '<i class="lv2-tier">' + (wait ? 'BOOK' : t === 'try' ? 'DA VALUTARE' : 'OTTIMA') + '</i>' + (QI ? '<i class="lv2-min">min ' + QI.min.toFixed(2) + '</i>' : '') + '</span>' +
+    /* 4.8.0 — vinta / persa: sfondo verde o rosso tenue (non più la spunta) */
     '</' + (o.attr ? 'button' : 'div') + '>';
 }
 /* numero sul tasto Live della barra in basso: OTTIME dei filtri preferiti negli ultimi 5 minuti */
@@ -3392,11 +3403,15 @@ function tipLivePanel(list) {
   items.sort(function (a, b) { return (b.e.t || 0) - (a.e.t || 0); });
   tipUI._nowExp = nextExp;
   /* 4.2.4 — Adesso › Preferiti (di base): solo i filtri preferiti, cioè quelli che ti notificano; Tutti mostra tutto */
-  var favMode = tipUI.nowFav !== false, nAllNow = items.length, nFavNow = items.filter(function (x) { return tipFavOn(x.e.fromK || x.k); }).length;
+  var qrMode = tipUI.lvMode === 'qr', inMode = function (x) { return qrMode ? !!TIP_WAIT_K[x.k] : !TIP_WAIT_K[x.k]; };
+  var favMode = tipUI.nowFav !== false, nAllNow = items.filter(inMode).length, nFavNow = items.filter(function (x) { return inMode(x) && tipFavOn(x.e.fromK || x.k); }).length;
   if (favMode) {
     items = items.filter(function (x) { return tipFavOn(x.e.fromK || x.k); });
-    byType = {}; items.forEach(function (x) { (byType[x.k] = byType[x.k] || []).push(x); });
   }
+  /* 4.8.0 — GIOCATE e QUOTA RAGGIUNTA separate: uno switch sceglie cosa vedere (prima erano mescolate) */
+  var nNowQr = items.filter(function (x) { return TIP_WAIT_K[x.k]; }).length, nNowSig = items.length - nNowQr;
+  items = items.filter(inMode);
+  byType = {}; items.forEach(function (x) { (byType[x.k] = byType[x.k] || []).push(x); });
   var favSeg = '<div class="lv-favseg" role="tablist"><button type="button" role="tab" aria-selected="' + favMode + '" class="' + (favMode ? 'on' : '') + '" data-now-fav="1">★ Preferiti <i>' + nFavNow + '</i></button>' +
     '<button type="button" role="tab" aria-selected="' + !favMode + '" class="' + (!favMode ? 'on' : '') + '" data-now-fav="0">Tutti <i>' + nAllNow + '</i></button>' +
     '<button type="button" class="lv-favedit" data-fav-open aria-label="Scegli i filtri preferiti">' + TIP_IC_FUNNEL + '</button></div>';
@@ -3437,7 +3452,7 @@ function tipLivePanel(list) {
   var nowHtml = lvBar +
     (shown.length ? '<div class="lv2-list">' + shown.slice(0, nShow).map(function (x) { return tipLvRow(x.e, { isNew: x.isNew, attr: x.P.open, showRes: x.e.res != null, reach: true }); }).join('') + '</div>' +
       (shown.length > LIM ? '<button type="button" class="tl-more" data-lv-more>' + (tipUI.lvAll ? 'Mostra solo i primi ' + LIM : 'Mostra gli altri ' + (shown.length - LIM)) + '</button>' : '')
-      : '<div class="lv-empty"><b>Nessun segnale' + (favMode ? ' dei filtri preferiti' : '') + ' negli ultimi 5 minuti</b><small>' + (favMode && nAllNow ? nAllNow + ' in Tutti. ' : '') + 'Il controllo è automatico ogni 2 minuti: un segnale resta qui per 5 minuti, poi lo trovi in Oggi.</small></div>');
+      : '<div class="lv-empty"><b>' + (qrMode ? 'Nessuna quota raggiunta' : 'Nessun segnale') + (favMode ? ' dei filtri preferiti' : '') + ' negli ultimi 5 minuti</b><small>' + (favMode && nAllNow ? nAllNow + ' in Tutti. ' : '') + 'Il controllo è automatico ogni 2 minuti: un segnale resta qui per 5 minuti, poi lo trovi in Oggi.</small></div>');
   /* 3.96.0 — giocate di adesso escluse dal filtro qualità: chiuse in fondo, con il motivo */
   var excHtml = nowExc.length ? '<details class="tip-split tip-qbox lv-exc"' + (tipUI.nowExcOpen ? ' open' : '') + ' ontoggle="tipUI.nowExcOpen=this.open"><summary>🚫 Esclusi dal filtro qualità <span class="tip-qsum">' + nowExc.length + '</span></summary>' +
     '<p class="muted tip-hint">Non sono consigli: niente notifica e niente statistiche. Restano registrati in Oggi › Esclusi.</p><div class="lv-list">' +
@@ -3447,7 +3462,8 @@ function tipLivePanel(list) {
         '<span class="lv-main"><b class="lv-teams">' + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b><span class="lv-sub"><span class="lv-score">' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : '?-?') + '</span><span class="lv-kind">' + U.esc(TIP_PLAY_SHORT[x.pl.k] || x.pl.k) + '</span></span>' +
         '<small class="lv-league">🚫 ' + U.esc(tipQualityWhy(x.e || tipQPlay(x.pl))) + '</small></span><span class="lv-side"><b class="lv-pct">' + pc + '%</b></span></button>';
     }).join('') + '</div></details>' : '';
-  var today0 = U.local().slice(0, 10), nToday = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= tipStatsFrom() && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipQShown(e); }).length;
+  var today0 = U.local().slice(0, 10), todayL = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= tipStatsFrom() && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipQShown(e); });
+  var nTodayQr = todayL.filter(function (e) { return TIP_WAIT_K[e.k]; }).length, nTodaySig = todayL.length - nTodayQr, nToday = qrMode ? nTodayQr : nTodaySig;
   var nLive = (tipUI.scan && tipUI.scan.list ? tipUI.scan.list.length : 0) || live.length;
   var tab = tipUI.liveTab || 'now';
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
@@ -3458,7 +3474,12 @@ function tipLivePanel(list) {
   var bar = '<div class="lv2-status"><span class="lv-dot' + (S && Date.now() - S.at < 5 * 60e3 ? ' on' : '') + '"></span><span class="lv2-st">' + (S ? 'Aggiornato alle ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'In attesa del controllo') + ' · ' + nLive + ' partite' +
     (svTxt ? ' · <span class="' + (svOld ? 'lv2-warn' : 'lv2-ver') + '">' + (svOld ? '⚠ ' : '') + 'server ' + U.esc(svTxt) + '</span>' : '') + '</span>' +
     '<button type="button" class="lv2-ref" data-scan aria-label="Aggiorna adesso">↻</button></div>' +
-    '<div class="lv-tabs lv2-tabs" role="tablist">' + tb('now', 'Adesso', items.length) + tb('today', 'Oggi', nToday) + tb('all', 'Partite', nLive) + '</div>';
+    '<div class="lv-tabs lv2-tabs" role="tablist">' + tb('now', 'Adesso', items.length) + tb('today', 'Oggi', nToday) + tb('all', 'Partite', nLive) + '</div>' +
+    (tab === 'all' ? '' : (function () {
+      var a = tab === 'today' ? nTodaySig : nNowSig, b = tab === 'today' ? nTodayQr : nNowQr;
+      return '<div class="lv2-mode" role="tablist" aria-label="Cosa vedere"><button type="button" role="tab" aria-selected="' + !qrMode + '" class="sig' + (!qrMode ? ' on' : '') + '" data-lv-mode="sig">🎯 Giocate da fare <i>' + a + '</i></button>' +
+        '<button type="button" role="tab" aria-selected="' + qrMode + '" class="qr' + (qrMode ? ' on' : '') + '" data-lv-mode="qr">⏳ Quota raggiunta <i>' + b + '</i></button></div>';
+    })());
   var allHtml = scanHtml + tipStarPanel(list) +
     '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>I tuoi pronostici in corso</b><span>' + live.length + ' partite · ' + live.filter(function (m) { return evals[m.id] && evals[m.id].act.k !== 'no'; }).length + ' da giocare</span></div>' +
     (live.length ? '<div class="tip-tlist">' + live.map(row).join('') + '</div>' : '<p class="muted tip-tnone">Nessuna partita dei pronostici in corso adesso.</p>') + '</section>' +
@@ -3466,6 +3487,10 @@ function tipLivePanel(list) {
   return '<div class="lv-wrap">' + bar + '<div class="lv-pane">' +
     (tab === 'today' ? tipExcellentArchive() : tab === 'all' ? allHtml : nowHtml + excHtml) + '</div></div>';
 }
+document.addEventListener('click', function (ev) {
+  var m = ev.target.closest && ev.target.closest('[data-lv-mode]');
+  if (m) { tipUI.lvMode = m.getAttribute('data-lv-mode') === 'qr' ? 'qr' : 'sig'; tipUI.lvAll = false; tipUI.todayAll = false; render(); }
+});
 document.addEventListener('click', function (ev) {
   var f = ev.target.closest && ev.target.closest('[data-now-fav]');
   if (f) { tipUI.nowFav = f.getAttribute('data-now-fav') === '1'; tipUI.lvK = ''; tipUI.lvAll = false; render(); }

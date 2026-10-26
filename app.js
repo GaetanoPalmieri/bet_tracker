@@ -1,4 +1,4 @@
-const APP_VERSION = '4.7.1';
+const APP_VERSION = '4.8.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -1950,7 +1950,7 @@ async function importData(e) {
 // 3.0.0 — niente più inserimento scommesse
 
 // 1.1.8 — navigazione bidirezionale con transizione coerente con il verso dello swipe.
-const TAB_ORDER = ['tips', 'live', 'home', 'stats', 'accounts'];
+const TAB_ORDER = ['tips', 'live', 'stats', 'home', 'accounts']; /* 4.8.0 — Statistiche prima di Saldo */
 let swipeStart = null,
   tabTransitioning = false;
 function prefersReducedMotion() {
@@ -2721,6 +2721,34 @@ function diaryCalendar(series) {
 }
 
 /* ---------- Pagina ---------- */
+/* 4.8.0 — SALDO A MODULI. Saldo totale = soldi versati (saldo iniziale + depositi). Le vincite/perdite dei giorni segnati
+   e i prelievi sono moduli a parte: versi 100, vinci 15 e prelevi i 15 → versato 100, vinto +15, prelevato 15, sul conto 100.
+   I prelievi si tolgono prima dalle vincite: solo la parte oltre le vincite riduce il capitale. */
+function saldoParts() {
+  var s = startDate(),
+    fl = realFlows().filter(function (t) {
+      return !s || dayKey(t.date) >= s;
+    });
+  var dep = U.round(db.accounts[0].initial + fl.filter(function (t) { return t.amount > 0; }).reduce(function (n, t) { return n + t.amount; }, 0)),
+    wd = U.round(fl.filter(function (t) { return t.amount < 0; }).reduce(function (n, t) { return n - t.amount; }, 0)),
+    cur = balance(),
+    res = U.round(cur - dep + wd),
+    wdWin = U.round(Math.min(wd, Math.max(res, 0)));
+  return { dep: dep, wd: wd, cur: cur, res: res, wdWin: wdWin, wdCap: U.round(wd - wdWin), capital: U.round(dep - (wd - wdWin)) };
+}
+function saldoModulesHtml() {
+  var P = saldoParts();
+  var tile = function (cls, label, val, note) {
+    return '<div class="sm-tile ' + cls + '"><small>' + label + '</small><b>' + val + '</b>' + (note ? '<span>' + note + '</span>' : '') + '</div>';
+  };
+  return (
+    '<div class="saldo-mod">' +
+    tile('sm-dep', 'Saldo totale', U.money(P.dep), 'versato') +
+    tile('sm-res ' + sClass(P.res), 'Vinto / perso', sMoney(P.res), 'dai giorni segnati') +
+    tile('sm-wd', 'Prelevato', P.wd ? '−' + U.money(P.wd) : U.money(0), P.wd ? (P.wdCap > 0.004 ? 'vincite ' + U.money(P.wdWin) + ' · capitale ' + U.money(P.wdCap) : 'tutto dalle vincite') : 'nessun prelievo') +
+    '</div><p class="saldo-mod-eq">' + U.money(P.dep) + ' <i>' + (P.res < 0 ? '−' : '+') + '</i> ' + U.money(Math.abs(P.res)) + ' <i>−</i> ' + U.money(P.wd) + ' <i>=</i> <b>' + U.money(P.cur) + '</b> sul conto</p>'
+  );
+}
 function diaryPage(which) {
   /* 3.0.0 — Home: saldo, segna il giorno, depositi/prelievi, calendario e quattro numeri.
      Statistiche: tutto il resto, solo sul saldo. */
@@ -2768,13 +2796,15 @@ function diaryPage(which) {
         U.money(Math.abs(flowsAfter)) +
         '</b> (non contano come vincita o perdita)</span>';
     var hero =
-      '<section class="card hero diary-hero"><div class="row"><small>SALDO ATTUALE</small>' +
+      '<section class="card hero diary-hero"><div class="row"><small>SUL CONTO ORA</small>' +
       chip +
       '</div><div class="big">' +
       U.money(cur) +
       '</div><div class="diary-hero-sub">' +
       sub +
-      '</div><button type="button" class="primary diary-record" data-diary-edit="' +
+      '</div>' +
+      saldoModulesHtml() +
+      '<button type="button" class="primary diary-record" data-diary-edit="' +
       today +
       '">' +
       (todayEntry ? '✎ Aggiorna il saldo di oggi' : '＋ Segna il saldo di oggi') +
@@ -3430,6 +3460,7 @@ function diaryForm(date) {
       '<label class="sheet-field" for="diary-note"><span>Nota (facoltativa)</span><input id="diary-note" name="note" type="text" maxlength="140" placeholder="es. giornata di Champions" value="' +
       U.esc((existing && existing.note) || '') +
       '"></label></div>' +
+      '<div class="sheet-group"><label class="sheet-field" for="diary-wd"><span>Hai prelevato oggi? (€, facoltativo)</span><input id="diary-wd" name="wd" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label><p class="sheet-note" id="diary-wd-note">Es. versi 100, vinci 15 e prelevi i 15: scrivi saldo 100 e prelievo 15. Il giorno risulta +15 e il saldo totale resta 100.</p></div>' +
       '<div class="diary-effect sheet-box" id="diary-effect"></div><p class="error" id="diary-error"></p>' +
       '</form>',
   );
@@ -3438,7 +3469,21 @@ function diaryForm(date) {
   var explain = function () {
     /* 3.0.0 — anteprima del risultato del giorno, depositi e prelievi esclusi */
     var dt = f.elements.date.value,
-      v = Number(f.elements.value.value);
+      v = Number(f.elements.value.value),
+      wdNew = Math.max(0, Number(f.elements.wd.value) || 0);
+    var dayWd = dt
+      ? U.round(
+          realFlows()
+            .filter(function (t) {
+              return t.amount < 0 && dayKey(t.date) === dt;
+            })
+            .reduce(function (n, t) {
+              return n - t.amount;
+            }, 0),
+        )
+      : 0;
+    var wn = d.querySelector('#diary-wd-note');
+    if (wn && dayWd > 0.004) wn.textContent = 'Già segnati ' + U.money(dayWd) + ' di prelievi in questo giorno: scrivi qui solo un prelievo in più.';
     if (!dt || dt > today || !U.finite(v) || f.elements.value.value === '') {
       eff.innerHTML = '';
       return;
@@ -3465,6 +3510,7 @@ function diaryForm(date) {
           return n + t.amount;
         }, 0),
     );
+    moved = U.round(moved - wdNew);
     var res = U.round(v - prev.balance - moved);
     eff.innerHTML =
       '<p>Risultato ' +
@@ -3504,9 +3550,10 @@ function diaryForm(date) {
       err.textContent = 'Quel giorno è già segnato: aprilo dall’agenda per correggerlo.';
       return;
     }
-    if (diarySave(existing, dt, v, note)) {
+    var wdv = U.round(Math.max(0, Number(f.elements.wd.value) || 0));
+    if (diarySave(existing, dt, v, note, wdv)) {
       d.close();
-      U.toast('Saldo segnato');
+      U.toast(wdv ? 'Saldo e prelievo segnati' : 'Saldo segnato');
     }
   };
   var del = d.querySelector('#diary-delete');
@@ -3535,9 +3582,17 @@ function diaryForm(date) {
     };
 }
 
-function diarySave(existing, date, value, note) {
+function diarySave(existing, date, value, note, wd) {
   return mutate(function (n) {
     n.diary = n.diary || [];
+    /* 4.8.0 — prelievo segnato insieme al saldo del giorno: movimento normale (non conta come vincita o perdita) */
+    if (wd > 0)
+      n.transactions.push({
+        id: U.uid(),
+        account: n.accounts[0].id,
+        amount: -U.round(wd),
+        date: (date === dToday() ? new Date() : new Date(date + 'T20:00:00')).toISOString(),
+      });
     var e = existing
       ? n.diary.find(function (x) {
           return x.id === existing.id;
@@ -4285,6 +4340,40 @@ requestAnimationFrame(() => {
     setTimeout(() => splash.remove(), 350);
   }
 });
+/* 4.8.0 — BARRA IN BASSO ALL'APERTURA. Su iPhone (app sulla Home) al primo avvio Safari calcola l'altezza dello schermo
+   prima di aver sistemato la zona sotto (indicatore Home): la barra fissa restava più in alto, con una striscia di
+   un altro colore sotto, finché un cambio scheda (che ridisegna e torna in cima) non la rimetteva a posto.
+   Ora lo stesso "riallineamento" si fa da solo all'avvio, al ritorno nell'app e quando cambia la dimensione dello schermo. */
+function fixBottomBar() {
+  const nav = document.querySelector('nav.tabbar'),
+    ae = document.activeElement;
+  if (!nav || (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))) return; /* con la tastiera aperta non si tocca */
+  const y = window.scrollY;
+  window.scrollTo(0, y + 1);
+  window.scrollTo(0, y);
+  nav.style.display = 'none';
+  void nav.offsetHeight;
+  nav.style.display = '';
+}
+try {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+} catch {
+  /* ok */
+}
+[0, 60, 300, 800, 1600].forEach((ms) => setTimeout(fixBottomBar, ms));
+window.addEventListener('load', () => setTimeout(fixBottomBar, 50));
+window.addEventListener('pageshow', () => setTimeout(fixBottomBar, 50));
+window.addEventListener('orientationchange', () => setTimeout(fixBottomBar, 300));
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) setTimeout(fixBottomBar, 80);
+});
+if (window.visualViewport) {
+  let vvT = 0;
+  window.visualViewport.addEventListener('resize', () => {
+    clearTimeout(vvT);
+    vvT = setTimeout(fixBottomBar, 120);
+  });
+}
 
 // Feedback for mouse, touch and keyboard, including dynamically created controls.
 document.addEventListener(
