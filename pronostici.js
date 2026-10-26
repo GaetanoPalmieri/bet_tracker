@@ -2092,7 +2092,16 @@ function tipPlayMark(m, ctx, x, q, st) {
   tipPlayQueue({ e: e, played: { k: x.k, q: q, s: st, min: ctx.min, legs: e.legs, at: x.at, risk: Math.round(x.cost.risk * st / base * 100) / 100, n: x.legs.length, t: Date.now() } });
 }
 /* una sola voce per partita e punteggio anche nello storico già salvato (prima della 3.48 si salvava ogni tipo) */
+/* 4.11.0 — lo stesso registro viene deduplicato più volte a ogni ridisegno (Adesso, Oggi, contatori, badge):
+   si ricorda l'ultimo risultato finché il registro non cambia (dopo ogni salvataggio è un oggetto nuovo). */
+var TIP_DEDUP_C = { L: null, n: -1, out: null };
 function tipPlayDedup(L) {
+  if (L && L === TIP_DEDUP_C.L && L.length === TIP_DEDUP_C.n && TIP_DEDUP_C.out) return TIP_DEDUP_C.out.slice();
+  var out = tipPlayDedupRaw(L);
+  TIP_DEDUP_C = { L: L, n: L ? L.length : -1, out: out };
+  return out.slice();
+}
+function tipPlayDedupRaw(L) {
   var by = {};
   (L || []).forEach(function (e) {
     var g = tipPlayGroup(e), b = by[g], rk = function (z) { return z.tier === 'try' ? 1 : 0; };
@@ -3033,69 +3042,95 @@ document.addEventListener('click', function (ev) {
   mutate(function (d) { d.predModel = d.predModel || {}; if (undo) delete d.predModel.todayReset; else d.predModel.todayReset = { date: U.local().slice(0, 10), t: Date.now() }; });
   U.toast(undo ? 'Statistiche di oggi di nuovo intere.' : 'Statistiche di oggi azzerate: contano solo i consigli da adesso.');
 });
+/* 4.11.0 — FILTRI VELOCI: una riga di pulsanti con i filtri che hanno segnali, i migliori di oggi per primi (% sulle
+   chiuse, numero di segnali). Un tocco mostra solo quel filtro, un altro tocco torna a tutti. Vale per Adesso e Oggi. */
+function tipKOf(e) { return TIP_WAIT_K[e.k] ? e.fromK || e.k : e.k; }
+function tipKChipsHtml(listForCounts, statsByK, selK) {
+  var cnt = {};
+  listForCounts.forEach(function (e) { var k = tipKOf(e); cnt[k] = (cnt[k] || 0) + 1; });
+  var ks = Object.keys(cnt);
+  if (selK && !cnt[selK]) ks.push(selK);
+  if (ks.length < 2 && !selK) return '';
+  var pct = function (k) { var g = statsByK[k]; return g && g.w + g.l ? Math.round(g.w / (g.w + g.l) * 100) : null; };
+  ks.sort(function (a, b) { var pa = pct(a), pb = pct(b); return (pb == null ? -1 : pb) - (pa == null ? -1 : pa) || (cnt[b] || 0) - (cnt[a] || 0); });
+  var name = function (k) { return tipLvFilterName({ k: k }); };
+  return '<div class="lvk-row" role="toolbar" aria-label="Filtri veloci"><button type="button" class="lvk' + (!selK ? ' on' : '') + '" data-lvk="">Tutti <i>' + listForCounts.length + '</i></button>' +
+    ks.map(function (k) {
+      var p = pct(k);
+      return '<button type="button" class="lvk' + (selK === k ? ' on' : '') + '" data-lvk="' + U.esc(k) + '"><span>' + U.esc(name(k)) + '</span>' +
+        (p != null ? '<b class="' + (p >= 80 ? 'good' : p >= 70 ? 'mid' : 'bad') + '">' + p + '%</b>' : '') + '<i>' + (cnt[k] || 0) + '</i></button>';
+    }).join('') + '</div>';
+}
+/* vinte/perse di oggi per filtro (dopo l'eventuale azzeramento), per le % dei filtri veloci */
+function tipTodayKStats(pool) {
+  var cut = tipTodayFrom(), by = {};
+  pool.forEach(function (e) {
+    if (cut && (e.t || 0) < cut) return;
+    var k = tipKOf(e), g = by[k] = by[k] || { w: 0, l: 0 };
+    if (e.res === 1) g.w++; else if (e.res === 0) g.l++;
+  });
+  return by;
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-lvk]');
+  if (!b) return;
+  var k = b.getAttribute('data-lvk');
+  tipUI.lvK = tipUI.lvK === k || !k ? '' : k;
+  tipUI.lvAll = false; tipUI.todayN = 0;
+  render();
+});
+/* 4.11.0 — OGGI RIFATTO. In alto un riepilogo leggibile (% grande e "vinte · perse · in attesa" scritte per esteso,
+   niente più ✓ ✕ ◷), con l'azzeramento lì accanto; poi i filtri veloci; poi Tutti / Stabili / In prova e gli strumenti;
+   poi l'elenco a pagine da 15. */
 function tipExcellentArchive() {
-  /* 3.55.0 — solo i consigli di oggi (00:00-23:59) e niente monitoraggi; tutto resta salvato per statistiche e retraining.
-     3.99.2 — sezione rifatta: intestazione compatta con vinte/perse/in attesa e %, statistiche dietro il pulsante 📊,
-     elenco con gli ultimi 10 consigli e un pulsante per vedere gli altri. */
-  var today0 = U.local().slice(0, 10), smp = tipUI.splitSample || '';
-  var all = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip' && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && (e.t || 0) >= tipStatsFrom() && tipLblPass(e.prof || 'nq', e.rit || 'norm') && tipEFilter(tipUI.arcF, e); })
-    .slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
-  var Q = tipQSplit(all), arr = tipSortEntries(tipSampleOf(Q.pass, smp)), exc = tipSampleOf(Q.exc, smp), mine = Q.pass.filter(function (e) { return e.played; }).length;
-  /* 4.5.0 — ★ Preferiti è un interruttore accanto ai filtri (prima un riquadro a parte con un secondo elenco) */
-  var favOnly = !!tipUI.todayFav, nFavAll = arr.filter(function (e) { return tipFavOn(e.k); }).length;
-  if (favOnly) arr = arr.filter(function (e) { return tipFavOn(e.k); });
-  /* 4.2.7 — con l'azzeramento: conteggi e statistiche solo dei consigli dopo quell'ora; l'elenco resta intero (prima i nuovi) */
+  var today0 = U.local().slice(0, 10), smp = tipUI.splitSample || '', from = tipStatsFrom();
+  var all = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) {
+    var t = e.t || 0;
+    return t >= from && new Date(t).toLocaleDateString('sv-SE') === today0 && tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip' && tipLblPass(e.prof || 'nq', e.rit || 'norm') && tipEFilter(tipUI.arcF, e);
+  }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
+  var Q = tipQSplit(all), qrMode = tipUI.lvMode === 'qr';
+  var inMode = function (e) { return qrMode ? !!TIP_WAIT_K[e.k] : !TIP_WAIT_K[e.k]; };
+  var pass = Q.pass.filter(inMode), exc = tipSampleOf(Q.exc.filter(inMode), smp);
+  var nSt = pass.filter(function (e) { return !tipIsTrial(e); }).length;
+  var arr = tipSampleOf(pass, smp);
+  var favOnly = !!tipUI.todayFav, nFavAll = arr.filter(function (e) { return tipFavOn(tipKOf(e)); }).length;
+  if (favOnly) arr = arr.filter(function (e) { return tipFavOn(tipKOf(e)); });
+  var chips = tipKChipsHtml(arr, tipTodayKStats(arr), tipUI.lvK || '');
+  if (tipUI.lvK) arr = arr.filter(function (e) { return tipKOf(e) === tipUI.lvK; });
+  arr = tipSortEntries(arr);
   var cut = tipTodayFrom(), isNew = function (e) { return !cut || (e.t || 0) >= cut; };
-  /* 4.6.0 — le quote raggiunte restano nell'elenco ma non nei conteggi (sono contate a parte) */
-  /* 4.8.0 — con lo switch: o solo le giocate o solo le quote raggiunte (con i loro conteggi) */
-  var qrMode = tipUI.lvMode === 'qr', waitT = [];
-  arr = arr.filter(function (e) { return qrMode ? !!TIP_WAIT_K[e.k] : !TIP_WAIT_K[e.k]; });
-  var arrAll = arr;
-  var arrS = cut ? arr.filter(isNew) : arr, arrOld = cut ? arr.filter(function (e) { return !isNew(e); }) : [];
+  var arrS = cut ? arr.filter(isNew) : arr;
   var cutLbl = cut ? new Date(cut).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
-  var w = arrS.filter(function (e) { return e.res === 1; }).length, l = arrS.filter(function (e) { return e.res === 0; }).length, wait = arrS.filter(function (e) { return e.res == null; }).length;
-  var LIM = 10, n = tipUI.todayAll ? arrAll.length : LIM, open = !!tipUI.todayStats;
-  var pill = function (cls, ic, v, t) { return '<span class="tl-pill tl-' + cls + '" title="' + t + '"><i>' + ic + '</i>' + v + '</span>'; };
-  var rate = w + l ? Math.round(w / (w + l) * 100) : null;
-  void pill;
-  var head = '<div class="lv2-sum"><span class="lv2-k win" title="Vinte">✓ ' + w + '</span><span class="lv2-k loss" title="Perse">✕ ' + l + '</span><span class="lv2-k wait" title="In attesa">◷ ' + wait + '</span>' +
-    (waitT.length ? '<span class="lv2-k qr" title="Quota raggiunta (contate a parte)">⏳ ' + waitT.filter(function (e) { return e.res === 1; }).length + '–' + waitT.filter(function (e) { return e.res === 0; }).length + '</span>' : '') +
-    (rate != null ? '<b class="lv2-rate ' + (rate >= 80 ? 'good' : rate >= 70 ? 'mid' : 'bad') + '">' + rate + '%</b>' : '') +
-    '<small>' + (cut ? arrS.length + ' dalle ' + cutLbl : arr.length + ' segnal' + (arr.length === 1 ? 'e' : 'i')) + (favOnly ? ' · ★' : '') + (mine ? ' · ' + mine + ' giocat' + (mine === 1 ? 'o' : 'i') : '') + '</small></div>';
-  /* 4.1.0 — filtri, statistiche e ordina: solo icone, accanto a Totale / Stabili / In prova; i filtri attivi sotto, piccoli */
-  var actF = tipEFilterChips(tipUI.arcF, tipUI.lblF, 'data-arcclear');
-  /* 4.2.0 — Tutti / Stabili / In prova in un menu a tendina (di base Tutti, sempre scritto sul pulsante) */
-  var nSt = Q.pass.filter(function (e) { return !tipIsTrial(e); }).length;
-  var tools = '<div class="tl-tools">' + tipSampleDD(smp, 'data-split-sample', { '': Q.pass.length, stable: nSt, trial: Q.pass.length - nSt }) +
-    '<div class="ic-row"><button type="button" class="lv2-favt' + (favOnly ? ' on' : '') + '" data-today-fav aria-pressed="' + favOnly + '" aria-label="Solo filtri preferiti">★<i>' + nFavAll + '</i></button>' + tipIconBtn('data-arcfilters', TIP_IC_FILTER, 'Filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
+  var w = 0, l = 0, wait = 0;
+  arrS.forEach(function (e) { if (e.res === 1) w++; else if (e.res === 0) l++; else wait++; });
+  var rate = w + l ? Math.round(w / (w + l) * 100) : null, mine = arrS.filter(function (e) { return e.played; }).length;
+  var sum = '<div class="lv3-sum"><div class="lv3-rate ' + (rate == null ? '' : rate >= 80 ? 'good' : rate >= 70 ? 'mid' : 'bad') + '"><b>' + (rate == null ? '—' : rate + '%') + '</b><small>' + (tipUI.lvK ? U.esc(tipLvFilterName({ k: tipUI.lvK })) : qrMode ? 'quote raggiunte' : 'vinte oggi') + '</small></div>' +
+    '<div class="lv3-counts"><span class="w"><b>' + w + '</b> vint' + (w === 1 ? 'a' : 'e') + '</span><span class="l"><b>' + l + '</b> pers' + (l === 1 ? 'a' : 'e') + '</span><span class="o"><b>' + wait + '</b> in attesa</span>' +
+    (mine ? '<span class="o"><b>' + mine + '</b> giocat' + (mine === 1 ? 'a' : 'e') + '</span>' : '') + '</div>' +
+    '<div class="lv3-reset">' + (cut ? '<span>Conta dalle <b>' + cutLbl + '</b></span><button type="button" data-today-reset-undo>Annulla</button><button type="button" data-today-reset>↺ Di nuovo</button>'
+      : '<button type="button" data-today-reset>↺ Conta da adesso</button>') + '</div></div>';
+  var actF = tipEFilterChips(tipUI.arcF, tipUI.lblF, 'data-arcclear'), open = !!tipUI.todayStats;
+  var seg = function (v, t, n) { return '<button type="button" class="' + (smp === v ? 'on' : '') + '" data-split-sample="' + v + '">' + t + ' <i>' + n + '</i></button>'; };
+  var tools = '<div class="lv3-tools"><div class="lv3-seg" role="tablist">' + seg('', 'Tutti', pass.length) + seg('stable', '🛡️ Stabili', nSt) + seg('trial', '🧪 In prova', pass.length - nSt) + '</div>' +
+    '<div class="ic-row"><button type="button" class="lv2-favt' + (favOnly ? ' on' : '') + '" data-today-fav aria-pressed="' + favOnly + '" aria-label="Solo filtri preferiti">★<i>' + nFavAll + '</i></button>' + tipIconBtn('data-arcfilters', TIP_IC_FILTER, 'Altri filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
     (actF.length ? '<div class="tip-lblf tip-chips-sm">' + actF.join('') + '</div>' : '');
-  /* 4.2.4 — riquadro PREFERITI: aperto mostra solo i consigli di oggi dei filtri preferiti (stessa scelta Tutti/Stabili/In prova e stessi filtri) */
-  var favBox = ''; /* 4.5.0 — sostituito dall'interruttore ★ */
-  /* (riquadro Preferiti 4.2.4 tolto)
-  var fw = favS.filter(function (e) { return e.res === 1; }).length, fl = favS.filter(function (e) { return e.res === 0; }).length, fr = fw + fl ? Math.round(fw / (fw + fl) * 100) : null;
-  var favBox = '<details class="tl-fav"' + (tipUI.todayFavOpen ? ' open' : '') + ' ontoggle="tipUI.todayFavOpen=this.open"><summary><span class="tl-fav-t">★ Preferiti</span>' +
-    '<span class="tl-fav-k">' + favS.length + ' segnal' + (favS.length === 1 ? 'e' : 'i') + (cut ? ' dalle ' + cutLbl : '') + (fw + fl ? ' · <b class="positive">' + fw + '</b>–<b class="negative">' + fl + '</b> · ' + fr + '%' : '') + '</span></summary>' +
-    (favL.length ? '<div class="tip-tlist tl-list">' + favS.concat(favL.filter(function (e) { return !isNew(e); })).map(function (e) { return cut && !isNew(e) ? '<div class="tl-before">' + tipMemRow(e) + '</div>' : tipMemRow(e); }).join('') + '</div>' : '<p class="muted tip-tnone">Nessun consiglio dei filtri preferiti oggi.</p>') +
-    fine del vecchio riquadro */
-  var resetBar = '<div class="tl-reset">' + (cut ? '<span>Statistiche dalle <b>' + cutLbl + '</b> · ' + arrOld.length + ' consigli di prima esclusi</span><button type="button" class="tl-reset-btn" data-today-reset-undo>Annulla</button><button type="button" class="tl-reset-btn" data-today-reset>↺ Di nuovo</button>'
-      : '<span>Vuoi vedere solo come vanno i consigli da adesso?</span><button type="button" class="tl-reset-btn main" data-today-reset>↺ Azzera le statistiche di oggi</button>') + '</div>';
-  var stats = open ? '<div class="tl-stats">' + resetBar + (arrS.length ? tipStTab(tipStLevelRows(arrS, smp).map(function (r) { return [r[0], r[1]]; }), tipStatCount) + '<p class="st2-h">Per giocata</p>' + tipStTab(tipStLiveSplit(arrS, 'k').rows.map(function (r) { return r.slice(0, 2).concat(['', r[3]]); }), tipStatCount) : '<p class="muted tip-tnone">' + (cut ? 'Ancora nessun consiglio dalle ' + cutLbl + '.' : 'Ancora nessun esito oggi.') + '</p>') +
-    '<p class="muted st2-hint">% sulle chiuse, ◷ in attesa. L’azzeramento vale solo qui e fino a mezzanotte.</p></div>' : '';
-  /* 4.2.7 — con l'azzeramento: prima i consigli nuovi, poi una riga "prima delle hh:mm" e i vecchi più chiari */
-  var ordered = cut ? arrAll.filter(isNew).concat(arrAll.filter(function (e) { return !isNew(e); })) : arrAll, nNewAll = cut ? arrAll.filter(isNew).length : 0;
-  var list = arrAll.length ? '<div class="lv2-list">' + ordered.slice(0, n).map(function (e, i) {
-      var div = cut && i === nNewAll ? '<div class="tl-cut">Prima dell’azzeramento delle ' + cutLbl + ' · non contano nelle statistiche di oggi</div>' : '';
+  var stats = open ? '<div class="tl-stats">' + (arrS.length ? tipStTab(tipStLevelRows(arrS, smp).map(function (r) { return [r[0], r[1]]; }), tipStatCount) + '<p class="st2-h">Per giocata</p>' + tipStTab(tipStLiveSplit(arrS, 'k').rows.map(function (r) { return r.slice(0, 2).concat(['', r[3]]); }), tipStatCount) : '<p class="muted tip-tnone">Ancora nessun esito.</p>') + '</div>' : '';
+  var ordered = cut ? arr.filter(isNew).concat(arr.filter(function (e) { return !isNew(e); })) : arr, nNewAll = cut ? arrS.length : 0;
+  var PAGE = 15, n = Math.max(PAGE, tipUI.todayN || PAGE);
+  var list = ordered.length ? '<div class="lv2-list">' + ordered.slice(0, n).map(function (e, i) {
+      var div = cut && i === nNewAll && i > 0 ? '<div class="tl-cut">Prima delle ' + cutLbl + ' · non contano</div>' : '';
       return div + (cut && !isNew(e) ? '<div class="tl-before">' + tipLvRow(e, { showRes: true }) + '</div>' : tipLvRow(e, { showRes: true }));
     }).join('') + '</div>' +
-      (ordered.length > LIM ? '<button type="button" class="tl-more" data-today-more>' + (tipUI.todayAll ? 'Mostra solo gli ultimi ' + LIM : 'Mostra gli altri ' + (ordered.length - LIM)) + '</button>' : '')
-    : '<p class="muted tip-tnone">' + (qrMode ? 'Nessuna quota raggiunta oggi con questa selezione.' : 'Nessun consiglio' + (smp === 'trial' ? ' in prova' : smp === 'stable' ? ' stabile' : '') + ' oggi con questa selezione.') + '</p>';
-  return '<section class="tl-today lv2-today">' + head + tools + favBox + stats + list + tipQualityBox(arr, exc, 'oggi') + '</section>';
+      (ordered.length > n ? '<button type="button" class="tl-more" data-today-more>Mostra altri ' + Math.min(PAGE * 2, ordered.length - n) + ' · ' + (ordered.length - n) + ' rimasti</button>' : '')
+    : '<p class="muted tip-tnone">' + (qrMode ? 'Nessuna quota raggiunta oggi con questa selezione.' : 'Nessun segnale oggi con questa selezione.') + '</p>';
+  return '<section class="tl-today lv2-today lv3-today">' + sum + chips + tools + stats + list + tipQualityBox(arr, exc, 'oggi') + '</section>';
 }
 document.addEventListener('click', function (ev) {
   var b = ev.target.closest && ev.target.closest('[data-today-stats],[data-today-more],[data-today-fav]');
   if (!b) return;
-  if (b.hasAttribute('data-today-fav')) tipUI.todayFav = !tipUI.todayFav;
-  else if (b.hasAttribute('data-today-stats')) tipUI.todayStats = !tipUI.todayStats; else tipUI.todayAll = !tipUI.todayAll;
+  if (b.hasAttribute('data-today-fav')) { tipUI.todayFav = !tipUI.todayFav; tipUI.todayN = 0; }
+  else if (b.hasAttribute('data-today-stats')) tipUI.todayStats = !tipUI.todayStats;
+  else tipUI.todayN = Math.max(15, tipUI.todayN || 15) + 30;
   render();
 });
 
@@ -3471,7 +3506,7 @@ document.addEventListener('click', function (ev) {
   ev.preventDefault();
   tipSignalSheet(tipLvFind(b.getAttribute('data-lv-open')));
 });
-/* numero sul tasto Live della barra in basso: OTTIME dei filtri preferiti negli ultimi 5 minuti */
+/* numero sul tasto Live della barra in basso: OTTIME dei filtri preferiti negli ultimi 5 minuti (le nuove) */
 function tipLiveBadge() {
   var now = Date.now(), n = 0;
   (((db.predModel || {}).playLog) || []).forEach(function (e) { if ((e.tier === 'excellent' || TIP_WAIT_K[e.k]) && e.res == null && e.t > now - 5 * 60e3 && e.t <= now + 60e3 && !TIP_LIVE_HIDE[e.k] && tipKindActive(e.k) && !e.conditional && !e.costly && tipFavOn(e.fromK || e.k)) n++; });
@@ -3479,16 +3514,21 @@ function tipLiveBadge() {
 }
 function tipLivePanel(list) {
   tipUI.freshIds = tipFreshIds();
-  var scanHtml = tipScanPanel(); /* prima: collega le partite dei pronostici ai dati live della scansione */
-  var evals = {};
-  var live = list.filter(tipIsLiveNow).map(function (m) { evals[m.id] = tipLiveEval(m); return m; }).sort(function (a, b) {
-    var pa = evals[a.id] && evals[a.id].act.k !== 'no' ? 0 : 1, pb = evals[b.id] && evals[b.id].act.k !== 'no' ? 0 : 1;
-    return pa - pb || tipKickoff(a) - tipKickoff(b);
-  }),
+  /* 4.11.0 — PIÙ VELOCE: prima, a ogni ridisegno di Adesso e Oggi si ricostruivano anche lo scanner e la valutazione live di
+     tutte le partite dei pronostici (scheda Partite), anche se non si vedevano. Ora si fa solo la valutazione della
+     scansione (una volta per scansione, serve a collegare i segnali) e il resto solo quando apri Partite. */
+  tipScanEval();
+  var evals = {}, live = [], soon = [];
+  var prepAll = function () {
+    live = list.filter(tipIsLiveNow).map(function (m) { evals[m.id] = tipLiveEval(m); return m; }).sort(function (a, b) {
+      var pa = evals[a.id] && evals[a.id].act.k !== 'no' ? 0 : 1, pb = evals[b.id] && evals[b.id].act.k !== 'no' ? 0 : 1;
+      return pa - pb || tipKickoff(a) - tipKickoff(b);
+    });
     soon = list.filter(function (m) {
       var ko = tipKickoff(m).getTime(), now = Date.now();
       return !m.cancelled && !tipNum(m.ft) && ko > now + 5 * 60e3 && ko < now + 3 * 3600e3;
     }).sort(function (a, b) { return tipKickoff(a) - tipKickoff(b); });
+  };
   var row = function (m) {
     var d = (tipUI.liveData || {})[m.id],
       sc = d && d.goals && d.goals[0] != null ? d.goals[0] + '-' + d.goals[1] : 'vs',
@@ -3503,7 +3543,7 @@ function tipLivePanel(list) {
      Dopo 5 minuti escono da "Adesso" e restano in "Oggi". Sono le stesse voci di "Oggi" con gli stessi filtri, quindi
      un segnale entra in tutte e due insieme e i contatori si muovono insieme. Prima "Adesso" mostrava solo le giocate
      ancora valide all'ultima scansione: con un gol, un angolo o la finestra di minuti chiusa sparivano subito. */
-  var NOW_MS = 5 * 60e3, nowT = Date.now(), dayNow = U.local().slice(0, 10), rowsBy = {}, byType = {}, items = [], nowExc = [], nextExp = 0;
+  var NOW_MS = 20 * 60e3, nowT = Date.now(), dayNow = U.local().slice(0, 10), rowsBy = {}, byType = {}, items = [], nowExc = [], nextExp = 0;
   (tipUI.scanRows || []).forEach(function (y) { if (y && y.x && y.x.afId) rowsBy[y.x.afId] = y; });
   tipPlayDedup((db.predModel || {}).playLog || []).forEach(function (e) {
     var t = e.t || 0;
@@ -3530,6 +3570,10 @@ function tipLivePanel(list) {
   /* 4.8.0 — GIOCATE e QUOTA RAGGIUNTA separate: uno switch sceglie cosa vedere (prima erano mescolate) */
   var nNowQr = items.filter(function (x) { return TIP_WAIT_K[x.k]; }).length, nNowSig = items.length - nNowQr;
   items = items.filter(inMode);
+  /* 4.11.0 — filtri veloci anche in Adesso (stessa scelta di Oggi); le % sono quelle di oggi */
+  var today0 = U.local().slice(0, 10), todayL = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= tipStatsFrom() && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipQShown(e); });
+  var nowChips = tipKChipsHtml(items.map(function (x) { return x.e; }), tipTodayKStats(todayL.filter(function (e) { return qrMode ? !!TIP_WAIT_K[e.k] : !TIP_WAIT_K[e.k]; })), tipUI.lvK || '');
+  if (tipUI.lvK) items = items.filter(function (x) { return tipKOf(x.e) === tipUI.lvK; });
   byType = {}; items.forEach(function (x) { (byType[x.k] = byType[x.k] || []).push(x); });
   var favSeg = '<div class="lv-favseg" role="tablist"><button type="button" role="tab" aria-selected="' + favMode + '" class="' + (favMode ? 'on' : '') + '" data-now-fav="1">★ Preferiti <i>' + nFavNow + '</i></button>' +
     '<button type="button" role="tab" aria-selected="' + !favMode + '" class="' + (!favMode ? 'on' : '') + '" data-now-fav="0">Tutti <i>' + nAllNow + '</i></button>' +
@@ -3568,10 +3612,10 @@ function tipLivePanel(list) {
   var lblN = tipFArr((tipUI.lblF || {}).p).length + tipFArr((tipUI.lblF || {}).r).length;
   var lvBar = '<div class="lv2-bar"><div class="lv2-seg" role="tablist"><button type="button" role="tab" aria-selected="' + favMode + '" class="' + (favMode ? 'on' : '') + '" data-now-fav="1">★ Preferiti <i>' + nFavNow + '</i></button>' +
     '<button type="button" role="tab" aria-selected="' + !favMode + '" class="' + (!favMode ? 'on' : '') + '" data-now-fav="0">Tutti <i>' + nAllNow + '</i></button></div></div>' + (lblN ? tipLblFilterBar() : '');
-  var nowHtml = lvBar +
+  var nowHtml = lvBar + nowChips +
     (shown.length ? '<div class="lv2-list">' + shown.slice(0, nShow).map(function (x) { return tipLvRow(x.e, { isNew: x.isNew, showRes: x.e.res != null, reach: true }); }).join('') + '</div>' +
       (shown.length > LIM ? '<button type="button" class="tl-more" data-lv-more>' + (tipUI.lvAll ? 'Mostra solo i primi ' + LIM : 'Mostra gli altri ' + (shown.length - LIM)) + '</button>' : '')
-      : '<div class="lv-empty"><b>' + (qrMode ? 'Nessuna quota raggiunta' : 'Nessun segnale') + (favMode ? ' dei filtri preferiti' : '') + ' negli ultimi 5 minuti</b><small>' + (favMode && nAllNow ? nAllNow + ' in Tutti. ' : '') + 'Il controllo è automatico ogni 2 minuti: un segnale resta qui per 5 minuti, poi lo trovi in Oggi.</small></div>');
+      : '<div class="lv-empty"><b>' + (qrMode ? 'Nessuna quota raggiunta' : 'Nessun segnale') + (favMode ? ' dei filtri preferiti' : '') + ' negli ultimi 20 minuti</b><small>' + (favMode && nAllNow ? nAllNow + ' in Tutti. ' : '') + 'Il controllo è automatico ogni 2 minuti: un segnale resta qui per 20 minuti, poi lo trovi in Oggi.</small></div>');
   /* 3.96.0 — giocate di adesso escluse dal filtro qualità: chiuse in fondo, con il motivo */
   var excHtml = nowExc.length ? '<details class="tip-split tip-qbox lv-exc"' + (tipUI.nowExcOpen ? ' open' : '') + ' ontoggle="tipUI.nowExcOpen=this.open"><summary>🚫 Esclusi dal filtro qualità <span class="tip-qsum">' + nowExc.length + '</span></summary>' +
     '<p class="muted tip-hint">Non sono consigli: niente notifica e niente statistiche. Restano registrati in Oggi › Esclusi.</p><div class="lv-list">' +
@@ -3581,9 +3625,8 @@ function tipLivePanel(list) {
         '<span class="lv-main"><b class="lv-teams">' + U.esc(P2.m.home) + ' – ' + U.esc(P2.m.away) + '</b><span class="lv-sub"><span class="lv-score">' + (P2.sc ? P2.sc[0] + '-' + P2.sc[1] : '?-?') + '</span><span class="lv-kind">' + U.esc(TIP_PLAY_SHORT[x.pl.k] || x.pl.k) + '</span></span>' +
         '<small class="lv-league">🚫 ' + U.esc(tipQualityWhy(x.e || tipQPlay(x.pl))) + '</small></span><span class="lv-side"><b class="lv-pct">' + pc + '%</b></span></button>';
     }).join('') + '</div></details>' : '';
-  var today0 = U.local().slice(0, 10), todayL = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= tipStatsFrom() && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipQShown(e); });
   var nTodayQr = todayL.filter(function (e) { return TIP_WAIT_K[e.k]; }).length, nTodaySig = todayL.length - nTodayQr, nToday = qrMode ? nTodayQr : nTodaySig;
-  var nLive = (tipUI.scan && tipUI.scan.list ? tipUI.scan.list.length : 0) || live.length;
+  var nLive = (tipUI.scan && tipUI.scan.list ? tipUI.scan.list.length : 0) || list.filter(tipIsLiveNow).length;
   var tab = tipUI.liveTab || 'now';
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
   var S = tipUI.scan;
@@ -3602,7 +3645,8 @@ function tipLivePanel(list) {
       return '<div class="lv2-mode" role="tablist" aria-label="Cosa vedere"><button type="button" role="tab" aria-selected="' + !qrMode + '" class="sig' + (!qrMode ? ' on' : '') + '" data-lv-mode="sig">🎯 Giocate da fare <i>' + a + '</i></button>' +
         '<button type="button" role="tab" aria-selected="' + qrMode + '" class="qr' + (qrMode ? ' on' : '') + '" data-lv-mode="qr">⏳ Quota raggiunta <i>' + b + '</i></button></div>';
     })());
-  var allHtml = scanHtml + tipStarPanel(list) +
+  if (tab === 'all') prepAll();
+  var allHtml = tab !== 'all' ? '' : tipScanPanel() + tipStarPanel(list) +
     '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>I tuoi pronostici in corso</b><span>' + live.length + ' partite · ' + live.filter(function (m) { return evals[m.id] && evals[m.id].act.k !== 'no'; }).length + ' da giocare</span></div>' +
     (live.length ? '<div class="tip-tlist">' + live.map(row).join('') + '</div>' : '<p class="muted tip-tnone">Nessuna partita dei pronostici in corso adesso.</p>') + '</section>' +
     (soon.length ? '<section class="card tip-top tip-live-section"><div class="tip-top-head"><b>Tra poco</b><span>prossime 3 ore</span></div><div class="tip-tlist">' + soon.map(row).join('') + '</div></section>' : '');
@@ -3611,7 +3655,7 @@ function tipLivePanel(list) {
 }
 document.addEventListener('click', function (ev) {
   var m = ev.target.closest && ev.target.closest('[data-lv-mode]');
-  if (m) { tipUI.lvMode = m.getAttribute('data-lv-mode') === 'qr' ? 'qr' : 'sig'; tipUI.lvAll = false; tipUI.todayAll = false; render(); }
+  if (m) { tipUI.lvMode = m.getAttribute('data-lv-mode') === 'qr' ? 'qr' : 'sig'; tipUI.lvAll = false; tipUI.todayN = 0; tipUI.lvK = ''; render(); }
 });
 document.addEventListener('click', function (ev) {
   var f = ev.target.closest && ev.target.closest('[data-now-fav]');

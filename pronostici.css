@@ -1535,3 +1535,45 @@ nav.tabbar.tabbar-bottom button[data-badge]:not([data-badge=""])::after{content:
 .sg-filt .lv2-corner{position:static;width:auto;height:auto;padding:6px 9px;border-radius:10px;border:1px solid var(--suite-glass-edge);font-size:18px;justify-self:start}
 .lv2-corner{font-size:14px;width:28px;height:26px}
 .lv2.lv2-trial,.lv2.lv2-win.lv2-trial,.lv2.lv2-loss.lv2-trial{border-style:solid!important}
+
+/* ===== 4.11.0 — Live più veloce: niente animazione a ogni ridisegno, righe fuori schermo non disegnate ===== */
+.lv-pane{animation:none!important}
+.lv2-list>.lv2,.lv2-list>.tl-before{content-visibility:auto;contain-intrinsic-size:auto 120px}
+/* filtri veloci */
+.lvk-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:2px 2px 4px;-webkit-overflow-scrolling:touch}
+.lvk-row::-webkit-scrollbar{display:none}
+.lvk{flex:0 0 auto;display:inline-flex!important;align-items:center;gap:6px;min-height:36px!important;margin:0!important;padding:0 12px!important;border-radius:999px!important;border:1px solid var(--suite-glass-edge)!important;background:color-mix(in srgb,var(--suite-text) 4%,transparent)!important;color:var(--suite-text)!important;font:inherit;font-size:13px!important;font-weight:700!important;white-space:nowrap;box-shadow:none!important}
+.lvk i{font-style:normal;font-size:11.5px;font-weight:700;opacity:.65;font-variant-numeric:tabular-nums}
+.lvk b{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.lvk b.good{color:#5fe0ac}.lvk b.mid{color:#ffc56b}.lvk b.bad{color:#ff8a80}
+.lvk.on{background:var(--suite-teal-grad)!important;color:#fff!important;border-color:transparent!important}
+.lvk.on b,.lvk.on i{color:#fff!important;opacity:1}
+:root[data-theme="light"] .lvk b.good{color:#0e7a50}:root[data-theme="light"] .lvk b.mid{color:#8a5200}:root[data-theme="light"] .lvk b.bad{color:#b3261e}
+/* Oggi rifatto */
+.lv3-today{gap:10px!important}
+.lv3-sum{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center;padding:12px 14px;border-radius:16px;border:1px solid var(--suite-glass-edge);background:color-mix(in srgb,var(--suite-text) 4%,transparent)}
+.lv3-rate{grid-row:1/3;display:grid;justify-items:center;min-width:76px;padding-right:14px;border-right:1px solid var(--suite-glass-edge)}
+.lv3-rate b{font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.lv3-rate small{font-size:10.5px;color:var(--suite-text-soft);text-align:center;margin-top:3px;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lv3-rate.good b{color:#5fe0ac}.lv3-rate.mid b{color:#ffc56b}.lv3-rate.bad b{color:#ff8a80}
+.lv3-counts{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--suite-text-soft)}
+.lv3-counts b{font-size:16px;font-weight:800;color:var(--suite-text);font-variant-numeric:tabular-nums}
+.lv3-counts .w b{color:#5fe0ac}.lv3-counts .l b{color:#ff8a80}
+.lv3-reset{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;color:var(--suite-text-soft)}
+.lv3-reset button{min-height:30px!important;margin:0!important;padding:0 10px!important;border-radius:9px!important;border:1px solid var(--suite-glass-edge)!important;background:transparent!important;color:var(--suite-text)!important;font:inherit;font-size:12px!important;font-weight:700!important;box-shadow:none!important}
+.lv3-tools{display:flex;align-items:center;gap:8px}
+.lv3-seg{flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,auto);gap:3px;padding:3px;border-radius:11px;background:color-mix(in srgb,var(--suite-text) 5%,transparent)}
+.lv3-seg button{min-height:34px!important;margin:0!important;padding:0 6px!important;border:0!important;border-radius:8px!important;background:transparent!important;color:var(--suite-text-soft)!important;font:inherit;font-size:12px!important;font-weight:700!important;white-space:nowrap;box-shadow:none!important}
+.lv3-seg button i{font-style:normal;opacity:.7;font-variant-numeric:tabular-nums}
+.lv3-seg button.on{background:rgba(242,176,78,.16)!important;color:#ffcf7a!important}
+.lv3-tools .ic-row{flex:0 0 auto}
+:root[data-theme="light"] .lv3-rate.good b,:root[data-theme="light"] .lv3-counts .w b{color:#0e7a50}
+:root[data-theme="light"] .lv3-rate.bad b,:root[data-theme="light"] .lv3-counts .l b{color:#b3261e}
+:root[data-theme="light"] .lv3-rate.mid b{color:#8a5200}:root[data-theme="light"] .lv3-seg button.on{color:#8a5200!important}
+@media (max-width:380px){.lv3-tools{flex-wrap:wrap}.lv3-seg{flex-basis:100%}}
+/* 4.11.0 — niente pagina più larga dello schermo: la riga dei filtri veloci scorre dentro, non allarga la colonna */
+.lv-wrap,.lv-pane,.lv3-today{grid-template-columns:minmax(0,1fr)!important;min-width:0}
+.lv-wrap>*,.lv-pane>*,.lv3-today>*{min-width:0}
+.lv3-tools{flex-wrap:wrap}
+.lv3-seg{flex-basis:100%}
+.lv3-tools .ic-row{margin-left:auto}
