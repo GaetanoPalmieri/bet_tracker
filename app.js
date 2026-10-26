@@ -1,4 +1,4 @@
-const APP_VERSION = '4.3.9';
+const APP_VERSION = '4.7.1';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -589,22 +589,31 @@ function limitCard() {
     : '';
 }
 function render() {
-  if (!['home', 'stats', 'tips', 'accounts'].includes(tab)) tab = 'tips';
+  if (!['home', 'stats', 'tips', 'live', 'accounts'].includes(tab)) tab = 'tips';
   document.getElementById('title').textContent = {
     home: 'Saldo',
     stats: 'Statistiche',
-    tips: 'Pronostici',
+    tips: 'Prepartita',
+    live: 'Live',
     accounts: 'Altro',
   }[tab];
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+  try {
+    /* 4.5.0 — numero di OTTIME nuove sul tasto Live */
+    const lb = document.querySelector('nav button[data-tab="live"]');
+    if (lb && typeof tipLiveBadge === 'function') { const n = tipLiveBadge(); lb.dataset.badge = n ? String(n) : ''; }
+  } catch (e) {
+    /* ok */
+  }
   const error = document.getElementById('storage-error');
   error.hidden = !storageError;
   error.textContent = storageError;
   let html = '';
   chartPoints = [];
-  if (tab === 'home') html = diaryPage('home');
-  if (tab === 'stats') html = diaryPage('stats');
-  if (tab === 'tips') html = typeof tipsPage === 'function' ? tipsPage() : ''; /* 3.89.0 — Pronostici è la prima scheda: pronostici.js arriva dopo */
+  /* 4.5.0 — le statistiche del saldo sono dentro Saldo (Saldo · Andamento); la scheda Statistiche è dei pronostici */
+  if (tab === 'home') html = homeViewSeg() + diaryPage(diaryUI.homeView === 'stats' ? 'stats' : 'home');
+  if (tab === 'stats') html = typeof tipStatsTab === 'function' ? tipStatsTab() : diaryPage('stats');
+  if (tab === 'tips' || tab === 'live') html = typeof tipsPage === 'function' ? tipsPage() : ''; /* 3.89.0 — Pronostici è la prima scheda: pronostici.js arriva dopo */
   if (tab === 'accounts') {
     const s = startDate();
     html = `${window.SuiteTheme ? SuiteTheme.card({ cls: 'card' }) : ''}${window.SuiteSync && typeof syncBet !== 'undefined' && syncBet ? SuiteSync.cardHtml('bet', { cls: 'card' }) + '<div class="card suite-sync-card push-card" id="pushCard"></div>' : ''}<div class="card hero acc-hero"><small>SALDO ATTUALE</small><div class="big">${U.money(balance())}</div><div class="acc-initial"><span>Saldo iniziale <b>${U.money(db.accounts[0].initial)}</b>${s ? ' · dal ' + U.esc(dLabel(s)) : ''}</span><button type="button" id="initial">Modifica</button></div><div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tx="deposit"><span aria-hidden="true">↓</span>Deposito</button><button type="button" class="flow-btn out" data-tx="withdraw"><span aria-hidden="true">↑</span>Prelievo</button></div></div><h2 class="section">Depositi e prelievi</h2>${
@@ -618,13 +627,22 @@ function render() {
         .join('') || '<div class="card empty">Nessun deposito o prelievo.</div>'
     }<div class="card"><h2>Backup e ripristino</h2><p class="muted">Dati salvati sul telefono e, se colleghi la sincronizzazione, anche online. Ultima esportazione richiesta: ${db.settings.lastExport ? U.date(db.settings.lastExport) : 'mai'}.</p><div class="actions"><button id="export">Esporta JSON</button><button id="import">Importa backup</button></div><input type="file" accept=".json,application/json" id="import-file" hidden></div><div class="card app-version-card"><h2>Versione app</h2><p class="muted">Bet Tracker ${APP_VERSION} · gli aggiornamenti vengono controllati automaticamente.</p><button type="button" id="check-app-update">Controlla aggiornamenti</button></div>`;
   }
-  if (tab !== 'tips') document.querySelector('header .tip-htools')?.remove(); /* 3.89.0 — pulsanti dei Pronostici solo nella loro scheda */
+  if (tab !== 'tips' && tab !== 'live') document.querySelector('header .tip-htools')?.remove(); /* 3.89.0 — pulsanti dei Pronostici solo nella loro scheda */
   main.innerHTML = html;
   bind();
   U.bindChart(main, chartPoints);
-  if (tab === 'home' || tab === 'stats') bindDiary();
-  if (tab === 'tips' && typeof bindTips === 'function') bindTips();
+  if (tab === 'home') {
+    bindDiary();
+    main.querySelectorAll('[data-home-view]').forEach((b) => (b.onclick = () => { diaryUI.homeView = b.dataset.homeView; render(); window.scrollTo(0, 0); }));
+  }
+  if (tab === 'stats' && typeof tipStatsTabBind === 'function') tipStatsTabBind();
+  else if (tab === 'stats') bindDiary();
+  if ((tab === 'tips' || tab === 'live') && typeof bindTips === 'function') bindTips();
   if (tab === 'accounts' && typeof renderPushCard === 'function') renderPushCard();
+}
+function homeViewSeg() {
+  const v = diaryUI.homeView === 'stats' ? 'stats' : 'home';
+  return `<div class="diary-seg home-view-seg" role="tablist" aria-label="Saldo"><button type="button" role="tab" data-home-view="home" class="${v === 'home' ? 'active' : ''}" aria-selected="${v === 'home'}">Saldo</button><button type="button" role="tab" data-home-view="stats" class="${v === 'stats' ? 'active' : ''}" aria-selected="${v === 'stats'}">Andamento</button></div>`;
 }
 function sportsCard() {
   const info = sdbInfo(),
@@ -1932,7 +1950,7 @@ async function importData(e) {
 // 3.0.0 — niente più inserimento scommesse
 
 // 1.1.8 — navigazione bidirezionale con transizione coerente con il verso dello swipe.
-const TAB_ORDER = ['tips', 'home', 'stats', 'accounts'];
+const TAB_ORDER = ['tips', 'live', 'home', 'stats', 'accounts'];
 let swipeStart = null,
   tabTransitioning = false;
 function prefersReducedMotion() {
