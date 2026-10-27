@@ -1384,13 +1384,18 @@ function tipWaitQ(A) { var q = Number((A || tipAlertPrefs()).qMin); return isFin
    moltiplica per 0,92 (archivio bet365 2-22/10, 5.532 segnali: il calcolo puro dava 3-5 punti di "gol presto" in meno;
    il minuto in cui la quota arriva è giusto entro 1'). Prezzo 70-75% → gol prima di 1.50 nel 32%, 1.50 verso il 57';
    prezzo 90%+ → 82%, 1.50 verso il 75'. */
-function tipWaitInfo(p0, m0, half, Q) {
+/* 4.13.1 — "⚡ gol prima" su AVANTI DI 1 A QUOTA troppo alto: segnali veri 22-27/10 (398) 28,9% contro 33,9% mostrato; archivio
+   4 settimane (263, quote minuto per minuto) 30,0% contro 34,0%. La differenza cala con la soglia: 1.30 −3, 1.40 −4, 1.50 −4/−5,
+   1.60 −3, 1.80 0. Negli altri filtri il calcolo è giusto (prossimo gol 2T 59,2% contro 59,6%, 1-0 54,4% contro 55,3%) e il
+   minuto della quota anche (scarto mediano 0', 99% entro 5'; dal vivo 39 "quota raggiunta" tutti entro 4'). */
+function tipWaitTv2(Q) { return Q <= 1.45 ? 0.04 : Q >= 1.8 ? 0 : 0.05 * Math.min(1, (1.8 - Q) / 0.3); }
+function tipWaitInfo(p0, m0, half, Q, k) {
   if (!(p0 > 0 && p0 < 1) || !isFinite(m0)) return null;
   var pq = 0.95 / Q, end = half === 1 ? 47 : 95;
   if (p0 <= pq) return { early: 0, at: m0, now: true };
   var lam0 = -Math.log(1 - p0), lmax = -Math.log(1 - pq), at = Math.round(end - (end - m0) * lmax / lam0);
   var reach = Math.min(1, 0.92 * (1 - p0) / (1 - pq));
-  return { early: 1 - reach, at: at, late: at > (half === 1 ? 44 : 88) };
+  return { early: k === 'tv2' ? Math.max(0, 1 - reach - tipWaitTv2(Q)) : 1 - reach, at: at, late: at > (half === 1 ? 44 : 88) };
 }
 function tipWaitText(i, Q, short) {
   if (!i) return '';
@@ -1650,14 +1655,24 @@ var TIP_CAL = {
 var TIP_CAL_ADJ = { /* [pari, avanti di 1, avanti di 2+] */
   1: { top7: [-0.016, -0.011, 0.012], first: [-0.018, 0.008, -0.024], lower: [-0.019, 0.022, 0.002], cup: [0.046, -0.001, -0.004],
        'minor+': [-0.012, -0.044, -0.041], minor: [-0.023, 0.008, 0.001], 'youth+': [0.024, 0.025, 0.015], youth: [-0.006, 0.011, -0.013], women: [-0.002, -0.022, -0.043] },
-  2: { top7: [-0.010, -0.007, 0.028], first: [0.027, -0.018, 0], lower: [-0.028, -0.035, -0.019], cup: [0.016, -0.004, 0.029],
-       'minor+': [-0.025, 0.046, 0.009], minor: [-0.007, 0.023, 0.001], 'youth+': [-0.038, -0.022, -0.025], youth: [0.010, -0.008, 0.011], women: [-0.020, -0.003, 0.018] }
+  2: { top7: [0.006, 0.014, 0.016], first: [-0.022, -0.005, -0.014], lower: [0.002, 0.014, -0.007], cup: [0.003, 0.007, 0.009],
+       'minor+': [0.010, 0.014, 0.015], minor: [-0.005, 0.018, 0.006], 'youth+': [-0.008, 0.004, 0.004], youth: [0.007, -0.010, 0.009], women: [0.020, 0.007, 0.025] } /* 4.13.0 — rifatto su 4 settimane */
 };
 /* 4.2.9 — OTTIMA da 87% (era 85%): segnali veri 22-24/10, stima ≥87% 142 segnali vinti 93% (ogni giorno 87-96%), stima 85-87%
    158 segnali vinti 87%. Meno segnali e quelli che restano vincono di più. */
 /* 4.12.0 — RIANALISI DELLO STORICO (archivio bet365 2-22/10 + segnali veri 23-26/10, regole 4.11.1):
    prossimo gol 1T con stima 70-75% vince 68,8% sull'archivio (stima 73,6%; 170) e 56,5% dal vivo (23) → si parte da 75%.
    1T nei minori dei Paesi forti −4 punti (archivio −4,4: −8 / −4 / −3; dal vivo −10 su 36) → TIP_CAL_ADJ[1]['minor+'] −0,04. */
+/* 4.13.0 — RETRAINING 27/10. Archivio bet365 ora di 4 settimane (24/9-22/10, 10.500 partite: 24/9-1/10 è nuovo) + segnali veri
+   23-27/10. Correzioni del 2T per gruppo e punteggio (TIP_CAL_ADJ[2]) rifatte su tutte e 4 le settimane (scarto medio rispetto
+   al prezzo tarato, ristretto verso 0 con 300 casi): quelle di prima venivano da una settimana sola (16-22/10) e fuori da quella
+   settimana sbagliavano (minori dei Paesi forti avanti di 1 +4,6 → vero +1,4; giovanili forti −2/−4 → vero 0).
+   Prova a turno (3 settimane per tarare, la quarta per controllare): prossimo gol 2T OTTIMA da 1.261 segnali al 88,7% (stima
+   90,2%) a 1.455 al 90,0% (stima 90,2%); gol 2T sull'1-0 stima 84,7% contro 84,6% vinte (prima 86,7%). Dal vivo 23-27/10:
+   OTTIME del 2T da 421 (89,8%) a 470 (90,0%).
+   "Avanti di 1 a quota" tiene le correzioni di prima (TIP_TV2_ADJ): dal vivo 338 segnali 78,4% contro 78,8% stimato. Con le nuove
+   perderebbe un quarto dei segnali senza vincere di più. Prossimo gol 1T: correzioni invariate (l'archivio non ha i tiri in porta). */
+var TIP_TV2_ADJ = { 'minor+': 0.046, minor: 0.023 };
 var TIP_GOAL_GREEN = 0.87, TIP_GOAL_WARM = { 1: 0.75, 2: 0.74 };
 var TIP_TM3_UP = 0.02; /* 4.3.1 — correzione del gol 2T sull'1-0 (vedi tipTargetGoal) */
 function tipGoalProb(M, half, lgG, diff) {
@@ -1811,13 +1826,18 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   /* 4.2.8 — % tarata (mercato vero + gruppo e punteggio + selezione) e una sola regola per tutti: OTTIMA da 85%,
      DA VALUTARE da 74% nel 2T e da 70% nel 1T */
   var Pg = tipGoalProb(M, half, lgG, diff), p = Pg.p, green = TIP_GOAL_GREEN, warm = TIP_GOAL_WARM[half] || 0.74;
-  /* 4.4.0 — Americhe nel 2T: niente correzioni in più per il campionato, poi −7 punti con una squadra avanti di 1 (archivio 1-0: 74% contro 81%), −3 negli altri casi */
-  if (half === 2 && amer) p = Math.max(0.01, Math.min(0.95, Pg.base + Math.min(Pg.adj, 0) - (diff === 1 ? 0.07 : 0.03)));
+  if (k === 'tv2') p = Math.max(0.01, Math.min(0.95, Pg.base + (TIP_TV2_ADJ[lgG] || 0))); /* 4.13.0 — vedi TIP_TV2_ADJ */
+  /* 4.4.0 — Americhe nel 2T: niente correzioni in più per il campionato, poi −7 punti con una squadra avanti di 1 (archivio 1-0: 74% contro 81%), −3 negli altri casi.
+     4.13.0 — archivio 4 settimane, prossimo gol 2T rispetto al prezzo: avanti di 1 −4,1, sotto in tutte e 4 le settimane (prima −7 → stima 4 punti sotto il vero),
+     avanti di 2+ +0,9 (dal vivo +3,6: prima −3 → stima 6 punti sotto), pari −1,7 (resta −3). → −4 / 0 / −3 */
+  if (half === 2 && amer) p = Math.max(0.01, Math.min(0.95, Pg.base + Math.min(Pg.adj, 0) - (diff === 1 ? 0.04 : diff === 0 ? 0.03 : 0)));
   /* 4.6.2 — Americhe nel 1T (prossimo gol 1T): sopra il mercato. Archivio bet365 2-22/10: 216 segnali, 80% contro 75%,
      +6 / +6 / +3 nei tre periodi; dal vivo 23-26/10: 44 segnali, 84% contro 78% stimato → +3 punti. Analisi per campionato
      e per nazione (4.6.2): scegliendo i campionati "buoni" o "cattivi" su due periodi, nel terzo vincono come gli altri →
-     niente elenchi di campionati, solo regole per gruppo o zona confermate dall'archivio E dal vivo. */
-  else if (half === 1 && amer) p = Math.min(0.95, p + 0.03);
+     niente elenchi di campionati, solo regole per gruppo o zona confermate dall'archivio E dal vivo.
+     4.13.0 — TOLTO: rifatto con il motore su 4 settimane, nel 1T le Americhe vincono come il prezzo (73,9% contro 74,3%, 257 momenti
+     con prezzo ≥70%), come gli altri (75,0% contro 74,9%); i segnali con il +3 erano sotto le altre zone in tutte e 4 le settimane.
+     I segnali che il +3 faceva partire (stima 75-77%): archivio 66% su 50, dal vivo 76% su 17. */
   /* 4.3.1 — 🎯 gol 2T sull'1-0: dal vivo 22-25/10 vince 147 su 169 (87%) contro 85,5% stimato: +2 punti, così la % è quella vera
      e quando arriva all'87% torna OTTIMA. Vince uguale da OTTIMA e da DA VALUTARE (87%): il livello qui conta poco. */
   /* 4.3.6 — femminili e serie minori dei Paesi forti (in prova): sempre DA VALUTARE.
@@ -2026,7 +2046,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.12.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.13.1',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2311,7 +2331,7 @@ function tipLeagueTop(m) {
 var TIP_LG_EXTRA = { major: 0, 'minor+': 0.02, minor: 0.04, 'youth+': 0.03, youth: 0.06, women: 0.06 };
 /* 3.65.0 — prepartita: punti in più richiesti per pronostici e Top fuori dai campionati maggiori */
 /* 3.66.0 — Over 2.5: 54% vinte con 72% previsto (13 pronostici), serve più margine */
-var TIP_PRE_MK_EXTRA = { o25: 8, gg: 99 }; /* 4.12.0 — Goal sospeso: pronostici veri 16-25/10 11/25 (44%) con 75% mostrato */ /* 3.89.0 — Over 2.5 7/13 (54%) con 72% previsto */
+var TIP_PRE_MK_EXTRA = { o25: 8 }; /* 4.13.0 — Goal / No goal di nuovo attivo: la sospensione della 4.12.0 veniva da un conto sbagliato (i "No goal" vinti contati come persi). Conto giusto 16-25/10: Goal 7/10 (73,7% mostrato), No goal 14/19 (74,7% mostrato) */ /* 3.89.0 — Over 2.5 7/13 (54%) con 72% previsto */
 var TIP_PRE_LG_EXTRA = { major: 0, 'minor+': 2, minor: 4, 'youth+': 4, youth: 6, women: 6 };
 var TIP_STEP1T_ON = false;
 /* 3.67.0 — tolte le giocate a 1.80: 42-43% vinte, lontane dall'obiettivo 80% */
@@ -3419,7 +3439,7 @@ function tipLvRow(e, o) {
   var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e);
   var QI = !wait && TIP_TARGET[e.k] && !/^t[ck]/.test(e.k) ? tipQuotaInfo(e) : null;
   var reach = '';
-  if (o.reach && TIP_WAIT_SRC[e.k] && e.res == null) { var Q = tipWaitQ(); reach = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, (e.half || 1) === 1 || e.k === 'tm1' || e.k === 'tm1s' ? 1 : 2, Q), Q, true); }
+  if (o.reach && TIP_WAIT_SRC[e.k] && e.res == null) { var Q = tipWaitQ(); reach = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, (e.half || 1) === 1 || e.k === 'tm1' || e.k === 'tm1s' ? 1 : 2, Q, e.k), Q, true); }
   var meta = [hm, U.esc(e.league || ''), Array.isArray(e.ft) && e.res != null ? 'finale ' + e.ft[0] + '-' + e.ft[1] : '', wait && e.fromMin != null ? 'segnale al ' + e.fromMin + '’' : ''].filter(Boolean).join(' · ');
   var quote = wait ? (e.q ? '<i class="lv2-q">@' + Number(e.q).toFixed(2) + (e.qEst ? '≈' : '') + '</i>' : '')
     : QI && QI.q ? '<i class="lv2-q' + (QI.ok ? ' val' : QI.value < 0 ? ' low' : '') + '">@' + QI.q.toFixed(2) + (QI.est ? '≈' : '') + '</i>' : '';
@@ -3495,7 +3515,7 @@ function tipSignalSheet(e) {
     (wait ? row('Quota raggiunta', e.q ? Number(e.q).toFixed(2) + (e.qEst ? ' (stimata)' : ' bet365') : '') + row('Segnale di partenza', (e.fromMin != null ? e.fromMin + '’' : '') + (e.fromP ? ' · ' + Math.round(e.fromP * 100) + '%' : '')) : '') +
     (QI ? row('Quota minima', QI.min.toFixed(2)) + row('Quota bet365', QI.q ? QI.q.toFixed(2) + (QI.est ? ' (ricavata)' : '') : 'non disponibile', QI.ok ? 'positive' : '') + (QI.q ? row('Valore', QI.ok ? '💰 sì, +' + Math.round(QI.value * 100) + '%' : 'no (' + Math.round(QI.value * 100) + '%)', QI.ok ? 'positive' : 'muted') : '') : '');
   var early = '';
-  if (TIP_WAIT_SRC[e.k] && e.res == null) { var Qw = tipWaitQ(); early = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, half, Qw), Qw, false); }
+  if (TIP_WAIT_SRC[e.k] && e.res == null) { var Qw = tipWaitQ(); early = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, half, Qw, e.k), Qw, false); }
   var st = e.stats && Array.isArray(e.stats.side) ? e.stats.side : null, stats = '';
   if (st) {
     var sr = function (l, k) { var a = st[0] && st[0][k], b = st[1] && st[1][k]; return a == null && b == null ? '' : '<div class="sg-st"><b>' + (a == null ? '–' : a) + '</b><span>' + l + '</span><b>' + (b == null ? '–' : b) + '</b></div>'; };

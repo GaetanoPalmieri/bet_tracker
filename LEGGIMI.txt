@@ -1,18 +1,11 @@
-Bet Tracker 4.2.7 · server pronostici-avvisi 4.2.7
+Bet Tracker 4.13.1 · server pronostici-avvisi 4.13.1
 
 Sostituisci nella cartella bet_tracker:
   pronostici.js, pronostici.css, app.js, index.html, sw.js   → app (pubblica come al solito)
   pronostici-avvisi.txt                                     → funzione Supabase "pronostici-avvisi" (ripubblicala)
-Dopo: in Live la barra deve dire "server 4.2.7", in Altro l'app "4.2.7".
+Dopo: in Live la barra deve dire "server 4.13.1", in Altro l'app "4.13.1".
 
-4.2.7 — campionati divisi per gruppi (archivio quote bet365 16-22/10 + segnali veri 19-24/10):
-  serie minori dei Paesi forti (Championship, Serie B, Ligue 2, 2./3. Liga, Segunda, Superettan,
-  dilettanti inglesi, USL...): niente segnali gol e niente giocate stabili
-  coppe internazionali (Champions, Europa, Conference, Libertadores, Sudamericana, AFC, CAF, CONCACAF): niente segnali gol
-  primi 7 campionati e altre prime divisioni: DA VALUTARE con la % del mercato (come 4.2.6)
-  campionati minori con una squadra avanti: OTTIMA (come 4.2.6)
-
-Consigli di oggi › 📊 › "Azzera le statistiche di oggi":
-  da quel momento contano solo i consigli nuovi (intestazione, statistiche, Preferiti);
-  l'elenco resta intero, i consigli di prima stanno in fondo più chiari. "Annulla" torna indietro.
-  Vale fino a mezzanotte. Storico, statistiche generali e partite passate non cambiano.
+Cosa cambia (dettagli in retraining-2026-10-27.md):
+  4.13.0 — retraining 27/10: correzioni del 2T per campionato rifatte su 4 settimane di archivio (più OTTIME, vincono uguale);
+           Americhe 2T −4 / 0 / −3 (era −7 / −3 / −3); tolto il +3 delle Americhe nel 1T; Goal / No goal di nuovo attivo.
+  4.13.1 — "⚡ gol prima" su Avanti di 1 a quota abbassato (−5 punti a 1.50, meno con soglie più alte).
