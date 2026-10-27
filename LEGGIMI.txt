@@ -1,11 +1,20 @@
-Bet Tracker 4.13.1 · server pronostici-avvisi 4.13.1
+Bet Tracker 4.16.0 · server pronostici-avvisi 4.16.0
 
 Sostituisci nella cartella bet_tracker:
   pronostici.js, pronostici.css, app.js, index.html, sw.js   → app (pubblica come al solito)
   pronostici-avvisi.txt                                     → funzione Supabase "pronostici-avvisi" (ripubblicala)
-Dopo: in Live la barra deve dire "server 4.13.1", in Altro l'app "4.13.1".
+Dopo: in Altro l'app deve dire "4.16.0", in Live la barra "server 4.16.0".
 
 Cosa cambia (dettagli in retraining-2026-10-27.md):
   4.13.0 — retraining 27/10: correzioni del 2T per campionato rifatte su 4 settimane di archivio (più OTTIME, vincono uguale);
            Americhe 2T −4 / 0 / −3 (era −7 / −3 / −3); tolto il +3 delle Americhe nel 1T; Goal / No goal di nuovo attivo.
   4.13.1 — "⚡ gol prima" su Avanti di 1 a quota abbassato (−5 punti a 1.50, meno con soglie più alte).
+  4.14.0 — "⚠ partita ferma": sui segnali gol del 2T ancora aperti (prossimo gol 2T, 1-0, avanti di 1 e le loro quote
+           raggiunte), se 15' dopo il segnale il punteggio è lo stesso e non c'è stato nemmeno un angolo. Archivio:
+           in questi casi il gol arriva il 58% contro il 68% della quota. Solo un avviso: segnali e statistiche non cambiano.
+  4.15.0 — "🎯 spingono" (in prova): sul prossimo gol 1T ancora aperto, da 5' dopo il segnale e fino al 42', se sono arrivati
+           tiri in porta: % di adesso = prezzo bet365 di adesso + 6 punti (1 tiro in porta) o + 9 (2 o più). Dal vivo 23-27/10:
+           1 tiro in porta 69% contro 60% del prezzo, 2 o più 73% contro 60%, su pochi segnali. Solo un avviso.
+  4.16.0 — Champions League ed Europa League (UEFA, maschili) di nuovo nei segnali gol, IN PROVA (🧪, statistiche a parte).
+           Archivio 4 settimane: Champions 36/40, Europa League 10/11; dal vivo 22/10 Europa League 17/19. Le altre coppe
+           (Conference, CONCACAF, AFC, CAF, Libertadores…) restano fuori: vincono molto meno della % mostrata.

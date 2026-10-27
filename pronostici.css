@@ -1600,3 +1600,19 @@ nav.tabbar.tabbar-bottom button[data-badge]:not([data-badge=""])::after{content:
 .tip-nav.tip-nav3{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px!important;min-height:0!important}
 .tip-nav.tip-nav3 .tip-navb{min-height:42px!important;height:42px!important;flex-direction:row!important;gap:7px!important;font-size:14px!important;font-weight:700!important;border-radius:12px!important;padding:0 6px!important}
 .tip-nav.tip-nav3 .tip-navb svg{width:19px!important;height:19px!important}
+
+/* 4.14.0 — ⚠ partita ferma (nessun angolo 15' dopo il segnale) */
+.lv2-stall{font-size:11px;font-weight:800;color:#ff8a7a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-stall{margin:6px 0 0;padding:8px 10px;border-radius:10px;font-size:12.5px;line-height:1.35;color:#ffb3a8;background:rgba(255,99,82,.12);border:1px solid rgba(255,99,82,.35)}
+.sg-stall b{color:#ff8a7a}
+:root[data-theme="light"] .lv2-stall{color:#b3261e}
+:root[data-theme="light"] .sg-stall{color:#7a1d16;background:rgba(179,38,30,.08);border-color:rgba(179,38,30,.3)}
+:root[data-theme="light"] .sg-stall b{color:#b3261e}
+
+/* 4.15.0 — 🎯 spingono (1T, in prova) */
+.lv2-push{font-size:11px;font-weight:800;color:#5fe0b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-push{margin:6px 0 0;padding:8px 10px;border-radius:10px;font-size:12.5px;line-height:1.35;color:#bff3df;background:rgba(46,204,143,.12);border:1px solid rgba(46,204,143,.35)}
+.sg-push b{color:#5fe0b0}
+:root[data-theme="light"] .lv2-push{color:#0e7a50}
+:root[data-theme="light"] .sg-push{color:#0b4f35;background:rgba(14,122,80,.08);border-color:rgba(14,122,80,.3)}
+:root[data-theme="light"] .sg-push b{color:#0e7a50}
