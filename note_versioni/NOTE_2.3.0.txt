@@ -1,0 +1,9 @@
+VERSIONE 2.3.0
+
+Apertura protetta con Face ID
+- Nelle impostazioni, riquadro "Apertura protetta": attivandolo l'app si apre solo
+  dopo il riconoscimento, e lo richiede anche quando torni dopo piu' di 2 minuti
+  passati in un'altra app.
+- Codice di 6 cifre come riserva, per quando il riconoscimento non funziona.
+- Usa le passkey: il riconoscimento lo fa iOS, l'app non vede mai il tuo volto.
+- Dettagli e vie d'uscita in GUIDA_FACEID.txt.

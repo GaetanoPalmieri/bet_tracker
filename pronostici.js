@@ -18,14 +18,24 @@ var TIP_FILE = 'pronostici.json';
 var TIP_DEFAULTS = { version: '1', threshold: 70, htShare: 0.45, drawBoost: 1, goalFactor: 1, leagueGoal: {}, rho: 0 };
 /* 3.9.0 — Soglie per mercato (per entrare in lista) e media minima delle liste Top.
    Il file può sovrascriverle con model.thresholds / model.topTargets. */
-var TIP_THR = { ht05: 75, o15: 80, o25: 71, gg: 71 };
-var TIP_TOP = { ht05: 80, o15: 85, o25: 75, gg: 75 };
+/* 4.12.0 — MERCATI NUOVI E OVER 2.5 RIVISTO. Over 2.5: prima serviva il 79% (71 + 8 dopo il 7/13 del 3.89.0) e non
+   entrava quasi mai; ora soglia 62%, Top da 68% di media (le quote dell'Over 2.5 stanno quasi sempre sopra 1.50) e gol
+   attesi con lo storico delle squadre. Gol squadra (segna / Over 1.5 della squadra più forte) e angoli (partita,
+   1° tempo, squadra) dalle quote bet365 e dalle classifiche TotalCorner. Per questi mercati valgono le soglie qui
+   sotto, non quelle del vecchio file del modello (che per l'Over 2.5 diceva 71/75). */
+var TIP_THR = { ht05: 75, o15: 80, o25: 62, gg: 71, tg: 88, t15: 70, co: 80, co1: 80, ct: 80 };
+var TIP_TOP = { ht05: 80, o15: 85, o25: 68, gg: 75, tg: 91, t15: 74, co: 84, co1: 84, ct: 84 };
+var TIP_THR_CODE = { o25: 1, tg: 1, t15: 1, co: 1, co1: 1, ct: 1 };
+var TIP_NEW_MK = { tg: 1, t15: 1, co: 1, co1: 1, ct: 1 };
+var TIP_COR_MK = { co: 1, co1: 1, ct: 1 };
 function tipThr(P, k) {
   var t = (P && P.thresholds) || {};
+  if (TIP_THR_CODE[k]) return TIP_THR[k];
   return t[k] != null ? t[k] : TIP_THR[k] != null ? TIP_THR[k] : (P && P.threshold) || 70;
 }
 function tipTarget(P, k) {
   var t = (P && P.topTargets) || {};
+  if (TIP_THR_CODE[k]) return TIP_TOP[k];
   return t[k] != null ? t[k] : TIP_TOP[k] || 80;
 }
 /* Quota del book per il pronostico (se c'è nel file). */
@@ -43,8 +53,13 @@ var TIP_MARKETS = [
   ['o25', 'Over/Under 2.5'],
   ['ht05', 'O/U 0.5 1° tempo'],
   ['gg', 'Goal / No goal'],
+  ['tg', 'Squadra segna'],
+  ['t15', 'Over 1.5 squadra'],
+  ['co', 'Angoli partita'],
+  ['co1', 'Angoli 1° tempo'],
+  ['ct', 'Angoli squadra'],
 ];
-var TIP_SHORT = { '1x2': '1X2', o05: 'O/U 0.5', o15: 'O/U 1.5', o25: 'O/U 2.5', ht05: '1° tempo', gg: 'GG/NG' };
+var TIP_SHORT = { '1x2': '1X2', o05: 'O/U 0.5', o15: 'O/U 1.5', o25: 'O/U 2.5', ht05: '1° tempo', gg: 'GG/NG', tg: 'Segna squadra', t15: 'O1.5 squadra', co: 'Angoli', co1: 'Angoli 1T', ct: 'Angoli squadra' };
 var tipUI = { view: 'open', day: 'all', league: '', q: '', loading: false, fileInfo: '', panel: 'home', sort: 'time' };
 
 /* ---------- Modello ---------- */
@@ -158,6 +173,8 @@ function tipCalc(m, P) {
   var pc = function (x) {
     return Math.round(x * 100);
   };
+  /* 4.12.0 — gol squadra, Over 2.5 con lo storico delle squadre, angoli */
+  var mx = tipCalcExtra(m, lh, la, 1 - u25);
   return {
     lh: lh,
     la: la,
@@ -166,7 +183,8 @@ function tipCalc(m, P) {
     p2: pc(p2),
     o05: pc(1 - u05),
     o15: pc(1 - u15),
-    o25: pc(1 - u25),
+    o25: pc(mx.o25 != null ? mx.o25 : 1 - u25),
+    mx: mx,
     /* 3.9.0 — quota di gol nel 1° tempo ricavata dalle quote del primo tempo, se presente */
     ht05: pc(1 - Math.exp(-(U.finite(m.hts) ? m.hts : P.htShare || 0.45) * ((P.htLeague || {})[m.league] || 1) * (lh + la))),
     gg: pc(gg),
@@ -175,9 +193,95 @@ function tipCalc(m, P) {
     }),
   };
 }
+/* ---------- 4.12.0 — GOL SQUADRA E ANGOLI PREPARTITA ----------
+   Gol: i gol attesi del modello (quote bet365: linea gol, 1X2 e handicap asiatico) mescolati per il 25% con lo storico
+   delle squadre (classifica TotalCorner: gol fatti/subiti a partita, avvicinati alla media del campionato quando le
+   partite sono poche). Lo storico vale solo per l'Over 2.5 e i gol squadra: Over 1.5, 1° tempo e Goal restano come prima.
+   Angoli: stessa stima dei segnali angoli live (tipCornerPrior: linea angoli bet365 60% + storico squadre 40%),
+   ripartita tra le squadre con l'handicap angoli e lo storico. Distribuzione binomiale negativa (gli angoli variano
+   più di un Poisson). Linea scelta: la più alta con almeno l'80% (es. Over 9.5 angoli). */
+var TIP_HIST_W = 0.25;
+var TIP_HOME_ADV = [1.12, 0.88]; /* le classifiche non separano casa e trasferta */
+function tipGoalHistLam(m) {
+  var H = m && m.goalHist, lg = H && H.lg;
+  var ok = function (t) { return t && U.finite(t.n) && t.n >= 4 && U.finite(t.gf) && U.finite(t.ga); };
+  if (!H || !lg || !U.finite(lg.avg) || lg.avg <= 0 || !ok(H.h) || !ok(H.a)) return null;
+  var half = lg.avg / 2, K = 5, sh = function (t, v) { return (v * t.n + half * K) / (t.n + K); };
+  return {
+    h: ((sh(H.h, H.h.gf) + sh(H.a, H.a.ga)) / 2) * TIP_HOME_ADV[0],
+    a: ((sh(H.a, H.a.gf) + sh(H.h, H.h.ga)) / 2) * TIP_HOME_ADV[1],
+    n: Math.min(H.h.n, H.a.n),
+  };
+}
+/* P(almeno n) con media mu e varianza mu·phi (binomiale negativa; phi = 1 è Poisson) */
+function tipNbAtLeast(n, mu, phi) {
+  if (!(mu > 0)) return n <= 0 ? 1 : 0;
+  if (!(phi > 1.001)) return tipPoisAtLeast(n, mu);
+  var r = mu / (phi - 1), q = mu / (r + mu), t = Math.pow(1 - q, r), s = 0;
+  for (var k = 0; k < n; k++) { s += t; t *= ((k + r) / (k + 1)) * q; }
+  return Math.max(0, Math.min(1, 1 - s));
+}
+var TIP_COR_PHI = { co: 1.2, co1: 1.15, ct: 1.15 };
+/* linee possibili: partono abbastanza in alto da tenere solo le partite da tanti angoli (Over 8.5 all'80% vuol dire
+   circa 12 angoli attesi; Over 3.5 1T circa 6; Over 4.5 squadra circa 7) */
+var TIP_COR_LINES = { co: [8.5, 9.5, 10.5, 11.5, 12.5], co1: [3.5, 4.5, 5.5], ct: [4.5, 5.5, 6.5, 7.5] };
+var TIP_LINE_AIM = 0.8;
+function tipLineChoice(k, mu) {
+  var L = TIP_COR_LINES[k], best = null;
+  L.forEach(function (x) {
+    var p = tipNbAtLeast(Math.floor(x) + 1, mu, TIP_COR_PHI[k]);
+    if (p >= TIP_LINE_AIM && (!best || x > best.L)) best = { L: x, p: p };
+  });
+  return best || { L: L[0], p: tipNbAtLeast(Math.floor(L[0]) + 1, mu, TIP_COR_PHI[k]) };
+}
+function tipCornerPre(m, lh, la) {
+  var o = m.odds || {};
+  if (!U.finite(o.cl) || o.cl < 4 || o.cl > 20) return null; /* serve la linea angoli del book */
+  var pr = tipCornerPrior({ cornerHist: m.cornerHist, corner: { pre: o.cl, preHt: U.finite(o.clh) ? o.clh : null } });
+  var E = pr.E, H = m.cornerHist || {}, th = tipCornerTeam(H.h), ta = tipCornerTeam(H.a), acc = 0, w = 0;
+  if (th && ta) {
+    var xh = ((th.cf + ta.ca) / 2) * 1.1, xa = ((ta.cf + th.ca) / 2) * 0.9;
+    if (xh + xa > 0) { acc += xh / (xh + xa); w++; }
+  }
+  var ach = U.finite(o.ach) ? o.ach : null;
+  /* segno dell'handicap angoli: la favorita netta fa più angoli */
+  if (ach != null && ((lh - la > 0.6 && ach > 0.75) || (la - lh > 0.6 && ach < -0.75))) ach = -ach;
+  if (ach != null) { acc += Math.max(0.2, Math.min(0.8, (E - ach) / (2 * E))); w++; }
+  var sh = w ? acc / w : 0.53 + (lh / Math.max(0.1, lh + la) - 0.5) * 0.5;
+  sh = Math.max(0.25, Math.min(0.75, sh));
+  return { E: E, Eht: pr.Eht, Eh: E * sh, Ea: E * (1 - sh), src: pr.src + (ach != null ? ' + handicap' : ''), n: pr.n };
+}
+function tipCalcExtra(m, lh, la, o25) {
+  var out = { o25: null, lam: [lh, la], gh: null, tg: null, t15: null, cor: null, co: null, co1: null, ct: null };
+  var gh = tipGoalHistLam(m);
+  if (gh) {
+    var bl = function (a, b) { var v = (1 - TIP_HIST_W) * a + TIP_HIST_W * b; return Math.max(a * 0.8, Math.min(a * 1.25, v)); };
+    out.lam = [bl(lh, gh.h), bl(la, gh.a)];
+    out.gh = { n: gh.n };
+    out.o25 = Math.max(0.01, Math.min(0.99, o25 + tipPoisAtLeast(3, out.lam[0] + out.lam[1]) - tipPoisAtLeast(3, lh + la)));
+  }
+  var side = out.lam[0] >= out.lam[1] ? 0 : 1, lam = out.lam[side];
+  out.tg = { side: side, p: 1 - Math.exp(-lam) };
+  out.t15 = { side: side, p: tipPoisAtLeast(2, lam) };
+  var cr = tipCornerPre(m, lh, la);
+  if (cr) {
+    out.cor = cr;
+    out.co = tipLineChoice('co', cr.E);
+    out.co1 = tipLineChoice('co1', cr.Eht);
+    var cs = cr.Eh >= cr.Ea ? 0 : 1;
+    out.ct = Object.assign({ side: cs }, tipLineChoice('ct', cs ? cr.Ea : cr.Eh));
+  }
+  return out;
+}
+/* linea e squadra dal testo del pronostico ("Over 9.5 angoli", "Over 4.5 angoli ospite", "Segna casa") */
+function tipSelLine(sel) { var r = /(\d+(?:\.\d+)?)/.exec(String(sel || '')); return r ? Number(r[1]) : null; }
+function tipSelSide(sel) { return /\bospite\b/.test(String(sel || '')) ? 1 : 0; }
+function tipHasCorPick(m, k) { return (m.picks || []).some(function (p) { return k ? p.m === k : TIP_COR_MK[p.m]; }); }
+function tipNeedCor(m) { return tipHasCorPick(m) && (!tipNum(m.cor) || (tipHasCorPick(m, 'co1') && !tipNum(m.corHt))); }
 /* Il pronostico scelto per ogni mercato: il lato più probabile. */
 function tipChoices(c) {
   var one = c.p1 >= c.px && c.p1 >= c.p2 ? ['1', c.p1] : c.p2 >= c.px ? ['2', c.p2] : ['X', c.px];
+  var mx = c.mx || {}, SIDE = ['casa', 'ospite'], P2 = function (v) { return Math.round(v * 100); };
   var two = function (p, a, b) {
     return p >= 50 ? [a, p] : [b, 100 - p];
   };
@@ -198,6 +302,12 @@ function tipChoices(c) {
     gg: (function (x) {
       return { sel: x[0], p: x[1] };
     })(two(c.gg, 'Goal', 'No goal')),
+    /* 4.12.0 — solo il lato "Over" (squadra più forte, angoli sopra la linea) */
+    tg: mx.tg ? { sel: 'Segna ' + SIDE[mx.tg.side], p: P2(mx.tg.p) } : null,
+    t15: mx.t15 ? { sel: 'Over 1.5 ' + SIDE[mx.t15.side], p: P2(mx.t15.p) } : null,
+    co: mx.co ? { sel: 'Over ' + mx.co.L + ' angoli', p: P2(mx.co.p) } : null,
+    co1: mx.co1 ? { sel: 'Over ' + mx.co1.L + ' angoli 1T', p: P2(mx.co1.p) } : null,
+    ct: mx.ct ? { sel: 'Over ' + mx.ct.L + ' angoli ' + SIDE[mx.ct.side], p: P2(mx.ct.p) } : null,
   };
 }
 function tipPicksFor(m, P) {
@@ -206,7 +316,11 @@ function tipPicksFor(m, P) {
     out = [];
   TIP_MARKETS.forEach(function (k) {
     var x = ch[k[0]];
-    if (x.p >= tipThr(P, k[0]) + (TIP_PRE_LG_EXTRA[tipLeagueTier(m)] || 0) + (TIP_PRE_MK_EXTRA[k[0]] || 0)) out.push({ m: k[0], sel: x.sel, p: x.p });
+    if (!x) return;
+    /* 4.12.0 — Under 2.5 solo come prima (79%): l'Over 2.5 rivisto non deve riempire le liste di Under */
+    var thr = tipThr(P, k[0]) + (TIP_PRE_LG_EXTRA[tipLeagueTier(m)] || 0) + (TIP_PRE_MK_EXTRA[k[0]] || 0);
+    if (k[0] === 'o25' && /^Under/.test(x.sel)) thr = Math.max(thr, 79);
+    if (x.p >= thr) out.push({ m: k[0], sel: x.sel, p: x.p });
   });
   return out;
 }
@@ -222,7 +336,7 @@ function tipIssueOpen(m, now) {
 }
 function tipIssueInputs(m) {
   var inputs = {};
-  ['lh', 'la', 'hts', 'p1x2', 'odds', 'src', 'fav', 'ctx', 'rel', 'lhS', 'laS', 'lhM', 'laM', 'wMkt', 'warn', 'topSkip', 'league', 'home', 'away'].forEach(function (k) {
+  ['lh', 'la', 'hts', 'p1x2', 'odds', 'src', 'fav', 'ctx', 'rel', 'lhS', 'laS', 'lhM', 'laM', 'wMkt', 'warn', 'topSkip', 'league', 'home', 'away', 'cornerHist', 'goalHist'].forEach(function (k) {
     if (m[k] != null) inputs[k] = m[k];
   });
   return inputs;
@@ -327,7 +441,16 @@ function tipAutoOutcome(m, pick) {
     var over = ht[0] + ht[1] >= 1;
     return (pick.sel.indexOf('Over') === 0) === over ? 'V' : 'P';
   }
+  /* 4.12.0 — angoli: servono gli angoli finali (o del 1° tempo); se dopo 3 ricerche non ci sono, annullato */
+  if (TIP_COR_MK[pick.m]) {
+    var cc = pick.m === 'co1' ? m.corHt : m.cor, ln = tipSelLine(pick.sel);
+    if (!tipNum(cc) || ln == null) return ft && (m.corTry || 0) >= 3 ? 'N' : '';
+    var nc = pick.m === 'ct' ? cc[tipSelSide(pick.sel)] : cc[0] + cc[1];
+    return nc > ln ? 'V' : 'P';
+  }
   if (!ft) return '';
+  if (pick.m === 'tg') return ft[tipSelSide(pick.sel)] >= 1 ? 'V' : 'P';
+  if (pick.m === 't15') return ft[tipSelSide(pick.sel)] >= 2 ? 'V' : 'P';
   var h = ft[0],
     a = ft[1],
     t = h + a;
@@ -391,7 +514,7 @@ function tipSlug(s) {
 }
 /* 3.9.0 — Dati aggiuntivi del modello v3: quote del book, gol attesi dalle sole
    statistiche e dalle sole quote, quota di gol nel 1° tempo, forza della favorita. */
-var TIP_EXTRA = ['hts', 'odds', 'mkt', 'fav', 'src', 'topSkip', 'lhS', 'laS', 'lhM', 'laM', 'wMkt', 'warn'];
+var TIP_EXTRA = ['hts', 'odds', 'mkt', 'fav', 'src', 'topSkip', 'lhS', 'laS', 'lhM', 'laM', 'wMkt', 'warn', 'cornerHist', 'goalHist']; /* 4.12.0 — storico squadre (classifiche) */
 function tipCopyExtra(m, fm) {
   /* 3.10.0 — movimento quote: si conservano le prime quote viste (apertura) */
   if (m.odds && fm.odds && JSON.stringify(m.odds) !== JSON.stringify(fm.odds) && !m.oddsOpen) m.oddsOpen = m.odds;
@@ -664,7 +787,7 @@ async function tipAutoPrematch({ manual = false } = {}) {
     if (f && f.bzRemaining != null) tipUI.bzRem = f.bzRemaining;
     /* 3.99.9 — se il server non aggiorna i pronostici da più di 8 ore lo si dice in Partite e Top, con il motivo */
     var age = f && f.generatedAt ? Date.now() - Date.parse(f.generatedAt) : null;
-    tipUI.preStale = f && (f.prematchErr || (age != null && age > 8 * 3600e3)) ? ('⚠ Pronostici automatici fermi' + (f.generatedAt ? ' dal ' + new Date(f.generatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') + (f.prematchErr && f.prematchErr.msg ? ' · ' + f.prematchErr.msg : ' · ripubblica pronostici-avvisi 3.99.9')) : null;
+    tipUI.preStale = f && (f.prematchErr || (age != null && age > 8 * 3600e3)) ? ('⚠ Pronostici automatici fermi' + (f.generatedAt ? ' dal ' + new Date(f.generatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') + (f.prematchErr && f.prematchErr.msg ? ' · ' + f.prematchErr.msg : ' · controlla su Supabase il giro bet-avvisi-live (supabase/avvisi-live.sql)')) : null;
     if (!f || !Array.isArray(f.matches) || (!f.matches.length && f.error)) { if (manual) U.toast((f && f.error) || 'Pronostici automatici non disponibili.'); return; }
     var pm = db.predModel || {};
     /* 3.95.1 — durante il giro del server il file cresce (oggi, poi domani, poi dopodomani): si riprende ogni volta che
@@ -747,6 +870,8 @@ async function tipAutoResults(opts) {
     if (!(ko + 125 * 60e3 < now && ko > now - 5 * 86400e3)) return false;
     if (!tipNum(m.ft)) return true;
     if (m.ov && Object.keys(m.ov).length && !m.afId) return true; /* esiti a mano da sostituire */
+    /* 4.12.0 — partite chiuse ma senza angoli, con un pronostico angoli (al massimo 3 ricerche) */
+    if (tipNeedCor(m) && (m.corTry || 0) < 3) return true;
     /* 3.14.1 — partite già chiuse ma senza minuto del primo gol (serve al piano 30') */
     return hasHt(m) && !Number.isInteger(m.fg) && tipNum(m.ht) && m.ht[0] + m.ht[1] > 0 && !m.fgTried;
   });
@@ -812,6 +937,10 @@ async function tipAutoResults(opts) {
           m.ov = {};
         }
         if (Array.isArray(x.ht)) m.ht = x.ht;
+        /* 4.12.0 — angoli finali e del 1° tempo (mercati angoli) */
+        if (tipNum(x.corners)) m.cor = x.corners;
+        if (tipNum(x.htCorners)) m.corHt = x.htCorners;
+        if (tipNum(m.ft) && tipNeedCor(m)) m.corTry = (m.corTry || 0) + 1;
         if (Number.isInteger(x.fg) && !Number.isInteger(m.fg)) m.fg = x.fg;
         if (tipNum(m.ft) && !Number.isInteger(m.fg) && m.ht && m.ht[0] + m.ht[1] > 0) m.fgTried = true;
       });
@@ -1384,18 +1513,13 @@ function tipWaitQ(A) { var q = Number((A || tipAlertPrefs()).qMin); return isFin
    moltiplica per 0,92 (archivio bet365 2-22/10, 5.532 segnali: il calcolo puro dava 3-5 punti di "gol presto" in meno;
    il minuto in cui la quota arriva è giusto entro 1'). Prezzo 70-75% → gol prima di 1.50 nel 32%, 1.50 verso il 57';
    prezzo 90%+ → 82%, 1.50 verso il 75'. */
-/* 4.13.1 — "⚡ gol prima" su AVANTI DI 1 A QUOTA troppo alto: segnali veri 22-27/10 (398) 28,9% contro 33,9% mostrato; archivio
-   4 settimane (263, quote minuto per minuto) 30,0% contro 34,0%. La differenza cala con la soglia: 1.30 −3, 1.40 −4, 1.50 −4/−5,
-   1.60 −3, 1.80 0. Negli altri filtri il calcolo è giusto (prossimo gol 2T 59,2% contro 59,6%, 1-0 54,4% contro 55,3%) e il
-   minuto della quota anche (scarto mediano 0', 99% entro 5'; dal vivo 39 "quota raggiunta" tutti entro 4'). */
-function tipWaitTv2(Q) { return Q <= 1.45 ? 0.04 : Q >= 1.8 ? 0 : 0.05 * Math.min(1, (1.8 - Q) / 0.3); }
-function tipWaitInfo(p0, m0, half, Q, k) {
+function tipWaitInfo(p0, m0, half, Q) {
   if (!(p0 > 0 && p0 < 1) || !isFinite(m0)) return null;
   var pq = 0.95 / Q, end = half === 1 ? 47 : 95;
   if (p0 <= pq) return { early: 0, at: m0, now: true };
   var lam0 = -Math.log(1 - p0), lmax = -Math.log(1 - pq), at = Math.round(end - (end - m0) * lmax / lam0);
   var reach = Math.min(1, 0.92 * (1 - p0) / (1 - pq));
-  return { early: k === 'tv2' ? Math.max(0, 1 - reach - tipWaitTv2(Q)) : 1 - reach, at: at, late: at > (half === 1 ? 44 : 88) };
+  return { early: 1 - reach, at: at, late: at > (half === 1 ? 44 : 88) };
 }
 function tipWaitText(i, Q, short) {
   if (!i) return '';
@@ -1410,7 +1534,6 @@ function tipIsTrial(e) {
   if (!e || !e.trial) return false;
   if (!TIP_STABLE_K[e.k]) return true;
   var g = e.factors && e.factors.lgG;
-  if (g === 'cup') return true; /* 4.16.0 — Champions ed Europa League: in prova */
   return e.k === 'tm3' && (g === 'women' || g === 'lower');
 }
 
@@ -1605,10 +1728,7 @@ var TIP_TARGET_P = { tk1: 0.84, tk2: 0.82 };
 /* 4.2.2 — gol 1T mai OTTIMA: con le quote vere bet365 del 1° tempo (2.528 momenti, 20-22/10) il mercato è esatto entro 1-2 punti
    e le statistiche live non aggiungono nulla fuori campione (56% contro 66% di base): oltre il 75% non si va */
 /* 4.3.5 — prossimo gol 1T solo con mercato ≥70%: sotto vinceva 74% (74 segnali), da 70% in su 81% (174), uguale nei due periodi */
-/* 4.11.1 — prossimo gol 2T fino a 5 gol in partita (era 4). Archivio bet365 2-22/10, prezzo ≥75%: con 5 gol 86,1% contro 84,0%
-   del prezzo (310 segnali; +2 / +4 / 0 nei tre periodi), dal vivo 20-26/10 84,6% contro 84,4%; fino a 4 gol 82,3% contro 82,4%.
-   Con 6 o più gol 81,4% contro 84,3% (199; dal vivo 80,5% contro 84%) e con 6 gol e 2 di scarto (4-2) 73% contro 83% → restano fuori. */
-var TIP_TM = { 1: { from: 10, to: 38, pMin: 0.70, up: 0.07, green: 1, warm: 0.75 }, 2: { from: 46, to: 80, pMin: 0.75, up: 0.03, maxG: 5, green: 0.88, warm: 0.78 } };
+var TIP_TM = { 1: { from: 10, to: 38, pMin: 0.70, up: 0.07, green: 1, warm: 0.75 }, 2: { from: 46, to: 80, pMin: 0.75, up: 0.03, maxG: 4, green: 0.88, warm: 0.78 } };
 function tipLineLam(L) { /* gol attesi da una linea gol asiatica (linea x.5 = +0,17, x.25/x.75 = +0,08: tarato sul registro) */
   if (!U.finite(L) || L <= 0) return null;
   var fr = L - Math.floor(L), adj = Math.abs(fr - 0.5) < 0.01 ? 0.17 : Math.abs(fr - 0.25) < 0.01 || Math.abs(fr - 0.75) < 0.01 ? 0.08 : 0;
@@ -1655,26 +1775,13 @@ var TIP_CAL = {
 };
 var TIP_CAL_ADJ = { /* [pari, avanti di 1, avanti di 2+] */
   1: { top7: [-0.016, -0.011, 0.012], first: [-0.018, 0.008, -0.024], lower: [-0.019, 0.022, 0.002], cup: [0.046, -0.001, -0.004],
-       'minor+': [-0.012, -0.044, -0.041], minor: [-0.023, 0.008, 0.001], 'youth+': [0.024, 0.025, 0.015], youth: [-0.006, 0.011, -0.013], women: [-0.002, -0.022, -0.043] },
-  2: { top7: [0.006, 0.014, 0.016], first: [-0.022, -0.005, -0.014], lower: [0.002, 0.014, -0.007], cup: [0.003, 0.007, 0.009],
-       'minor+': [0.010, 0.014, 0.015], minor: [-0.005, 0.018, 0.006], 'youth+': [-0.008, 0.004, 0.004], youth: [0.007, -0.010, 0.009], women: [0.020, 0.007, 0.025] } /* 4.13.0 — rifatto su 4 settimane */
+       'minor+': [0.028, -0.004, -0.001], minor: [-0.023, 0.008, 0.001], 'youth+': [0.024, 0.025, 0.015], youth: [-0.006, 0.011, -0.013], women: [-0.002, -0.022, -0.043] },
+  2: { top7: [-0.010, -0.007, 0.028], first: [0.027, -0.018, 0], lower: [-0.028, -0.035, -0.019], cup: [0.016, -0.004, 0.029],
+       'minor+': [-0.025, 0.046, 0.009], minor: [-0.007, 0.023, 0.001], 'youth+': [-0.038, -0.022, -0.025], youth: [0.010, -0.008, 0.011], women: [-0.020, -0.003, 0.018] }
 };
 /* 4.2.9 — OTTIMA da 87% (era 85%): segnali veri 22-24/10, stima ≥87% 142 segnali vinti 93% (ogni giorno 87-96%), stima 85-87%
    158 segnali vinti 87%. Meno segnali e quelli che restano vincono di più. */
-/* 4.12.0 — RIANALISI DELLO STORICO (archivio bet365 2-22/10 + segnali veri 23-26/10, regole 4.11.1):
-   prossimo gol 1T con stima 70-75% vince 68,8% sull'archivio (stima 73,6%; 170) e 56,5% dal vivo (23) → si parte da 75%.
-   1T nei minori dei Paesi forti −4 punti (archivio −4,4: −8 / −4 / −3; dal vivo −10 su 36) → TIP_CAL_ADJ[1]['minor+'] −0,04. */
-/* 4.13.0 — RETRAINING 27/10. Archivio bet365 ora di 4 settimane (24/9-22/10, 10.500 partite: 24/9-1/10 è nuovo) + segnali veri
-   23-27/10. Correzioni del 2T per gruppo e punteggio (TIP_CAL_ADJ[2]) rifatte su tutte e 4 le settimane (scarto medio rispetto
-   al prezzo tarato, ristretto verso 0 con 300 casi): quelle di prima venivano da una settimana sola (16-22/10) e fuori da quella
-   settimana sbagliavano (minori dei Paesi forti avanti di 1 +4,6 → vero +1,4; giovanili forti −2/−4 → vero 0).
-   Prova a turno (3 settimane per tarare, la quarta per controllare): prossimo gol 2T OTTIMA da 1.261 segnali al 88,7% (stima
-   90,2%) a 1.455 al 90,0% (stima 90,2%); gol 2T sull'1-0 stima 84,7% contro 84,6% vinte (prima 86,7%). Dal vivo 23-27/10:
-   OTTIME del 2T da 421 (89,8%) a 470 (90,0%).
-   "Avanti di 1 a quota" tiene le correzioni di prima (TIP_TV2_ADJ): dal vivo 338 segnali 78,4% contro 78,8% stimato. Con le nuove
-   perderebbe un quarto dei segnali senza vincere di più. Prossimo gol 1T: correzioni invariate (l'archivio non ha i tiri in porta). */
-var TIP_TV2_ADJ = { 'minor+': 0.046, minor: 0.023 };
-var TIP_GOAL_GREEN = 0.87, TIP_GOAL_WARM = { 1: 0.75, 2: 0.74 };
+var TIP_GOAL_GREEN = 0.87, TIP_GOAL_WARM = { 1: 0.70, 2: 0.74 };
 var TIP_TM3_UP = 0.02; /* 4.3.1 — correzione del gol 2T sull'1-0 (vedi tipTargetGoal) */
 function tipGoalProb(M, half, lgG, diff) {
   var C = TIP_CAL[half] || TIP_CAL[2], ab = C[M.src === 'quote' ? 'quote' : 'linea'], m = Math.max(0.01, Math.min(0.995, M.p));
@@ -1735,13 +1842,6 @@ function tipLineJump(id, min, half, ll, G) {
 var TIP_LG_TOP7 = /^(england |english )?premier league$|^(spain |spanish )?la ?liga( ea sports)?$|^(italy |italian )?serie a$|^(germany |german )?bundesliga( i)?$|^(france |french )?ligue 1( mcdonald'?s)?$|^(netherlands |holland |dutch )?eredivisie$|^(portugal |portuguese )?(primeira liga|liga portugal( betclic)?)$/i;
 var TIP_LG_LOWER = /championship|league one|league two|serie b|serie c|ligue 2|2\. ?liga|3\. ?liga|bundesliga ii|2\. bundesliga|segunda|primera division rfef|eerste divisie|keuken|superettan|division [1-3]|super league 2|national league|southern|northern|isthmian|\busl\b|second|liga 2|liga ii|challenge league/i;
 var TIP_LG_INTCUP = /champions league|europa league|conference league|libertadores|sudamericana|\bafc\b|\bcaf\b|concacaf|club world cup/i;
-/* 4.16.0 — CHAMPIONS LEAGUE ED EUROPA LEAGUE (UEFA, maschili) DI NUOVO, IN PROVA. Le coppe internazionali restano fuori dai
-   segnali gol (4.2.7), ma queste due no. Archivio bet365 24/9-22/10 con le regole di oggi (coppe riattivate): Champions League 36/40
-   (90%, stima 86%), Europa League 10/11 (stima 84,5%); dal vivo 22/10 Europa League 17/19. Le altre coppe fanno peggio:
-   CONCACAF Nations League 73% (67, stima 82%), AFC Challenge League 64% (11), Conference League 60% (10). Pochi casi → segnali
-   in prova (🧪, statistiche a parte); restano le regole UEFA di prima (2T solo con mercato ≥85%, niente 1-0). */
-var TIP_LG_CUPTRIAL = /^(uefa )?(champions|europa) league$/i;
-function tipCupTrial(league) { return TIP_LG_CUPTRIAL.test(String(league || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s*·\s*/g, ' ').trim()); }
 /* 4.4.0 — CAMPIONATI DELLE AMERICHE (Sud, Centro, Caraibi, Messico, USA, Canada). Archivio quote bet365 2-22/10 (10.000 partite,
    tre periodi) e segnali veri 22-26/10, sempre sotto il mercato quando una squadra è avanti di 1:
      1-0 46'-70'          74% contro 81% (231 partite; 72 · 75 · 78 nei tre periodi) · dal vivo 27/36 (75%)
@@ -1768,6 +1868,7 @@ function tipFavState(x) {
   return { p: Math.round(Math.max(1 / o[0], 1 / o[2]) / s * 1000) / 1000, st: d === 0 ? 'pari' : (d > 0) === home ? 'avanti' : 'sotto' };
 }
 function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
+  if (half !== 1) return null; /* 4.13.0 — solo il prossimo gol 1T (anche con gol già fatti): niente segnali 2T */
   var W = TIP_TM[half];
   if (!W || min < W.from || min > W.to || (W.maxG != null && G > W.maxG) || (half === 1 && women)) return null;
   if (x && U.finite(x.lineJump) && x.lineJump >= 0.5) return null; /* 4.2.3 — rigore / evento in corso: si aspetta */
@@ -1809,7 +1910,7 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var fav = tipFavState(x);
   if (half === 1 && fav && fav.st === 'sotto') return null;
   var tm3Ok = half === 2 && !lowV && G === 1 && !recent && !uefa && !amer && min <= 70 && (tier === 'minor' || tier === 'minor+' || tier === 'women' || lgG === 'lower');
-  if ((lgG === 'cup' && !tipCupTrial(lgN)) || (lgG === 'lower' && !tm3Ok)) return null; /* 4.16.0 — Champions ed Europa League in prova */
+  if (lgG === 'cup' || (lgG === 'lower' && !tm3Ok)) return null;
   var k = half === 1 ? 'tm1' : 'tm2';
   /* 4.2.6 — archivio quote bet365 16-22/10 (~2.900 partite): il vantaggio sul mercato c'è solo nei campionati minori
      con una squadra avanti. Maggiori, giovanili e femminili sono al livello del mercato o sotto; la parità è sotto.
@@ -1834,18 +1935,13 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   /* 4.2.8 — % tarata (mercato vero + gruppo e punteggio + selezione) e una sola regola per tutti: OTTIMA da 85%,
      DA VALUTARE da 74% nel 2T e da 70% nel 1T */
   var Pg = tipGoalProb(M, half, lgG, diff), p = Pg.p, green = TIP_GOAL_GREEN, warm = TIP_GOAL_WARM[half] || 0.74;
-  if (k === 'tv2') p = Math.max(0.01, Math.min(0.95, Pg.base + (TIP_TV2_ADJ[lgG] || 0))); /* 4.13.0 — vedi TIP_TV2_ADJ */
-  /* 4.4.0 — Americhe nel 2T: niente correzioni in più per il campionato, poi −7 punti con una squadra avanti di 1 (archivio 1-0: 74% contro 81%), −3 negli altri casi.
-     4.13.0 — archivio 4 settimane, prossimo gol 2T rispetto al prezzo: avanti di 1 −4,1, sotto in tutte e 4 le settimane (prima −7 → stima 4 punti sotto il vero),
-     avanti di 2+ +0,9 (dal vivo +3,6: prima −3 → stima 6 punti sotto), pari −1,7 (resta −3). → −4 / 0 / −3 */
-  if (half === 2 && amer) p = Math.max(0.01, Math.min(0.95, Pg.base + Math.min(Pg.adj, 0) - (diff === 1 ? 0.04 : diff === 0 ? 0.03 : 0)));
+  /* 4.4.0 — Americhe nel 2T: niente correzioni in più per il campionato, poi −7 punti con una squadra avanti di 1 (archivio 1-0: 74% contro 81%), −3 negli altri casi */
+  if (half === 2 && amer) p = Math.max(0.01, Math.min(0.95, Pg.base + Math.min(Pg.adj, 0) - (diff === 1 ? 0.07 : 0.03)));
   /* 4.6.2 — Americhe nel 1T (prossimo gol 1T): sopra il mercato. Archivio bet365 2-22/10: 216 segnali, 80% contro 75%,
      +6 / +6 / +3 nei tre periodi; dal vivo 23-26/10: 44 segnali, 84% contro 78% stimato → +3 punti. Analisi per campionato
      e per nazione (4.6.2): scegliendo i campionati "buoni" o "cattivi" su due periodi, nel terzo vincono come gli altri →
-     niente elenchi di campionati, solo regole per gruppo o zona confermate dall'archivio E dal vivo.
-     4.13.0 — TOLTO: rifatto con il motore su 4 settimane, nel 1T le Americhe vincono come il prezzo (73,9% contro 74,3%, 257 momenti
-     con prezzo ≥70%), come gli altri (75,0% contro 74,9%); i segnali con il +3 erano sotto le altre zone in tutte e 4 le settimane.
-     I segnali che il +3 faceva partire (stima 75-77%): archivio 66% su 50, dal vivo 76% su 17. */
+     niente elenchi di campionati, solo regole per gruppo o zona confermate dall'archivio E dal vivo. */
+  else if (half === 1 && amer) p = Math.min(0.95, p + 0.03);
   /* 4.3.1 — 🎯 gol 2T sull'1-0: dal vivo 22-25/10 vince 147 su 169 (87%) contro 85,5% stimato: +2 punti, così la % è quella vera
      e quando arriva all'87% torna OTTIMA. Vince uguale da OTTIMA e da DA VALUTARE (87%): il livello qui conta poco. */
   /* 4.3.6 — femminili e serie minori dei Paesi forti (in prova): sempre DA VALUTARE.
@@ -2054,7 +2150,7 @@ function tipPlayFind(id, ctx) {
 }
 function tipPlayEntry(m, ctx, x, lid) {
   var data = (tipUI.liveData || {})[m.id] || {};
-  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.16.0',
+  return JSON.parse(JSON.stringify({ schemaVersion: 2, engineVersion: '4.10.0',
     input: { lh: m.lh, la: m.la, odds: m.odds || null, preIssueId: m.preIssue ? m.preIssue.id : null,
       parameters: tipParams(), observedAt: data.at || null, status: data.status || null, prev: tipLivePrev(m.id, ctx.min, ctx.half) },
     key: tipPlayKey(m.id, ctx), id: m.id, afId: lid, home: m.home, away: m.away, league: m.league, date: m.date, time: m.time,
@@ -2339,15 +2435,21 @@ function tipLeagueTop(m) {
 var TIP_LG_EXTRA = { major: 0, 'minor+': 0.02, minor: 0.04, 'youth+': 0.03, youth: 0.06, women: 0.06 };
 /* 3.65.0 — prepartita: punti in più richiesti per pronostici e Top fuori dai campionati maggiori */
 /* 3.66.0 — Over 2.5: 54% vinte con 72% previsto (13 pronostici), serve più margine */
-var TIP_PRE_MK_EXTRA = { o25: 8 }; /* 4.13.0 — Goal / No goal di nuovo attivo: la sospensione della 4.12.0 veniva da un conto sbagliato (i "No goal" vinti contati come persi). Conto giusto 16-25/10: Goal 7/10 (73,7% mostrato), No goal 14/19 (74,7% mostrato) */ /* 3.89.0 — Over 2.5 7/13 (54%) con 72% previsto */
+var TIP_PRE_MK_EXTRA = {}; /* 3.89.0 — Over 2.5 7/13 (54%) con 72% previsto: +8 punti; 4.12.0 — tolto, l'Over 2.5 ha soglie sue (TIP_THR) */
 var TIP_PRE_LG_EXTRA = { major: 0, 'minor+': 2, minor: 4, 'youth+': 4, youth: 6, women: 6 };
 var TIP_STEP1T_ON = false;
 /* 3.67.0 — tolte le giocate a 1.80: 42-43% vinte, lontane dall'obiettivo 80% */
 var TIP_K_OFF = { t1s18: 1, t2u18: 1, tp1: 1, tp2: 1, tc2: 1, th2: 1, tq1: 1, th1: 1, tf1: 1, tc1: 1, t1st: 1, t1s15: 1, tf2: 1, tg1: 1, tq2: 1, tn2: 1, t2w: 1, t1w: 1, tk2: 1 }; /* 3.99.9 — tk2 (+1 angolo finale 82’-83’) spento: segnali veri del 22/10 4 vinte su 10; sul registro era 83% solo per caso */ /* 3.99.0 — spenti anche t2w/t1w (aspetta e gioca l’unico: sul registro 10/31, 32%; nei consigli veri mai chiuse) */ /* 3.98.0 — spenti: tg1, tq2, tn2 (con la probabilità del mercato diventano doppioni di 🎯 prossimo gol 1T/2T); tc1 +1 angolo finale (125/170, 74%: dall’82’ il tempo non basta, base 64%), t1st 7/14 e t1s15 22/37 (gol 1T, modello ottimista), tf2 (doppione del nuovo 🎯 gol 2T, che fa meglio: 88% contro 84%) */ /* 3.95.0 — th1 (36’-42’: base 47%, 63% contro 76% previsto) e tf1 (58% contro 71%) spenti: al loro posto 🎯 angolo 1T e 🎯 gol 1T */ /* 3.89.0 — tq1: 40/76 (53%) con 60% previsto, anche quando OTTIMA: spento */
+/* 4.13.0 — LIVE SOLO GOL 1° TEMPO: resta solo il 🎯 prossimo gol entro l'intervallo (⭐ dalla stima 80%), a qualsiasi
+   punteggio: parte quando le squadre spingono (almeno un tiro in porta negli ultimi 5-15 minuti e mercato bet365 ≥ 70%).
+   Più la sua ⏳ quota raggiunta. Tutti gli altri segnali live (2° tempo, angoli, step, partite da gol) sono spenti: non vengono
+   generati, non notificano e non contano nelle statistiche (restano nell'Archivio e negli export). */
+var TIP_LIVE_ONLY = { tm1: 1, tm1s: 1, tr1: 1 };
+['t1st', 't1s15', 't1s18', 't2st3', 't2st2', 't2u15', 't2u18', 't2w', 't1w', 'tp1', 'tp2', 'tc1', 'tc2', 'th1', 'th2', 'tq1', 'tq2', 'tg1', 'tn2', 'tf1', 'tf2', 'tm2', 'tm3', 'tv2', 'tk1', 'tk2', 'tr2'].forEach(function (k) { TIP_K_OFF[k] = 1; });
  /* 3.74.0 — tp1/tp2 sostituiti da tq1/tq2; 3.78.0 — +2 angoli spenti (sbagliano) */
 /* 3.71.0 — statistiche azzerate: contano solo i consigli dei tipi ATTIVI, dal momento dell'azzeramento.
    Tutto resta salvato (export, retraining, calibrazione) e si può rivedere con "Archivio". */
-function tipKindActive(k) { return !TIP_K_OFF[k] && !(k === 't1st' && !TIP_STEP1T_ON); }
+function tipKindActive(k) { return !!TIP_LIVE_ONLY[k] && !TIP_K_OFF[k]; } /* 4.13.0 — solo prossimo gol 1T */
 function tipStatsFrom() { return tipUI.stArchive ? 0 : (((db.predModel || {}).statsFrom) || 0); }
 function tipStatsFromDay() { var f = tipStatsFrom(); return f ? new Date(f).toLocaleDateString('sv-SE') : '0000-00-00'; }
 function tipStatsOk(e) { return !e.idBad && (!!tipUI.stArchive || ((e.t || 0) >= tipStatsFrom() && tipKindActive(e.k))); }
@@ -3091,7 +3193,7 @@ function tipKChipsHtml(listForCounts, statsByK, selK) {
   return '<div class="lvk-row" role="toolbar" aria-label="Filtri veloci"><button type="button" class="lvk' + (!selK ? ' on' : '') + '" data-lvk="">Tutti <i>' + listForCounts.length + '</i></button>' +
     ks.map(function (k) {
       var p = pct(k);
-      return '<button type="button" class="lvk' + (selK === k ? ' on' : '') + '" data-lvk="' + U.esc(k) + '"><i class="fkdot ' + tipFkCls(k) + '" aria-hidden="true"></i><span>' + U.esc(name(k)) + '</span>' +
+      return '<button type="button" class="lvk' + (selK === k ? ' on' : '') + '" data-lvk="' + U.esc(k) + '"><span>' + U.esc(name(k)) + '</span>' +
         (p != null ? '<b class="' + (p >= 80 ? 'good' : p >= 70 ? 'mid' : 'bad') + '">' + p + '%</b>' : '') + '<i>' + (cnt[k] || 0) + '</i></button>';
     }).join('') + '</div>';
 }
@@ -3342,7 +3444,7 @@ function tipAlertFilters(A, btn) {
   var Qw = tipWaitQ(A), qOn = !A.qOff;
   var qSec = sec('⏳ Quota raggiunta') + '<div class="tip-chips"><button type="button" class="tip-chipbtn' + (qOn ? ' on' : '') + '" data-alert-qoff>' + (qOn ? 'Attivo' : 'Spento') + '</button>' +
     [1.3, 1.4, 1.5, 1.6, 1.7, 1.8].map(function (q) { return '<button type="button" class="tip-chipbtn' + (qOn && Math.abs(q - Qw) < 0.001 ? ' on' : '') + '" data-alert-q="' + q + '">' + q.toFixed(2) + '</button>'; }).join('') + '</div>' +
-    '<p class="muted tip-hint">Dopo un segnale gol che ti arriva (prossimo gol 1T e 2T, gol 2T sull’1-0, avanti di 1 a quota) il server segue la partita: se non segnano e la quota bet365 per un altro gol arriva alla soglia, ti avvisa. A quella quota si vince quanto dice il book: a 1.50 circa il 62%. Ci arrivi più o meno una volta su tre: nelle altre segnano prima.</p>';
+    '<p class="muted tip-hint">Dopo un segnale prossimo gol 1T che ti arriva il server segue la partita: se non segnano e la quota bet365 per un altro gol entro l’intervallo arriva alla soglia, ti avvisa. A quella quota si vince quanto dice il book: a 1.50 circa il 62%. Ci arrivi più o meno una volta su tre: nelle altre segnano prima.</p>';
   return qSec + sec('Segnali') + '<div class="tip-chips">' + btn('stable', on('stable'), 'Stabili') + btn('trial', on('trial'), 'In prova 🧪') + '</div>' +
     sec('Livello') + '<div class="tip-chips">' + btn('excellent', on('excellent'), 'OTTIME') + btn('amber', on('amber'), 'DA VALUTARE') + btn('quality', on('quality'), 'Solo qualità') + btn('valOnly', !!A.valOnly, '💰 Solo con valore') + '</div>' +
     '<p class="muted tip-hint">💰 Solo con valore: ti arrivano solo i segnali gol in cui la quota bet365 vera supera la quota minima (1 diviso la %) almeno del 3%. Senza quota vera il segnale non arriva.</p>' +
@@ -3410,7 +3512,7 @@ function tipBetLabel(e) {
   var first = (e.half || 0) === 1 || k === 'tm1' || k === 'tm1s' || k.indexOf('t1') === 0;
   return 'Over ' + (G + 0.5).toFixed(1) + (first ? ' 1T' : '');
 }
-var TIP_LV_KIND = { tm1: 'prossimo gol 1T', tm1s: '⭐ Prossimo gol 1T', tm2: 'prossimo gol 2T', tm3: 'gol 2T sull’1-0', tv2: 'avanti di 1 a quota' };
+var TIP_LV_KIND = { tm1: 'prossimo gol 1T', tm1s: '⭐ Prossimo gol 1T', tm2: 'prossimo gol 2T', tm3: 'gol 2T sull’1-0', tv2: 'avanti di 1' };
 /* 4.9.0 — ETICHETTE UGUALI PER TUTTI: livello (OTTIMA / DA VALUTARE / PREZZO BOOK), stato del filtro (STABILE / IN PROVA)
    e valore (💰) sono etichette dello stesso tipo, una accanto all'altra. Il filtro che ha generato il segnale è il titolo. */
 function tipLvTags(e, QI) {
@@ -3423,85 +3525,11 @@ function tipLvCorner(e) {
   if (TIP_WAIT_K[e.k]) return '';
   return tipIsTrial(e) ? '<i class="lv2-corner trial" role="img" aria-label="Filtro in prova" title="Filtro in prova">🧪</i>' : '<i class="lv2-corner stable" role="img" aria-label="Filtro stabile" title="Filtro stabile">🛡️</i>';
 }
-/* 4.12.0 — NOME DEL FILTRO SUBITO RICONOSCIBILE: etichetta in MAIUSCOLO con un colore per filtro
-   (prossimo gol 2T blu, 1-0 viola, avanti di 1 fucsia, prossimo gol 1T turchese, ⭐ 1T turchese pieno, quota raggiunta grigio-azzurro). */
-var TIP_FK_CLS = { tm2: 'fk-tm2', tm3: 'fk-tm3', tv2: 'fk-tv2', tm1: 'fk-tm1', tm1s: 'fk-tm1s', tk1: 'fk-co', tk2: 'fk-co' };
-function tipFkCls(k) { return TIP_FK_CLS[k] || 'fk-x'; }
-function tipFkTag(e) {
-  var wait = !!TIP_WAIT_K[e.k], k = wait ? e.fromK : e.k;
-  var n = String(TIP_LV_KIND[k] || TIP_PLAY_SHORT[k] || k || '').replace(/^🎯\s*/, '').toUpperCase();
-  return wait ? '<i class="fk fk-qr">⏳ QUOTA RAGGIUNTA</i><i class="fk fk-sm ' + tipFkCls(k) + '">' + U.esc(n) + '</i>' : '<i class="fk ' + tipFkCls(k) + '">' + U.esc(n) + '</i>';
-}
 function tipLvFilterName(e) {
   var wait = !!TIP_WAIT_K[e.k], k = wait ? e.fromK : e.k;
   var n = String(TIP_LV_KIND[k] || TIP_PLAY_SHORT[k] || k || '').replace(/^🎯\s*/, '');
   n = n ? n.charAt(0).toUpperCase() + n.slice(1) : '';
   return wait ? 'Quota raggiunta · ' + n.charAt(0).toLowerCase() + n.slice(1) : n;
-}
-/* 4.14.0 — ⚠ PARTITA FERMA. Segnali gol del 2T (prossimo gol 2T, 1-0, avanti di 1) ancora aperti: se dal segnale sono passati
-   15 minuti o più, il punteggio è lo stesso e non c'è stato nemmeno un angolo, la partita si è fermata.
-   Archivio bet365 4 settimane (24/9-22/10, quote vere): 15' dopo il segnale senza gol e senza angoli il gol arriva il 58,1%
-   contro il 68,2% del prezzo di quel momento (353 casi, sotto in tutte e 4 le settimane); con almeno un angolo 65,5% contro
-   70,3%. Dal vivo 23-27/10: 55,8% contro 60,6% (95). Solo un avviso: non cambia segnali, % e statistiche. Vale anche per la
-   "quota raggiunta" nata da questi segnali (è proprio quando viene voglia di rientrare). */
-var TIP_STALL_K = { tm2: 1, tm3: 1, tv2: 1 }, TIP_STALL_MIN = 15;
-function tipCornersOf(st) {
-  if (!st) return null;
-  if (U.finite(st.c)) return st.c;
-  var s = st.side;
-  return Array.isArray(s) && s[0] && s[1] && U.finite(s[0].c) && U.finite(s[1].c) ? s[0].c + s[1].c : null;
-}
-function tipStallInfo(e) {
-  if (!e || e.res != null || !e.afId) return null;
-  var base = e;
-  if (TIP_WAIT_K[e.k]) {
-    if (!TIP_STALL_K[e.fromK]) return null;
-    base = null; ((db.predModel || {}).playLog || []).forEach(function (x) { if (x && x.key === e.fromKey) base = x; });
-    if (!base) return null;
-  } else if (!TIP_STALL_K[e.k]) return null;
-  var y = null; (tipUI.scanRows || []).forEach(function (r) { if (r && r.x && r.x.afId === e.afId) y = r; });
-  if (!y || !y.x || !Array.isArray(y.x.goals) || y.half !== 2 || !U.finite(y.min) || !U.finite(base.min)) return null;
-  if ((y.x.goals[0] || 0) !== (base.gh || 0) || (y.x.goals[1] || 0) !== (base.ga || 0)) return null;
-  var dm = y.min - base.min;
-  if (dm < TIP_STALL_MIN) return null;
-  var c1 = tipCornersOf(y.x.stats), c0 = tipCornersOf(base.stats);
-  if (c1 == null || c0 == null || c1 > c0) return null;
-  return { dm: dm, from: base.min };
-}
-/* 4.15.0 — 🎯 SPINGONO (1T, IN PROVA). Prossimo gol 1T ancora aperto, nessun gol da almeno 5 minuti dopo il segnale (fino al 42'):
-   se dal segnale sono arrivati tiri in porta, la % di adesso = prezzo bet365 di adesso (tarato) + un aumento per i tiri in porta.
-   Segnali veri 23-27/10, 5-17 minuti dopo il segnale senza gol (117 segnali): 0 tiri in porta 62% contro 60% del prezzo tarato,
-   1 tiro in porta 69% contro 60% (42), 2 o più 73% contro 60% (22). Aumento ristretto verso 0 per i pochi casi: +6 / +9 punti.
-   L'archivio non ha i tiri in porta per confermarlo: avviso in prova, non cambia segnali e statistiche. */
-var TIP_PUSH1_UP = { 1: 0.06, 2: 0.09 }, TIP_PUSH1_K = { tm1: 1, tm1s: 1 };
-function tipSotOf(st) {
-  if (!st) return null;
-  if (U.finite(st.t)) return st.t;
-  var s = st.side;
-  return Array.isArray(s) && s[0] && s[1] && U.finite(s[0].t) && U.finite(s[1].t) ? s[0].t + s[1].t : null;
-}
-function tipPush1Info(e) {
-  if (!e || e.res != null || !e.afId) return null;
-  var base = e;
-  if (TIP_WAIT_K[e.k]) {
-    if (!TIP_PUSH1_K[e.fromK]) return null;
-    base = null; ((db.predModel || {}).playLog || []).forEach(function (x) { if (x && x.key === e.fromKey) base = x; });
-    if (!base) return null;
-  } else if (!TIP_PUSH1_K[e.k]) return null;
-  var y = null; (tipUI.scanRows || []).forEach(function (r) { if (r && r.x && r.x.afId === e.afId) y = r; });
-  if (!y || !y.x || !Array.isArray(y.x.goals) || y.half !== 1 || !U.finite(y.min) || !U.finite(base.min)) return null;
-  var g = y.x.goals, G = (g[0] || 0) + (g[1] || 0);
-  if ((g[0] || 0) !== (base.gh || 0) || (g[1] || 0) !== (base.ga || 0)) return null;
-  var dm = y.min - base.min;
-  if (dm < 5 || y.min > 42) return null;
-  var t1 = tipSotOf(y.x.stats), t0 = tipSotOf(base.stats);
-  if (t1 == null || t0 == null || t1 - t0 < 1) return null;
-  var M = tipMktNext(y.x, y.min, 1, G);
-  if (!M || !(M.p > 0)) return null;
-  var lgN = String(e.league || base.league || ''), lgG = tipLgGroup(lgN, tipLeagueTier({ league: lgN, home: e.home, away: e.away }));
-  var Pg = tipGoalProb(M, 1, lgG, Math.abs((g[0] || 0) - (g[1] || 0))), sot = t1 - t0;
-  var pNow = Math.max(0.01, Math.min(0.92, Pg.base + TIP_PUSH1_UP[sot >= 2 ? 2 : 1]));
-  return { sot: sot, dm: dm, min: y.min, p: pNow, pMkt: M.p, q: M.book || (M.ovr > 1 ? 1 / (M.p * M.ovr) : 0.95 / M.p), qEst: !M.book };
 }
 function tipLvRow(e, o) {
   o = o || {};
@@ -3512,22 +3540,19 @@ function tipLvRow(e, o) {
   var wait = !!TIP_WAIT_K[e.k], trial = !wait && tipIsTrial(e);
   var QI = !wait && TIP_TARGET[e.k] && !/^t[ck]/.test(e.k) ? tipQuotaInfo(e) : null;
   var reach = '';
-  if (o.reach && TIP_WAIT_SRC[e.k] && e.res == null) { var Q = tipWaitQ(); reach = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, (e.half || 1) === 1 || e.k === 'tm1' || e.k === 'tm1s' ? 1 : 2, Q, e.k), Q, true); }
+  if (o.reach && TIP_WAIT_SRC[e.k] && e.res == null) { var Q = tipWaitQ(); reach = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, (e.half || 1) === 1 || e.k === 'tm1' || e.k === 'tm1s' ? 1 : 2, Q), Q, true); }
   var meta = [hm, U.esc(e.league || ''), Array.isArray(e.ft) && e.res != null ? 'finale ' + e.ft[0] + '-' + e.ft[1] : '', wait && e.fromMin != null ? 'segnale al ' + e.fromMin + '’' : ''].filter(Boolean).join(' · ');
   var quote = wait ? (e.q ? '<i class="lv2-q">@' + Number(e.q).toFixed(2) + (e.qEst ? '≈' : '') + '</i>' : '')
     : QI && QI.q ? '<i class="lv2-q' + (QI.ok ? ' val' : QI.value < 0 ? ' low' : '') + '">@' + QI.q.toFixed(2) + (QI.est ? '≈' : '') + '</i>' : '';
-  var stall = tipStallInfo(e), push1 = tipPush1Info(e);
   var lvId = U.esc(String(e.key || e.id || '') + '§' + (e.k || '') + '§' + (e.t || 0));
   return '<button type="button" data-lv-open="' + lvId + '" class="lv2 lv2-' + (wait ? 'qr' : t) + (trial ? ' lv2-trial' : '') + (o.isNew ? ' lv2-new' : '') + (o.showRes ? ' lv2-' + st : '') + '"' + (o.showRes && st !== 'wait' ? ' aria-label="' + (st === 'win' ? 'Vinta' : 'Persa') + '"' : '') + '>' +
     tipLvCorner(e) +
     '<span class="lv2-min"><b>' + (e.min != null ? e.min + '’' : '–') + '</b><small>' + (half === 1 ? '1T' : '2T') + '</small></span>' +
-    '<span class="lv2-main"><span class="lv2-fname">' + tipFkTag(e) + '</span>' +
+    '<span class="lv2-main"><b class="lv2-fname">' + U.esc(tipLvFilterName(e)) + '</b>' +
     '<span class="lv2-teams">' + U.esc(e.home || '') + ' – ' + U.esc(e.away || '') + '</span>' +
     '<span class="lv2-bet"><i class="lv2-sc">' + (e.gh || 0) + '-' + (e.ga || 0) + '</i><b>' + U.esc(tipBetLabel(e)) + '</b>' + quote + '</span>' +
     tipLvTags(e, QI) +
-    (meta ? '<span class="lv2-meta">' + meta + '</span>' : '') + (reach ? '<span class="lv2-early">' + reach + '</span>' : '') +
-    (stall ? '<span class="lv2-stall">⚠ partita ferma · nessun angolo in ' + stall.dm + '’</span>' : '') +
-    (push1 ? '<span class="lv2-push">🎯 spingono · ' + push1.sot + (push1.sot === 1 ? ' tiro' : ' tiri') + ' in porta · ora ' + Math.round(push1.p * 100) + '%</span>' : '') + '</span>' +
+    (meta ? '<span class="lv2-meta">' + meta + '</span>' : '') + (reach ? '<span class="lv2-early">' + reach + '</span>' : '') + '</span>' +
     '<span class="lv2-side">' + (pc != null ? '<b class="lv2-pct">' + pc + '%</b>' : '') + (QI ? '<i class="lv2-mq">min ' + QI.min.toFixed(2) + '</i>' : '') +
     (o.showRes && st !== 'wait' ? '<i class="lv2-out">' + (st === 'win' ? 'VINTA' : 'PERSA') + '</i>' : '') + '</span>' +
     '</button>';
@@ -3591,7 +3616,7 @@ function tipSignalSheet(e) {
     (wait ? row('Quota raggiunta', e.q ? Number(e.q).toFixed(2) + (e.qEst ? ' (stimata)' : ' bet365') : '') + row('Segnale di partenza', (e.fromMin != null ? e.fromMin + '’' : '') + (e.fromP ? ' · ' + Math.round(e.fromP * 100) + '%' : '')) : '') +
     (QI ? row('Quota minima', QI.min.toFixed(2)) + row('Quota bet365', QI.q ? QI.q.toFixed(2) + (QI.est ? ' (ricavata)' : '') : 'non disponibile', QI.ok ? 'positive' : '') + (QI.q ? row('Valore', QI.ok ? '💰 sì, +' + Math.round(QI.value * 100) + '%' : 'no (' + Math.round(QI.value * 100) + '%)', QI.ok ? 'positive' : 'muted') : '') : '');
   var early = '';
-  if (TIP_WAIT_SRC[e.k] && e.res == null) { var Qw = tipWaitQ(); early = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, half, Qw, e.k), Qw, false); }
+  if (TIP_WAIT_SRC[e.k] && e.res == null) { var Qw = tipWaitQ(); early = tipWaitText(tipWaitInfo((e.factors || {}).pMkt || e.p, e.min, half, Qw), Qw, false); }
   var st = e.stats && Array.isArray(e.stats.side) ? e.stats.side : null, stats = '';
   if (st) {
     var sr = function (l, k) { var a = st[0] && st[0][k], b = st[1] && st[1][k]; return a == null && b == null ? '' : '<div class="sg-st"><b>' + (a == null ? '–' : a) + '</b><span>' + l + '</span><b>' + (b == null ? '–' : b) + '</b></div>'; };
@@ -3605,8 +3630,6 @@ function tipSignalSheet(e) {
     '<div class="sg-hero"><div><small>' + (wait ? 'Quota raggiunta' : 'Giocata') + '</small><b>' + U.esc(tipBetLabel(e)) + '</b></div><div class="sg-pct">' + (pc != null ? '<b>' + pc + '%</b>' : '') + '<small>' + tierT + '</small></div></div>' +
     resBox +
     (early ? '<p class="sg-early">' + U.esc(early) + '</p>' : '') +
-    (function () { var pu = tipPush1Info(e); return pu ? '<p class="sg-push"><b>🎯 Spingono</b> · ' + pu.sot + (pu.sot === 1 ? ' tiro' : ' tiri') + ' in porta in ' + pu.dm + ' minuti dal segnale, ancora senza gol (' + pu.min + '’). Gol entro l’intervallo adesso: <b>~' + Math.round(pu.p * 100) + '%</b> (bet365 ' + Math.round(pu.pMkt * 100) + '%, quota ' + (pu.qEst ? '≈' : '') + pu.q.toFixed(2) + '; quota giusta ' + (1 / pu.p).toFixed(2) + '). 🧪 In prova: dal vivo con 1 tiro in porta 69% contro 60%, con 2 o più 73% contro 60%, su pochi segnali.</p>' : ''; })() +
-    (function () { var sf = tipStallInfo(e); return sf ? '<p class="sg-stall"><b>⚠ Partita ferma</b> · nessun angolo in ' + sf.dm + ' minuti dal segnale (' + sf.from + '’). In questi casi il gol arriva molto meno di quanto dice la quota (58% contro 68%): non rigiocarla a quota più alta.</p>' : ''; })() +
     '<div class="sg-rows">' + info + '</div>' + tipFilterRecap(e) + stats +
     (wait ? '<p class="sheet-note">Quota raggiunta: la quota bet365 del prossimo gol è arrivata alla tua soglia. La % è quella del book, non è un consiglio: è contata a parte.</p>' : '') +
     '</div>',
@@ -4540,7 +4563,9 @@ function tipOthers(m) {
   var have = {}, ch;
   (m.picks || []).forEach(function (p) { have[p.m] = 1; });
   try { ch = tipChoices(tipCalc(m, tipParams())); } catch (e) { return ''; }
-  var out = TIP_MARKETS.filter(function (k) { return !have[k[0]] && ch[k[0]]; }).map(function (k) {
+  var P0 = tipParams();
+  /* 4.12.0 — squadre e angoli in grigio solo se vicini alla soglia (testi compatti) */
+  var out = TIP_MARKETS.filter(function (k) { return !have[k[0]] && ch[k[0]] && (!TIP_NEW_MK[k[0]] || ch[k[0]].p >= tipThr(P0, k[0]) - 8); }).map(function (k) {
     var x = ch[k[0]], s = m.cancelled ? '' : tipAutoOutcome(m, { m: k[0], sel: x.sel, p: x.p }),
       mark = { V: '✓', P: '✕' }[s] || '';
     return '<span class="tip-other' + (s === 'V' ? ' ok' : s === 'P' ? ' ko' : '') + '">' + U.esc(x.sel) + ' <i>' + Math.round(x.p) + '%</i>' + (mark ? ' <em aria-hidden="true">' + mark + '</em>' : '') + '</span>';
@@ -4629,10 +4654,10 @@ function tipNav(list) {
   }, 0);
   if (tab === 'live') return ''; /* 4.5.0 — nel Live niente barra Home · Partite · Top */
   /* 3.54.0 — Home fissa a sinistra, poi lo switch Partite · Top (4.5.0 — il Live è una scheda della barra in basso) */
-  /* 4.12.0 — barra compatta: Home · Partite · Top, tre pulsanti uguali (prima Home a parte e un posto vuoto dopo Top) */
-  return '<div class="tip-nav tip-nav3" role="navigation" aria-label="Sezioni dei pronostici">' +
-    it('home', TIP_IC.home, 'Home') + it('list', TIP_IC.list, 'Partite') + it('top', TIP_IC.star, 'Top') + (nOtt < 0 ? '' : '') +
-    '</div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden>';
+  return '<div class="tip-nav" role="navigation" aria-label="Sezioni dei pronostici">' +
+    '<button type="button" class="tip-navhome' + (P === 'home' ? ' on' : '') + '" data-tip-panel="home" aria-label="Home dei pronostici">' + TIP_IC.home + '</button>' +
+    '<div class="tip-navseg">' + it('list', TIP_IC.list, 'Partite') + it('top', TIP_IC.star, 'Top') + (nOtt < 0 ? '' : '') +
+    '</div></div><input type="file" accept=".json,.csv,application/json,text/csv,text/plain" id="tip-file" hidden>';
 }
 /* giorni a scelta rapida, uguali in Top e Partite: Oggi · Domani · Dopodomani · Tutti (con il numero di partite) */
 function tipDayChips(list, allLabel, countFn, unit) { /* 4.0.1 — countFn/unit: in Top si contano le partite in Top, non tutti i pronostici */
@@ -5675,21 +5700,15 @@ function tipCalRows() {
   tipUI._cal = by;
   return by;
 }
-var TIP_PRE_OFF = { o15: -5, o25: -5, ht05: -3 };
 function tipCal(k, p) {
   var rows = (tipCalRows()[k] || []).filter(function (r) { return Math.abs(r[0] - p) <= 4; });
-  /* 4.12.0 — CORREZIONE FISSA DI PARTENZA. Archivio bet365 2-22/10 (7.675 partite): le % ricavate dalla linea gol con Poisson
-     sono troppo alte in tutti i periodi (Over 1.5 −4/−7, Over 0.5 1T −3/−6, Over 2.5 −4/−6), e i pronostici veri 16-25/10
-     lo confermano (Over 1.5 77,9% contro 83,2% mostrato, Over 0.5 1T 75,4% contro 78,4%). Senza storico si parte da qui;
-     con lo storico la correzione si sposta piano verso quella osservata (prima si partiva da zero). */
-  var off = TIP_PRE_OFF[k] || 0;
-  if (!rows.length) return Math.round(Math.max(1, Math.min(99, p + off)));
+  if (!rows.length) return p;
   var K = 15, /* 3.89.0 — Over 1.5 77% contro 84% previsto: la correzione con lo storico pesa di più (era 25) */
     w = rows.reduce(function (s, r) { return s + r[1]; }, 0),
     e = rows.reduce(function (s, r) { return s + r[0] / 100; }, 0);
   /* correzione = (vinti reali − attesi) diluita */
   /* 3.14.0 — prudenza: verso il basso si corregge del tutto, verso l'alto al massimo +1 punto */
-  var d = ((w - e + off / 100 * K) / (rows.length + K)) * 100;
+  var d = ((w - e) / (rows.length + K)) * 100;
   return Math.round(Math.max(1, Math.min(99, p + Math.min(d, 1))));
 }
 /* ---------- 3.9.0 — Liste Top ----------
@@ -5705,9 +5724,22 @@ var TIP_TOP_MK = [
   ['o15', 'Over 1.5'],
   ['o25', 'Over 2.5'],
   ['gg', 'Goal'],
+  ['tg', 'Squadra segna'],
+  ['t15', 'Over 1.5 squadra'],
+  ['co', 'Angoli partita'],
+  ['co1', 'Angoli 1° tempo'],
+  ['ct', 'Angoli squadra'],
 ];
+function tipTopNoOdds(m, k) {
+  var o = m.odds;
+  if (!o) return 'quote Over del book non disponibili';
+  if (TIP_COR_MK[k]) return U.finite(o.cl) ? '' : 'linea angoli del book non disponibile';
+  if (!(o.o15 || o.o25 || o.gl) || (m.topSkip && !o.o25 && !o.gl)) return 'quote Over del book non disponibili';
+  return '';
+}
 function tipFavBonus(m, k) {
-  if (k === '1x2' || !m.fav) return 0;
+  /* 4.12.0 — negli angoli la favorita non conta (una partita equilibrata può fare tanti angoli) */
+  if (k === '1x2' || TIP_COR_MK[k] || !m.fav) return 0;
   var f = m.fav;
   if (f >= 50) return Math.min(1, (f - 50) / 25) * 3;
   return f < 42 ? -1.5 : 0;
@@ -5721,11 +5753,11 @@ function tipTopCandidates(day, list, P) {
       cand = [], skip = {};
     list.forEach(function (m) {
       var out = function (why) { if (m.date === day && (m.picks || []).some(function (x) { return x.m === k && !/^(Under|No goal)/.test(x.sel); })) skip[m.id] = why; };
-      if (m.date === day && !m.cancelled && (m.warn || !m.odds || !(m.odds.o15 || m.odds.o25 || m.odds.gl) || (m.topSkip && !m.odds.o25 && !m.odds.gl)))
-        return out(m.warn ? 'avviso sulla partita' : 'quote Over del book non disponibili');
-      /* 3.50.0 — bastano le quote Over del book (1.5 o 2.5): le partite automatiche spesso non hanno l'Over 1.5 */
-      if (m.date !== day || m.cancelled || m.warn || !m.odds || !(m.odds.o15 || m.odds.o25 || m.odds.gl)) return;
-      if (m.topSkip && !m.odds.o25 && !m.odds.gl) return;
+      if (m.date !== day || m.cancelled) return;
+      /* 3.50.0 — bastano le quote Over del book (1.5 o 2.5): le partite automatiche spesso non hanno l'Over 1.5.
+         4.12.0 — per gli angoli serve la linea angoli del book */
+      var noOdds = m.warn ? 'avviso sulla partita' : tipTopNoOdds(m, k);
+      if (noOdds) return out(noOdds);
       var pk = (m.picks || []).find(function (x) { return x.m === k; });
       if (!pk) return;
       /* niente Under / No goal nelle Top: solo i lati "Over / Goal / segno" */
@@ -5855,6 +5887,12 @@ function tipTopRow(c, i) {
     '<span class="tip-tmain"><b>' + U.esc(m.home) + ' – ' + U.esc(m.away) + '</b><small>' + U.esc(m.time) + ' · ' + U.esc(m.league) + (m.fav ? ' · favorita ' + m.fav + '%' : '') + '</small></span>' +
     '<span class="tip-tpick"><b>' + U.esc(c.p.sel) + '</b><small>' + c.p.p + '%' + (c.p.raw != null && c.p.raw !== c.p.p ? ' (stima ' + c.p.raw + '%)' : '') + (odd ? ' · @' + odd.toFixed(2) : '') + '</small>' +
     '<small class="tip-plan">quota di pareggio ' + (100 / c.p.p).toFixed(2) + (odd ? ' · quota alla pubblicazione' : ' · quota book non disponibile') + '</small>' +
+    (TIP_COR_MK[c.p.m] ? (function () {
+      var x = (tipCalc(m).mx || {}).cor, o = m.odds || {}, k = c.p.m;
+      if (!x) return '';
+      var att = k === 'co1' ? x.Eht : k === 'ct' ? (tipSelSide(c.p.sel) ? x.Ea : x.Eh) : x.E, ln = k === 'co1' ? o.clh : k === 'co' ? o.cl : null;
+      return '<small class="tip-plan">angoli attesi ' + att.toFixed(1) + (U.finite(ln) ? ' · linea book ' + ln : '') + '</small>';
+    })() : '') +
     (function () {
       if (c.p.m !== 'o15' || c.p.sel !== 'Over 1.5') return '';
       /* senza la quota Over 1.5 del book: stimata dai gol attesi delle quote (con il margine del book, circa 5%) */
@@ -5924,7 +5962,8 @@ function tipPrePlayPanel(list) {
    (sotto le soglie dei pronostici) mostrano comunque il mercato più probabile, con la % corretta dallo storico. */
 var TIP_TOP_SEL = { ht05: 'Over 0.5 1T', o15: 'Over 1.5', o25: 'Over 2.5', gg: 'Goal' };
 function tipTopLeagues(day, list) {
-  var out = [], mks = TIP_TOP_MK.map(function (mk) { return mk[0]; });
+  /* 4.12.0 — restano i 4 mercati dei gol (Over 0.5 1T, Over 1.5, Over 2.5, Goal): i nuovi hanno le loro Top */
+  var out = [], mks = Object.keys(TIP_TOP_SEL);
   list.forEach(function (m) {
     if (m.date !== day || m.cancelled || !tipLeagueTop(m)) return;
     var issue = m.preIssue && Array.isArray(m.preIssue.picks) && m.preIssue.picks.length ? m.preIssue : null, best = null;
@@ -5975,7 +6014,7 @@ function tipTopPanel(list) {
     TIP_TOP_MK.forEach(function (mk) {
       var r = T[mk[0]];
       var near = r.near.length ? ' Le più vicine: ' + r.near.map(function (c) { return U.esc(c.m.home) + ' – ' + U.esc(c.m.away) + ' ' + c.p.p + '%'; }).join(', ') + '.' : '';
-      html += sec('Top ' + mk[1], r.items, r.avg, r.target, r.cand ? 'Nessuna partita arriva al ' + r.target + '% di media.' + near : 'Nessuna candidata con quote complete.');
+      html += sec('Top ' + mk[1], r.items, r.avg, r.target, r.cand ? 'Nessuna partita arriva al ' + r.target + '% di media.' + near : TIP_COR_MK[mk[0]] ? 'Nessuna partita da tanti angoli (serve la linea angoli del book).' : 'Nessuna candidata con quote complete.');
       if ((mk[0] === 'ht05' || mk[0] === 'o15') && r.ext.length) {
         html +=
           '<section class="card tip-top tip-top-ext"><div class="tip-top-head"><b>Top allargata · ' + mk[1] + '</b><span>' + (r.target - 3) + '-' + (r.target - 1) + '%</span></div>' +
@@ -5987,6 +6026,19 @@ function tipTopPanel(list) {
     });
   });
   return html;
+}
+/* 4.12.0 — riquadro gol squadra e angoli nel dettaglio partita */
+function tipExtraBlock(c, m) {
+  var mx = c.mx || {}, L = mx.lam || [c.lh, c.la], pc = function (v) { return Math.round(v * 100) + '%'; }, o = (m && m.odds) || {};
+  var cells = [['Segna casa', pc(1 - Math.exp(-L[0]))], ['Segna ospite', pc(1 - Math.exp(-L[1]))], ['Over 1.5 casa', pc(tipPoisAtLeast(2, L[0]))], ['Over 1.5 ospite', pc(tipPoisAtLeast(2, L[1]))]];
+  if (mx.cor) cells.push(['Angoli attesi', mx.cor.E.toFixed(1)], ['Angoli 1T', mx.cor.Eht.toFixed(1)], ['Angoli casa', mx.cor.Eh.toFixed(1)], ['Angoli ospite', mx.cor.Ea.toFixed(1)]);
+  var sg = function (v) { return (v > 0 ? '+' : '') + v; }, info = [];
+  if (U.finite(o.ah)) info.push('handicap ' + sg(o.ah));
+  if (U.finite(o.cl)) info.push('linea angoli ' + o.cl + (U.finite(o.clh) ? ' (1T ' + o.clh + ')' : '') + (U.finite(o.ach) ? ', handicap ' + sg(o.ach) : ''));
+  info.push(mx.gh || (mx.cor && mx.cor.n) ? 'con storico squadre (' + ((mx.gh && mx.gh.n) || mx.cor.n) + '+ partite)' : 'senza storico squadre');
+  return '<h3 class="tip-sub">Squadre e angoli <small>bet365 + classifiche</small></h3><div class="tip-probs">' +
+    cells.map(function (x) { return '<div class="tip-prob"><small>' + x[0] + '</small><b>' + x[1] + '</b></div>'; }).join('') + '</div>' +
+    '<p class="muted tip-hint">' + U.esc(info.join(' · ')) + '</p>';
 }
 /* Riquadro quote nel dettaglio partita */
 function tipOddsBlock(m) {
@@ -6248,6 +6300,7 @@ function tipDetail(id) {
     '<button type="button" class="tip-ctx-btn" data-ctx-open>🧭 Contesto squadre' + tipCtxBadge(m) + ' ›</button>' +
     '<h3 class="tip-sub">Probabilità <small>i mercati consigliati usano la percentuale salvata</small></h3>' +
     '<div class="tip-probs">' + prob('1', c.p1) + prob('X', c.px) + prob('2', c.p2) + prob('Over 1.5', c.o15, 1, 'o15') + prob('Over 2.5', c.o25, 1, 'o25') + prob('Over 0.5 1T', c.ht05, 1, 'ht05') + prob('Goal', c.gg, 1, 'gg') + prob('Gol attesi', c.lh.toFixed(1) + '–' + c.la.toFixed(1)) + '</div>' +
+    tipExtraBlock(c, issue ? Object.assign({}, m, issue.inputs) : m) +
     tipOddsBlock(m) +
     (function () {
       var pk = (m.picks || []).find(function (x) { return x.m === 'ht05' && x.sel.indexOf('Over') === 0; });
