@@ -1711,3 +1711,15 @@ button.pst-hb.on,.pst-r.on{box-shadow:inset 0 0 0 2px rgba(24,152,136,.7)!import
 main button.pr-tb.on:not(#_){border-color:transparent!important}
 main button.pst-hb.main:not(#_){border-color:rgba(24,152,136,.5)!important}
 main button.pst-hb.on:not(#_){border-color:rgba(24,152,136,.85)!important}
+/* 4.19.0 — Top: menu a tendina dei filtri (tieni premuto su un filtro o tocca quello acceso) */
+.pr-mkc .lvk{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:transform .12s}
+.pr-mkc .lvk.tip-lp{transform:scale(.95)}
+.pr-chev{font-size:10px;margin-left:-2px;opacity:.9}
+.dd-fov{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.18);animation:tlIn .12s ease-out}
+.dd-float{display:grid!important;gap:2px;position:fixed;min-width:250px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);overflow-y:auto;animation:tlIn .14s ease-out;z-index:1001}
+.dd-float .dd-opt{min-height:46px!important}
+.dd-float .dd-opt>b:not(.dd-tick){min-width:42px;text-align:right;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.dd-float .dd-opt>i{min-width:30px;text-align:center}
+.dd-float .dd-opt>b.good{color:#5fe0ac}.dd-float .dd-opt>b.mid{color:#ffc56b}.dd-float .dd-opt>b.bad{color:#ff8a80}
+:root[data-theme="light"] .dd-float .dd-opt>b.good{color:#0e7a50}:root[data-theme="light"] .dd-float .dd-opt>b.mid{color:#8a5200}:root[data-theme="light"] .dd-float .dd-opt>b.bad{color:#b3261e}
+.dd-float .dd-opt .pr-dot{display:inline-block;width:11px;height:11px}

@@ -5612,7 +5612,7 @@ function tipTopList(list, days) {
     var w = 0, l = 0;
     itemsOf(k).forEach(function (c) { var s = tipOutcome(c.m, c.p).s; if (s === 'V') w++; else if (s === 'P') l++; });
     var r = w + l ? Math.round(w / (w + l) * 100) : null;
-    return '<button type="button" class="lvk' + (sel === k ? ' on' : '') + '" data-top-mk="' + k + '"' + (color ? ' style="--mk:var(--mk-' + k + ')"' : '') + '>' + (color ? '<span class="pr-dot"></span>' : '') + '<span>' + label + '</span>' +
+    return '<button type="button" class="lvk' + (sel === k ? ' on' : '') + '" data-top-mk="' + k + '"' + (color ? ' style="--mk:var(--mk-' + k + ')"' : '') + '>' + (color ? '<span class="pr-dot"></span>' : '') + '<span>' + label + '</span>' + (sel === k ? '<span class="pr-chev">▾</span>' : '') +
       (r != null ? '<b class="' + (r >= 80 ? 'good' : r >= 70 ? 'mid' : 'bad') + '">' + r + '%</b>' : '') + '<i>' + n + '</i></button>';
   };
   var chips = '<div class="lvk-row pr-mkc" role="toolbar" aria-label="Mercati">' + chip('all', 'Tutte') + chip('tt', '🏆 Top campionati') + TIP_TOP_MK.map(function (k) { return chip(k[0], TIP_TOPMK_LBL[k[0]] || k[1], true); }).join('') + '</div>';
@@ -5640,7 +5640,7 @@ function tipTopList(list, days) {
     return '<h2 class="tip-day"><span>' + tipDayLabel(x.d, true) + '</span><small>' + rows.length + (rows.length === 1 ? ' partita' : ' partite') + '</small></h2>' +
       (rows.length ? '<div class="pr-list">' + rows.join('') + '</div>' : '<p class="muted tip-tnone">Nessuna partita in Top' + (sel === 'all' ? '' : ' per questo mercato') + '.</p>');
   }).join('');
-  return chips + body + '<p class="muted tip-hint">Top fino a 10 per mercato, bloccate al calcio d’inizio. ★ = in Top · tocca una partita per il dettaglio.</p>';
+  return chips + body + '<p class="muted tip-hint">Top fino a 10 per mercato, bloccate al calcio d’inizio. ★ = in Top · tocca una partita per il dettaglio · tieni premuto su Tutte (o tocca il filtro acceso) per il menu dei filtri.</p>';
 }
 function tipTopDaysNext(list) {
   var today = U.local().slice(0, 10);
@@ -5650,9 +5650,67 @@ function tipTopDaysNext(list) {
   var P = tipParams(), days = Object.keys(ds).sort().filter(function (d) { try { return tipTopFor(d, list, P).all.length > 0; } catch (e) { return false; } });
   return days.length ? days : [today];
 }
+/* 4.19.0 — Top: tieni premuto su un filtro (es. Tutte) oppure tocca quello già acceso = menu a tendina con tutti i filtri */
+function tipTopMenuClose() {
+  var o = document.querySelector('.dd-fov');
+  if (o) o.remove();
+  if (tipUI._lpChip) { tipUI._lpChip._lpAt = 0; tipUI._lpChip = null; }
+}
+function tipTopMenuOpen(b) {
+  tipTopMenuClose();
+  var row = b && b.closest('.pr-mkc');
+  if (!row) return;
+  var opts = Array.prototype.map.call(row.querySelectorAll('[data-top-mk]'), function (c) {
+    var k = c.getAttribute('data-top-mk'), on = c.classList.contains('on'), st = c.getAttribute('style');
+    var lab = c.querySelector('span:not(.pr-dot):not(.pr-chev)'), pc = c.querySelector('b'), n = c.querySelector('i');
+    var txt = lab ? lab.textContent.replace(/^🏆\s*/, '') : k;
+    var ic = k === 'all' ? '★' : k === 'tt' ? '🏆' : '<span class="pr-dot"></span>';
+    return '<button type="button" role="menuitemradio" aria-checked="' + on + '" class="dd-opt' + (on ? ' on' : '') + '" data-top-mk="' + k + '"' + (st ? ' style="' + U.esc(st) + '"' : '') + '>' +
+      '<span class="dd-ic">' + ic + '</span><span class="dd-lab">' + U.esc(txt) + '</span>' + (pc ? pc.outerHTML : '<b></b>') + (n ? '<i>' + U.esc(n.textContent) + '</i>' : '') + '<b class="dd-tick">' + (on ? '✓' : '') + '</b></button>';
+  }).join('');
+  var ov = document.createElement('div');
+  ov.className = 'dd-fov';
+  ov.innerHTML = '<div class="dd-menu dd-float pr-mkmenu" role="menu" aria-label="Filtra le Top"><div class="dd-title">Filtra le Top</div>' + opts + '</div>';
+  document.body.appendChild(ov);
+  var m = ov.firstChild, r = b.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight, h = m.offsetHeight, w = m.offsetWidth;
+  var top = r.bottom + 6;
+  if (top + h > vh - 10) top = r.top - 6 - h;
+  if (top < 10) { top = 10; m.style.maxHeight = (vh - 20) + 'px'; }
+  m.style.top = top + 'px';
+  m.style.left = Math.max(10, Math.min(r.left, vw - w - 10)) + 'px';
+  ov.addEventListener('click', function (ev) { if (ev.target === ov && Date.now() >= (tipUI._ddIgnore || 0)) tipTopMenuClose(); });
+  try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { /* ok */ }
+}
+(function () {
+  var timer = null, x0 = 0, y0 = 0, chip = null;
+  var stop = function () { clearTimeout(timer); timer = null; if (chip) chip.classList.remove('tip-lp'); chip = null; };
+  document.addEventListener('pointerdown', function (ev) {
+    var b = ev.target.closest && ev.target.closest('.pr-mkc [data-top-mk]');
+    if (!b) return;
+    stop(); chip = b; x0 = ev.clientX; y0 = ev.clientY; b.classList.add('tip-lp');
+    timer = setTimeout(function () {
+      timer = null; b.classList.remove('tip-lp');
+      b._lpAt = Date.now(); tipUI._lpChip = b;
+      tipUI._ddIgnore = Infinity; /* finché il dito resta giù, il rilascio non sceglie e non chiude */
+      tipTopMenuOpen(b);
+      tipUI._lpChip = b;
+    }, 450);
+  });
+  document.addEventListener('pointermove', function (ev) { if (timer && (Math.abs(ev.clientX - x0) > 8 || Math.abs(ev.clientY - y0) > 8)) stop(); }, true);
+  ['pointercancel', 'scroll'].forEach(function (n) { document.addEventListener(n, stop, true); });
+  document.addEventListener('pointerup', function () { if (tipUI._ddIgnore === Infinity) tipUI._ddIgnore = Date.now() + 350; stop(); }, true);
+  document.addEventListener('contextmenu', function (ev) { if (ev.target.closest && ev.target.closest('[data-top-mk]')) ev.preventDefault(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') tipTopMenuClose(); });
+  window.addEventListener('resize', function () { tipTopMenuClose(); });
+})();
 document.addEventListener('click', function (ev) {
   var b = ev.target.closest && ev.target.closest('[data-top-mk]');
   if (!b) return;
+  if (tipLongPressed(b)) return;
+  var inMenu = !!b.closest('.dd-float');
+  if (inMenu && Date.now() < (tipUI._ddIgnore || 0)) return;
+  if (!inMenu && b.classList.contains('on')) { tipUI._ddIgnore = Date.now() + 100; tipTopMenuOpen(b); return; }
+  tipTopMenuClose();
   tipUI.topMk = b.getAttribute('data-top-mk');
   render();
   setTimeout(function () { var c = document.querySelector('.pr-mkc .lvk.on'); if (c && c.scrollIntoView) c.scrollIntoView({ inline: 'center', block: 'nearest' }); }, 30);
