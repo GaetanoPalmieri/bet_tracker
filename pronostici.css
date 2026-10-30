@@ -1624,3 +1624,13 @@ nav.tabbar.tabbar-bottom button[data-badge]:not([data-badge=""])::after{content:
 :root[data-theme="light"] .pst-hb > b.mid,:root[data-theme="light"] .pst-c b.mid{color:#8a5200}
 :root[data-theme="light"] .pst-hb > b.bad,:root[data-theme="light"] .pst-c b.bad{color:#b3261e}
 @media (max-width:370px){.pst-r{grid-template-columns:minmax(0,1fr) 70px 70px;gap:6px}.pst-hb > b{font-size:26px}}
+
+/* 4.16.0 — statistiche veloci e Top dei giorni passati */
+.pst-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pst-head .tip-pagehead{flex:1;min-width:0}
+.pst-topmode{margin:0 0 12px}
+.pst-strip{margin:0 0 10px}
+.pst-quick,.pst-pastsum{margin:0 0 12px!important}
+.pst-mk{display:flex;flex-wrap:wrap;gap:6px}
+.pst-mkc{cursor:default}
+.pst-quick .st2-link{justify-self:start}

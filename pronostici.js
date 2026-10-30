@@ -4720,7 +4720,7 @@ function tipHubPanel(list) {
     return '<button type="button" class="card tip-hub' + (accent ? ' ' + accent : '') + '" data-tip-panel="' + k + '"><span class="tip-hubhead"><span class="tip-hubic">' + ic + '</span><b>' + title + '</b><span class="tip-hubmeta">' + meta + '</span>' + TIP_IC.chev + '</span>' + (body ? '<span class="tip-hubbody">' + body + '</span>' : '') + '</button>';
   };
   /* 4.15.0 — esiti delle Top di oggi (come "Oggi" nel Live) */
-  var TD = tipPreCount(tipPreRowsDay(list, today).filter(function (r) { return r.top; }));
+  var TD = tipPreCount(tipPreRowsRaw(list, today).filter(function (r) { return r.top; }));
   var topRes = TD.w + TD.l + TD.a ? row('Esiti Top di oggi', TD.n ? Math.round(TD.rate) + '%' : '◷', TD.w + ' vinte · ' + TD.l + ' perse · ' + TD.a + ' in attesa', TD.n ? (TD.rate >= TD.exp - 2 ? 'positive' : 'negative') : '') : '';
   var topBody = topRes + T.all.slice(0, 4).map(function (c) { return row(U.esc(c.m.time) + ' · ' + U.esc(c.m.home) + ' – ' + U.esc(c.m.away), U.esc(c.p.sel) + ' ' + c.p.p + '%', '', 'positive'); }).join('') ||
     '<span class="tip-hubempty">Nessuna partita in Top oggi' + (list.some(function (m) { return m.date > today; }) ? ': guarda domani in Top.' : '.') + '</span>';
@@ -4811,9 +4811,9 @@ function tipsPage() {
   if (onLive) pn = 'live';
   else if (['home', 'top', 'list'].indexOf(pn) < 0) pn = 'home';
   tipUI.panel = tipUI.panelBy[tab] = pn;
-  var body = pn === 'top' ? tipHead('Top', 'Le partite più sicure del giorno') + (tipUI.preStale ? '<p class="tip-amber-text tip-hint">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(list, 'Da oggi', tipTopDayCount(list), ['in Top', 'in Top']) + tipTopPanel(list)
+  var body = pn === 'top' ? tipTopBody(list) /* 4.16.0 — Prossimi giorni / Giorni passati, statistiche veloci */
     : pn === 'live' ? tipLivePanel(list) /* 3.99.3 — la barra di stato della sezione sostituisce l'intestazione */
-    : pn === 'list' ? tipHead('Partite', 'Tutti i pronostici, con filtri') + (tipUI.preStale ? '<p class="tip-amber-text tip-hint">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(list, 'Tutti') + tipListPanel(list)
+    : pn === 'list' ? '<div class="pst-head">' + tipHead('Partite', 'Tutti i pronostici, con filtri') + tipPreQuickBtn() + '</div>' + (tipUI.preStale ? '<p class="tip-amber-text tip-hint">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(list, 'Tutti') + (tipUI.preQuick ? tipPreQuick(list) : '') + tipListPanel(list)
     : tipHubPanel(list);
   return tipNav(list) + '<div class="tip-body tip-body-' + pn + '">' + body + '</div>';
 }
@@ -5517,6 +5517,81 @@ function tipStatsLive2() {
   html += '<section class="st2-list"><p class="st2-h">Segnali · ' + L.length + '</p><div class="lv2-list">' + L.slice(0, nL).map(function (e) { return tipLvRow(e, { showRes: true }); }).join('') + '</div>' + tipStMoreBtn(Math.min(20, L.length - nL), 'data-st-listmore', 'segnali') + '</section>';
   return html + (QL.exc.length ? '<section class="card st2-card">' + tipQualityBox(L, QL.exc, 'riep') + '</section>' : '');
 }
+/* ---------- 4.16.0 — STATISTICHE VELOCI E TOP DEI GIORNI PASSATI (scheda Prepartita) ----------
+   📊 accanto al titolo di Partite e Top (come il pulsante Statistiche di Oggi nel Live): apre un riquadro con ★ Top e Tutti
+   del giorno scelto e mercato per mercato. In Top, "◷ Giorni passati": le Top di un giorno già giocato con la stessa
+   visualizzazione delle Top di oggi (✓ ✕ su ogni riga), in alto i giorni con la loro % e il riepilogo in numeri. */
+function tipPreRowsRaw(list, day) {
+  var top = tipPreTopSet(list), out = [];
+  list.forEach(function (m) {
+    if (m.cancelled || m.date !== day) return;
+    (m.picks || []).forEach(function (p) {
+      var o = tipOutcome(m, p).s;
+      out.push({ m: m, p: p, top: !!top[m.id + '|' + p.m], res: o === 'V' ? 1 : o === 'P' ? 0 : null, prob: (p.p || 0) / 100 });
+    });
+  });
+  return out;
+}
+function tipPreDayName(d) {
+  var today = U.local().slice(0, 10);
+  return d === today ? 'Oggi' : d === tipAddDays(today, -1) ? 'Ieri' : d === tipAddDays(today, 1) ? 'Domani' : tipCap(tipDayLabel(d));
+}
+function tipPreQuick(list) {
+  var today = U.local().slice(0, 10), d = tipUI.day && tipUI.day !== 'all' ? tipUI.day : today, R = tipPreRowsRaw(list, d);
+  var head = '<p class="st2-h">📊 Statistiche veloci · ' + U.esc(tipPreDayName(d)) + '</p>';
+  if (!R.length) return '<section class="card st2-card pst-quick">' + head + '<p class="muted tip-tnone">Nessun pronostico in questo giorno.</p></section>';
+  return '<section class="card st2-card pst-quick">' + head + '<div class="pst-hero">' + tipPreHeroBox('★ Top', tipPreCount(R.filter(function (r) { return r.top; })), true) + tipPreHeroBox('Tutti', tipPreCount(R)) + '</div>' +
+    tipPreTab2(TIP_MARKETS.map(function (k) { return [k[1], R.filter(function (r) { return r.p.m === k[0]; })]; }), 'Mercato') +
+    '<button type="button" class="st2-link" data-tip-panel="stats">Tutte le statistiche ›</button></section>';
+}
+function tipPreQuickBtn() { var open = !!tipUI.preQuick; return tipIconBtn('data-pre-qstats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche veloci', 0, open); }
+function tipTopPastPanel(list) {
+  var today = U.local().slice(0, 10), ds = {};
+  list.forEach(function (m) { if (m.date < today && !m.cancelled && m.preIssue && m.preIssue.top && Object.keys(m.preIssue.top).length) ds[m.date] = 1; });
+  var days = Object.keys(ds).sort().reverse().slice(0, 30);
+  if (!days.length) return '<section class="card"><p class="muted tip-tnone">Nessuna Top registrata nei giorni passati.</p></section>';
+  var day = tipUI.topPast && ds[tipUI.topPast] ? tipUI.topPast : days[0];
+  var topOf = function (d) { return tipPreRowsRaw(list, d).filter(function (r) { return r.top; }); };
+  var strip = '<div class="lvk-row pst-strip" role="toolbar" aria-label="Giorni passati">' + days.map(function (d) {
+    var c = tipPreCount(topOf(d));
+    return '<button type="button" class="lvk' + (d === day ? ' on' : '') + '" data-top-past="' + d + '"><span>' + U.esc(tipPreDayName(d)) + '</span>' + (c.n ? '<b class="' + tipPreGood(c) + '">' + Math.round(c.rate) + '%</b>' : '') + '<i>' + (c.w + c.l + c.a) + '</i></button>';
+  }).join('') + '</div>';
+  var R = topOf(day), c = tipPreCount(R), by = {};
+  R.forEach(function (r) { (by[r.p.m] = by[r.p.m] || []).push(r); });
+  var mk = TIP_TOP_MK.filter(function (k) { return by[k[0]]; }).map(function (k) {
+    var x = tipPreCount(by[k[0]]);
+    return '<span class="lvk pst-mkc"><span>' + U.esc(TIP_SHORT[k[0]] || k[0]) + '</span>' + (x.n ? '<b class="' + tipPreGood(x) + '">' + Math.round(x.rate) + '%</b>' : '') + '<i>' + x.w + '–' + x.l + (x.a ? ' · ' + x.a + '◷' : '') + '</i></span>';
+  }).join('');
+  var R7 = [];
+  days.slice(0, 7).forEach(function (d) { R7 = R7.concat(topOf(d)); });
+  var c7 = tipPreCount(R7);
+  var sum = '<section class="card st2-card pst-pastsum"><p class="st2-h">Top di ' + U.esc(tipPreDayName(day).toLowerCase() === 'ieri' ? 'ieri' : tipDayLabel(day, true)) + '</p>' +
+    '<div class="lv3-sum"><div class="lv3-rate ' + (c.n ? tipPreGood(c) : '') + '"><b>' + (c.n ? Math.round(c.rate) + '%' : '—') + '</b><small>vinte ★ Top</small></div>' +
+    '<div class="lv3-counts"><span class="w"><b>' + c.w + '</b> vint' + (c.w === 1 ? 'a' : 'e') + '</span><span class="l"><b>' + c.l + '</b> pers' + (c.l === 1 ? 'a' : 'e') + '</span>' + (c.a ? '<span class="o"><b>' + c.a + '</b> senza esito</span>' : '') +
+    (c.n ? '<span class="o">previsto <b>' + Math.round(c.exp) + '%</b></span>' : '') + '</div></div>' +
+    (mk ? '<div class="pst-mk">' + mk + '</div>' : '') +
+    (c7.n ? '<p class="muted st2-hint">Ultimi ' + Math.min(7, days.length) + ' giorni con Top: <b class="' + (c7.rate >= c7.exp - 2 ? 'positive' : 'negative') + '">' + Math.round(c7.rate) + '%</b> · ' + c7.w + ' vinte · ' + c7.l + ' perse · previsto ' + Math.round(c7.exp) + '%</p>' : '') + '</section>';
+  var keep = tipUI.day, sec = '';
+  tipUI.day = day;
+  try { sec = tipTopPanel(list); } finally { tipUI.day = keep; }
+  return strip + sum + sec;
+}
+function tipTopBody(list) {
+  var past = !!tipUI.topPastOn, open = !!tipUI.preQuick;
+  var head = '<div class="pst-head">' + tipHead('Top', past ? 'Come sono andate le Top dei giorni passati' : 'Le partite più sicure del giorno') + (past ? '' : tipPreQuickBtn()) + '</div>';
+  var seg = '<div class="lv3-seg pst-seg pst-topmode" role="tablist"><button type="button" role="tab" aria-selected="' + !past + '" class="' + (!past ? 'on' : '') + '" data-top-mode="next">Prossimi giorni</button>' +
+    '<button type="button" role="tab" aria-selected="' + past + '" class="' + (past ? 'on' : '') + '" data-top-mode="past">◷ Giorni passati</button></div>';
+  if (past) return head + seg + tipTopPastPanel(list);
+  return head + seg + (tipUI.preStale ? '<p class="tip-amber-text tip-hint">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(list, 'Da oggi', tipTopDayCount(list), ['in Top', 'in Top']) + (open ? tipPreQuick(list) : '') + tipTopPanel(list);
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-pre-qstats],[data-top-mode],[data-top-past]');
+  if (!b) return;
+  if (b.hasAttribute('data-pre-qstats')) tipUI.preQuick = !tipUI.preQuick;
+  else if (b.hasAttribute('data-top-mode')) { tipUI.topPastOn = b.getAttribute('data-top-mode') === 'past'; window.scrollTo(0, 0); }
+  else tipUI.topPast = b.getAttribute('data-top-past');
+  render();
+});
 /* 4.15.0 — STATISTICHE PREPARTITA RIFATTE. In alto la GIORNATA, come "Oggi" nel Live: giorno con ‹ ›, % grande e
    "vinte · perse · in attesa" delle Top (o di tutti i pronostici), filtri veloci per mercato con la % del giorno e partite
    del giorno. Poi il periodo scelto: ★ Top e Tutti affiancati, giorno per giorno e mercato per mercato con Top e Tutti
