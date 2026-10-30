@@ -9,13 +9,13 @@
   "theme_color": "#12181f",
   "icons": [
     {
-      "src": "bet-icon-192-nera.png?v=4.13.1",
+      "src": "bet-icon-192-nera.png?v=4.14.1",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "bet-icon-512-nera.png?v=4.13.1",
+      "src": "bet-icon-512-nera.png?v=4.14.1",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
