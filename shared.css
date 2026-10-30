@@ -118,13 +118,6 @@ label {
 .app-toast button {
   margin-left: 10px;
 }
-.save-center {
-  text-align: center;
-  margin-top: 20px;
-}
-.save-center button {
-  min-width: 180px;
-}
 dialog {
   background: var(--bt-12181f);
   color: var(--bt-f1f5f4);
@@ -219,30 +212,6 @@ input[type='datetime-local'] {
   border-radius: 6px;
   background: var(--bt-25313b);
   font-size: 11px;
-}
-.restore-box {
-  border: 1px solid var(--bt-e8a33d);
-  padding: 14px;
-  border-radius: 12px;
-  margin-bottom: 15px;
-}
-.storage-alert {
-  padding: 12px;
-  background: var(--bt-542e2e);
-}
-.list-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.list-table td,
-.list-table th {
-  padding: 10px 4px;
-  border-bottom: 1px solid var(--bt-2b3640);
-  text-align: left;
-}
-.list-table td:last-child {
-  text-align: right;
 }
 @media (prefers-reduced-motion: reduce) {
   * {

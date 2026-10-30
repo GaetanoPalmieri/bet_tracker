@@ -33,28 +33,17 @@ body::before {
 }
 
 /* ---------- Sezioni e riquadri ---------- */
-main .card,
-main .diary-kpi,
-main .tip-filters,
-main .tip-card,
-main section.card {
+main .card,main .diary-kpi,main .tip-card,main section.card {
   background-color: var(--vt-card) !important;
   -webkit-backdrop-filter: var(--vt-blur) !important;
   backdrop-filter: var(--vt-blur) !important;
   border-color: var(--vt-edge) !important;
 }
-main .tip-fbtn,
-main .tip-tool,
-main .tip-srow input,
-main .money-grid > div,
-main .dcal-week,
-main .diary-seg {
+main .money-grid > div,main .diary-seg {
   background-color: var(--vt-card-2) !important;
   -webkit-backdrop-filter: blur(12px) saturate(1.4);
   backdrop-filter: blur(12px) saturate(1.4);
 }
-main .tip-fbtn.on { background-color: rgba(58, 166, 132, .18) !important; }
-main .tip-tool.on { background: var(--suite-teal-grad) !important; }
 /* Le partite colorate tengono la loro tinta sopra al vetro */
 main .tip-card { background-image: linear-gradient(100deg, var(--tint), transparent 70%) !important; }
 

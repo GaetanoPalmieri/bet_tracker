@@ -3200,7 +3200,7 @@ document.addEventListener('click', function (ev) {
 /* 4.11.0 — FILTRI VELOCI: una riga di pulsanti con i filtri che hanno segnali, i migliori di oggi per primi (% sulle
    chiuse, numero di segnali). Un tocco mostra solo quel filtro, un altro tocco torna a tutti. Vale per Adesso e Oggi. */
 function tipKOf(e) { return TIP_WAIT_K[e.k] ? e.fromK || e.k : e.k; }
-function tipKChipsHtml(listForCounts, statsByK, selK) {
+function tipKChipsHtml(listForCounts, statsByK, selK, bare) {
   var cnt = {};
   listForCounts.forEach(function (e) { var k = tipKOf(e); cnt[k] = (cnt[k] || 0) + 1; });
   var ks = Object.keys(cnt);
@@ -3209,13 +3209,33 @@ function tipKChipsHtml(listForCounts, statsByK, selK) {
   var pct = function (k) { var g = statsByK[k]; return g && g.w + g.l ? Math.round(g.w / (g.w + g.l) * 100) : null; };
   ks.sort(function (a, b) { var pa = pct(a), pb = pct(b); return (pb == null ? -1 : pb) - (pa == null ? -1 : pa) || (cnt[b] || 0) - (cnt[a] || 0); });
   var name = function (k) { return tipLvFilterName({ k: k }); };
-  return '<div class="lvk-row" role="toolbar" aria-label="Filtri veloci"><button type="button" class="lvk' + (!selK ? ' on' : '') + '" data-lvk="">Tutti <i>' + listForCounts.length + '</i></button>' +
+  /* 4.20.0 — bare: solo i pulsanti dei filtri (per la fila unica del Live); "Tutti i filtri" c'è solo nel menu */
+  return (bare ? '<button type="button" class="lvk' + (!selK ? ' on' : '') + '" data-lvk="" hidden><span>Tutti i filtri</span><i>' + listForCounts.length + '</i></button>' : '<div class="lvk-row" role="toolbar" aria-label="Filtri veloci"><button type="button" class="lvk' + (!selK ? ' on' : '') + '" data-lvk="">Tutti <i>' + listForCounts.length + '</i></button>') +
     ks.map(function (k) {
       var p = pct(k);
       return '<button type="button" class="lvk' + (selK === k ? ' on' : '') + '" data-lvk="' + U.esc(k) + '"><span>' + U.esc(name(k)) + '</span>' +
         (p != null ? '<b class="' + (p >= 80 ? 'good' : p >= 70 ? 'mid' : 'bad') + '">' + p + '%</b>' : '') + '<i>' + (cnt[k] || 0) + '</i></button>';
-    }).join('') + '</div>';
+    }).join('') + (bare ? '' : '</div>');
 }
+/* 4.20.0 — LIVE: UNA SOLA FILA al posto di tre barre (Giocate da fare / Quota raggiunta, Preferiti / Tutti, filtri):
+   ★ Preferiti · Tutti · ⏳ Quota raggiunta | i filtri con la % di oggi. Tieni premuto = menu con tutto. */
+function tipLvOneRow(qr, fav, n, kinds) {
+  var c = function (g, on, label, cnt, ic) {
+    return '<button type="button" class="lvk lv-grp-' + g + (on ? ' on' : '') + '" data-lv-grp="' + g + '" data-chip-radio data-ic="' + ic + '"><span>' + label + '</span>' + (on ? '<span class="pr-chev">▾</span>' : '') + '<i>' + cnt + '</i></button>';
+  };
+  return '<div class="lvk-row lv-one" role="toolbar" aria-label="Cosa vedere" data-chipmenu="Live"><span class="lvk-sep" data-t="Mostra" hidden></span>' +
+    c('fav', !qr && fav, '★ Preferiti', n.fav, '★') + c('all', !qr && !fav, 'Tutti', n.all, '•') + c('qr', qr, '⏳ Quota raggiunta', n.qr, '⏳') +
+    (kinds ? '<span class="lvk-sep" data-t="Filtro"></span>' + kinds : '') + '</div>';
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-lv-grp]');
+  if (!b) return;
+  var g = b.getAttribute('data-lv-grp'), today = (tipUI.liveTab || 'now') === 'today';
+  tipUI.lvMode = g === 'qr' ? 'qr' : 'sig';
+  if (g !== 'qr') { if (today) tipUI.todayFav = g === 'fav'; else tipUI.nowFav = g === 'fav'; }
+  tipUI.lvK = ''; tipUI.lvAll = false; tipUI.todayN = 0;
+  render();
+});
 /* vinte/perse di oggi per filtro (dopo l'eventuale azzeramento), per le % dei filtri veloci */
 function tipTodayKStats(pool) {
   var cut = tipTodayFrom(), by = {};
@@ -3248,9 +3268,11 @@ function tipExcellentArchive() {
   var pass = Q.pass.filter(inMode), exc = tipSampleOf(Q.exc.filter(inMode), smp);
   var nSt = pass.filter(function (e) { return !tipIsTrial(e); }).length;
   var arr = tipSampleOf(pass, smp);
-  var favOnly = !!tipUI.todayFav, nFavAll = arr.filter(function (e) { return tipFavOn(tipKOf(e)); }).length;
+  var favOnly = !!tipUI.todayFav && !qrMode, nFavAll = arr.filter(function (e) { return tipFavOn(tipKOf(e)); }).length;
   if (favOnly) arr = arr.filter(function (e) { return tipFavOn(tipKOf(e)); });
-  var chips = tipKChipsHtml(arr, tipTodayKStats(arr), tipUI.lvK || '');
+  var sigS = tipSampleOf(Q.pass.filter(function (e) { return !TIP_WAIT_K[e.k]; }), smp);
+  var chips = tipLvOneRow(qrMode, favOnly, { fav: sigS.filter(function (e) { return tipFavOn(tipKOf(e)); }).length, all: sigS.length, qr: tipSampleOf(Q.pass.filter(function (e) { return !!TIP_WAIT_K[e.k]; }), smp).length }, tipKChipsHtml(arr, tipTodayKStats(arr), tipUI.lvK || '', true));
+  void nFavAll;
   if (tipUI.lvK) arr = arr.filter(function (e) { return tipKOf(e) === tipUI.lvK; });
   arr = tipSortEntries(arr);
   var cut = tipTodayFrom(), isNew = function (e) { return !cut || (e.t || 0) >= cut; };
@@ -3267,9 +3289,9 @@ function tipExcellentArchive() {
   var actF = tipEFilterChips(tipUI.arcF, tipUI.lblF, 'data-arcclear'), open = !!tipUI.todayStats;
   var seg = function (v, t, n) { return '<button type="button" class="' + (smp === v ? 'on' : '') + '" data-split-sample="' + v + '">' + t + ' <i>' + n + '</i></button>'; };
   var tools = '<div class="lv3-tools"><div class="lv3-seg" role="tablist">' + seg('', 'Tutti', pass.length) + seg('stable', '🛡️ Stabili', nSt) + seg('trial', '🧪 In prova', pass.length - nSt) + '</div>' +
-    '<div class="ic-row"><button type="button" class="lv2-favt' + (favOnly ? ' on' : '') + '" data-today-fav aria-pressed="' + favOnly + '" aria-label="Solo filtri preferiti">★<i>' + nFavAll + '</i></button>' + tipIconBtn('data-arcfilters', TIP_IC_FILTER, 'Altri filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
+    '<div class="ic-row">' + tipIconBtn('data-arcfilters', TIP_IC_FILTER, 'Altri filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
     (actF.length ? '<div class="tip-lblf tip-chips-sm">' + actF.join('') + '</div>' : '');
-  var stats = open ? '<div class="tl-stats">' + (arrS.length ? tipStTab(tipStLevelRows(arrS, smp).map(function (r) { return [r[0], r[1]]; }), tipStatCount) + '<p class="st2-h">Per giocata</p>' + tipStTab(tipStLiveSplit(arrS, 'k').rows.map(function (r) { return r.slice(0, 2).concat(['', r[3]]); }), tipStatCount) : '<p class="muted tip-tnone">Ancora nessun esito.</p>') + '</div>' : '';
+  var stats = open ? '<div class="tl-stats">' + (arrS.length ? tipStPeekTab(tipStLevelRows(arrS, smp).map(function (r) { return [r[0], r[1]]; }), tipStatCount, 'td-l') + '<p class="st2-h">Per giocata</p>' + tipStPeekTab(tipStLiveSplit(arrS, 'k').rows.map(function (r) { return r.slice(0, 2).concat(['', r[3]]); }), tipStatCount, 'td-k') : '<p class="muted tip-tnone">Ancora nessun esito.</p>') + '</div>' : '';
   var ordered = cut ? arr.filter(isNew).concat(arr.filter(function (e) { return !isNew(e); })) : arr, nNewAll = cut ? arrS.length : 0;
   var PAGE = 15, n = Math.max(PAGE, tipUI.todayN || PAGE);
   var list = ordered.length ? '<div class="lv2-list">' + ordered.slice(0, n).map(function (e, i) {
@@ -3718,7 +3740,8 @@ function tipLivePanel(list) {
   tipUI._nowExp = nextExp;
   /* 4.2.4 — Adesso › Preferiti (di base): solo i filtri preferiti, cioè quelli che ti notificano; Tutti mostra tutto */
   var qrMode = tipUI.lvMode === 'qr', inMode = function (x) { return qrMode ? !!TIP_WAIT_K[x.k] : !TIP_WAIT_K[x.k]; };
-  var favMode = tipUI.nowFav !== false, nAllNow = items.filter(inMode).length, nFavNow = items.filter(function (x) { return inMode(x) && tipFavOn(x.e.fromK || x.k); }).length;
+  var nOne = { fav: items.filter(function (x) { return !TIP_WAIT_K[x.k] && tipFavOn(x.e.fromK || x.k); }).length, all: items.filter(function (x) { return !TIP_WAIT_K[x.k]; }).length, qr: items.filter(function (x) { return TIP_WAIT_K[x.k]; }).length };
+  var favMode = tipUI.nowFav !== false && !qrMode, nAllNow = items.filter(inMode).length, nFavNow = items.filter(function (x) { return inMode(x) && tipFavOn(x.e.fromK || x.k); }).length;
   if (favMode) {
     items = items.filter(function (x) { return tipFavOn(x.e.fromK || x.k); });
   }
@@ -3727,7 +3750,7 @@ function tipLivePanel(list) {
   items = items.filter(inMode);
   /* 4.11.0 — filtri veloci anche in Adesso (stessa scelta di Oggi); le % sono quelle di oggi */
   var today0 = U.local().slice(0, 10), todayL = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= tipStatsFrom() && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipQShown(e); });
-  var nowChips = tipKChipsHtml(items.map(function (x) { return x.e; }), tipTodayKStats(todayL.filter(function (e) { return qrMode ? !!TIP_WAIT_K[e.k] : !TIP_WAIT_K[e.k]; })), tipUI.lvK || '');
+  var nowChips = tipLvOneRow(qrMode, favMode, nOne, tipKChipsHtml(items.map(function (x) { return x.e; }), tipTodayKStats(todayL.filter(function (e) { return qrMode ? !!TIP_WAIT_K[e.k] : !TIP_WAIT_K[e.k]; })), tipUI.lvK || '', true));
   if (tipUI.lvK) items = items.filter(function (x) { return tipKOf(x.e) === tipUI.lvK; });
   byType = {}; items.forEach(function (x) { (byType[x.k] = byType[x.k] || []).push(x); });
   var favSeg = '<div class="lv-favseg" role="tablist"><button type="button" role="tab" aria-selected="' + favMode + '" class="' + (favMode ? 'on' : '') + '" data-now-fav="1">★ Preferiti <i>' + nFavNow + '</i></button>' +
@@ -3767,7 +3790,8 @@ function tipLivePanel(list) {
   var lblN = tipFArr((tipUI.lblF || {}).p).length + tipFArr((tipUI.lblF || {}).r).length;
   var lvBar = '<div class="lv2-bar"><div class="lv2-seg" role="tablist"><button type="button" role="tab" aria-selected="' + favMode + '" class="' + (favMode ? 'on' : '') + '" data-now-fav="1">★ Preferiti <i>' + nFavNow + '</i></button>' +
     '<button type="button" role="tab" aria-selected="' + !favMode + '" class="' + (!favMode ? 'on' : '') + '" data-now-fav="0">Tutti <i>' + nAllNow + '</i></button></div></div>' + (lblN ? tipLblFilterBar() : '');
-  var nowHtml = lvBar + nowChips +
+  void lvBar; void favSeg; void chips;
+  var nowHtml = (lblN ? tipLblFilterBar() : '') + nowChips +
     (shown.length ? '<div class="lv2-list">' + shown.slice(0, nShow).map(function (x) { return tipLvRow(x.e, { isNew: x.isNew, showRes: x.e.res != null, reach: true }); }).join('') + '</div>' +
       (shown.length > LIM ? '<button type="button" class="tl-more" data-lv-more>' + (tipUI.lvAll ? 'Mostra solo i primi ' + LIM : 'Mostra gli altri ' + (shown.length - LIM)) + '</button>' : '')
       : '<div class="lv-empty"><b>' + (qrMode ? 'Nessuna quota raggiunta' : 'Nessun segnale') + (favMode ? ' dei filtri preferiti' : '') + ' negli ultimi 20 minuti</b><small>' + (favMode && nAllNow ? nAllNow + ' in Tutti. ' : '') + 'Il controllo è automatico ogni 2 minuti: un segnale resta qui per 20 minuti, poi lo trovi in Oggi.</small></div>');
@@ -3791,11 +3815,10 @@ function tipLivePanel(list) {
   /* 4.8.1 — STATO IN EVIDENZA: riquadro in cima con l'ora dell'ultimo controllo (ambra se più vecchio di 5 minuti) e un
      pulsante "Aggiorna" grande, che durante il controllo gira senza cambiare larghezza (prima la scritta veniva tagliata). */
   var fresh = S && Date.now() - S.at < 5 * 60e3, agoM = S ? Math.max(0, Math.round((Date.now() - S.at) / 60e3)) : null;
-  var bar = '<div class="lv2-status lv2-statusx' + (fresh ? ' fresh' : ' stale') + '"><span class="lv-dot' + (fresh ? ' on' : '') + '"></span><span class="lv2-st"><b>' + (S ? 'Aggiornato alle ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'In attesa del controllo') + '</b>' +
-    '<small>' + (S ? (agoM < 1 ? 'adesso' : agoM + ' min fa') + ' · ' : '') + nLive + ' partite live' + (svTxt ? ' · <span class="' + (svOld ? 'lv2-warn' : 'lv2-ver') + '">' + (svOld ? '⚠ ' : '') + 'server ' + U.esc(svTxt) + '</span>' : '') + '</small></span>' +
-    '<button type="button" class="lv2-ref lv2-refx" data-scan aria-label="Aggiorna adesso"><i aria-hidden="true">↻</i><span>Aggiorna</span></button></div>' +
+  var bar = '<div class="lv2-status lv2-statusx' + (fresh ? ' fresh' : ' stale') + (tipUI._lvRef ? ' busy' : '') + '" data-lv-tapref role="button" tabindex="0" aria-label="Aggiorna adesso"><span class="lv-dot' + (fresh ? ' on' : '') + '"></span><span class="lv2-st"><b>' + (S ? 'Aggiornato alle ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'In attesa del controllo') + '</b>' +
+    '<small>' + (S ? (agoM < 1 ? 'adesso' : agoM + ' min fa') + ' · ' : '') + nLive + ' partite live' + (svTxt ? ' · <span class="' + (svOld ? 'lv2-warn' : 'lv2-ver') + '">' + (svOld ? '⚠ ' : '') + 'server ' + U.esc(svTxt) + '</span>' : '') + '</small><small class="lv2-hint">' + (tipUI._lvRef ? 'Aggiorno…' : '↓ tira giù o tocca qui per aggiornare') + '</small></span></div>' +
     '<div class="lv-tabs lv2-tabs" role="tablist">' + tb('now', 'Adesso', items.length) + tb('today', 'Oggi', nToday) + tb('all', 'Partite', nLive) + '</div>' +
-    (tab === 'all' ? '' : (function () {
+    (tab === 'all' || true ? '' : (function () {
       var a = tab === 'today' ? nTodaySig : nNowSig, b = tab === 'today' ? nTodayQr : nNowQr;
       return '<div class="lv2-mode" role="tablist" aria-label="Cosa vedere"><button type="button" role="tab" aria-selected="' + !qrMode + '" class="sig' + (!qrMode ? ' on' : '') + '" data-lv-mode="sig">🎯 Giocate da fare <i>' + a + '</i></button>' +
         '<button type="button" role="tab" aria-selected="' + qrMode + '" class="qr' + (qrMode ? ' on' : '') + '" data-lv-mode="qr">⏳ Quota raggiunta <i>' + b + '</i></button></div>';
@@ -5380,23 +5403,40 @@ function tipArchiveChip() {
       Toccando un giorno si apre quel giorno, toccando una giocata o un campionato si filtra (✕ per togliere).
    5) l'elenco dei segnali del periodo, ultimi 10 (prima c'era lo Storico con un riquadro per giorno). */
 var TIP_ST_PER = [['oggi', 'Oggi'], ['ieri', 'Ieri'], ['7', '7 gg'], ['30', '30 gg'], ['all', 'Tutto']];
+/* 4.20.0 — periodi in più nel menu (tieni premuto un periodo): questa settimana, questo mese, mese scorso, 90 giorni */
+var TIP_ST_PER_X = [['wk', 'Questa settimana'], ['mo', 'Questo mese'], ['pm', 'Mese scorso'], ['90', '90 giorni']];
+function tipStPerBounds(k) {
+  var t = tipISO(new Date()), d = new Date(t + 'T12:00:00');
+  if (k === 'wk') return [tipAddDays(t, -((d.getDay() + 6) % 7)), t];
+  if (k === 'mo') return [t.slice(0, 8) + '01', t];
+  if (k === 'pm') { var a = new Date(d.getFullYear(), d.getMonth() - 1, 1), b = new Date(d.getFullYear(), d.getMonth(), 0); return [tipISO(a), tipISO(b)]; }
+  if (k === '90') return [tipAddDays(t, -89), t];
+  return null;
+}
 function tipStPerKey() {
   var t = tipISO(new Date()), R = tipStRange();
   if (!tipUI.stFrom) return 'all';
-  if (R.to !== t) return R.from === R.to && R.from === tipAddDays(t, -1) ? 'ieri' : '';
-  return R.from === t ? 'oggi' : R.from === tipAddDays(t, -6) ? '7' : R.from === tipAddDays(t, -29) ? '30' : '';
+  if (R.to !== t) { if (R.from === R.to && R.from === tipAddDays(t, -1)) return 'ieri'; var pm = tipStPerBounds('pm'); return R.from === pm[0] && R.to === pm[1] ? 'pm' : ''; }
+  if (R.from === t) return 'oggi';
+  if (R.from === tipAddDays(t, -6)) return '7';
+  if (R.from === tipAddDays(t, -29)) return '30';
+  var x = TIP_ST_PER_X.find(function (o) { var B = tipStPerBounds(o[0]); return o[0] !== 'pm' && B && B[0] === R.from; });
+  return x ? x[0] : '';
 }
 function tipStSetPer(k) {
-  var t = tipISO(new Date());
+  var t = tipISO(new Date()), B = tipStPerBounds(k);
   if (k === 'all') { tipUI.stFrom = ''; tipUI.stTo = ''; }
   else if (k === 'ieri') { tipUI.stFrom = tipUI.stTo = tipAddDays(t, -1); }
+  else if (B) { tipUI.stFrom = B[0]; tipUI.stTo = B[1]; }
   else { tipUI.stFrom = tipAddDays(t, k === 'oggi' ? 0 : k === '7' ? -6 : -29); tipUI.stTo = t; }
 }
 function tipStPerRow() {
-  var cur = tipStPerKey();
-  return '<div class="st2-per" role="tablist" aria-label="Periodo">' + TIP_ST_PER.map(function (o) {
-    return '<button type="button" role="tab" aria-selected="' + (cur === o[0]) + '" class="st2-chip' + (cur === o[0] ? ' on' : '') + '" data-st-per="' + o[0] + '">' + o[1] + '</button>';
-  }).join('') + '<button type="button" class="st2-chip' + (cur ? '' : ' on') + '" data-stfopen="period" aria-label="Scegli i giorni dal calendario">📅' + (cur ? '' : ' ' + U.esc(tipStRangeLabel())) + '</button></div>';
+  var cur = tipStPerKey(), vis = TIP_ST_PER.some(function (o) { return o[0] === cur; }), xs = TIP_ST_PER_X.find(function (o) { return o[0] === cur; });
+  var chip = function (o, hid) {
+    return '<button type="button" role="tab" aria-selected="' + (cur === o[0]) + '" class="st2-chip' + (cur === o[0] ? ' on' : '') + '" data-st-per="' + o[0] + '" data-chip-radio' + (hid ? ' hidden' : '') + '>' + o[1] + (cur === o[0] && !hid ? '<span class="pr-chev">▾</span>' : '') + '</button>';
+  };
+  return '<div class="st2-per" role="tablist" aria-label="Periodo" data-chipmenu="Periodo">' + TIP_ST_PER.map(function (o) { return chip(o, false); }).join('') + TIP_ST_PER_X.map(function (o) { return chip(o, true); }).join('') +
+    '<button type="button" class="st2-chip' + (vis ? '' : ' on') + '" data-stfopen="period" data-menu-act data-ic="📅" aria-label="Scegli i giorni dal calendario"><span>📅' + (vis ? '' : ' ' + U.esc(xs ? xs[1] : tipStRangeLabel())) + '</span>' + '<span hidden data-menu-lab>Scegli i giorni…</span></button></div>';
 }
 /* righe [etichetta, elenco, attributo per il tocco, sottotitolo]; cnt = tipStatCount (live) o tipPreCount (prepartita) */
 function tipStTab(rows, cnt, opt) {
@@ -5406,12 +5446,42 @@ function tipStTab(rows, cnt, opt) {
   var eur = !opt.noEur;
   return '<div class="st2-tab' + (eur ? '' : ' noeur') + '"><div class="st2-r st2-hd"><span></span><span>V–P</span><span>%</span>' + (eur ? '<span>€</span>' : '') + '</div>' + rows.map(function (r) {
     var c = cnt(r[1]), has = c.n > 0, good = has && (c.exp == null || c.rate >= c.exp - 2), tag = r[2] ? 'button' : 'div';
-    return '<' + tag + (r[2] ? ' type="button" ' + r[2] : '') + ' class="st2-r' + (r[2] ? ' st2-tap' : '') + '"><span class="st2-l"><b>' + r[0] + '</b>' + (r[3] ? '<small>' + r[3] + '</small>' : '') + '</span>' +
+    return '<' + tag + (r[2] ? ' type="button" ' + r[2] : '') + ' class="st2-r' + (r[2] ? ' st2-tap' : '') + (r[4] ? ' on' : '') + '"><span class="st2-l"><b>' + r[0] + '</b>' + (r[3] ? '<small>' + r[3] + '</small>' : '') + '</span>' +
       '<span class="st2-wl"><span>' + (c.w + c.l ? tipWL2(c) : '—') + '</span>' + (c.a ? '<small>+' + c.a + ' ◷</small>' : '') + '</span>' +
       '<span class="st2-p ' + (has ? (good ? 'good' : 'bad') : 'none') + '"><b>' + (has ? Math.round(c.rate) + '%' : '—') + '</b>' + (has && c.exp != null ? '<small>prev. ' + Math.round(c.exp) + '</small>' : '') + '</span>' +
       (eur ? '<span class="st2-eur ' + (has && c.pl != null ? (c.pl >= 0 ? 'positive' : 'negative') : 'muted') + '">' + (has && c.pl != null ? (c.pl >= 0 ? '+' : '') + Math.round(c.pl) : '—') + '</span>' : '') + '</' + tag + '>';
   }).join('') + '</div>';
 }
+/* 4.20.0 — STATISTICHE LIVE TOCCABILI come in Prepartita: tocchi una riga (es. Prossimo gol 1T, un giorno, un
+   campionato) e subito sotto la tabella si aprono i suoi segnali con l'esito. "Filtra" fa quello che faceva prima il
+   tocco (tutta la pagina solo su quella riga). */
+function tipStPeekTab(rows, cnt, scope, opt) {
+  rows = rows.filter(function (r) { return r[1] && r[1].length; });
+  var cur = tipUI.stPeek || '', det = '';
+  var R2 = rows.map(function (r) {
+    var dv = (/data-st-drill="([^"]*)"/.exec(r[2] || '') || [])[1] || '';
+    var key = scope + '|' + (dv || String(r[0]).replace(/<[^>]+>/g, '').trim());
+    if (cur === key) det = tipStPeekDet(r, dv, key);
+    return [r[0], r[1], 'data-st-peek="' + U.esc(key) + '"', r[3], cur === key];
+  });
+  return tipStTab(R2, cnt, opt) + det;
+}
+function tipStPeekDet(r, dv, key) {
+  var L = r[1].slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); }), c = tipStatCount(L), n = tipUI.stPeekN || 10;
+  var name = String(r[0]).replace(/<[^>]+>/g, '').trim();
+  return '<div class="pst-det st-peek"><div class="pst-det-h"><b>' + U.esc(name) + '</b><span>' + (c.w + c.l ? '<b class="positive">' + c.w + '</b> vinte · <b class="negative">' + c.l + '</b> perse' : 'nessun esito') + (c.a ? ' · ' + c.a + ' ◷' : '') + '</span>' +
+    (dv ? '<button type="button" class="st-peek-f" data-st-drill="' + U.esc(dv) + '">Filtra</button>' : '') +
+    '<button type="button" class="pst-x" data-st-peek="' + U.esc(key) + '" aria-label="Chiudi l’elenco">✕</button></div>' +
+    '<div class="lv2-list">' + L.slice(0, n).map(function (e) { return tipLvRow(e, { showRes: true }); }).join('') + '</div>' +
+    (L.length > n ? '<button type="button" class="tl-more" data-st-peekmore>Mostra altri ' + Math.min(20, L.length - n) + ' · ' + (L.length - n) + ' rimasti</button>' : '') + '</div>';
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-st-peek],[data-st-peekmore]');
+  if (!b) return;
+  if (b.hasAttribute('data-st-peekmore')) tipUI.stPeekN = (tipUI.stPeekN || 10) + 20;
+  else { var k = b.getAttribute('data-st-peek'); tipUI.stPeek = tipUI.stPeek === k ? '' : k; tipUI.stPeekN = 10; }
+  render();
+});
 function tipStSum(c, sub) {
   var has = c.n > 0, good = has && (c.exp == null || c.rate >= c.exp - 2);
   return '<div class="st2-sum"><b class="st2-big ' + (has ? (good ? 'good' : 'bad') : 'none') + '">' + (has ? Math.round(c.rate) + '%' : '—') + '</b><span class="st2-sumx"><span>' + (c.w + c.l ? tipWL2(c) + ' vinte–perse' : 'Nessun esito') + (c.a ? ' · ' + c.a + ' ◷' : '') + '</span>' +
@@ -5483,17 +5553,17 @@ function tipStatsLive2() {
   var S = L.length ? tipStLiveSplit(L, key) : { rows: [] };
   var nL = tipUI.stListN || 10;
   var html = '<section class="card st2-card">' + tipStSum(c, mine.length ? 'giocate da te ' + mw + '/' + mine.length + ' (<b class="' + (mpl >= 0 ? 'positive' : 'negative') + '">' + (mpl >= 0 ? '+' : '') + mpl.toFixed(2) + '€</b>)' : '') +
-    (L.length ? tipStTab(tipStLevelRows(L, smp, tipStatWait()), tipStatCount) : '') + '</section>';
+    (L.length ? tipStPeekTab(tipStLevelRows(L, smp, tipStatWait()), tipStatCount, 'lvl') : '') + '</section>';
   if (!L.length) return html + (QL.exc.length ? '<section class="card st2-card">' + tipQualityBox(L, QL.exc, 'riep') + '</section>' : '');
   /* 4.7.0 — resa alle quote bet365 vere (solo i segnali gol con la quota vera registrata) */
   var QV = L.filter(function (e) { var i = TIP_TARGET[e.k] && !/^t[ck]/.test(e.k) ? tipQuotaInfo(e) : null; return i && i.q; });
   if (QV.length) {
     var cntQ = function (arr) { var c = tipStatCount(arr), pl = 0; arr.forEach(function (e) { var i = tipQuotaInfo(e); if (e.res === 1) pl += 10 * (i.q - 1); else if (e.res === 0) pl -= 10; }); c.pl = pl; return c; };
-    html += '<section class="card st2-card"><p class="st2-h">💰 Alle quote bet365 vere · 10 € a segnale</p>' + tipStTab([['Tutti con quota vera', QV], ['<span class="lv2-qv">💰 Con valore</span>', QV.filter(tipHasValue), '', 'quota vera ≥ minima +3%'], ['Senza valore', QV.filter(function (e) { return !tipHasValue(e); })]], cntQ) +
+    html += '<section class="card st2-card"><p class="st2-h">💰 Alle quote bet365 vere · 10 € a segnale</p>' + tipStPeekTab([['Tutti con quota vera', QV], ['<span class="lv2-qv">💰 Con valore</span>', QV.filter(tipHasValue), '', 'quota vera ≥ minima +3%'], ['Senza valore', QV.filter(function (e) { return !tipHasValue(e); })]], cntQ, 'qv') +
       '<p class="muted st2-hint">Quota minima = 1 diviso la %. Il segno ≈ vuol dire quota ricavata dalla linea asiatica.</p></section>';
   }
-  html += '<section class="card st2-card">' + tipStSplitRow(TIP_ST_LSPLIT, key) + tipStTab(S.rows, tipStatCount) + tipStMoreBtn(S.more, 'data-hist-more', 'giorni') +
-    '<p class="muted st2-hint">Tocca una riga per vedere solo quella. % sulle chiuse, “prev.” = prevista, € teorici con la puntata base.</p></section>';
+  html += '<section class="card st2-card">' + tipStSplitRow(TIP_ST_LSPLIT, key) + tipStPeekTab(S.rows, tipStatCount, 'sp-' + key) + tipStMoreBtn(S.more, 'data-hist-more', 'giorni') +
+    '<p class="muted st2-hint">Tocca una riga per vedere i suoi segnali qui sotto; “Filtra” mostra tutta la pagina solo su quella. % sulle chiuse, “prev.” = prevista, € teorici con la puntata base.</p></section>';
   html += '<section class="st2-list"><p class="st2-h">Segnali · ' + L.length + '</p><div class="lv2-list">' + L.slice(0, nL).map(function (e) { return tipLvRow(e, { showRes: true }); }).join('') + '</div>' + tipStMoreBtn(Math.min(20, L.length - nL), 'data-st-listmore', 'segnali') + '</section>';
   return html + (QL.exc.length ? '<section class="card st2-card">' + tipQualityBox(L, QL.exc, 'riep') + '</section>' : '');
 }
@@ -5612,10 +5682,10 @@ function tipTopList(list, days) {
     var w = 0, l = 0;
     itemsOf(k).forEach(function (c) { var s = tipOutcome(c.m, c.p).s; if (s === 'V') w++; else if (s === 'P') l++; });
     var r = w + l ? Math.round(w / (w + l) * 100) : null;
-    return '<button type="button" class="lvk' + (sel === k ? ' on' : '') + '" data-top-mk="' + k + '"' + (color ? ' style="--mk:var(--mk-' + k + ')"' : '') + '>' + (color ? '<span class="pr-dot"></span>' : '') + '<span>' + label + '</span>' + (sel === k ? '<span class="pr-chev">▾</span>' : '') +
+    return '<button type="button" class="lvk' + (sel === k ? ' on' : '') + '" data-top-mk="' + k + '" data-chip-radio data-chipscroll' + (k === 'all' ? ' data-ic="★"' : k === 'tt' ? ' data-ic="🏆"' : '') + (color ? ' style="--mk:var(--mk-' + k + ')"' : '') + '>' + (color ? '<span class="pr-dot"></span>' : '') + '<span>' + label + '</span>' + (sel === k ? '<span class="pr-chev">▾</span>' : '') +
       (r != null ? '<b class="' + (r >= 80 ? 'good' : r >= 70 ? 'mid' : 'bad') + '">' + r + '%</b>' : '') + '<i>' + n + '</i></button>';
   };
-  var chips = '<div class="lvk-row pr-mkc" role="toolbar" aria-label="Mercati">' + chip('all', 'Tutte') + chip('tt', '🏆 Top campionati') + TIP_TOP_MK.map(function (k) { return chip(k[0], TIP_TOPMK_LBL[k[0]] || k[1], true); }).join('') + '</div>';
+  var chips = '<div class="lvk-row pr-mkc" role="toolbar" aria-label="Mercati" data-chipmenu="Filtra le Top">' + chip('all', 'Tutte') + chip('tt', '🏆 Top campionati') + TIP_TOP_MK.map(function (k) { return chip(k[0], TIP_TOPMK_LBL[k[0]] || k[1], true); }).join('') + '</div>';
   var byTime = function (a, b) { return tipKickoff(a.m) - tipKickoff(b.m); };
   var corInfo = function (c) {
     if (!TIP_COR_MK[c.p.m]) return '';
@@ -5650,70 +5720,216 @@ function tipTopDaysNext(list) {
   var P = tipParams(), days = Object.keys(ds).sort().filter(function (d) { try { return tipTopFor(d, list, P).all.length > 0; } catch (e) { return false; } });
   return days.length ? days : [today];
 }
-/* 4.19.0 — Top: tieni premuto su un filtro (es. Tutte) oppure tocca quello già acceso = menu a tendina con tutti i filtri */
-function tipTopMenuClose() {
+/* 4.20.0 — MENU DEI FILTRI, uguale ovunque (Top, Live, Statistiche, Giorni passati): in una fila di filtri con
+   data-chipmenu, tieni premuto un filtro → menu a tendina con tutti i filtri della fila (anche quelli fuori schermo, con
+   % e numeri). Toccare il filtro già acceso (se non si può spegnere: data-chip-radio, con ▾) apre lo stesso menu.
+   Le voci del menu hanno gli stessi data-* dei filtri: la scelta passa dagli stessi gestori. */
+function tipChipMenuClose() {
   var o = document.querySelector('.dd-fov');
   if (o) o.remove();
   if (tipUI._lpChip) { tipUI._lpChip._lpAt = 0; tipUI._lpChip = null; }
 }
-function tipTopMenuOpen(b) {
-  tipTopMenuClose();
-  var row = b && b.closest('.pr-mkc');
-  if (!row) return;
-  var opts = Array.prototype.map.call(row.querySelectorAll('[data-top-mk]'), function (c) {
-    var k = c.getAttribute('data-top-mk'), on = c.classList.contains('on'), st = c.getAttribute('style');
-    var lab = c.querySelector('span:not(.pr-dot):not(.pr-chev)'), pc = c.querySelector('b'), n = c.querySelector('i');
-    var txt = lab ? lab.textContent.replace(/^🏆\s*/, '') : k;
-    var ic = k === 'all' ? '★' : k === 'tt' ? '🏆' : '<span class="pr-dot"></span>';
-    return '<button type="button" role="menuitemradio" aria-checked="' + on + '" class="dd-opt' + (on ? ' on' : '') + '" data-top-mk="' + k + '"' + (st ? ' style="' + U.esc(st) + '"' : '') + '>' +
-      '<span class="dd-ic">' + ic + '</span><span class="dd-lab">' + U.esc(txt) + '</span>' + (pc ? pc.outerHTML : '<b></b>') + (n ? '<i>' + U.esc(n.textContent) + '</i>' : '') + '<b class="dd-tick">' + (on ? '✓' : '') + '</b></button>';
-  }).join('');
+function tipMenuShow(anchor, title, inner, at) {
+  tipChipMenuClose();
   var ov = document.createElement('div');
   ov.className = 'dd-fov';
-  ov.innerHTML = '<div class="dd-menu dd-float pr-mkmenu" role="menu" aria-label="Filtra le Top"><div class="dd-title">Filtra le Top</div>' + opts + '</div>';
+  ov.innerHTML = '<div class="dd-menu dd-float" role="menu" aria-label="' + U.esc(title) + '">' + (title ? '<div class="dd-title">' + U.esc(title) + '</div>' : '') + inner + '</div>';
   document.body.appendChild(ov);
-  var m = ov.firstChild, r = b.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight, h = m.offsetHeight, w = m.offsetWidth;
-  var top = r.bottom + 6;
-  if (top + h > vh - 10) top = r.top - 6 - h;
+  var m = ov.firstChild, r = anchor.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight, h = m.offsetHeight, w = m.offsetWidth;
+  var top = (at ? at.y : r.bottom) + 6, left = at ? at.x - w / 2 : r.left;
+  if (top + h > vh - 10) top = (at ? at.y : r.top) - 6 - h;
   if (top < 10) { top = 10; m.style.maxHeight = (vh - 20) + 'px'; }
   m.style.top = top + 'px';
-  m.style.left = Math.max(10, Math.min(r.left, vw - w - 10)) + 'px';
-  ov.addEventListener('click', function (ev) { if (ev.target === ov && Date.now() >= (tipUI._ddIgnore || 0)) tipTopMenuClose(); });
+  m.style.left = Math.max(10, Math.min(left, vw - w - 10)) + 'px';
+  ov.addEventListener('click', function (ev) { if (ev.target === ov && Date.now() >= (tipUI._ddIgnore || 0)) tipChipMenuClose(); });
   try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { /* ok */ }
+  return m;
+}
+function tipChipMenuOpen(b) {
+  var row = b && b.closest('[data-chipmenu]');
+  if (!row) return;
+  var hasPc = !!row.querySelector('button b:not(.dd-tick)'), html = '';
+  Array.prototype.forEach.call(row.children, function (c) {
+    if (c.classList.contains('lvk-sep')) { var t = c.getAttribute('data-t'); if (t) html += '<div class="dd-title dd-sub">' + U.esc(t) + '</div>'; return; }
+    if (c.tagName !== 'BUTTON') return;
+    var on = c.classList.contains('on'), attrs = '';
+    Array.prototype.forEach.call(c.attributes, function (a) { if (/^data-/.test(a.name) && a.name !== 'data-chip-radio' && a.name !== 'data-ic') attrs += ' ' + a.name + '="' + U.esc(a.value) + '"'; });
+    var st = c.getAttribute('style'), dot = c.querySelector('.pr-dot'), ic = c.getAttribute('data-ic') || '';
+    var lab = c.querySelector('[data-menu-lab]') || c.querySelector('span:not(.pr-dot):not(.pr-chev):not([hidden])'), txt = (lab ? lab.textContent : c.firstChild && c.firstChild.nodeType === 3 ? c.firstChild.textContent : c.textContent).trim();
+    if (ic && txt.indexOf(ic) === 0) txt = txt.slice(ic.length).trim();
+    var pc = c.querySelector('b'), n = c.querySelector('i');
+    html += '<button type="button" role="menuitemradio" aria-checked="' + on + '" class="dd-opt' + (on ? ' on' : '') + '"' + attrs + (st ? ' style="' + U.esc(st) + '"' : '') + '>' +
+      '<span class="dd-ic">' + (dot ? '<span class="pr-dot"></span>' : U.esc(ic)) + '</span><span class="dd-lab">' + U.esc(txt) + '</span>' +
+      (pc ? pc.outerHTML : hasPc ? '<b></b>' : '') + (n ? '<i>' + U.esc(n.textContent) + '</i>' : '') + '<b class="dd-tick">' + (on ? '✓' : '') + '</b></button>';
+  });
+  var first = row.firstElementChild, own = first && first.classList.contains('lvk-sep') && first.getAttribute('data-t');
+  tipMenuShow(b, own ? '' : row.getAttribute('data-chipmenu') || 'Filtri', html);
 }
 (function () {
   var timer = null, x0 = 0, y0 = 0, chip = null;
   var stop = function () { clearTimeout(timer); timer = null; if (chip) chip.classList.remove('tip-lp'); chip = null; };
   document.addEventListener('pointerdown', function (ev) {
-    var b = ev.target.closest && ev.target.closest('.pr-mkc [data-top-mk]');
+    var b = ev.target.closest && ev.target.closest('[data-chipmenu] > button');
     if (!b) return;
     stop(); chip = b; x0 = ev.clientX; y0 = ev.clientY; b.classList.add('tip-lp');
     timer = setTimeout(function () {
       timer = null; b.classList.remove('tip-lp');
-      b._lpAt = Date.now(); tipUI._lpChip = b;
-      tipUI._ddIgnore = Infinity; /* finché il dito resta giù, il rilascio non sceglie e non chiude */
-      tipTopMenuOpen(b);
+      b._lpAt = Date.now(); tipUI._ddIgnore = Infinity; /* finché il dito resta giù, il rilascio non sceglie e non chiude */
+      tipChipMenuOpen(b);
       tipUI._lpChip = b;
     }, 450);
   });
   document.addEventListener('pointermove', function (ev) { if (timer && (Math.abs(ev.clientX - x0) > 8 || Math.abs(ev.clientY - y0) > 8)) stop(); }, true);
   ['pointercancel', 'scroll'].forEach(function (n) { document.addEventListener(n, stop, true); });
   document.addEventListener('pointerup', function () { if (tipUI._ddIgnore === Infinity) tipUI._ddIgnore = Date.now() + 350; stop(); }, true);
-  document.addEventListener('contextmenu', function (ev) { if (ev.target.closest && ev.target.closest('[data-top-mk]')) ev.preventDefault(); });
-  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') tipTopMenuClose(); });
-  window.addEventListener('resize', function () { tipTopMenuClose(); });
+  document.addEventListener('contextmenu', function (ev) { if (ev.target.closest && ev.target.closest('[data-chipmenu] > button, .pr-row, .lv2')) ev.preventDefault(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') tipChipMenuClose(); });
+  window.addEventListener('resize', function () { tipChipMenuClose(); });
+  /* prima di tutti gli altri gestori: rilascio dopo la pressione lunga, filtro acceso = menu, voce del menu */
+  document.addEventListener('click', function (ev) {
+    var t = ev.target, eat = function () { ev.stopPropagation(); ev.preventDefault(); };
+    var o = t.closest && t.closest('.dd-float .dd-opt');
+    if (o) {
+      if (Date.now() < (tipUI._ddIgnore || 0)) { eat(); return; }
+      if (o.classList.contains('on') && !o.hasAttribute('data-menu-act')) { eat(); tipChipMenuClose(); return; }
+      tipChipMenuClose(); /* l'evento continua verso il gestore del filtro (stessi data-*) */
+      if (o.hasAttribute('data-chipscroll')) setTimeout(function () { var c = document.querySelector('[data-chipmenu] > button.on'); if (c && c.scrollIntoView) c.scrollIntoView({ inline: 'center', block: 'nearest' }); }, 40);
+      return;
+    }
+    var b = t.closest && t.closest('[data-chipmenu] > button, .pr-row, .lv2');
+    if (!b) return;
+    if (b._lpAt && Date.now() - b._lpAt < 1500) { b._lpAt = 0; eat(); return; }
+    if (b.matches('[data-chipmenu] > button') && b.classList.contains('on') && b.hasAttribute('data-chip-radio')) { eat(); tipUI._ddIgnore = Date.now() + 100; tipChipMenuOpen(b); }
+  }, true);
 })();
 document.addEventListener('click', function (ev) {
   var b = ev.target.closest && ev.target.closest('[data-top-mk]');
   if (!b) return;
-  if (tipLongPressed(b)) return;
-  var inMenu = !!b.closest('.dd-float');
-  if (inMenu && Date.now() < (tipUI._ddIgnore || 0)) return;
-  if (!inMenu && b.classList.contains('on')) { tipUI._ddIgnore = Date.now() + 100; tipTopMenuOpen(b); return; }
-  tipTopMenuClose();
   tipUI.topMk = b.getAttribute('data-top-mk');
   render();
   setTimeout(function () { var c = document.querySelector('.pr-mkc .lvk.on'); if (c && c.scrollIntoView) c.scrollIntoView({ inline: 'center', block: 'nearest' }); }, 30);
+});
+/* 4.20.0 — MENU RAPIDO DI UNA PARTITA: tieni premuta una riga di Partite / Top (o un segnale del Live) → preferita,
+   dettaglio e "copia le squadre" (da incollare nella ricerca di bet365). */
+function tipCopyText(s) {
+  var ok = function () { U.toast('Copiato: ' + s); };
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(s).then(ok, function () { fb(); }); return; } } catch (e) { /* ok */ }
+  fb();
+  function fb() {
+    var ta = document.createElement('textarea');
+    ta.value = s; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '-100px';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); ok(); } catch (e2) { U.toast(s); }
+    ta.remove();
+  }
+}
+function tipRowMenuOpen(b, at) {
+  var html = '', it = function (attrs, ic, lab) { return '<button type="button" class="dd-opt" data-menu-act ' + attrs + '><span class="dd-ic">' + ic + '</span><span class="dd-lab">' + lab + '</span></button>'; };
+  var home = '', away = '', title = '';
+  if (b.classList.contains('pr-row')) {
+    var id = b.getAttribute('data-tip-open'), m = (db.predictions || []).find(function (x) { return x.id === id; });
+    if (!m) return;
+    home = m.home; away = m.away; title = m.home + ' – ' + m.away;
+    var star = tipIsStar(m);
+    html = it('data-copy-teams="' + U.esc(title) + '"', '⧉', 'Copia “' + U.esc(title) + '”') +
+      it('data-row-star="' + U.esc(id) + '"', star ? '☆' : '★', star ? 'Togli dalle preferite' : 'Aggiungi alle preferite') +
+      it('data-tip-open="' + U.esc(id) + '"', '›', 'Apri il dettaglio');
+  } else {
+    var lv = b.getAttribute('data-lv-open') || '', t = b.querySelector('.lv2-teams');
+    title = t ? t.textContent.trim() : '';
+    if (!title) return;
+    html = it('data-copy-teams="' + U.esc(title) + '"', '⧉', 'Copia “' + U.esc(title) + '”') + it('data-lv-open="' + U.esc(lv) + '"', '›', 'Apri il segnale');
+  }
+  void home; void away;
+  tipMenuShow(b, title, html, at);
+}
+(function () {
+  var timer = null, x0 = 0, y0 = 0;
+  var stop = function () { clearTimeout(timer); timer = null; };
+  document.addEventListener('pointerdown', function (ev) {
+    if (ev.target.closest && ev.target.closest('.pr-star, [data-tip-star], .dd-fov')) return;
+    var b = ev.target.closest && ev.target.closest('.pr-row[data-tip-open], button.lv2[data-lv-open]');
+    if (!b) return;
+    stop(); x0 = ev.clientX; y0 = ev.clientY;
+    timer = setTimeout(function () {
+      timer = null;
+      b._lpAt = Date.now(); tipUI._lpChip = b; tipUI._ddIgnore = Infinity;
+      tipRowMenuOpen(b, { x: x0, y: y0 });
+      tipUI._lpChip = b;
+    }, 500);
+  });
+  document.addEventListener('pointermove', function (ev) { if (timer && (Math.abs(ev.clientX - x0) > 8 || Math.abs(ev.clientY - y0) > 8)) stop(); }, true);
+  ['pointercancel', 'pointerup', 'scroll'].forEach(function (n) { document.addEventListener(n, stop, true); });
+})();
+document.addEventListener('click', function (ev) {
+  var o = ev.target.closest && ev.target.closest('.dd-float [data-tip-open]');
+  if (o) tipDetail(o.getAttribute('data-tip-open'));
+});
+/* 4.20.0 — TIRA GIÙ PER AGGIORNARE (Live e Prepartita) al posto del pulsante: dall'inizio della pagina trascini in basso,
+   compare "Rilascia per aggiornare", lasci e parte. Live = nuovo controllo delle partite in corso; Prepartita = pronostici
+   automatici e risultati. Nel Live anche un tocco sul riquadro "Aggiornato alle…" aggiorna. */
+async function tipLiveRefresh() {
+  if (tipUI._lvRef) return;
+  tipUI._lvRef = true;
+  try { await tipScanFetch(); tipSignalsPull(true); render(); setTimeout(tipFreshNotify, 120); }
+  catch (e) { U.toast(tipFnErr(e)); }
+  finally { tipUI._lvRef = false; render(); }
+}
+async function tipPreRefresh() {
+  try { await Promise.all([tipAutoPrematch({ manual: false }), tipAutoResults({ manual: false })]); render(); U.toast('Prepartita aggiornata'); }
+  catch (e) { U.toast(tipFnErr(e)); }
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-lv-tapref]');
+  if (b) tipLiveRefresh();
+});
+(function () {
+  var y0 = null, x0 = 0, dy = 0, el = null, armed = false, busy = false, TH = 78;
+  var where = function () {
+    if (typeof tab === 'undefined') return '';
+    if (tab === 'live') return 'live';
+    if (tab === 'tips') return 'pre';
+    return '';
+  };
+  var pill = function () {
+    if (!el) { el = document.createElement('div'); el.className = 'ptr'; el.innerHTML = '<i aria-hidden="true">↻</i><span></span>'; document.body.appendChild(el); }
+    return el;
+  };
+  var hide = function () { if (el && !busy) { el.classList.remove('show', 'armed'); el.style.transform = ''; } armed = false; };
+  document.addEventListener('touchstart', function (ev) {
+    y0 = null;
+    if (busy || ev.touches.length !== 1 || window.scrollY > 2 || !where() || document.querySelector('dialog[open], .dd-fov')) return;
+    if (ev.target.closest && ev.target.closest('input, textarea, select, .lvk-row, [data-chipmenu]')) return;
+    y0 = ev.touches[0].clientY; x0 = ev.touches[0].clientX; dy = 0; armed = false;
+  }, { passive: true });
+  document.addEventListener('touchmove', function (ev) {
+    if (y0 == null) return;
+    var t = ev.touches[0], dx = t.clientX - x0;
+    dy = t.clientY - y0;
+    if (dy < 8 || window.scrollY > 2) { if (dy < 0 || Math.abs(dx) > Math.abs(dy)) { y0 = null; hide(); } return; }
+    var p = pill(), d = Math.min(dy, 150);
+    armed = d >= TH;
+    p.classList.add('show'); p.classList.toggle('armed', armed);
+    p.querySelector('span').textContent = armed ? 'Rilascia per aggiornare' : 'Tira giù per aggiornare';
+    p.style.transform = 'translate(-50%,' + Math.round(d * 0.55) + 'px) rotate(0)';
+    p.querySelector('i').style.transform = 'rotate(' + Math.round(d * 2.4) + 'deg)';
+  }, { passive: true });
+  document.addEventListener('touchend', function () {
+    if (y0 == null) return;
+    y0 = null;
+    if (!armed) { hide(); return; }
+    var w = where(), p = pill();
+    busy = true; p.classList.add('busy'); p.querySelector('span').textContent = 'Aggiorno…';
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { /* ok */ }
+    (w === 'live' ? tipLiveRefresh() : tipPreRefresh()).finally(function () { busy = false; p.classList.remove('busy'); hide(); });
+  }, { passive: true });
+  document.addEventListener('touchcancel', function () { y0 = null; hide(); }, { passive: true });
+})();
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-copy-teams],[data-row-star]');
+  if (!b) return;
+  if (b.hasAttribute('data-copy-teams')) tipCopyText(b.getAttribute('data-copy-teams'));
+  else { tipToggleStar(b.getAttribute('data-row-star')); render(); }
 });
 function tipTopPastPanel(list) {
   var today = U.local().slice(0, 10), ds = {};
@@ -5723,9 +5939,9 @@ function tipTopPastPanel(list) {
   var day = tipUI.topPast && ds[tipUI.topPast] ? tipUI.topPast : days[0];
   if (tipUI.preQDay !== day) { tipUI.preQDay = day; tipUI.preQmk = ''; tipUI.preQN = 15; }
   var topOf = function (d) { return tipPreRowsRaw(list, d).filter(function (r) { return r.top; }); };
-  var strip = '<div class="lvk-row pst-strip" role="toolbar" aria-label="Giorni passati">' + days.map(function (d) {
+  var strip = '<div class="lvk-row pst-strip" role="toolbar" aria-label="Giorni passati" data-chipmenu="Giorno">' + days.map(function (d) {
     var c = tipPreCount(topOf(d));
-    return '<button type="button" class="lvk' + (d === day ? ' on' : '') + '" data-top-past="' + d + '"><span>' + U.esc(tipPreDayName(d)) + '</span>' + (c.n ? '<b class="' + tipPreGood(c) + '">' + Math.round(c.rate) + '%</b>' : '') + '<i>' + (c.w + c.l + c.a) + '</i></button>';
+    return '<button type="button" class="lvk' + (d === day ? ' on' : '') + '" data-top-past="' + d + '" data-chip-radio data-chipscroll><span>' + U.esc(tipPreDayName(d)) + '</span>' + (d === day ? '<span class="pr-chev">▾</span>' : '') + (c.n ? '<b class="' + tipPreGood(c) + '">' + Math.round(c.rate) + '%</b>' : '') + '<i>' + (c.w + c.l + c.a) + '</i></button>';
   }).join('') + '</div>';
   var R7 = [];
   days.slice(0, 7).forEach(function (d) { R7 = R7.concat(topOf(d)); });

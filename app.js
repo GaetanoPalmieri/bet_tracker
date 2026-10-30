@@ -1,4 +1,4 @@
-const APP_VERSION = '4.19.0';
+const APP_VERSION = '4.20.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -615,17 +615,19 @@ function render() {
   if (tab === 'stats') html = typeof tipStatsTab === 'function' ? tipStatsTab() : diaryPage('stats');
   if (tab === 'tips' || tab === 'live') html = typeof tipsPage === 'function' ? tipsPage() : ''; /* 3.89.0 — Pronostici è la prima scheda: pronostici.js arriva dopo */
   if (tab === 'accounts') {
+    /* 4.20.0 — ALTRO PIÙ PULITO: niente più "Saldo attuale" con Deposito e Prelievo (sono già in Saldo); saldo iniziale,
+       depositi/prelievi e backup sono righe che si aprono e chiudono (come in Money), chiuse di base. */
     const s = startDate();
-    html = `${window.SuiteTheme ? SuiteTheme.card({ cls: 'card' }) : ''}${window.SuiteSync && typeof syncBet !== 'undefined' && syncBet ? SuiteSync.cardHtml('bet', { cls: 'card' }) + '<div class="card suite-sync-card push-card" id="pushCard"></div>' : ''}<div class="card hero acc-hero"><small>SALDO ATTUALE</small><div class="big">${U.money(balance())}</div><div class="acc-initial"><span>Saldo iniziale <b>${U.money(db.accounts[0].initial)}</b>${s ? ' · dal ' + U.esc(dLabel(s)) : ''}</span><button type="button" id="initial">Modifica</button></div><div class="hero-flow-btns"><button type="button" class="flow-btn in" data-tx="deposit"><span aria-hidden="true">↓</span>Deposito</button><button type="button" class="flow-btn out" data-tx="withdraw"><span aria-hidden="true">↑</span>Prelievo</button></div></div><h2 class="section">Depositi e prelievi</h2>${
-      realFlows()
-        .slice()
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
+    const flows = realFlows().slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    const altOpen = (k) => (diaryUI.altOpen && diaryUI.altOpen[k] ? ' open' : '');
+    html = `${window.SuiteTheme ? SuiteTheme.card({ cls: 'card' }) : ''}${window.SuiteSync && typeof syncBet !== 'undefined' && syncBet ? SuiteSync.cardHtml('bet', { cls: 'card' }) + '<div class="card suite-sync-card push-card" id="pushCard"></div>' : ''}<details class="card alt-sec" data-alt="conto"${altOpen('conto')}><summary><span class="alt-t"><b>Saldo iniziale, depositi e prelievi</b><small>${U.money(db.accounts[0].initial)}${s ? ' dal ' + U.esc(dLabel(s)) : ''} · ${flows.length} ${flows.length === 1 ? 'movimento' : 'movimenti'}</small></span></summary><div class="alt-body"><div class="acc-initial alt-initial"><span>Saldo iniziale <b>${U.money(db.accounts[0].initial)}</b>${s ? ' · dal ' + U.esc(dLabel(s)) : ''}</span><button type="button" id="initial">Modifica</button></div>${
+      flows
         .map(
           (t) =>
-            `<div class="card flow-row ${t.amount < 0 ? 'out' : 'in'}"><span class="flow-ic" aria-hidden="true">${t.amount < 0 ? '↑' : '↓'}</span><div class="flow-main"><b>${t.amount < 0 ? 'Prelievo' : 'Deposito'}</b><small>${U.date(t.date)}</small></div><strong class="${t.amount < 0 ? 'negative' : 'positive'}">${t.amount < 0 ? '−' : '+'}${U.money(Math.abs(t.amount))}</strong><div class="flow-actions"><button data-tx-edit="${t.id}">Modifica</button><button class="danger" data-tx-delete="${t.id}">Elimina</button></div></div>`,
+            `<div class="flow-row alt-flow ${t.amount < 0 ? 'out' : 'in'}"><span class="flow-ic" aria-hidden="true">${t.amount < 0 ? '↑' : '↓'}</span><div class="flow-main"><b>${t.amount < 0 ? 'Prelievo' : 'Deposito'}</b><small>${U.date(t.date)}</small></div><strong class="${t.amount < 0 ? 'negative' : 'positive'}">${t.amount < 0 ? '−' : '+'}${U.money(Math.abs(t.amount))}</strong><div class="flow-actions"><button data-tx-edit="${t.id}">Modifica</button><button class="danger" data-tx-delete="${t.id}">Elimina</button></div></div>`,
         )
-        .join('') || '<div class="card empty">Nessun deposito o prelievo.</div>'
-    }<div class="card"><h2>Backup e ripristino</h2><p class="muted">Dati salvati sul telefono e, se colleghi la sincronizzazione, anche online. Ultima esportazione richiesta: ${db.settings.lastExport ? U.date(db.settings.lastExport) : 'mai'}.</p><div class="actions"><button id="export">Esporta JSON</button><button id="import">Importa backup</button></div><input type="file" accept=".json,application/json" id="import-file" hidden></div><div class="card app-version-card"><h2>Versione app</h2><p class="muted">Bet Tracker ${APP_VERSION} · gli aggiornamenti vengono controllati automaticamente.</p><button type="button" id="check-app-update">Controlla aggiornamenti</button></div>`;
+        .join('') || '<p class="muted alt-empty">Nessun deposito o prelievo: li segni da Saldo.</p>'
+    }</div></details><details class="card alt-sec" data-alt="backup"${altOpen('backup')}><summary><span class="alt-t"><b>Backup e ripristino</b><small>Ultima esportazione: ${db.settings.lastExport ? U.date(db.settings.lastExport) : 'mai'}</small></span></summary><div class="alt-body"><p class="muted">Dati salvati sul telefono e, se colleghi la sincronizzazione, anche online.</p><div class="actions"><button id="export">Esporta JSON</button><button id="import">Importa backup</button></div><input type="file" accept=".json,application/json" id="import-file" hidden></div></details><div class="card app-version-card"><h2>Versione app</h2><p class="muted">Bet Tracker ${APP_VERSION} · gli aggiornamenti vengono controllati automaticamente.</p><button type="button" id="check-app-update">Controlla aggiornamenti</button></div>`;
   }
   if (tab !== 'tips' && tab !== 'live') document.querySelector('header .tip-htools')?.remove(); /* 3.89.0 — pulsanti dei Pronostici solo nella loro scheda */
   main.innerHTML = html;
@@ -770,6 +772,7 @@ function bind() {
     if (U.finite(v) && v >= 0) mutate((n) => (n.settings.monthlyLimit = U.round(v)));
   });
   document.getElementById('initial')?.addEventListener('click', initialForm);
+  main.querySelectorAll('details.alt-sec').forEach((d) => d.addEventListener('toggle', () => { diaryUI.altOpen = diaryUI.altOpen || {}; diaryUI.altOpen[d.dataset.alt] = d.open; }));
   document.getElementById('export')?.addEventListener('click', exportData);
   document.getElementById('import')?.addEventListener('click', () => document.getElementById('import-file').click());
   document.getElementById('import-file')?.addEventListener('change', importData);

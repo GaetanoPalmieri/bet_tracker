@@ -50,10 +50,8 @@ button:disabled {
 }
 main,
 header {
-  max-width: 540px;
   margin: auto;
-  padding: 16px;
-}
+  padding: 16px;}
 header {
   display: flex;
   align-items: center;
@@ -94,16 +92,9 @@ small {
 .hero {
   background: linear-gradient(135deg, var(--bt-23433e), var(--bt-1b232c));
 }
-.big {
-  font-size: 34px;
-  font-weight: 750;
-  margin: 7px 0;
-}
 .grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+  gap: 10px;}
 .grid .card {
   margin: 0;
 }
@@ -197,21 +188,16 @@ main {
 }
 .filters {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-bottom: 12px;
-}
+  margin-bottom: 12px;}
 input,
 select {
   width: 100%;
-  min-width: 0;
   background: var(--bt-222d38);
   border: 1px solid var(--line);
   color: var(--text);
   padding: 12px 10px;
-  border-radius: 9px;
-  font-size: 16px;
-}
+  border-radius: 9px;}
 label {
   display: block;
   font-size: 13px;
@@ -219,15 +205,12 @@ label {
   margin: 12px 0 6px;
 }
 dialog {
-  width: calc(100% - 24px);
-  max-width: 510px;
   max-height: 90dvh;
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 20px;
   background: var(--bg);
-  color: var(--text);
-}
+  color: var(--text);}
 dialog::backdrop {
   background: #050a10bd;
 }
@@ -341,9 +324,6 @@ th:last-child {
   flex-wrap: wrap;
   margin-top: 10px;
 }
-.account-name {
-  overflow-wrap: anywhere;
-}
 #storage-error {
   padding: 12px;
   background: var(--bt-542e2e);
@@ -353,7 +333,6 @@ a {
   color: var(--gold);
 }
 
-#new-bet,
 #start {
   background: var(--gold);
   color: var(--bt-241800);
@@ -365,8 +344,7 @@ a {
   padding: 15px 26px;
   font-size: 16px;
 }
-button[data-close],
-.remove-leg {
+button[data-close] {
   color: var(--bt-ff9992);
   background: var(--bt-402b30);
   border-color: var(--bt-714049);
@@ -391,20 +369,6 @@ button[data-quick='lost'] {
   background: var(--bt-522d32);
   color: var(--bt-ffb1ab);
   border-color: var(--bt-82434b);
-}
-.save-center {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-.save-center button {
-  min-width: 200px;
-}
-.day-filter {
-  margin-bottom: 14px;
-}
-.day-filter label {
-  margin-top: 0;
 }
 
 /* Layout mobile: contenuti entro il viewport e scorrimento solo verticale. */
@@ -446,11 +410,6 @@ header h1 {
   font-size: clamp(22px, 6vw, 27px);
   overflow-wrap: anywhere;
 }
-#new-bet {
-  flex-shrink: 0;
-  padding: 11px 10px;
-  font-size: 14px;
-}
 .grid,
 .filters {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -460,11 +419,7 @@ header h1 {
 .row > * {
   min-width: 0;
 }
-.card p,
-.card b,
-.card span,
-.value,
-.big {
+.card p,.card b,.card span,.value {
   overflow-wrap: anywhere;
 }
 input,
@@ -518,50 +473,14 @@ dialog {
 .pick-selector {
   min-width: 0;
 }
-.pick-options {
-  margin-top: 8px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--bt-17212a);
-}
-.pick-options[hidden] {
-  display: none;
-}
-.pick-options p {
-  margin: 0 0 10px;
-}
-.pick-head,
 .pick-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
-.pick-head {
-  font-size: 11px;
-  color: var(--gold);
-  margin-bottom: 8px;
-}
 .pick-grid {
-  max-height: 230px;
   overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.pick-preset {
-  font-size: 13px;
-  padding: 12px 5px;
-}
-.pick-preset.selected {
-  border-color: var(--gold);
-  color: var(--gold);
-  background: var(--bt-3b321f);
-}
-.pick-close {
-  width: 100%;
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--sub);
-}
+  overscroll-behavior: contain;}
 
 .help {
   padding: 0;

@@ -11,7 +11,6 @@
 
 /* ---------- Sfondo con bagliori (come nelle altre app) ---------- */
 body { background: transparent !important; font-family: var(--suite-font-body); }
-html { background: var(--suite-bg); }
 body::before {
   content: "";
   position: fixed;
@@ -32,13 +31,6 @@ header {
 }
 header .eyebrow { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--suite-text-soft); }
 header h1 { font-family: var(--suite-font-display); font-weight: 750; letter-spacing: -.02em; }
-#new-bet {
-  background: var(--suite-amber-grad) !important;
-  color: var(--suite-on-amber) !important;
-  border: 0 !important;
-  border-radius: 14px !important;
-  box-shadow: 0 8px 20px -8px rgba(232,147,44,.6) !important;
-}
 
 /* ---------- Card in vetro ---------- */
 main .card,
@@ -60,7 +52,7 @@ main .card.hero {
     radial-gradient(120% 140% at 0% 0%, rgba(58,166,132,.16), transparent 60%),
     var(--suite-glass-strong) !important;
 }
-.big, .value { font-family: var(--suite-font-display); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.value { font-family: var(--suite-font-display); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 h2, h3 { font-family: var(--suite-font-display); }
 
 /* ---------- Barra di navigazione flottante in vetro ---------- */
@@ -111,16 +103,8 @@ dialog button.primary {
 /* ---------- Dialog in vetro ---------- */
 dialog {
   background: var(--suite-glass-strong) !important;
-  color: var(--suite-text) !important;
-  border: 1px solid var(--suite-glass-edge) !important;
-  border-radius: 22px !important;
-  -webkit-backdrop-filter: blur(22px) saturate(1.5);
-  backdrop-filter: blur(22px) saturate(1.5);
-}
+  color: var(--suite-text) !important;}
 :root[data-theme="dark"] dialog { background: rgba(22,30,38,.94) !important; }
-:root[data-theme="light"] dialog { background: rgba(250,250,247,.97) !important; }
-dialog .head, .editor-head { background: transparent !important; }
-:root[data-theme="light"] dialog::backdrop { background: rgba(20,24,26,.28); }
 :root[data-theme="light"] .app-toast { background: #14181a; color: #fff; }
 
 /* ---------- Splash ---------- */
@@ -153,9 +137,9 @@ dialog .head, .editor-head { background: transparent !important; }
 .suite-sync-card button:disabled { opacity: .6; }
 
 /* ---------- Popup aggiornamento / backup (uguale nelle app) ---------- */
-.app-update-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(8,12,16,.45); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+.app-update-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity .2s ease;}
 .app-update-modal.show { opacity: 1; pointer-events: auto; }
-.app-update-card { width: min(340px,100%); padding: 22px 20px 18px; border-radius: 22px; text-align: center; background: rgba(27,35,44,.86); color: #f1f5f4; border: 1px solid rgba(255,255,255,.07); box-shadow: 0 24px 60px rgba(0,0,0,.35); -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); }
+.app-update-card { width: min(340px,100%); padding: 22px 20px 18px; text-align: center; background: rgba(27,35,44,.86); color: #f1f5f4;}
 .app-update-icon { width: 46px; height: 46px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 800; background: rgba(85,195,167,.18); color: #55c3a7; }
 .app-update-card h3 { margin: 0 0 6px; font-size: 18px; }
 .app-update-card p { margin: 0 0 16px; font-size: 14px; line-height: 1.45; color: #9fb0ab; }
@@ -163,8 +147,7 @@ dialog .head, .editor-head { background: transparent !important; }
 .app-update-actions.one { grid-template-columns: 1fr; }
 .app-update-card button { min-height: 44px; border-radius: 14px; font: inherit; font-weight: 700; font-size: 15px; border: 1px solid rgba(255,255,255,.1); background: transparent; color: inherit; }
 .app-update-card .app-update-now { border: 0; background: var(--suite-amber-grad); color: var(--suite-on-amber); }
-:root[data-theme="light"] .app-update-modal { background: rgba(20,24,26,.28); }
-:root[data-theme="light"] .app-update-card { background: rgba(255,255,255,.92); color: #14181a; border-color: rgba(20,24,26,.08); box-shadow: 0 24px 60px rgba(20,24,26,.18); }
+:root[data-theme="light"] .app-update-card { color: #14181a;}
 :root[data-theme="light"] .app-update-card p { color: #4b5450; }
 :root[data-theme="light"] .app-update-icon { background: rgba(31,93,76,.12); color: #1f5d4c; }
 :root[data-theme="light"] .app-update-card button { border-color: rgba(20,24,26,.12); }
@@ -177,7 +160,7 @@ dialog .head, .editor-head { background: transparent !important; }
 .suite-modal-card h3{text-align:center;}
 .suite-modal-text{font-size:13.5px;line-height:1.45;opacity:.8;margin:0 0 12px!important;}
 .suite-history-list{display:grid;gap:6px;overflow-y:auto;margin-bottom:12px;}
-.suite-history-row{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid rgba(127,140,150,.3);background:transparent;color:inherit;font:inherit;font-size:14px;text-align:left;}
+.suite-history-row{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid rgba(127,140,150,.3);color:inherit;font:inherit;font-size:14px;text-align:left;}
 .suite-history-row.confirm{border:0;background:linear-gradient(145deg,#f7c463,#e48d24);color:#241800;font-weight:700;}
 .suite-modal .suite-sync-form{gap:10px;}
 
@@ -238,40 +221,18 @@ main input, main select, dialog input, dialog select, dialog textarea {
 /* ---------- Popup e pannelli: vetro sfocato ---------- */
 dialog, :root[data-theme="dark"] dialog, :root[data-theme="light"] dialog {
   background: color-mix(in srgb, var(--suite-surface) 60%, transparent) !important;
-  border: 1px solid var(--suite-glass-edge) !important;
-  box-shadow: 0 24px 60px -18px rgba(0,0,0,.55) !important;
   -webkit-backdrop-filter: blur(24px) saturate(1.8) !important;
-  backdrop-filter: blur(24px) saturate(1.8) !important;
-}
-:root[data-theme="light"] dialog {
-  background: color-mix(in srgb, #ffffff 72%, transparent) !important;
-  box-shadow: 0 24px 60px -18px rgba(20,24,26,.28) !important;
-}
-dialog::backdrop { background: rgba(8,11,13,.42) !important; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
-:root[data-theme="light"] dialog::backdrop { background: rgba(20,24,26,.26) !important; }
+  backdrop-filter: blur(24px) saturate(1.8) !important;}
 dialog .editor-head, dialog .head, .editor-head {
-  background: transparent !important;
-  border-bottom: 1px solid var(--suite-glass-edge);
-  -webkit-backdrop-filter: blur(18px) saturate(1.6);
-  backdrop-filter: blur(18px) saturate(1.6);
-}
+  background: transparent !important;}
 .bet-savebar {
   background: color-mix(in srgb, var(--suite-surface) 55%, transparent) !important;
   border-top: 1px solid var(--suite-glass-edge) !important;
   -webkit-backdrop-filter: blur(18px) saturate(1.6);
   backdrop-filter: blur(18px) saturate(1.6);
 }
-.pick-panel-scrim { background: rgba(8,11,13,.42) !important; -webkit-backdrop-filter: blur(5px) !important; backdrop-filter: blur(5px) !important; }
-:root[data-theme="light"] .pick-panel-scrim { background: rgba(20,24,26,.26) !important; }
-.pick-panel-card, .event-panel-card {
-  border: 1px solid var(--suite-glass-edge) !important;
-  box-shadow: 0 -16px 40px -12px rgba(0,0,0,.5) !important;
-  -webkit-backdrop-filter: blur(26px) saturate(1.6);
-  backdrop-filter: blur(26px) saturate(1.6);
-}
-.team-suggestions { border-color: var(--suite-glass-edge) !important; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
-.app-update-card { background: color-mix(in srgb, var(--suite-surface) 62%, transparent) !important; -webkit-backdrop-filter: blur(26px) saturate(1.6); backdrop-filter: blur(26px) saturate(1.6); }
-:root[data-theme="light"] .app-update-card { background: rgba(255,255,255,.78) !important; }
+.team-suggestions { -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);}
+.app-update-card { background: color-mix(in srgb, var(--suite-surface) 62%, transparent) !important;}
 .app-toast { -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); border: 1px solid var(--suite-glass-edge); border-radius: 14px !important; }
 
 /* ---------- X di chiusura: solo la X, grigia, senza riquadro ---------- */
@@ -299,7 +260,6 @@ html { overflow-x: clip !important; min-height: 100%; background: var(--suite-bg
 body { overflow-x: clip !important; min-height: 100vh; min-height: 100dvh; }
 @supports not (overflow: clip) { html, body { overflow-x: hidden !important; } }
 
-
 /* =====================================================================
    2.1.2 — Restyling richiesto: pannelli glass, calendario Home, header
    ===================================================================== */
@@ -308,23 +268,9 @@ body { overflow-x: clip !important; min-height: 100vh; min-height: 100dvh; }
 header {
   position: relative !important;
   top: auto !important;
-  z-index: 3 !important;
-  padding-right: 158px !important;
-}
-#new-bet {
-  position: fixed !important;
-  top: calc(12px + env(safe-area-inset-top)) !important;
-  right: max(16px, calc((100vw - 560px) / 2 + 16px)) !important;
-  z-index: 80 !important;
-  min-height: 46px !important;
-  padding: 0 16px !important;
-  border: 1px solid rgba(255,255,255,.16) !important;
-  box-shadow: 0 12px 28px -10px rgba(232,147,44,.72), inset 0 1px 0 rgba(255,255,255,.26) !important;
-}
+  z-index: 3 !important;}
 @media (max-width: 380px) {
-  header { padding-right: 145px !important; }
-  #new-bet { right: 12px !important; padding-inline: 13px !important; }
-}
+  }
 
 /* Pannelli principali: vetro più trasparente, luminoso e stratificato. */
 dialog,
@@ -450,197 +396,6 @@ dialog textarea,
 }
 
 /* Calendario Home — nuova struttura più chiara e moderna. */
-.dcal-shell {
-  margin-top: 12px;
-  padding: 14px;
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 22px;
-  background: rgba(255,255,255,.025);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
-}
-:root[data-theme="light"] .dcal-shell {
-  background: rgba(255,255,255,.36);
-  border-color: rgba(20,24,26,.07);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
-}
-.dcal-head {
-  margin: 0 0 14px !important;
-  gap: 12px;
-}
-.dcal-month-copy { display: grid; gap: 2px; min-width: 0; }
-.dcal-month-copy small {
-  color: var(--suite-text-soft);
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: .11em;
-}
-.dcal-month-copy b {
-  font-size: 19px;
-  line-height: 1.15;
-  letter-spacing: -.015em;
-}
-.dcal-nav-group {
-  display: grid;
-  grid-template-columns: 38px 38px;
-  gap: 6px;
-  padding: 4px;
-  border-radius: 15px;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.035);
-}
-:root[data-theme="light"] .dcal-nav-group {
-  border-color: rgba(20,24,26,.07);
-  background: rgba(255,255,255,.48);
-}
-.dcal-nav {
-  width: 38px !important;
-  min-height: 36px !important;
-  border: 0 !important;
-  border-radius: 11px !important;
-  background: transparent !important;
-  font-size: 22px !important;
-  box-shadow: none !important;
-}
-.dcal-nav:not(:disabled):active { background: rgba(255,255,255,.08) !important; }
-.dcal-grid { gap: 5px !important; }
-.dcal-wd {
-  padding: 2px 0 6px !important;
-  font-size: 10px !important;
-  font-weight: 800 !important;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-.dcal-spacer { min-height: 1px; }
-.dcal-day {
-  position: relative;
-  min-height: 58px !important;
-  padding: 7px 2px 6px !important;
-  gap: 3px !important;
-  justify-content: flex-start !important;
-  border-radius: 15px !important;
-  border: 1px solid transparent !important;
-  background: transparent !important;
-  overflow: hidden;
-  transition: transform .14s ease, background .14s ease, border-color .14s ease;
-}
-.dcal-day:not(:disabled):active { transform: scale(.95); }
-.dcal-day-number {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 12.5px;
-  font-weight: 750;
-  line-height: 1;
-}
-.dcal-day-value {
-  max-width: 100%;
-  min-height: 11px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 8.5px;
-  line-height: 1;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--suite-text-soft);
-}
-.dcal-day.has {
-  background: rgba(255,255,255,.055) !important;
-  border-color: rgba(255,255,255,.08) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.045) !important;
-}
-:root[data-theme="light"] .dcal-day.has {
-  background: rgba(255,255,255,.54) !important;
-  border-color: rgba(20,24,26,.07) !important;
-}
-.dcal-day.has.positive { background: color-mix(in srgb, var(--bt-up) 11%, transparent) !important; box-shadow: none !important; }
-.dcal-day.has.negative { background: color-mix(in srgb, var(--bt-down) 11%, transparent) !important; box-shadow: none !important; }
-.dcal-day.has.positive .dcal-day-value { color: var(--bt-up-text) !important; }
-.dcal-day.has.negative .dcal-day-value { color: var(--bt-down-text) !important; }
-.dcal-day.today { border-color: rgba(232,163,61,.62) !important; }
-.dcal-day.today .dcal-day-number {
-  background: var(--suite-amber-grad);
-  color: var(--suite-on-amber);
-  box-shadow: 0 5px 14px -6px rgba(232,147,44,.8);
-}
-.dcal-day.future { opacity: .24 !important; }
-.dcal-dot {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  width: 4px;
-  height: 4px;
-  margin-left: -2px;
-  border-radius: 50%;
-  background: var(--suite-text-soft);
-  opacity: .65;
-}
-.dcal-day.positive .dcal-dot { background: var(--bt-up); opacity: 1; }
-.dcal-day.negative .dcal-dot { background: var(--bt-down); opacity: 1; }
-.dcal-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 14px;
-  margin-top: 12px;
-  color: var(--suite-text-soft);
-  font-size: 10px;
-}
-.dcal-legend span { display: inline-flex; align-items: center; gap: 5px; }
-.dcal-legend i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--suite-text-soft);
-  opacity: .7;
-}
-.dcal-legend i.positive { background: var(--bt-up); opacity: 1; }
-.dcal-legend i.negative { background: var(--bt-down); opacity: 1; }
-.dcal-summary {
-  display: grid !important;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 14px !important;
-  padding: 0 !important;
-  border: 0 !important;
-}
-.dcal-summary > div {
-  padding: 10px 11px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.07);
-  background: rgba(255,255,255,.035);
-}
-:root[data-theme="light"] .dcal-summary > div {
-  border-color: rgba(20,24,26,.06);
-  background: rgba(255,255,255,.45);
-}
-.dcal-summary small {
-  display: block;
-  margin-bottom: 3px;
-  font-size: 8.5px;
-  font-weight: 800;
-  letter-spacing: .08em;
-}
-.dcal-summary b { font-size: 15px; font-family: var(--suite-font-display); }
-.dcal-summary-empty {
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  gap: 2px !important;
-  padding: 11px 12px !important;
-  border-radius: 14px !important;
-  border: 1px dashed rgba(255,255,255,.09) !important;
-  color: var(--suite-text-soft);
-}
-.dcal-summary-empty small { margin: 0; letter-spacing: 0; font-size: 10px; font-weight: 500; }
-
-@media (max-width: 380px) {
-  .dcal-shell { padding: 11px; }
-  .dcal-grid { gap: 3px !important; }
-  .dcal-day { min-height: 54px !important; border-radius: 13px !important; }
-  .dcal-day-number { width: 24px; height: 24px; font-size: 12px; }
-  .dcal-day-value { font-size: 7.8px; }
-}
 
 /* =====================================================================
    Bet Tracker 2.5.0 — Agenda della Home a settimane, colori a intensità
@@ -719,26 +474,9 @@ button.wkcal-title:active, button.wkcal-title.lp-pressing { background: color-mi
 }
 
 /* Pulsanti più piccoli: "+ Scommessa" in alto e "Segna / Aggiorna il saldo di oggi" */
-header { padding-right: 120px !important; }
-#new-bet {
-  min-height: 32px !important;
-  height: 32px !important;
-  padding: 0 11px !important;
-  border-radius: 11px !important;
-  font-size: 12.5px !important;
-  font-weight: 700 !important;
-}
-main .diary-record {
-  min-height: 34px !important;
-  height: auto !important;
-  padding: 7px 12px !important;
-  border-radius: 11px !important;
-  font-size: 13px !important;
-}
 @media (max-width: 380px) {
   header { padding-right: 118px !important; }
-  #new-bet { padding: 0 10px !important; font-size: 12.5px !important; }
-}
+  }
 
 /* Scelta rapida del mese (stesso aspetto delle altre app) */
 .lp-popup {
@@ -893,10 +631,6 @@ dialog#editor.sheet .sheet-field select {
   background: color-mix(in srgb, var(--suite-surface) 70%, transparent) !important;
 }
 dialog#editor.sheet .sheet-amount input { font-size: 22px !important; font-weight: 700; height: 52px !important; font-variant-numeric: tabular-nums; }
-dialog#editor.sheet .sheet-amount-row { display: flex; align-items: center; gap: 8px; }
-dialog#editor.sheet .sheet-amount-row em { font-style: normal; font-size: 24px; font-weight: 750; width: 18px; text-align: center; }
-dialog#editor.sheet .sheet-amount.tone-in .sheet-amount-row em { color: var(--bt-up-text); }
-dialog#editor.sheet .sheet-amount.tone-out .sheet-amount-row em { color: var(--bt-down-text); }
 dialog#editor.sheet .sheet-section {
   margin: 4px 2px -2px !important;
   font-size: 11px !important;
@@ -934,7 +668,6 @@ dialog#editor.sheet .sheet-hero b { font-family: var(--suite-font-display); font
 dialog#editor.sheet .sheet-hero b.sheet-formula { font-size: 16px; font-weight: 750; letter-spacing: 0; }
 dialog#editor.sheet .sheet-hero:has(small:only-child) small { font-size: 14px; color: var(--suite-text); font-weight: 700; }
 dialog#editor.sheet .sheet-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-dialog#editor.sheet .sheet-tiles.three { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; }
 dialog#editor.sheet .sheet-tiles > div {
   display: grid;
   gap: 2px;
@@ -946,7 +679,7 @@ dialog#editor.sheet .sheet-tiles > div {
 }
 dialog#editor.sheet .sheet-tiles small { font-size: 10.5px; font-weight: 650; color: var(--suite-text-soft); }
 dialog#editor.sheet .sheet-tiles b { font-size: 14.5px; font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-dialog#editor.sheet .sheet-list, dialog#editor.sheet .day-list { display: grid; gap: 7px; }
+dialog#editor.sheet .sheet-list { display: grid; gap: 7px; }
 dialog#editor.sheet .sheet-row {
   display: flex;
   align-items: center;
@@ -956,7 +689,7 @@ dialog#editor.sheet .sheet-row {
   border: 1px solid var(--suite-glass-edge);
   background: color-mix(in srgb, var(--suite-text) 3.5%, transparent);
 }
-.sheet-row-ic, .day-ic {
+.sheet-row-ic {
   flex: 0 0 auto;
   width: 32px;
   height: 32px;
@@ -967,10 +700,10 @@ dialog#editor.sheet .sheet-row {
   font-weight: 800;
   background: color-mix(in srgb, var(--suite-text) 7%, transparent);
 }
-.tone-in .sheet-row-ic, .tone-in .day-ic { background: color-mix(in srgb, var(--bt-up) 18%, transparent); color: var(--bt-up-text); }
-.tone-out .sheet-row-ic, .tone-out .day-ic { background: color-mix(in srgb, var(--bt-down) 15%, transparent); color: var(--bt-down-text); }
-.tone-bet .sheet-row-ic, .tone-bet .day-ic { background: color-mix(in srgb, #e8a33d 18%, transparent); color: #c4700f; }
-:root[data-theme="dark"] .tone-bet .sheet-row-ic, :root[data-theme="dark"] .tone-bet .day-ic { color: #f7c463; }
+.tone-in .sheet-row-ic { background: color-mix(in srgb, var(--bt-up) 18%, transparent); color: var(--bt-up-text); }
+.tone-out .sheet-row-ic { background: color-mix(in srgb, var(--bt-down) 15%, transparent); color: var(--bt-down-text); }
+.tone-bet .sheet-row-ic { background: color-mix(in srgb, #e8a33d 18%, transparent); color: #c4700f; }
+:root[data-theme="dark"] .tone-bet .sheet-row-ic { color: #f7c463; }
 .sheet-row-main { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .sheet-row-main b { font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sheet-row-main small { font-size: 11px; color: var(--suite-text-soft); }
@@ -1022,55 +755,12 @@ dialog#editor.sheet .sheet-wide svg { width: 18px; height: 18px; }
 
 /* Riepilogo del giorno (tocco su un giorno dell'Agenda) */
 dialog#editor.day-sheet .sheet-title h2 { font-size: 18px !important; }
-dialog#editor.day-sheet .day-list { margin-top: 10px; }
-.day-card {
-  padding: 10px 11px;
-  border-radius: 16px;
-  border: 1px solid var(--suite-glass-edge);
-  background: color-mix(in srgb, var(--suite-text) 3.5%, transparent);
-}
-.day-card.tone-in { box-shadow: inset 3px 0 0 var(--bt-up); }
-.day-card.tone-out { box-shadow: inset 3px 0 0 var(--bt-down); }
-.day-card.tone-bet { box-shadow: inset 3px 0 0 #e8a33d; }
-.day-card.tone-bet.st-won { box-shadow: inset 3px 0 0 var(--bt-up); }
-.day-card.tone-bet.st-lost { box-shadow: inset 3px 0 0 var(--bt-down); }
-.day-card-top { display: flex; align-items: center; gap: 10px; }
-.day-card-title { flex: 1; min-width: 0; display: grid; gap: 1px; }
-.day-card-title b { font-size: 13.5px; font-weight: 750; }
-.day-card-title small { font-size: 11px; color: var(--suite-text-soft); }
-.day-card-top > strong { font-size: 14px; font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.day-legs { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
-.day-legs li {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 6px 9px;
-  border-radius: 10px;
-  font-size: 12px;
-  background: color-mix(in srgb, var(--suite-text) 4%, transparent);
-}
-.day-legs li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.day-legs li em { font-style: normal; color: var(--suite-text-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.day-legs li.leg-won em { color: var(--bt-up-text); }
-.day-legs li.leg-lost em { color: var(--bt-down-text); }
-.day-card-foot { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 11.5px; color: var(--suite-text-soft); }
-.day-card-foot b { color: var(--suite-text); font-variant-numeric: tabular-nums; }
-.day-card-foot b.positive { color: var(--bt-up-text); }
-.day-card-foot b.negative { color: var(--bt-down-text); }
-dialog#editor.day-sheet .day-diary-btn { width: 100%; margin-top: 12px; }
 
 /* Agenda: puntino sui giorni con movimenti */
 .wk-day.mv { position: relative; }
 .wk-day.mv::after {
-  content: '';
   position: absolute;
-  top: 4px;
-  right: 5px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #e8a33d;
-}
+  border-radius: 50%;}
 
 /* Conferme (elimina, ecc.): stesso vetro, pulsanti chiari */
 .app-confirm .app-update-card { border-radius: 24px !important; }
@@ -1130,22 +820,9 @@ dialog.app-confirm::backdrop { background: transparent !important; -webkit-backd
    Bet Tracker 3.0.0 — app snella: saldo, calendario, statistiche del saldo
    ===================================================================== */
 header { padding-right: 16px !important; }
-#new-bet { display: none !important; }
 .tabbar button { flex: 1 1 0; }
 
 /* Home: Deposito / Prelievo sotto "Segna il saldo" */
-.hero-flow-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-.flow-btn {
-  display: flex !important; align-items: center; justify-content: center; gap: 6px;
-  min-height: 38px !important; padding: 0 12px !important; border-radius: 12px !important;
-  font-size: 13.5px !important; font-weight: 700 !important;
-  background: color-mix(in srgb, var(--suite-text) 6%, transparent) !important;
-  border: 1px solid var(--suite-glass-edge) !important; color: var(--suite-text) !important; box-shadow: none !important;
-}
-.flow-btn span { font-weight: 800; }
-.flow-btn.in span { color: var(--bt-up-text); }
-.flow-btn.out span { color: var(--bt-down-text); }
-.diary-hero-sub { display: grid; gap: 2px; }
 
 /* Calendario: freccia sui giorni con depositi (↓) o prelievi (↑) */
 .wk-day.mv::after {
@@ -1172,9 +849,6 @@ header { padding-right: 16px !important; }
 .diary-seg.diary-mode { margin-top: 8px; }
 
 /* Altro: saldo iniziale e lista depositi / prelievi */
-.acc-hero .acc-initial { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0 2px; font-size: 13px; color: var(--suite-text-soft); }
-.acc-hero .acc-initial b { color: var(--suite-text); }
-.acc-hero .acc-initial button { min-height: 32px !important; padding: 0 12px !important; font-size: 12.5px !important; border-radius: 10px !important; }
 main .flow-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 10px; padding: 11px 12px !important; }
 main .flow-row .flow-ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; font-weight: 800; }
 main .flow-row.in .flow-ic { background: color-mix(in srgb, var(--bt-up) 18%, transparent); color: var(--bt-up-text); }
@@ -1188,12 +862,6 @@ main .flow-row .flow-actions { grid-column: 1 / -1; display: flex; gap: 8px; jus
 main .flow-row .flow-actions button { min-height: 34px !important; }
 
 /* Riepilogo del giorno */
-dialog#editor.day-sheet .day-edit {
-  width: 34px !important; height: 34px !important; min-height: 34px !important; padding: 0 !important;
-  border-radius: 10px !important; border: 0 !important; box-shadow: none !important;
-  background: color-mix(in srgb, var(--suite-text) 7%, transparent) !important; color: var(--suite-text-soft) !important;
-}
-dialog#editor.day-sheet .day-diary-btn.primary { margin-top: 12px; }
 dialog#editor.day-sheet .sheet-note { margin-top: 8px !important; }
 .diary-seg.diary-mode { grid-template-columns: 1fr 1fr !important; display: grid !important; }
 .diary-seg.diary-mode button { white-space: nowrap; }
