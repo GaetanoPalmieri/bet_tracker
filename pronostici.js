@@ -1171,9 +1171,11 @@ async function tipScanFetch() {
   if (!tipCanSync()) throw Object.assign(new Error('auth'), { auth: true });
   /* 3.57.0 — prima le partite già scaricate dal giro sul server (nessuna richiesta in più a TotalCorner), poi la lettura diretta */
   var r = null;
-  try { r = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'scan' } }); } catch (e) { r = null; }
+  /* 4.20.2 — medie dei campionati (~45 KB) solo all'apertura e ogni ora: meno dati scaricati da Supabase */
+  var needLg = !tipUI.lgAvg || !tipUI._lgAt || Date.now() - tipUI._lgAt > 3600e3;
+  try { r = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'scan', lg: needLg } }); } catch (e) { r = null; }
   if (!r || !Array.isArray(r.live)) r = await SuiteSync.api(TIP_FN, { method: 'POST', json: { action: 'scan', odds: true } });
-  if (r.lgAvg) tipUI.lgAvg = r.lgAvg;
+  if (r.lgAvg) { tipUI.lgAvg = r.lgAvg; tipUI._lgAt = Date.now(); }
   if (r.lateCor) tipUI.lateCor = r.lateCor; /* 3.99.0 — storico angoli finali per campionato */
   tipUI.scan = { at: Date.now(), list: r.live || [], oddsNote: r.oddsNote || null, remaining: r.remaining };
   return tipUI.scan;

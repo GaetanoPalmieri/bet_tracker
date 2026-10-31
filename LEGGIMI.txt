@@ -1,14 +1,17 @@
-Bet Tracker 4.20.1 · server pronostici-avvisi 4.14.2
+Bet Tracker 4.20.2 · server pronostici-avvisi 4.14.3
 
-Sostituisci nella cartella bet_tracker:
-  pronostici.js, app.js, index.html, sw.js   → app (pubblica come al solito)
-  pronostici-avvisi.txt                      → funzione Supabase "pronostici-avvisi" (ripubblicala)
-Dopo: in Altro l'app deve dire "4.20.1", in Live la barra "server 4.14.2".
+1) Supabase > SQL Editor: esegui supabase/manutenzione-4.14.3.sql (una volta).
+2) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt).
+3) Sostituisci pronostici.js, app.js, index.html, sw.js e pubblica l'app.
+Dopo: in Altro l'app deve dire "4.20.2", in Live la barra "server 4.14.3".
 
-4.20.1 / server 4.14.2 — CORREZIONE "CPU Time exceeded" (546) del 31/10.
-  Lo storico delle scansioni veniva riletto per intero 3-4 volte per partita a ogni giro: con 400 partite live circa
-  26 secondi di calcolo, mentre Supabase ne concede circa 2. Il giro veniva chiuso a metà e il live si fermava.
-  - Lo storico ora si legge una volta sola (1.600 letture: da 26 s a 0,02 s), sul server e nell'app.
-  - Il server si ferma a 0,9 s di calcolo del motore e al giro dopo riparte dalla partita dove era arrivato.
-  - L'archivio quote si aggiorna solo quando le partite live sono 120 o meno.
-  Segnali, regole e statistiche non cambiano.
+4.20.2 / server 4.14.3 — MENO SPAZIO E MENO DATI SU SUPABASE (piano gratuito: database 304 MB su 500, dati in uscita 6,8 GB su 5).
+  - Risposte della funzione compresse (gzip): la lista live, i pronostici e l'export pesano circa 8-10 volte meno.
+  - Medie dei campionati (~45 KB) mandate all'app solo all'apertura e ogni ora, non a ogni aggiornamento del live.
+  - Traccia: tenuta 14 giorni (prima 45); niente più righe extra ogni 2 minuti per gli angoli (segnali spenti);
+    pulizia a piccoli pezzi a ogni giro.
+  - Export del retraining: la traccia contiene solo le partite su cui hai avuto un segnale, al massimo gli ultimi 3 giorni,
+    letta per data con un indice: niente più "statement timeout" / "Load failed".
+
+4.20.1 / server 4.14.2 — CORREZIONE "CPU Time exceeded" (546) del 31/10: storico delle scansioni letto una volta sola,
+  freno a 0,9 s di calcolo per giro, archivio quote solo con 120 partite live o meno.

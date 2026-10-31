@@ -21,7 +21,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.14.2
+// Versione app: 4.14.3
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -2280,11 +2280,14 @@ let lgAvgCache: any = null;
 /* 3.67.0 — registro per gli studi su angoli e segnali "a pressione": ogni ~6 minuti una riga per partita live
    (minuto, punteggio, angoli, tiri, attacchi pericolosi, possesso, rossi, linee gol). Tabella pronostici_traccia,
    righe più vecchie di 45 giorni cancellate una volta al giorno. Nessuna richiesta in più a TotalCorner. */
+const TRACE_DAYS = 14;
 async function snapTrack(list: any[]) {
   const last: any = (await getState("snapAt")) || {};
   const full = !last.t || Date.now() - last.t >= 5.5 * 60e3;
-  /* 3.99.0 — più fitto anche nel 1° tempo dal 30’ (segnale angoli 34’-36’) */
-  if (!full) list = list.filter((r: any) => (r.status === "2H" && r.elapsed >= 75) || (r.status === "1H" && r.elapsed >= 30));
+  /* 3.99.0 — più fitto anche nel 1° tempo dal 30’ (segnale angoli 34’-36’).
+     4.14.3 — solo se i segnali angoli sono accesi (dalla 4.13.0 sono spenti): prima metà delle righe della traccia era questa */
+  const corOn = tipKindActive("tk1") || tipKindActive("tk2");
+  if (!full) list = corOn ? list.filter((r: any) => (r.status === "2H" && r.elapsed >= 75) || (r.status === "1H" && r.elapsed >= 30)) : [];
   const rows = (list || []).filter((r: any) => r && r.afId && (r.status === "1H" || r.status === "2H" || r.status === "HT")).map((r: any) => {
     const sd = r.stats?.side || [{}, {}];
     const pair = (k: string) => [sd[0]?.[k] ?? null, sd[1]?.[k] ?? null];
@@ -2293,8 +2296,11 @@ async function snapTrack(list: any[]) {
   });
   if (rows.length) { const { error } = await admin.from("pronostici_traccia").insert(rows); if (error) { console.error("traccia", error.message); return 0; } }
   const day = new Date().toISOString().slice(0, 10);
+  /* 4.14.3 — TRACCIA PER 14 GIORNI (prima 45): era la tabella che riempiva il database (304 MB su 500). Si cancella un po' a ogni
+     giro completo (le righe uscite dalla finestra nelle ultime 6 ore), così la cancellazione è sempre piccola e veloce. */
+  if (full) { try { const cut = Date.now() - TRACE_DAYS * 86400e3; await admin.from("pronostici_traccia").delete().lt("created_at", new Date(cut).toISOString()).gte("created_at", new Date(cut - 6 * 3600e3).toISOString()); } catch { /* al giro dopo */ } }
   if (last.clean !== day) {
-    await admin.from("pronostici_traccia").delete().lt("created_at", new Date(Date.now() - 45 * 86400e3).toISOString());
+    await admin.from("pronostici_traccia").delete().lt("created_at", new Date(Date.now() - TRACE_DAYS * 86400e3 - 6 * 3600e3).toISOString());
     await admin.from("pronostici_finali").delete().lt("created_at", new Date(Date.now() - 120 * 86400e3).toISOString());
     try { await admin.from("pronostici_storico_quote").delete().lt("created_at", new Date(Date.now() - 120 * 86400e3).toISOString()); } catch { /* tabella non ancora creata */ }
   }
@@ -2919,7 +2925,22 @@ async function runAlerts() {
   return { users: users.length, live: list.length, evaluated, newSignals: newSig, quotaReached: qNew, sent, bzCalls, cpu: cpuInfo };
 }
 
-Deno.serve(async (req) => {
+/* 4.14.3 — RISPOSTE COMPRESSE (gzip). Supabase (piano gratuito) conta i dati in uscita: 6,8 GB su 5 a ottobre. La lista
+   delle partite live (ogni 2 minuti con l'app aperta), i pronostici e l'export erano JSON non compressi: compressi pesano
+   circa 8-10 volte meno. Il browser li scompatta da solo. */
+async function gzipRes(req: Request, res: Response): Promise<Response> {
+  try {
+    if (!/\bgzip\b/.test(req.headers.get("accept-encoding") || "") || res.headers.get("content-encoding")) return res;
+    if (!/json/.test(res.headers.get("content-type") || "")) return res;
+    const buf = new Uint8Array(await res.arrayBuffer());
+    if (buf.length < 2048) return new Response(buf, { status: res.status, headers: res.headers });
+    const z = new Uint8Array(await new Response(new Blob([buf]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
+    const h = new Headers(res.headers); h.set("Content-Encoding", "gzip"); h.set("Vary", "Accept-Encoding"); h.delete("Content-Length");
+    return new Response(z, { status: res.status, headers: h });
+  } catch { return res; }
+}
+Deno.serve(async (req) => gzipRes(req, await handleReq(req)));
+async function handleReq(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Usa POST" }, 405);
   const cron = req.headers.get("x-cron-secret");
@@ -2951,10 +2972,20 @@ Deno.serve(async (req) => {
     const offset = Math.max(0, Math.floor(Number(body.offset) || 0)), size = 500;
     if (offset > 500000) return json({ error: "Registro troppo grande: scegli un periodo più breve" }, 400);
     let query = admin.from(table).select("*").gte("created_at", new Date(from).toISOString()).lte("created_at", new Date(until).toISOString());
+    /* 4.14.3 — TRACCIA NELL'EXPORT: solo le partite su cui hai avuto un segnale, al massimo gli ultimi 3 giorni, in ordine di data.
+       Prima tutte le partite live di tutto il periodo (centinaia di migliaia di righe): la lettura andava in "statement timeout"
+       e l'export restava incompleto ("Load failed"). */
+    if (body.kind === "trace") {
+      const f3 = new Date(Math.max(from, until - 3 * 86400e3)).toISOString(), u3 = new Date(until).toISOString();
+      const { data: sg } = await admin.from("pronostici_segnali").select("af:data->>afId,created_at").eq("user_id", au.user.id).gte("created_at", f3).lte("created_at", u3).order("created_at", { ascending: false }).limit(3000);
+      const ids = [...new Set((sg || []).map((r: any) => r.af).filter((v: any) => typeof v === "string" && v))].slice(0, 300);
+      if (!ids.length) return json({ rows: [], nextOffset: null, version: "3.71.0", note: "nessun segnale nel periodo" });
+      query = admin.from(table).select("*").in("af_id", ids).gte("created_at", f3).lte("created_at", u3);
+    }
     if (body.kind === "finals") query = query.eq("confirmed", true);
     /* 3.99.0 — anche i segnali salvati sul server (solo i propri), per non perdere niente nell'export */
     if (body.kind === "signals") query = admin.from(table).select("key,tier,data,created_at,updated_at").eq("user_id", au.user.id).gte("created_at", new Date(from).toISOString()).lte("created_at", new Date(until).toISOString());
-    const { data, error: e } = await (body.kind === "signals" ? query.order("created_at", { ascending: true }).order("key", { ascending: true }) : query.order(body.kind === "finals" || body.kind === "hist" ? "af_id" : "id", { ascending: true })).range(offset, offset + size - 1);
+    const { data, error: e } = await (body.kind === "signals" ? query.order("created_at", { ascending: true }).order("key", { ascending: true }) : (body.kind === "trace" ? query.order("created_at", { ascending: true }).order("id", { ascending: true }) : query.order(body.kind === "finals" || body.kind === "hist" ? "af_id" : "id", { ascending: true }))).range(offset, offset + size - 1);
     if (e && body.kind === "hist") return json({ rows: [], nextOffset: null, note: "storico quote non disponibile: " + e.message });
     if (e) return json({ error: e.message }, 500);
     return json({ rows: data || [], nextOffset: data?.length === size ? offset + size : null, version: "3.71.0" });
@@ -2964,7 +2995,7 @@ Deno.serve(async (req) => {
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
     const tb: any = (await getState("tcTables")) || {}, tbK = Object.keys(tb).filter((k) => k !== "_off");
     const tables = { leagues: tbK.length, ok: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.t).length, 0), err: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.err).length, 0), off: tb._off || null };
-    return json({ ver: "4.14.2", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.14.3", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2977,19 +3008,21 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.14.2" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.14.3" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
     const c: any = await getState("tcLive");
-    if (c && c.live && Date.now() - c.at < 5 * 60e3) return json({ live: c.live, at: c.at, source: "totalcorner-cache", lgAvg: (await getState("lgAvgVerified")) || {}, lateCor: lateCorPublic(await getState("lateCor")) });
+    /* 4.14.3 — medie dei campionati e angoli finali (~45 KB, cambiano poco) solo se l'app li chiede (all'apertura e ogni ora) */
+    const wantLg = body.lg !== false && body.lg !== 0;
+    if (c && c.live && Date.now() - c.at < 5 * 60e3) return json(wantLg ? { live: c.live, at: c.at, source: "totalcorner-cache", lgAvg: (await getState("lgAvgVerified")) || {}, lateCor: lateCorPublic(await getState("lateCor")) } : { live: c.live, at: c.at, source: "totalcorner-cache" });
     return json({ error: "Dati live non ancora pronti: il giro ogni 2 minuti li aggiorna." }, 503);
   }
   if (body.action === "prematch") {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.14.2" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.14.3" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
@@ -3001,4 +3034,4 @@ Deno.serve(async (req) => {
     return json({ sent });
   }
   return json({ error: "Azione sconosciuta" }, 400);
-});
+}
