@@ -1,9 +1,23 @@
-Bet Tracker 4.20.2 · server pronostici-avvisi 4.14.3
+Bet Tracker 4.20.4 · server pronostici-avvisi 4.14.4
 
-1) Supabase > SQL Editor: esegui supabase/manutenzione-4.14.3.sql (una volta).
-2) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt).
-3) Sostituisci pronostici.js, app.js, index.html, sw.js e pubblica l'app.
-Dopo: in Altro l'app deve dire "4.20.2", in Live la barra "server 4.14.3".
+1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): cambia la ⭐ del 1T.
+2) Sostituisci pronostici.js, pronostici.css, app.js, index.html, sw.js e pubblica l'app.
+3) Se non l'hai ancora fatto: Supabase > SQL Editor, esegui supabase/manutenzione-4.14.3.sql (una volta).
+Dopo: in Altro l'app deve dire "4.20.4", in Live la barra "server 4.14.4".
+
+4.20.4 / server 4.14.4
+  - PREPARTITA SENZA ANGOLI E SENZA UNDER: tolti Angoli partita, Angoli 1° tempo, Angoli squadra e i lati Under
+    (Under 2.5, Under 1.5, Under 0.5 1T), anche dai pronostici già salvati: liste, Top e statistiche non li contano più.
+    "No goal" resta (11/15 nei giorni 27-31/10, in linea con la % mostrata).
+  - STATISTICHE: ogni partita mostra il RISULTATO FINALE grande a destra (prepartita anche il risultato del 1° tempo)
+    e il giorno della partita (es. "Sab 31/10") in grassetto. Vale per le statistiche Live e Prepartita.
+  - ⭐ PROSSIMO GOL 1T: con il prezzo bet365 tra 76% e 80% la stima scende di 8 punti. Quei segnali vincevano 70/98 (71,4%)
+    contro 81,8% stimato: escono dalla ⭐ e restano "prossimo gol 1T" in prova. La ⭐ che resta: 104/124 (83,9%) sui
+    segnali 22-31/10, contro 167/213 (78,4%) di prima. Circa 12 ⭐ al giorno invece di 21.
+
+4.20.3 — EXPORT DEL RETRAINING CHE NON SI FERMA: ogni pagina si riprova fino a 3 volte ("Load failed" del telefono) e se un
+  registro non arriva si passa al successivo; nell'export serverRegistry.kinds dice quante righe sono arrivate per registro.
+  Solo app: la funzione resta 4.14.3.
 
 4.20.2 / server 4.14.3 — MENO SPAZIO E MENO DATI SU SUPABASE (piano gratuito: database 304 MB su 500, dati in uscita 6,8 GB su 5).
   - Risposte della funzione compresse (gzip): la lista live, i pronostici e l'export pesano circa 8-10 volte meno.

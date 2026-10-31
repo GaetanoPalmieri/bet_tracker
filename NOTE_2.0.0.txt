@@ -1,0 +1,30 @@
+BET TRACKER 2.0.0 — Nuova Home "diario del saldo" e stile della suite
+
+NUOVA HOME
+- Saldo attuale sempre aggiornato (saldo iniziale + movimenti + scommesse).
+- "Segna il saldo di oggi": ogni giorno scrivi quanto hai, come un'agenda.
+- Grafico dell'andamento (7 giorni, 30, 90, 1 anno, tutto) con dettaglio al tocco.
+- Variazioni giornaliere (barre verdi in aumento, rosse in calo).
+- Variazione oggi / 7 giorni / 30 giorni / dall'inizio.
+- Statistiche: massimo, minimo, distanza dal massimo, calo massimo, giorni in aumento
+  e in calo, media per giorno, serie di giorni consecutivi, giorni segnati.
+- Agenda del mese: tocca un giorno per segnarlo o correggerlo; registro del mese e tabella
+  mese per mese.
+
+SINCRONIA DEI SALDI
+- Il saldo segnato per il giorno più recente diventa il saldo di tutta l'app (Riepilogo, Altro):
+  viene registrato un "Allineamento saldo" pari alla differenza. Le scommesse non cambiano.
+- Le scommesse funzionano come prima e aggiornano subito il saldo attuale della Home;
+  il valore segnato nel diario resta quello scritto da te.
+- I giorni passati servono solo per lo storico e i grafici.
+- Gli allineamenti non contano come depositi o prelievi (Totale versato invariato).
+
+SCHEDE
+- Home (nuova) · Riepilogo (la Home di prima, invariata) · Scommesse · Statistiche · Altro.
+
+COME LE ALTRE APP
+- Tema Sistema / Chiaro / Scuro (Altro › Aspetto).
+- Sincronizzazione online con lo stesso accesso delle altre app (Altro › Sincronizzazione).
+  Non serve installare nulla su Supabase.
+- Funziona offline e avvisa quando c'è una nuova versione.
+- Promemoria backup dopo 30 giorni, card in vetro, barra in basso flottante.

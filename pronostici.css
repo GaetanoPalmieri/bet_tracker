@@ -1513,3 +1513,14 @@ main button.pst-hb.on:not(#_){border-color:rgba(24,152,136,.85)!important}
 .lv2-status.busy .lv-dot{animation:ptrPulse .8s ease-in-out infinite}
 @keyframes ptrPulse{50%{opacity:.3}}
 .lv2-hint{display:block;font-size:11px;color:var(--suite-text-soft);margin-top:1px}
+
+/* 4.20.4 — statistiche: risultato finale in evidenza e giorno della partita */
+.st2-match.st2-mx{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}
+.st2-mxl{display:grid;gap:3px;min-width:0}
+.st2-day,.lv2-day{font-weight:800;color:var(--suite-text)}
+.st2-ftb,.lv2-ftb{display:grid;justify-items:center;align-content:center;min-width:58px;padding:5px 8px;border-radius:11px;background:color-mix(in srgb,var(--suite-text) 8%,transparent)}
+.st2-ftb b,.lv2-ftb b{font-size:20px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--suite-text)}
+.st2-ftb small,.lv2-ftb small{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--suite-text-soft)}
+.st2-ftb.wait b,.lv2-ftb.wait b{color:var(--suite-text-soft)}
+.lv2-side.lv2-side-st{gap:4px;min-width:64px}
+.lv2-side-st .lv2-out{margin-top:0}

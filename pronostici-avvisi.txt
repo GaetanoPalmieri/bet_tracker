@@ -21,7 +21,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.14.3
+// Versione app: 4.14.4
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1196,6 +1196,12 @@ TIP_PLAY_NAME.tm1 = '🎯 Prossimo gol entro l’intervallo';
    resta per le stime sotto l'80%. Stessa partita e stesso punteggio = una sola voce: la chiave è quella del 1T. */
 TIP_PLAY_NAME.tm1s = '⭐ Prossimo gol entro l’intervallo, stima 80% o più';
 var TIP_TM1_STAR = 0.80;
+/* 4.20.4 / server 4.14.4 — ⭐ PROSSIMO GOL 1T CON PREZZO BET365 76-80%: la stima arrivava all'81-83% (⭐) ma vincevano molto meno.
+   Segnali veri 22-31/10 con prezzo 76-80%: 70/98 (71,4%) contro 81,8% stimato (22-26/10 74,6%, 27-31/10 65,7%); archivio bet365
+   4 settimane (senza tiri in porta) 74,9% contro 77,8% del prezzo. Con prezzo sotto il 76% 77% = stima, da 80% in su 27/30.
+   → −8 punti: escono dalla ⭐ e restano prossimo gol 1T (in prova) con la % vera. La ⭐ che resta: 104/124 (83,9%), 85% e 82%
+   nelle due metà, contro 78,4% di prima. */
+var TIP_TM1_MID = [0.76, 0.80], TIP_TM1_MID_DOWN = 0.08;
 function tipKeyK(k) { return k === 'tm1s' ? 'tm1' : k; }
 TIP_PLAY_NAME.tm2 = '🎯 Prossimo gol entro la fine (2° tempo, top campionati e prime divisioni, mercato ≥ 85%)';
 TIP_PLAY_NAME.tm3 = '🎯 Gol entro la fine sull’1-0 (2° tempo)';
@@ -1620,6 +1626,7 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
      dal 50' 86% (44), nessuna differenza vera. Negli altri campionati l'1-0 è sempre OTTIMA. */
   if (k === 'tm2' && top2) green = Math.min(green, 0.8); /* 4.14.0 — con mercato ≥ 85% nei top: sempre OTTIMA */
   if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
+  if (k === 'tm1' && M.p >= TIP_TM1_MID[0] && M.p < TIP_TM1_MID[1]) p = Math.max(0.01, p - TIP_TM1_MID_DOWN); /* 4.20.4 — vedi TIP_TM1_MID */
   if (k === 'tm1' && rd(p) >= TIP_TM1_STAR) k = 'tm1s'; /* 4.10.0 — ⭐ prossimo gol 1T */
   return { k: k, p: rd(p), green: green, warm: warm,
     book: M.book, o: { rule: '4.2.8', pMkt: rd(M.p),
@@ -2995,7 +3002,7 @@ async function handleReq(req: Request): Promise<Response> {
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
     const tb: any = (await getState("tcTables")) || {}, tbK = Object.keys(tb).filter((k) => k !== "_off");
     const tables = { leagues: tbK.length, ok: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.t).length, 0), err: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.err).length, 0), off: tb._off || null };
-    return json({ ver: "4.14.3", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.14.4", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -3008,7 +3015,7 @@ async function handleReq(req: Request): Promise<Response> {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.14.3" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.14.4" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -3022,7 +3029,7 @@ async function handleReq(req: Request): Promise<Response> {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.14.3" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.14.4" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
