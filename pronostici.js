@@ -3997,7 +3997,20 @@ function tipLiveMinQ() {
   try { v = Number(localStorage.getItem('tipMinQ')); } catch (e) { /* ok */ }
   return Math.max(TIP_MIN_ODDS, isFinite(v) && v > 1 ? v : TIP_MIN_ODDS);
 }
+/* 4.20.1 / server 4.14.2 — STORICO DELLE SCANSIONI LETTO UNA VOLTA SOLA. tipLiveHist(id) rileggeva (JSON.parse) lo storico di TUTTE le partite
+   a ogni chiamata, 3-4 volte per partita a ogni giro: con 400 partite live e 4 ore di storico (~2 MB) sono ~26 secondi di CPU.
+   Il sabato pomeriggio il server superava il limite di CPU di Supabase (546 "CPU Time exceeded", 31/10) e il giro si fermava
+   prima delle partite live. Ora si rilegge solo quando lo storico è cambiato. */
+var __tipLH = { s: null, v: {} };
+function tipLiveHistAll() {
+  var s = null;
+  try { s = localStorage.getItem('tipLiveHist'); } catch (e) { s = null; }
+  s = s || '{}';
+  if (s !== __tipLH.s) { var v = {}; try { v = JSON.parse(s) || {}; } catch (e) { v = {}; } __tipLH = { s: s, v: v }; }
+  return __tipLH.v;
+}
 function tipLiveHist(id, snap) {
+  if (!snap) return tipLiveHistAll()[id] || [];
   var all = {};
   try { all = JSON.parse(localStorage.getItem('tipLiveHist') || '{}') || {}; } catch (e) { all = {}; }
   if (snap) {

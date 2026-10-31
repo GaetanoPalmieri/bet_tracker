@@ -21,7 +21,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.14.1
+// Versione app: 4.14.2
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -2048,7 +2048,20 @@ function tipLiveInput(m, d) {
   if (pv) inp.prev = pv;
   return inp;
 }
+/* 4.20.1 / server 4.14.2 — STORICO DELLE SCANSIONI LETTO UNA VOLTA SOLA. tipLiveHist(id) rileggeva (JSON.parse) lo storico di TUTTE le partite
+   a ogni chiamata, 3-4 volte per partita a ogni giro: con 400 partite live e 4 ore di storico (~2 MB) sono ~26 secondi di CPU.
+   Il sabato pomeriggio il server superava il limite di CPU di Supabase (546 "CPU Time exceeded", 31/10) e il giro si fermava
+   prima delle partite live. Ora si rilegge solo quando lo storico è cambiato. */
+var __tipLH: any = { s: null, v: {} };
+function tipLiveHistAll() {
+  var s = null;
+  try { s = localStorage.getItem('tipLiveHist'); } catch (e) { s = null; }
+  s = s || '{}';
+  if (s !== __tipLH.s) { var v = {}; try { v = JSON.parse(s) || {}; } catch (e) { v = {}; } __tipLH = { s: s, v: v }; }
+  return __tipLH.v;
+}
 function tipLiveHist(id, snap) {
+  if (!snap) return tipLiveHistAll()[id] || [];
   var all = {};
   try { all = JSON.parse(localStorage.getItem('tipLiveHist') || '{}') || {}; } catch (e) { all = {}; }
   if (snap) {
@@ -2730,7 +2743,9 @@ async function runCron() {
   res.prematch = pre;
   res.settle = (globalThis as any).__settle || null;
   res.bzRemaining = bzRem;
-  try { res.hist = await histBackfill(); } catch (e) { res.hist = { error: (e as Error).message }; }
+  /* 4.14.2 — archivio quote (pesante da leggere) solo nei momenti con poche partite live */
+  if (!liveCache || liveCache.length <= 120) { try { res.hist = await histBackfill(); } catch (e) { res.hist = { error: (e as Error).message }; } }
+  else res.hist = { skip: "troppe partite live (" + liveCache.length + ")" };
   res.tcCalls = tcCalls; res.tcRemaining = tcRem; res.tcOffset = tcOff;
   if (bzRem != null) await setState("bzRemaining", { v: bzRem, at: Date.now() });
   return res;
@@ -2763,6 +2778,8 @@ async function runCronPre() {
     return { error: (e as Error).message };
   }
 }
+const TIP_CPU_MAX = 900; /* 4.14.2 — ms di calcolo del motore per giro (il resto del giro: scaricamento, salvataggi, prepartita) */
+let cpuInfo: any = null;
 async function runAlerts() {
   const { data: subs, error } = await admin.from("push_subscriptions").select("*").eq("app", APP).eq("enabled", true);
   if (error) return { error: error.message };
@@ -2795,10 +2812,21 @@ async function runAlerts() {
     const known = new Map((old || []).map((r: any) => [r.key, r.tier]));
     const originals = new Map((old || []).map((r: any) => [r.key, r.data]));
     const snaps: any[] = [];
-    for (const x of list) {
+    /* 4.14.2 — LIMITE DI CPU (Supabase: ~2 s per giro). Si conta il tempo di calcolo del motore partita per partita; oltre
+       TIP_CPU_MAX ms ci si ferma e il giro dopo riparte da lì (a rotazione), così nei giorni pieni nessuna partita resta sempre
+       fuori e il giro non viene chiuso a metà. */
+    const offAll: any = (await getState("alertsOff")) || {};
+    const off0 = list.length ? (Number(offAll[u.id]) || 0) % list.length : 0;
+    const order = list.slice(off0).concat(list.slice(0, off0));
+    let cpu = 0, stopIdx = -1, idx = -1;
+    for (const x of order) {
+      idx++;
+      if (cpu > TIP_CPU_MAX) { stopIdx = idx; break; }
       if (!x.stats) continue;
       let y: any = null;
-      try { y = tipScanMatch(x); } catch (e) { console.error("motore", x.afId, (e as Error).message); continue; }
+      const tc0 = performance.now();
+      try { y = tipScanMatch(x); } catch (e) { cpu += performance.now() - tc0; console.error("motore", x.afId, (e as Error).message); continue; }
+      cpu += performance.now() - tc0;
       if (!y) continue;
       evaluated++;
       if (y.x.stats && y.x.stats.side && y.min != null) snaps.push({ id: y.m.id, snap: { min: y.min, half: y.half, side: y.x.stats.side, at: now, ll: y.x.liveLine, g: (y.x.goals[0] || 0) + (y.x.goals[1] || 0) } });
@@ -2807,7 +2835,10 @@ async function runAlerts() {
       /* 3.68.0 — segnali IN PROVA: salvati come gli altri (senza notifica) */
       try {
         const ctxT = { min: y.min, half: y.half, gh: y.x.goals[0] || 0, ga: y.x.goals[1] || 0 };
-        for (const tp of tipTrialPlays(y.r, y.min, y.half, y.x, tipLivePrev(y.m.id, y.min, y.half), tipLivePrevAt(y.m.id, y.min, y.half, 8, 6, 12))) {
+        const tc1 = performance.now();
+        const trials = tipTrialPlays(y.r, y.min, y.half, y.x, tipLivePrev(y.m.id, y.min, y.half), tipLivePrevAt(y.m.id, y.min, y.half, 8, 6, 12));
+        cpu += performance.now() - tc1;
+        for (const tp of trials) {
           let eT = tipPlayEntry(y.m, ctxT, tp, x.afId);
           eT.key = tipPlayKey(y.m.id, ctxT) + "|" + tipKeyK(tp.k) + tipTrialKeyX(tp); eT.trial = true; eT.src = "server"; eT.t = now;
           if (tp.cn != null) { eT.cn = tp.cn; eT.need = tp.need; eT.lamC = tp.lamC; }
@@ -2827,8 +2858,10 @@ async function runAlerts() {
         }
       } catch (e) { console.error("prova", (e as Error).message); }
       if (y.half === 1 && y.min < 15) continue;
+      const tc2 = performance.now();
       let plays = tipPlays(y.r, y.min, y.half);
       let best = tipPlayBest(plays);
+      cpu += performance.now() - tc2;
       if (!best) continue;
       if (u.prefs.stars && !tipIsStar(y.m)) continue;
       const G = (y.x.goals[0] || 0) + (y.x.goals[1] || 0);
@@ -2866,6 +2899,8 @@ async function runAlerts() {
       newSig++;
       if (wantPush) { const n = await pushAll(u, message(pushE, pushX, upgraded, u.prefs), e); sent += n; }
     }
+    try { offAll[u.id] = stopIdx >= 0 ? (off0 + stopIdx) % Math.max(1, list.length) : 0; await setState("alertsOff", offAll); } catch { /* ok */ }
+    cpuInfo = { ms: Math.round(cpu), stoppedAt: stopIdx, of: list.length, from: off0 };
     /* 4.6.0 — quota raggiunta dopo i segnali delle ultime ore */
     try {
       const qr = await quotaWatch(u, list, now, known, originals);
@@ -2881,7 +2916,7 @@ async function runAlerts() {
   /* pulizia: segnali più vecchi di 10 giorni */
   if (new Date(now).getUTCMinutes() < 3) await admin.from("pronostici_segnali").delete().lt("created_at", new Date(now - 60 * 86400e3).toISOString()); /* 3.99.0 — 60 giorni (prima 10): servono all'export */
   try { await setState("qWatch", qWatch); } catch { /* ok */ }
-  return { users: users.length, live: list.length, evaluated, newSignals: newSig, quotaReached: qNew, sent, bzCalls };
+  return { users: users.length, live: list.length, evaluated, newSignals: newSig, quotaReached: qNew, sent, bzCalls, cpu: cpuInfo };
 }
 
 Deno.serve(async (req) => {
@@ -2929,7 +2964,7 @@ Deno.serve(async (req) => {
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
     const tb: any = (await getState("tcTables")) || {}, tbK = Object.keys(tb).filter((k) => k !== "_off");
     const tables = { leagues: tbK.length, ok: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.t).length, 0), err: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.err).length, 0), off: tb._off || null };
-    return json({ ver: "4.14.1", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.14.2", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -2942,7 +2977,7 @@ Deno.serve(async (req) => {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.14.1" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.14.2" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -2954,7 +2989,7 @@ Deno.serve(async (req) => {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.14.1" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.14.2" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
