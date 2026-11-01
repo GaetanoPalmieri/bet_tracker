@@ -1532,3 +1532,4 @@ main button.pst-hb.on:not(#_){border-color:rgba(24,152,136,.85)!important}
 @media(max-width:380px){.rbox{width:72px}.rbox-sc{font-size:20px}}
 .tg-fav{background:rgba(120,170,255,.16);color:#9cc3ff}
 :root[data-theme="light"] .tg-fav{color:#1a56a8}
+.lv-nowreset{margin:2px 0 10px}

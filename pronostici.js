@@ -3245,12 +3245,22 @@ document.addEventListener('click', function (ev) { if (ev.target.closest && ev.t
    per vedere subito come vanno le regole appena pubblicate. Vale fino a mezzanotte; storico, statistiche generali ed
    elenchi passati non cambiano. */
 function tipTodayFrom() { var r = (db.predModel || {}).todayReset; return r && r.date === U.local().slice(0, 10) ? r.t || 0 : 0; }
+/* 4.20.11 — AZZERA ADESSO: da quel momento in Adesso compaiono solo i segnali nuovi (gli altri restano in Oggi). Annulla li rimette. */
+function tipNowFrom() { var r = (db.predModel || {}).nowReset; return r && r.t && Date.now() - r.t < 3 * 3600e3 ? r.t : 0; }
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-now-reset],[data-now-reset-undo]');
+  if (!b) return;
+  var undo = b.hasAttribute('data-now-reset-undo');
+  mutate(function (d) { d.predModel = d.predModel || {}; if (undo) delete d.predModel.nowReset; else d.predModel.nowReset = { t: Date.now() }; });
+  U.toast(undo ? 'Adesso: di nuovo tutti i segnali degli ultimi 20 minuti.' : 'Adesso svuotato: compaiono solo i segnali nuovi.');
+});
 document.addEventListener('click', function (ev) {
   var b = ev.target.closest && ev.target.closest('[data-today-reset],[data-today-reset-undo]');
   if (!b) return;
   var undo = b.hasAttribute('data-today-reset-undo');
   mutate(function (d) { d.predModel = d.predModel || {}; if (undo) delete d.predModel.todayReset; else d.predModel.todayReset = { date: U.local().slice(0, 10), t: Date.now() }; });
-  U.toast(undo ? 'Statistiche di oggi di nuovo intere.' : 'Statistiche di oggi azzerate: contano solo i consigli da adesso.');
+  tipUI.todayShowOld = false;
+  U.toast(undo ? 'Oggi di nuovo intero: elenco e statistiche.' : 'Oggi azzerato: elenco e statistiche ripartono da adesso.');
 });
 /* 4.11.0 — FILTRI VELOCI: una riga di pulsanti con i filtri che hanno segnali, i migliori di oggi per primi (% sulle
    chiuse, numero di segnali). Un tocco mostra solo quel filtro, un altro tocco torna a tutti. Vale per Adesso e Oggi. */
@@ -3318,6 +3328,9 @@ function tipExcellentArchive() {
     var t = e.t || 0;
     return t >= from && new Date(t).toLocaleDateString('sv-SE') === today0 && tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip' && tipLblPass(e.prof || 'nq', e.rit || 'norm') && tipEFilter(tipUI.arcF, e);
   }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
+  /* 4.20.11 — dopo "Azzera Oggi" elenco, contatori e filtri veloci contano solo i segnali nuovi (quelli di prima con un tocco) */
+  var cut0 = tipTodayFrom(), nOldAll = cut0 ? all.filter(function (e) { return (e.t || 0) < cut0; }).length : 0;
+  if (cut0 && !tipUI.todayShowOld) all = all.filter(function (e) { return (e.t || 0) >= cut0; });
   var Q = tipQSplit(all), qrMode = tipUI.lvMode === 'qr';
   var inMode = function (e) { return qrMode ? !!TIP_WAIT_K[e.k] : !TIP_WAIT_K[e.k]; };
   var pass = Q.pass.filter(inMode), exc = tipSampleOf(Q.exc.filter(inMode), smp);
@@ -3340,13 +3353,15 @@ function tipExcellentArchive() {
     '<div class="lv3-counts"><span class="w"><b>' + w + '</b> vint' + (w === 1 ? 'a' : 'e') + '</span><span class="l"><b>' + l + '</b> pers' + (l === 1 ? 'a' : 'e') + '</span><span class="o"><b>' + wait + '</b> in attesa</span>' +
     (mine ? '<span class="o"><b>' + mine + '</b> giocat' + (mine === 1 ? 'a' : 'e') + '</span>' : '') + '</div>' +
     '<div class="lv3-reset">' + (cut ? '<span>Conta dalle <b>' + cutLbl + '</b></span><button type="button" data-today-reset-undo>Annulla</button><button type="button" data-today-reset>↺ Di nuovo</button>'
-      : '<button type="button" data-today-reset>↺ Conta da adesso</button>') + '</div></div>';
+      : '<button type="button" data-today-reset>↺ Azzera Oggi</button>') + '</div></div>';
   var actF = tipEFilterChips(tipUI.arcF, tipUI.lblF, 'data-arcclear'), open = !!tipUI.todayStats;
   var seg = function (v, t, n) { return '<button type="button" class="' + (smp === v ? 'on' : '') + '" data-split-sample="' + v + '">' + t + ' <i>' + n + '</i></button>'; };
   var tools = '<div class="lv3-tools"><div class="lv3-seg" role="tablist">' + seg('', 'Tutti', pass.length) + seg('stable', '🛡️ Stabili', nSt) + seg('trial', '🧪 In prova', pass.length - nSt) + '</div>' +
     '<div class="ic-row">' + tipIconBtn('data-arcfilters', TIP_IC_FILTER, 'Altri filtri', actF.length) + tipIconBtn('data-today-stats aria-expanded="' + open + '"', TIP_IC_STATS, 'Statistiche', 0, open) + tipSortSelect() + '</div></div>' +
     (actF.length ? '<div class="tip-lblf tip-chips-sm">' + actF.join('') + '</div>' : '');
   var stats = open ? '<div class="tl-stats">' + (arrS.length ? tipStPeekTab(tipStLevelRows(arrS, smp).map(function (r) { return [r[0], r[1]]; }), tipStatCount, 'td-l') + '<p class="st2-h">Per giocata</p>' + tipStPeekTab(tipStLiveSplit(arrS, 'k').rows.map(function (r) { return r.slice(0, 2).concat(['', r[3]]); }), tipStatCount, 'td-k') : '<p class="muted tip-tnone">Ancora nessun esito.</p>') + '</div>' : '';
+  /* 4.20.11 — dopo "Azzera Oggi" l'elenco mostra solo i segnali nuovi; quelli di prima si rivedono con un tocco */
+  var nOld = nOldAll, showOld = !!tipUI.todayShowOld;
   var ordered = cut ? arr.filter(isNew).concat(arr.filter(function (e) { return !isNew(e); })) : arr, nNewAll = cut ? arrS.length : 0;
   var PAGE = 15, n = Math.max(PAGE, tipUI.todayN || PAGE);
   var list = ordered.length ? '<div class="lv2-list">' + ordered.slice(0, n).map(function (e, i) {
@@ -3355,10 +3370,13 @@ function tipExcellentArchive() {
       return div + (cut && !isNew(e) ? '<div class="tl-before">' + tipLvRow(e, { showRes: true, stat: true, today: true }) + '</div>' : tipLvRow(e, { showRes: true, stat: true, today: true }));
     }).join('') + '</div>' +
       (ordered.length > n ? '<button type="button" class="tl-more" data-today-more>Mostra altri ' + Math.min(PAGE * 2, ordered.length - n) + ' · ' + (ordered.length - n) + ' rimasti</button>' : '')
-    : '<p class="muted tip-tnone">' + (qrMode ? 'Nessuna quota raggiunta oggi con questa selezione.' : 'Nessun segnale oggi con questa selezione.') + '</p>';
-  return '<section class="tl-today lv2-today lv3-today">' + sum + chips + tools + stats + list + tipQualityBox(arr, exc, 'oggi') + '</section>';
+    : '<p class="muted tip-tnone">' + (cut ? 'Nessun segnale nuovo dalle ' + cutLbl + '.' : qrMode ? 'Nessuna quota raggiunta oggi con questa selezione.' : 'Nessun segnale oggi con questa selezione.') + '</p>';
+  var oldBtn = nOld ? '<button type="button" class="tl-more" data-today-old>' + (showOld ? 'Nascondi i ' + nOld + ' segnali di prima delle ' + cutLbl : 'Mostra i ' + nOld + ' segnali di prima delle ' + cutLbl + ' (non contano)') + '</button>' : '';
+  return '<section class="tl-today lv2-today lv3-today">' + sum + chips + tools + stats + list + oldBtn + tipQualityBox(arr, exc, 'oggi') + '</section>';
 }
 document.addEventListener('click', function (ev) {
+  var o = ev.target.closest && ev.target.closest('[data-today-old]');
+  if (o) { tipUI.todayShowOld = !tipUI.todayShowOld; render(); return; }
   var b = ev.target.closest && ev.target.closest('[data-today-stats],[data-today-more],[data-today-fav]');
   if (!b) return;
   if (b.hasAttribute('data-today-fav')) { tipUI.todayFav = !tipUI.todayFav; tipUI.todayN = 0; }
@@ -3803,7 +3821,7 @@ function tipLivePanel(list) {
   (tipUI.scanRows || []).forEach(function (y) { if (y && y.x && y.x.afId) rowsBy[y.x.afId] = y; });
   tipPlayDedup((db.predModel || {}).playLog || []).forEach(function (e) {
     var t = e.t || 0;
-    if (t <= nowT - NOW_MS || t > nowT + 60e3 || t < tipStatsFrom() || new Date(t).toLocaleDateString('sv-SE') !== dayNow) return;
+    if (t <= nowT - NOW_MS || t > nowT + 60e3 || t < tipStatsFrom() || t < tipNowFrom() || new Date(t).toLocaleDateString('sv-SE') !== dayNow) return;
     if (!tipKindActive(e.k) || TIP_LIVE_HIDE[e.k] || !(e.tier === 'excellent' || e.tier === 'try' || !e.tier) || e.conditional || e.costly || e.res === 'skip') return;
     if (!tipLblPass(e.prof || 'nq', e.rit || 'norm')) return;
     var y = e.afId ? rowsBy[e.afId] : null;
@@ -3828,7 +3846,7 @@ function tipLivePanel(list) {
   var nNowQr = items.filter(function (x) { return TIP_WAIT_K[x.k]; }).length, nNowSig = items.length - nNowQr;
   items = items.filter(inMode);
   /* 4.11.0 — filtri veloci anche in Adesso (stessa scelta di Oggi); le % sono quelle di oggi */
-  var today0 = U.local().slice(0, 10), todayL = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= tipStatsFrom() && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipQShown(e); });
+  var today0 = U.local().slice(0, 10), todayL = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= tipStatsFrom() && (e.t || 0) >= tipTodayFrom() && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipQShown(e); });
   var nowChips = tipLvOneRow(qrMode, favMode, nOne, tipKChipsHtml(items.map(function (x) { return x.e; }), tipTodayKStats(todayL.filter(function (e) { return qrMode ? !!TIP_WAIT_K[e.k] : !TIP_WAIT_K[e.k]; })), tipUI.lvK || '', true));
   if (tipUI.lvK) items = items.filter(function (x) { return tipKOf(x.e) === tipUI.lvK; });
   byType = {}; items.forEach(function (x) { (byType[x.k] = byType[x.k] || []).push(x); });
@@ -3870,10 +3888,13 @@ function tipLivePanel(list) {
   var lvBar = '<div class="lv2-bar"><div class="lv2-seg" role="tablist"><button type="button" role="tab" aria-selected="' + favMode + '" class="' + (favMode ? 'on' : '') + '" data-now-fav="1">★ Preferiti <i>' + nFavNow + '</i></button>' +
     '<button type="button" role="tab" aria-selected="' + !favMode + '" class="' + (!favMode ? 'on' : '') + '" data-now-fav="0">Tutti <i>' + nAllNow + '</i></button></div></div>' + (lblN ? tipLblFilterBar() : '');
   void lvBar; void favSeg; void chips;
-  var nowHtml = (lblN ? tipLblFilterBar() : '') + nowChips +
+  var nCut = tipNowFrom(), nCutLbl = nCut ? new Date(nCut).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
+  var nowReset = '<div class="lv3-reset lv-nowreset">' + (nCut ? '<span>Svuotato alle <b>' + nCutLbl + '</b>: solo i segnali nuovi</span><button type="button" data-now-reset-undo>Annulla</button><button type="button" data-now-reset>↺ Di nuovo</button>'
+    : '<button type="button" data-now-reset>↺ Svuota Adesso</button>') + '</div>';
+  var nowHtml = (lblN ? tipLblFilterBar() : '') + nowChips + nowReset +
     (shown.length ? '<div class="lv2-list">' + shown.slice(0, nShow).map(function (x) { return tipLvRow(x.e, { isNew: x.isNew, showRes: x.e.res != null, reach: true }); }).join('') + '</div>' +
       (shown.length > LIM ? '<button type="button" class="tl-more" data-lv-more>' + (tipUI.lvAll ? 'Mostra solo i primi ' + LIM : 'Mostra gli altri ' + (shown.length - LIM)) + '</button>' : '')
-      : '<div class="lv-empty"><b>' + (qrMode ? 'Nessuna quota raggiunta' : 'Nessun segnale') + (favMode ? ' dei filtri preferiti' : '') + ' negli ultimi 20 minuti</b><small>' + (favMode && nAllNow ? nAllNow + ' in Tutti. ' : '') + 'Il controllo è automatico ogni 2 minuti: un segnale resta qui per 20 minuti, poi lo trovi in Oggi.</small></div>');
+      : '<div class="lv-empty"><b>' + (qrMode ? 'Nessuna quota raggiunta' : 'Nessun segnale') + (favMode ? ' dei filtri preferiti' : '') + (nCut ? ' dalle ' + nCutLbl : ' negli ultimi 20 minuti') + '</b><small>' + (favMode && nAllNow ? nAllNow + ' in Tutti. ' : '') + 'Il controllo è automatico ogni 2 minuti: un segnale resta qui per 20 minuti, poi lo trovi in Oggi.</small></div>');
   /* 3.96.0 — giocate di adesso escluse dal filtro qualità: chiuse in fondo, con il motivo */
   var excHtml = nowExc.length ? '<details class="tip-split tip-qbox lv-exc"' + (tipUI.nowExcOpen ? ' open' : '') + ' ontoggle="tipUI.nowExcOpen=this.open"><summary>🚫 Esclusi dal filtro qualità <span class="tip-qsum">' + nowExc.length + '</span></summary>' +
     '<p class="muted tip-hint">Non sono consigli: niente notifica e niente statistiche. Restano registrati in Oggi › Esclusi.</p><div class="lv-list">' +

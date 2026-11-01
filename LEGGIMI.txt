@@ -1,9 +1,17 @@
-Bet Tracker 4.20.10 · server pronostici-avvisi 4.14.8
+Bet Tracker 4.20.11 · server pronostici-avvisi 4.14.9
 
-1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): gol 1T favorita (4.14.6) 🔥 partita da gol (4.14.7), coppe (4.14.8).
+1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): gol 1T favorita (4.14.6) 🔥 partita da gol (4.14.7), coppe (4.14.8), nomi nelle notifiche (4.14.9).
 2) Sostituisci pronostici.js, pronostici.css, app.js, index.html, sw.js e pubblica l'app.
 3) Se non l'hai ancora fatto: Supabase > SQL Editor, esegui supabase/manutenzione-4.14.3.sql (una volta).
-Dopo: in Altro l'app deve dire "4.20.10", in Live la barra "server 4.14.8".
+Dopo: in Altro l'app deve dire "4.20.11", in Live la barra "server 4.14.9".
+
+server 4.14.9 — NOTIFICHE con i nomi nuovi: "⭐ Gol 1T favorita", "Gol 1T favorita", "🔥 Gol 1T/2T partita da gol" (prima
+  restava "Prossimo gol 1T"). Nel testo anche 💪 favorita xx% (e "sotto" se sta perdendo) o 🔥 linea gol prepartita.
+
+4.20.11 — solo app: AZZERA anche nell'elenco
+  - Live › Adesso: "↺ Svuota Adesso" → restano solo i segnali arrivati dopo; "Annulla" li rimette.
+  - Live › Oggi: "↺ Azzera Oggi" → elenco, contatori e statistiche di oggi ripartono da quel momento; i segnali di prima
+    spariscono dall'elenco (un tocco su "Mostra i N segnali di prima" li rivede, senza contarli). "Annulla" rimette tutto.
 
 4.20.10 / server 4.14.8 — COPPE INTERNAZIONALI dentro (Champions, Europa, Conference, Libertadores, AFC, CAF, CONCACAF):
   gol 1T favorita (sempre in prova, mai ⭐) e i due 🔥 partita da gol. Il prossimo gol 2T aveva già le coppe UEFA (32/34).
