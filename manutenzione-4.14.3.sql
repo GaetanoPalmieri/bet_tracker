@@ -11,11 +11,11 @@ create index if not exists pronostici_finali_at     on public.pronostici_finali 
 --    ogni volta cancella quello che riesce e alla fine finisce.
 delete from public.pronostici_traccia where created_at < now() - interval '14 days';
 
--- 3) Quanto pesa ogni tabella adesso.
-select relname as tabella, pg_size_pretty(pg_total_relation_size(relid)) as peso, n_live_tup as righe
-from pg_stat_user_tables order by pg_total_relation_size(relid) desc limit 10;
-
--- 4) FACOLTATIVO, in una query a parte e da sola: restituisce subito lo spazio liberato al conteggio di Supabase
+-- 3) FACOLTATIVO, in una query a parte e da sola: restituisce subito lo spazio liberato al conteggio di Supabase
 --    (senza, lo spazio viene riusato dalle righe nuove ma il numero in alto scende piano).
 --    Blocca la tabella per qualche secondo: meglio farlo quando ci sono poche partite live.
 -- vacuum full public.pronostici_traccia;
+
+-- 4) Quanto pesa (ultima riga: è il risultato che vedi sotto) ogni tabella adesso.
+select relname as tabella, pg_size_pretty(pg_total_relation_size(relid)) as peso, n_live_tup as righe
+from pg_stat_user_tables order by pg_total_relation_size(relid) desc limit 10;

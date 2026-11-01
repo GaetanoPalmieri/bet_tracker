@@ -1514,13 +1514,21 @@ main button.pst-hb.on:not(#_){border-color:rgba(24,152,136,.85)!important}
 @keyframes ptrPulse{50%{opacity:.3}}
 .lv2-hint{display:block;font-size:11px;color:var(--suite-text-soft);margin-top:1px}
 
-/* 4.20.4 — statistiche: risultato finale in evidenza e giorno della partita */
+/* 4.20.4 / 4.20.5 — statistiche: giorno della partita e scheda del risultato a destra (esito, finale, % stimata) */
 .st2-match.st2-mx{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}
 .st2-mxl{display:grid;gap:3px;min-width:0}
 .st2-day,.lv2-day{font-weight:800;color:var(--suite-text)}
-.st2-ftb,.lv2-ftb{display:grid;justify-items:center;align-content:center;min-width:58px;padding:5px 8px;border-radius:11px;background:color-mix(in srgb,var(--suite-text) 8%,transparent)}
-.st2-ftb b,.lv2-ftb b{font-size:20px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--suite-text)}
-.st2-ftb small,.lv2-ftb small{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--suite-text-soft)}
-.st2-ftb.wait b,.lv2-ftb.wait b{color:var(--suite-text-soft)}
-.lv2-side.lv2-side-st{gap:4px;min-width:64px}
-.lv2-side-st .lv2-out{margin-top:0}
+.rbox{display:grid;justify-items:center;align-self:center;width:78px;border-radius:12px;overflow:hidden;background:color-mix(in srgb,var(--suite-text) 6%,transparent);border:1px solid color-mix(in srgb,var(--suite-text) 14%,transparent)}
+.rbox-out{display:block;width:100%;box-sizing:border-box;text-align:center;font-style:normal;font-size:10px;font-weight:900;letter-spacing:.05em;padding:4px 2px;white-space:nowrap;background:color-mix(in srgb,var(--suite-text) 13%,transparent);color:var(--suite-text-soft)}
+.rbox.win .rbox-out{background:#2fbf8f;color:#06231a}
+.rbox.loss .rbox-out{background:#e5534b;color:#fff}
+.rbox.mix .rbox-out{background:#f2b04e;color:#2a1a00}
+.rbox-sc{margin-top:6px;font-size:22px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;color:var(--suite-text)}
+.rbox.wait .rbox-sc{color:var(--suite-text-soft)}
+.rbox-lb{min-height:11px;margin-top:3px;padding:0 3px;font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;color:var(--suite-text-soft)}
+.rbox-sub{margin-top:1px;font-size:10px;font-weight:700;white-space:nowrap;color:var(--suite-text-soft);font-variant-numeric:tabular-nums}
+.rbox-p{width:100%;box-sizing:border-box;margin-top:5px;padding:4px 2px 5px;text-align:center;border-top:1px solid color-mix(in srgb,var(--suite-text) 12%,transparent);font-size:9.5px;color:var(--suite-text-soft);white-space:nowrap}
+.rbox-p b{font-size:13px;font-weight:800;color:var(--suite-text);font-variant-numeric:tabular-nums}
+@media(max-width:380px){.rbox{width:72px}.rbox-sc{font-size:20px}}
+.tg-fav{background:rgba(120,170,255,.16);color:#9cc3ff}
+:root[data-theme="light"] .tg-fav{color:#1a56a8}

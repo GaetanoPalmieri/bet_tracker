@@ -1,9 +1,42 @@
-Bet Tracker 4.20.4 · server pronostici-avvisi 4.14.4
+Bet Tracker 4.20.10 · server pronostici-avvisi 4.14.8
 
-1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): cambia la ⭐ del 1T.
+1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): gol 1T favorita (4.14.6) 🔥 partita da gol (4.14.7), coppe (4.14.8).
 2) Sostituisci pronostici.js, pronostici.css, app.js, index.html, sw.js e pubblica l'app.
 3) Se non l'hai ancora fatto: Supabase > SQL Editor, esegui supabase/manutenzione-4.14.3.sql (una volta).
-Dopo: in Altro l'app deve dire "4.20.4", in Live la barra "server 4.14.4".
+Dopo: in Altro l'app deve dire "4.20.10", in Live la barra "server 4.14.8".
+
+4.20.10 / server 4.14.8 — COPPE INTERNAZIONALI dentro (Champions, Europa, Conference, Libertadores, AFC, CAF, CONCACAF):
+  gol 1T favorita (sempre in prova, mai ⭐) e i due 🔥 partita da gol. Il prossimo gol 2T aveva già le coppe UEFA (32/34).
+  Statistiche › Dividi per › Campionato: nuova riga "Coppe internazionali".
+
+4.20.9 / server 4.14.7 — 🔥 PARTITA DA GOL (due segnali nuovi, in prova; contano la linea gol prepartita e il minuto, non la favorita)
+  - 🔥 Gol 1T partita da gol: linea gol prepartita 3.5 o più, 12'-19', almeno un tiro in porta negli ultimi 5-15' → 77% (155 partite).
+  - 🔥 Gol 2T partita da gol: linea gol prepartita 3.25 o più, 47'-54' → 86% (303 partite).
+  Dati: traccia live 20-27/10, ~2.700 partite. Fuori femminili e coppe; serie minori dei Paesi forti dentro. Se nello stesso
+  momento parte già il gol 1T favorita / prossimo gol 2T della partita, il 🔥 non parte (niente doppioni).
+  - Gol 1T favorita anche nelle SERIE MINORI DEI PAESI FORTI (prima escluse), sempre in prova (mai ⭐) finché non ci sono numeri.
+  - Statistiche › Dividi per › Campionato: nuova riga "Serie minori Paesi forti".
+
+4.20.8 / server 4.14.6 — GOL 1T FAVORITA al posto del prossimo gol 1T (spenti: prossimo gol 1T, ⭐ prossimo gol 1T, quota raggiunta 1T).
+  Parte solo se una squadra è favorita almeno al 65% (1X2 bet365 prepartita), anche con la favorita sotto (stima −8) e con
+  qualsiasi numero di gol; 10'-38', almeno un tiro in porta negli ultimi 5-15 minuti. Nessuna soglia sulla quota:
+  ⭐ STABILE con stima da 80%, 🧪 IN PROVA da 70% a 80%. Segnali veri 27-31/10: ⭐ 31/34 (91%), in prova 46/60 (77%).
+  Statistiche del gol 1T: contano solo i segnali con favorita 65%+. Il filtro "💪 Solo con favorita forte" non serve più.
+
+4.20.7 / server 4.14.5 — GOL 1T SOLO CON FAVORITA FORTE: nuovo filtro negli Avvisi (sezione "Gol 1° tempo", spento di base).
+  Acceso, prossimo gol 1T, ⭐ e quota raggiunta 1T arrivano solo se una squadra è favorita almeno al 65% (1X2 bet365 prepartita).
+  Dal vivo: segnale 77/94 (82%) contro 56/81 (69%); quota raggiunta 32/48 (67%) contro 18/42 (43%) a quota ~1.70.
+  Sulle righe del gol 1T compare l'etichetta 💪 FAVORITA xx%. La quota raggiunta ora registra anche la favorita (statistiche).
+
+4.20.6 — solo app: la scheda del risultato (esito, finale, % stimata) anche in Live › Oggi; per i segnali ancora aperti
+  sotto c'è la quota minima.
+
+4.20.5 — solo app (la funzione resta 4.14.4)
+  - STATISTICHE: a destra di ogni partita una scheda ordinata e uguale per tutte le righe: in alto l'esito colorato
+    (VINTA / PERSA / IN CORSO; nel prepartita VINTO, VINTI 2/2, 1 SU 2, PERSO, IN ATTESA), al centro il risultato finale
+    grande (prepartita anche il 1° tempo), in basso la % stimata (prepartita: media dei pronostici della partita).
+  - STATISTICHE LIVE > Dividi per > FAVORITA: favorita forte (65%+), 50-65%, equilibrata, senza quote 1X2 (quote 1X2
+    prepartita bet365 registrate nel segnale).
 
 4.20.4 / server 4.14.4
   - PREPARTITA SENZA ANGOLI E SENZA UNDER: tolti Angoli partita, Angoli 1° tempo, Angoli squadra e i lati Under
