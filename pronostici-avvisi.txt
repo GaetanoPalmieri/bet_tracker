@@ -21,7 +21,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.15.2 (2/11: export della traccia completa, tutte le partite, un giorno alla volta) · 4.15.1 (2/11: 📊 controlli dopo il segnale a +5/+10/+15’ con notifica a parte, gol 1T anche sull’1-0 se il book è ≥75%) · 4.15.0 (2/11: gol 1T solo sullo 0-0 con le quote vere del 1T, niente ⭐, 🔥 2T solo nei campionati principali, quota raggiunta fuori)
+// Versione app: 4.15.3 (2/11: export della traccia con pagine da 1.000 righe e quote 1X2 nella traccia, niente notifica "⚽ GOL" dopo il segnale, 🔥 1T stima 75%) · 4.15.2 (2/11: export della traccia completa, tutte le partite, un giorno alla volta) · 4.15.1 (2/11: 📊 controlli dopo il segnale a +5/+10/+15’ con notifica a parte, gol 1T anche sull’1-0 se il book è ≥75%) · 4.15.0 (2/11: gol 1T solo sullo 0-0 con le quote vere del 1T, niente ⭐, 🔥 2T solo nei campionati principali, quota raggiunta fuori)
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1716,7 +1716,14 @@ function tipTrialKeyX(x) { return x && /^t[chk][12]$/.test(x.k) && x.cn != null 
    Serie minori dei Paesi forti dentro (1T 15/21, 2T 21/23: come gli altri). 4.20.10 — dentro anche le coppe internazionali
    (archivio e traccia: 🔥 1T 27/32, 🔥 2T 32/39, in linea con gli altri). Fuori i femminili. Non parte se nello stesso
    momento parte già il gol 1T favorita / prossimo gol 2T della stessa partita. */
-var TIP_GG = { 1: { from: 12, to: 19, line: 3.5, p: 0.77 }, 2: { from: 47, to: 54, line: 3.25, p: 0.86 } };
+/* 4.21.5 — TRACCIA COMPLETA 20/10-2/11 (765 partite, soprattutto campionati della notte: Americhe e Asia), filtri rigiocati
+   con questo motore e confrontati con i finali:
+     🔥 1T  36/48 (75%) contro 77% mostrato (20-27/10 28/35, 29/10-2/11 7/12) → stima 75%. Finestra confermata: 10'-19' 73-75%,
+            20'-24' 69%, 25'-29' 39%.
+     🔥 2T  campionati principali 26/31 (84%), stima 86% → resta; tutti i campionati tranne femminili 113/129 (88%).
+            Sull'1-1 con linea 3.25+ 9/14 (64%) contro 84% del mercato: pochi casi, da seguire.
+   Gol 1T favorita: nella traccia mancavano le quote 1X2 prepartita (aggiunte dalla 4.21.5): non verificabile qui. */
+var TIP_GG = { 1: { from: 12, to: 19, line: 3.5, p: 0.75 }, 2: { from: 47, to: 54, line: 3.25, p: 0.86 } };
 function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
   var W = TIP_GG[half];
   if (!W || !x || women || !U.finite(min) || min < W.from || min > W.to) return null;
@@ -2384,7 +2391,7 @@ async function snapTrack(list: any[]) {
     const sd = r.stats?.side || [{}, {}];
     const pair = (k: string) => [sd[0]?.[k] ?? null, sd[1]?.[k] ?? null];
     return { af_id: r.afId, min: r.status === "HT" ? 45 : r.elapsed, st: r.status, league: r.league, home: r.home, away: r.away,
-      d: { modelVersion: "3.71.0", observedAt: new Date().toISOString(), g: r.goals, c: pair("c"), s: pair("s"), t: pair("t"), da: pair("da"), att: pair("att"), pos: pair("poss"), red: pair("red"), ll: r.liveLine ?? null, pl: r.preLine ?? null, ht: r.ht || null, cl: r.corner || null, hc1: r.htCorners || null, co: r.cornerOdds || null, go: r.goalOdds || null } }; /* 3.99.0 — co: quote angoli live, per studiare dove il book sbaglia */
+      d: { modelVersion: "3.71.0", observedAt: new Date().toISOString(), g: r.goals, c: pair("c"), s: pair("s"), t: pair("t"), da: pair("da"), att: pair("att"), pos: pair("poss"), red: pair("red"), ll: r.liveLine ?? null, pl: r.preLine ?? null, x12: r.odds?.pre?.x12 || null, ht: r.ht || null, cl: r.corner || null, hc1: r.htCorners || null, co: r.cornerOdds || null, go: r.goalOdds || null } }; /* 3.99.0 — co: quote angoli live, per studiare dove il book sbaglia. 4.21.5 — x12: quote 1X2 prepartita (per controllare il gol 1T favorita sulla traccia) */
   });
   if (rows.length) { const { error } = await admin.from("pronostici_traccia").insert(rows); if (error) { console.error("traccia", error.message); return 0; } }
   const day = new Date().toISOString().slice(0, 10);
@@ -2816,7 +2823,7 @@ async function quotaWatch(u: any, list: any[], now: number, known: Map<string, a
 /* 4.21.2 / server 4.15.1 — 📊 CONTROLLI DOPO IL SEGNALE. Per ogni segnale gol che ti è arrivato, finché il risultato non
    cambia, il server riguarda la partita a +5, +10 e +15’ e ti manda una notifica DIVERSA da quelle dei segnali: titolo
    "📊 CONTROLLO +10’ ▸ 🟡 IN BILICO" (🟢 tiene · 🟡 in bilico · 🔴 non conviene più), stima aggiornata e quota da cui
-   conviene ancora entrare. Se arriva il gol: "📊 CONTROLLO ▸ ⚽ GOL". Una sola serie per partita (anche con più segnali),
+   conviene ancora entrare. Se arriva il gol la serie finisce senza notifica (4.21.5). Una sola serie per partita (anche con più segnali),
    tag a parte (sostituisce il controllo precedente, non il segnale). Conta il RITMO: attacchi pericolosi al minuto dopo il
    segnale contro la media della partita fino al segnale. Traccia live 30/10-2/11, segnali ancora senza gol (vinte · book):
               ritmo ≥ media   70-100%   sotto 70%    book
@@ -2844,11 +2851,6 @@ function tipProgRitmo(r: number | null) { return r == null ? "ritmo n.d." : r >=
 function messageProg(e: any, x: any, P: any, half: number) {
   const hm = e.t ? new Date(e.t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }) : "";
   const sc = `${x.goals[0] || 0}-${x.goals[1] || 0}`, from = `↪ segnale delle ${hm} (${e.min}’) · ${tipFilterName(e.k)}`;
-  if (!P) return {
-    title: `📊 CONTROLLO ▸ ⚽ GOL al ${x.elapsed}’`,
-    body: [`${e.home} – ${e.away} · ${sc}`, "Obiettivo raggiunto: non serve più entrare", from].join("\n"),
-    tag: "bet-prog-" + e.afId, renotify: true, url: "./?live=" + encodeURIComponent(e.afId || ""),
-  };
   const head = P.v === "ok" ? "🟢 TIENE ANCORA" : P.v === "mid" ? "🟡 IN BILICO" : "🔴 NON CONVIENE PIÙ";
   const act = P.v === "ok" ? `si può ancora entrare da @${P.q.toFixed(2)}` : P.v === "mid" ? `non aggiungere (solo da @${P.q.toFixed(2)})` : "non investire più qui";
   return {
@@ -2880,11 +2882,10 @@ async function progressWatch(u: any, list: any[], now: number, originals: Map<st
     const inHalf = half === 1 ? st === "1H" && x.elapsed <= 47 : st === "2H";
     out.checked++;
     let P: any = null, cpKey = "";
-    if (G !== G0) {
-      if (done.goal || done.end || !inHalf || G < G0) continue;
-      if (G - G0 < (Number(e.need) || 1)) continue;
-      cpKey = "goal";
-    } else {
+    /* 4.21.5 / server 4.15.3 — col gol arrivato NIENTE notifica "📊 CONTROLLO ▸ ⚽ GOL · non serve più entrare":
+       il gol lo controlli tu. La serie di controlli di quella partita finisce lì. */
+    if (G !== G0) continue;
+    {
       if (!inHalf) continue;
       const el = x.elapsed - e.min, cp = el >= 15 ? 15 : el >= 10 ? 10 : el >= 5 ? 5 : 0;
       if (!cp || el > 22 || done[cp] || done.end) continue;
@@ -3158,7 +3159,10 @@ async function handleReq(req: Request): Promise<Response> {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return json({ error: "Giorno non valido" }, 400);
     const t0 = Date.parse(day + "T00:00:00Z");
     if (!Number.isFinite(t0) || t0 < Date.now() - (TRACE_DAYS + 1) * 86400e3 || t0 > Date.now()) return json({ error: "Il server tiene la traccia solo " + TRACE_DAYS + " giorni" }, 400);
-    const cursor = Math.max(0, Math.floor(Number(body.cursor) || 0)), size = 2000;
+    /* 4.21.5 / server 4.15.3 — PAGINE DA 1.000. Supabase restituisce al massimo 1.000 righe per lettura: con pagine da 2.000
+       la prima pagina tornava con 1.000 righe, "next" restava vuoto e l'export si fermava. La traccia del 2/11 aveva così
+       esattamente 1.000 righe al giorno (le prime ore della notte, ~765 partite in 13 giorni invece di migliaia). */
+    const cursor = Math.max(0, Math.floor(Number(body.cursor) || 0)), size = 1000;
     let q = admin.from("pronostici_traccia").select("id,af_id,min,st,league,home,away,d,created_at")
       .gte("created_at", new Date(t0).toISOString()).lt("created_at", new Date(t0 + 86400e3).toISOString());
     if (cursor) q = q.gt("id", cursor);
@@ -3169,11 +3173,11 @@ async function handleReq(req: Request): Promise<Response> {
     const rows = (data || []).map((r: any) => {
       if (!teams[r.af_id]) teams[r.af_id] = [r.league || "", r.home || "", r.away || ""];
       const d = r.d || {};
-      return [r.af_id, Date.parse(r.created_at), r.min, r.st, n2(d.g), n2(d.s), n2(d.t), n2(d.da), n2(d.att), n2(d.pos), n2(d.red), n2(d.c), d.ll ?? null, d.pl ?? null, og(d.go && d.go.ht), og(d.go && d.go.ft)];
+      return [r.af_id, Date.parse(r.created_at), r.min, r.st, n2(d.g), n2(d.s), n2(d.t), n2(d.da), n2(d.att), n2(d.pos), n2(d.red), n2(d.c), d.ll ?? null, d.pl ?? null, og(d.go && d.go.ht), og(d.go && d.go.ft), n2(d.x12)];
     });
     const last = data && data.length ? data[data.length - 1].id : null;
-    return json({ day, rows, teams, next: data && data.length === size ? last : null,
-      cols: ["af_id", "t", "min", "st", "g", "s", "t_porta", "da", "att", "pos", "red", "c", "ll", "pl", "go_ht", "go_ft"], ver: "4.15.2" });
+    return json({ day, rows, teams, next: data && data.length >= size ? last : null,
+      cols: ["af_id", "t", "min", "st", "g", "s", "t_porta", "da", "att", "pos", "red", "c", "ll", "pl", "go_ht", "go_ft", "x12"], ver: "4.15.3" });
   }
   if (body.action === "training") {
     const table = body.kind === "finals" ? "pronostici_finali" : body.kind === "trace" ? "pronostici_traccia" : body.kind === "signals" ? "pronostici_segnali" : body.kind === "hist" ? "pronostici_storico_quote" : null;
@@ -3207,7 +3211,7 @@ async function handleReq(req: Request): Promise<Response> {
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
     const tb: any = (await getState("tcTables")) || {}, tbK = Object.keys(tb).filter((k) => k !== "_off");
     const tables = { leagues: tbK.length, ok: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.t).length, 0), err: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.err).length, 0), off: tb._off || null };
-    return json({ ver: "4.15.2", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.15.3", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -3220,7 +3224,7 @@ async function handleReq(req: Request): Promise<Response> {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.15.2" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.15.3" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -3234,7 +3238,7 @@ async function handleReq(req: Request): Promise<Response> {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.15.2" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.15.3" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {

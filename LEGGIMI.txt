@@ -1,9 +1,35 @@
-Bet Tracker 4.20.11 · server pronostici-avvisi 4.14.9
+Bet Tracker 4.21.5 · server pronostici-avvisi 4.15.3
 
-1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): gol 1T favorita (4.14.6) 🔥 partita da gol (4.14.7), coppe (4.14.8), nomi nelle notifiche (4.14.9).
-2) Sostituisci pronostici.js, pronostici.css, app.js, index.html, sw.js e pubblica l'app.
-3) Se non l'hai ancora fatto: Supabase > SQL Editor, esegui supabase/manutenzione-4.14.3.sql (una volta).
-Dopo: in Altro l'app deve dire "4.20.11", in Live la barra "server 4.14.9".
+1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): niente notifica "⚽ GOL", export
+   della traccia completo, quote 1X2 nella traccia, 🔥 1T al 75%.
+2) Sostituisci app.js, app.css, pronostici.js, pronostici.css, index.html, sw.js e pubblica l'app.
+Dopo: in Altro l'app deve dire "4.21.5", in Live la barra "server 4.15.3".
+
+4.21.5 / server 4.15.3
+  - NIENTE PIÙ NOTIFICA "📊 CONTROLLO ▸ ⚽ GOL · non serve più entrare": se arriva il gol la serie dei controlli si ferma
+    senza avvisi. I controlli a +5/+10/+15' senza gol restano.
+  - SALDO: il Calendario viene prima di Oggi; tolte le frasi di spiegazione (Calendario e "nessun movimento oggi").
+  - SALDO › "SUL CONTO" RIFATTO: carta verde con la cifra grande (centesimi più piccoli), pastiglie "oggi" e "7 giorni",
+    l'andamento degli ultimi 30 giorni disegnato sotto la cifra, Versato · Vinto/perso · Prelevato in tre caselle, poi
+    Aggiorna saldo, Prelievo e Deposito. Se lo chiudi resta una riga: "Sul conto" e la cifra.
+  - RIQUADRI A TENDINA IN TUTTA L'APP: tocca il titolo (o la freccia a destra) per chiudere o riaprire un riquadro.
+    L'app si ricorda come l'hai lasciato, anche dopo gli aggiornamenti del Live.
+  - STATISTICHE PIÙ CHIARE:
+      · Live: sotto il periodo c'è il riquadro FILTRI, con una riga per filtro (gol 1T favorita, 🔥 1T, 🔥 2T, prossimo
+        gol 2T…). Ogni riga mostra la % vinte (verde, arancio o rossa rispetto alla stima), vinte–perse, € teorici,
+        stabile / in prova e una barra con il segno della stima. Un tocco su una riga = tutta la pagina solo su quel
+        filtro; "Tutti i filtri" torna a tutto.
+      · Prepartita: riquadro MERCATI uguale (Over 1.5, 1° tempo, Goal…), con "Tutti i pronostici / ★ Solo Top".
+      · Poi Riepilogo, Dividi per (con il titolo), Analisi a bolle ed elenco.
+      · "Altri filtri" (livello, tempo, esito, campionato, profilo, ritmo) ora mostra tutte le scelte insieme, senza
+        aprire una voce alla volta; il calendario del periodo è sotto "📅 Scegli i giorni".
+  - RICALIBRAZIONE con la traccia del 2/11 (dettagli in analisi/traccia-completa-2026-11-02.md):
+      · La traccia era tagliata a 1.000 righe al giorno (solo le prime ore della notte, 765 partite): corretto
+        l'export (pagine da 1.000 e righe ogni 4' per partita) e aggiunte le quote 1X2 prepartita nella traccia.
+      · 🔥 Gol 1T partita da gol: 36/48 (75%) contro 77% → stima 75%.
+      · 🔥 Gol 2T, campionati principali: 26/31 (84%), stima 86% → resta.
+      · Gol 1T favorita: non verificabile (mancavano le 1X2), si rifà con la prossima traccia.
+    Tra 5-7 giorni rifai "⬇︎ Traccia completa" (7 giorni) e allegala: sarà intera.
 
 server 4.14.9 — NOTIFICHE con i nomi nuovi: "⭐ Gol 1T favorita", "Gol 1T favorita", "🔥 Gol 1T/2T partita da gol" (prima
   restava "Prossimo gol 1T"). Nel testo anche 💪 favorita xx% (e "sotto" se sta perdendo) o 🔥 linea gol prepartita.

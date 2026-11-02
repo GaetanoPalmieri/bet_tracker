@@ -1,4 +1,4 @@
-const APP_VERSION = '4.21.4';
+const APP_VERSION = '4.21.5';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -641,6 +641,7 @@ function render() {
   else if (tab === 'stats') bindDiary();
   if ((tab === 'tips' || tab === 'live') && typeof bindTips === 'function') bindTips();
   if (tab === 'accounts' && typeof renderPushCard === 'function') renderPushCard();
+  try { cxEnhance(); } catch (e) { /* ok */ } /* 4.21.5 — riquadri a tendina */
 }
 function homeViewSeg() {
   const v = diaryUI.homeView === 'stats' ? 'stats' : 'home';
@@ -2759,11 +2760,10 @@ function diaryPage(which) {
       kpi('Questo mese', monthCh) +
       kpi('Dall’inizio', diaryChange(series, 'all')) +
       '</div>';
-    var agenda =
-      '<section class="card diary-card"><h2>Calendario</h2><p class="muted diary-hint">Verde guadagno, rosso perdita: depositi e prelievi sono già esclusi. ↓ deposito · ↑ prelievo. Tocca un giorno per i dettagli.</p>' +
-      diaryCalendar(series) +
-      '</section>';
-    return saldoHomeHtml() + agenda + kpis;
+    /* 4.21.5 — Calendario sopra Oggi, senza la riga di spiegazione */
+    var agenda = '<section class="card diary-card" data-cx="calendario"><h2>Calendario</h2>' + diaryCalendar(series) + '</section>';
+    var H = saldoHomeHtml();
+    return H.hero + agenda + H.day + kpis;
   }
 
   /* ---------- Statistiche ---------- */
@@ -3623,7 +3623,26 @@ function diaryForm(date) {
   return moneySheet('saldo', { date: date });
 }
 /* 4.9.0 — pagina Saldo: in alto quanto hai sul conto e il risultato di oggi, sotto i tre numeri (versato, vinto/perso,
-   prelevato) in una riga, tre pulsanti, poi i movimenti di oggi in ordine di orario. */
+   prelevato) in una riga, tre pulsanti, poi i movimenti di oggi in ordine di orario.
+   4.21.5 — RIQUADRO "SUL CONTO" RIFATTO: carta a colori (verde petrolio) con la cifra grande (centesimi più piccoli),
+   le pastiglie Oggi e 7 giorni, l'andamento degli ultimi 30 giorni disegnato sotto la cifra, i tre numeri in caselle con
+   l'icona e i pulsanti. Chiuso a tendina resta una riga: "Sul conto" e la cifra. Restituisce { hero, day }: la pagina
+   mette il Calendario tra i due. */
+function sdSpark(series) {
+  var pts = series.filter(function (p) { return U.finite(p.balance); }).slice(-30);
+  if (pts.length < 2) return '';
+  var W = 300, H = 56, vals = pts.map(function (p) { return p.balance; }), lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), rg = hi - lo || 1;
+  var xy = pts.map(function (p, i) { return [Math.round(i / (pts.length - 1) * W * 10) / 10, Math.round((H - 6 - (p.balance - lo) / rg * (H - 14)) * 10) / 10]; });
+  var line = xy.map(function (q, i) { return (i ? 'L' : 'M') + q[0] + ' ' + q[1]; }).join(' ');
+  var last = xy[xy.length - 1];
+  return '<svg class="sd-spark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sdSparkG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".32"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
+    '<path d="' + line + ' L' + W + ' ' + H + ' L0 ' + H + ' Z" fill="url(#sdSparkG)"/><path d="' + line + '" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="3.2" fill="#fff"/></svg>';
+}
+function sdMoneyBig(n) {
+  var t = U.money(n), m = /^(.*?)([,.]\d{2})(\s*€.*)$/.exec(t);
+  return m ? '<span class="sd-int">' + U.esc(m[1]) + '</span><span class="sd-dec">' + U.esc(m[2] + m[3]) + '</span>' : '<span class="sd-int">' + U.esc(t) + '</span>';
+}
 function saldoHomeHtml() {
   var P = saldoParts(),
     today = dToday(),
@@ -3633,18 +3652,25 @@ function saldoHomeHtml() {
   var todayRes = te && te.delta != null ? te.delta : null;
   var mv = dayMovements(today);
   var wdToday = U.round(mv.filter(function (x) { return x.t.amount < 0; }).reduce(function (n, x) { return n - x.t.amount; }, 0));
-  var sub = todayRes != null
-    ? '<span class="sd-today ' + sClass(todayRes) + '">Oggi <b>' + sMoney(todayRes) + '</b></span>'
-    : '<span class="sd-today">' + (last ? 'Ultimo saldo ' + (last.date === dAdd(today, -1) ? 'ieri' : dShort(last.date)) + ' · ' + U.money(last.balance) : 'Segna il primo saldo per iniziare') + '</span>';
-  if (wdToday) sub += '<span class="sd-wd">↑ prelevati oggi ' + U.money(wdToday) + '</span>';
-  var hero =
-    '<section class="card sd-hero"><div class="sd-top"><small>Sul conto</small>' +
-    (te ? '<span class="sd-chip ok">✓ Aggiornato oggi</span>' : '<span class="sd-chip todo">Da aggiornare oggi</span>') + '</div>' +
-    '<div class="sd-big">' + U.money(P.cur) + '</div><div class="sd-sub">' + sub + '</div>' +
-    '<div class="sd-strip"><div><small>Versato</small><b>' + U.money(P.dep) + '</b></div><div><small>Vinto / perso</small><b class="' + sClass(P.res) + '">' + sMoney(P.res) + '</b></div><div><small>Prelevato</small><b>' + U.money(P.wd) + '</b></div></div>' +
-    '<div class="sd-actions"><button type="button" class="sd-main" data-ms="saldo">✎ Aggiorna saldo</button><button type="button" class="sd-btn out" data-ms="withdraw"><span aria-hidden="true">↑</span>Prelievo</button><button type="button" class="sd-btn in" data-ms="deposit"><span aria-hidden="true">↓</span>Deposito</button></div></section>';
-  /* movimenti di oggi */
   var hm = function (iso) { return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }); };
+  var w7 = diaryChange(series, 7);
+  var pill = function (label, v) {
+    var c = v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero';
+    return '<span class="sd-pill ' + c + '"><i aria-hidden="true">' + (v > 0 ? '▲' : v < 0 ? '▼' : '●') + '</i><b>' + U.money(Math.abs(v)) + '</b><small>' + label + '</small></span>';
+  };
+  var pills = (todayRes != null ? pill('oggi', todayRes) : '<span class="sd-pill wait"><small>' + (last ? 'ultimo saldo ' + (last.date === dAdd(today, -1) ? 'ieri' : dShort(last.date)) : 'segna il primo saldo per iniziare') + '</small></span>') +
+    (w7 ? pill('7 giorni', w7.value) : '') + (wdToday ? '<span class="sd-pill out"><i aria-hidden="true">↑</i><b>' + U.money(wdToday) + '</b><small>prelevati oggi</small></span>' : '');
+  var chip = te ? '<span class="sd-chip ok"><i aria-hidden="true">✓</i>' + (te.updatedAt ? 'Aggiornato alle ' + hm(te.updatedAt) : 'Aggiornato oggi') + '</span>' : '<span class="sd-chip todo"><i aria-hidden="true"></i>Da aggiornare</span>';
+  var tile = function (cls, ic, label, val, vcls) { return '<div class="sd-tile ' + cls + '"><small><i class="sd-tic" aria-hidden="true">' + ic + '</i>' + label + '</small><b class="' + (vcls || '') + '">' + val + '</b></div>'; };
+  var hero =
+    '<section class="card sd-hero sd-hero2' + (todayRes != null && todayRes < 0 ? ' down' : '') + '" data-cx="saldo-hero">' +
+    '<div class="sd-top"><span class="sd-lab">Sul conto</span><b class="sd-mini">' + U.money(P.cur) + '</b>' + chip + '</div>' +
+    '<div class="sd-big">' + sdMoneyBig(P.cur) + '</div>' +
+    '<div class="sd-pills">' + pills + '</div>' +
+    sdSpark(series) +
+    '<div class="sd-tiles">' + tile('dep', '↓', 'Versato', U.money(P.dep)) + tile('res', '±', 'Vinto / perso', sMoney(P.res), sClass(P.res)) + tile('wd', '↑', 'Prelevato', U.money(P.wd)) + '</div>' +
+    '<div class="sd-actions"><button type="button" class="sd-main" data-ms="saldo"><span aria-hidden="true">✎</span> Aggiorna saldo</button><button type="button" class="sd-btn out" data-ms="withdraw"><span aria-hidden="true">↑</span>Prelievo</button><button type="button" class="sd-btn in" data-ms="deposit"><span aria-hidden="true">↓</span>Deposito</button></div></section>';
+  /* movimenti di oggi */
   var items = mv.map(function (x) {
     var a = x.t.amount, out = a < 0;
     var note = out && U.finite(x.t.left) ? 'resta ' + U.money(x.t.left) : '';
@@ -3652,11 +3678,12 @@ function saldoHomeHtml() {
   });
   if (te) items.push({ at: te.updatedAt || today + 'T23:59:00', html: '<button type="button" class="sd-ev bal" data-ms="saldo"><span class="sd-ev-ic" aria-hidden="true">✎</span><span class="sd-ev-m"><b>Saldo di oggi</b><small>' + (te.updatedAt ? 'aggiornato alle ' + hm(te.updatedAt) : 'segnato') + (te.note ? ' · ' + U.esc(te.note) : '') + '</small></span><strong>' + U.money(te.balance) + '</strong></button>' });
   items.sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
+  /* 4.21.5 — senza la frase di spiegazione quando oggi non c'è niente */
   var day =
-    '<section class="card sd-day"><div class="sd-day-h"><h2>Oggi</h2>' + (todayRes != null ? '<b class="' + sClass(todayRes) + '">' + sMoney(todayRes) + '</b>' : '') + '</div>' +
-    (items.length ? '<div class="sd-evs">' + items.map(function (x) { return x.html; }).join('') + '</div>' : '<p class="muted sd-empty">Nessun movimento oggi. Hai vinto e prelevato? Usa <b>Prelievo</b>: scrivi quanto hai tolto e quanto resta sul conto.</p>') +
+    '<section class="card sd-day" data-cx="oggi"><div class="sd-day-h"><h2>Oggi</h2>' + (todayRes != null ? '<b class="' + sClass(todayRes) + '">' + sMoney(todayRes) + '</b>' : '') + '</div>' +
+    (items.length ? '<div class="sd-evs">' + items.map(function (x) { return x.html; }).join('') + '</div>' : '<p class="muted sd-empty">Nessun movimento oggi.</p>') +
     '</section>';
-  return hero + day;
+  return { hero: hero, day: day };
 }
 
 function diarySave(existing, date, value, note) {
@@ -4533,3 +4560,92 @@ document.addEventListener('click', function (ev) {
     : it.flows.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).map(function (t) { return '<div class="bub-srow"><span>' + U.esc(U.date(t.date)) + '</span><b class="' + (t.amount < 0 ? 'negative' : 'positive') + '">' + (t.amount < 0 ? '−' : '+') + U.money(Math.abs(t.amount)) + '</b></div>'; });
   sheetModal(sheetHead(it.label, { sub: (months.find(function (x) { return x.key === sel; }) || {}).long || '' }) + '<div class="bub-slist">' + (rows.join('') || '<p class="muted">Niente in questo mese.</p>') + '</div>');
 });
+
+
+/* ---------- 4.21.5 — RIQUADRI A TENDINA IN TUTTE LE SEZIONI ----------
+   Ogni riquadro (.card con un titolo) si chiude e si riapre toccando il titolo o la freccia a destra; resta come l'hai
+   lasciato (anche dopo gli aggiornamenti del Live e alla riapertura dell'app). Chiuso resta visibile solo il titolo.
+   Fuori: i riquadri che sono pulsanti (Home dei pronostici), quelli già a tendina (<details>, sezioni .tip-top / .tip-markets
+   della 3.30.0) e le caselle piccole (.diary-kpi). Un riquadro senza titolo non ha la freccia. */
+var CX_KEY = 'bet_cx_v1', cxClosed = null;
+function cxLoad() {
+  if (cxClosed) return cxClosed;
+  try { cxClosed = JSON.parse(localStorage.getItem(CX_KEY) || '{}') || {}; } catch (e) { cxClosed = {}; }
+  return cxClosed;
+}
+function cxSave() { try { localStorage.setItem(CX_KEY, JSON.stringify(cxClosed || {})); } catch (e) { /* memoria piena o privata: resta per questa sessione */ } }
+var CX_HEAD_SEL = 'h1,h2,h3,.st2-h,.bub-head,.sd-top,.sd-day-h,.diary-card-head,.tip-top-head,.cx-h';
+function cxHead(card) {
+  var k = card.firstElementChild;
+  while (k && (k.hidden || k.tagName === 'INPUT' || k.tagName === 'SCRIPT' || k.classList.contains('cx-skip'))) k = k.nextElementSibling;
+  if (!k) return null;
+  if (k.matches(CX_HEAD_SEL) || k.hasAttribute('data-cx-head')) return k;
+  /* primo figlio piccolo con un titolo dentro (es. intestazione con titolo e sottotitolo) */
+  if (k.children.length <= 4 && k.querySelector('h2,h3,.st2-h') && !k.querySelector('.lv2-list,table,svg,.pr-list,.st2-tab,.pst-tab,button')) return k;
+  return null;
+}
+function cxKeyOf(card, head) {
+  var own = card.getAttribute('data-cx');
+  if (own) return tab + '|' + own;
+  var t = String(head.textContent || '').split('·')[0].toLowerCase().replace(/[^a-zà-ÿ ]+/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 4).join(' ');
+  return t ? tab + '|' + t : '';
+}
+function cxApply(card, closed) {
+  card.classList.toggle('cx-closed', !!closed);
+  var h = card.querySelector(':scope > .cx-head');
+  if (h) h.setAttribute('aria-expanded', closed ? 'false' : 'true');
+}
+function cxEnhance() {
+  var root = document.getElementById('main');
+  if (!root) return;
+  var C = cxLoad();
+  root.querySelectorAll('.card, .st2-list').forEach(function (card) {
+    if (card.hasAttribute('data-cx-ok')) { var k0 = card.getAttribute('data-cx-ok'); cxApply(card, !!C[k0]); return; }
+    if (card.tagName === 'BUTTON' || card.tagName === 'DETAILS' || card.tagName === 'A' || card.hasAttribute('data-cx-off')) return;
+    if (card.classList.contains('diary-kpi') || card.classList.contains('tip-top') || card.classList.contains('tip-markets') || card.classList.contains('tip-fold')) return;
+    if (card.parentElement && card.parentElement.closest('.card, .st2-list, dialog')) return; /* solo i riquadri esterni */
+    var head = cxHead(card);
+    if (!head) return;
+    var key = cxKeyOf(card, head);
+    if (!key) return;
+    card.setAttribute('data-cx-ok', key);
+    card.classList.add('cx-card');
+    head.classList.add('cx-head');
+    head.setAttribute('role', 'button');
+    head.setAttribute('tabindex', '0');
+    if (!head.querySelector(':scope > .cx-ic')) head.insertAdjacentHTML('beforeend', '<span class="cx-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>');
+    cxApply(card, !!C[key]);
+  });
+}
+function cxToggle(card) {
+  var key = card.getAttribute('data-cx-ok');
+  if (!key) return;
+  var C = cxLoad(), closed = !card.classList.contains('cx-closed');
+  if (closed) C[key] = 1; else delete C[key];
+  cxSave();
+  cxApply(card, closed);
+}
+document.addEventListener('click', function (ev) {
+  var h = ev.target.closest && ev.target.closest('.cx-head');
+  if (!h) return;
+  var card = h.parentElement;
+  if (!card || !card.hasAttribute('data-cx-ok')) return;
+  /* i pulsanti e i campi dentro il titolo fanno il loro lavoro; la freccia chiude sempre */
+  if (!ev.target.closest('.cx-ic') && ev.target.closest('button,a,input,select,label,[data-ms],[data-bubm],[role="tab"]')) return;
+  ev.preventDefault();
+  cxToggle(card);
+});
+document.addEventListener('keydown', function (ev) {
+  if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.classList && ev.target.classList.contains('cx-head')) { ev.preventDefault(); cxToggle(ev.target.parentElement); }
+});
+/* il Live e le altre schede a volte ridisegnano solo un pezzo della pagina: si riapplica da solo */
+(function () {
+  var root = document.getElementById('main');
+  if (!root || typeof MutationObserver === 'undefined') return;
+  var queued = false;
+  new MutationObserver(function () {
+    if (queued) return;
+    queued = true;
+    (window.requestAnimationFrame || setTimeout)(function () { queued = false; try { cxEnhance(); } catch (e) { /* ok */ } });
+  }).observe(root, { childList: true, subtree: true });
+})();
