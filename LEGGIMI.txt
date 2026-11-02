@@ -1,9 +1,24 @@
-Bet Tracker 4.21.5 · server pronostici-avvisi 4.15.3
+Bet Tracker 4.21.6 · server pronostici-avvisi 4.15.4
 
-1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): niente notifica "⚽ GOL", export
-   della traccia completo, quote 1X2 nella traccia, 🔥 1T al 75%.
-2) Sostituisci app.js, app.css, pronostici.js, pronostici.css, index.html, sw.js e pubblica l'app.
-Dopo: in Altro l'app deve dire "4.21.5", in Live la barra "server 4.15.3".
+1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): ricalibrazione con la traccia completa.
+2) Sostituisci pronostici.js, app.js, index.html, sw.js e pubblica l'app (se non hai ancora pubblicato la 4.21.5,
+   anche app.css e pronostici.css).
+Dopo: in Altro l'app deve dire "4.21.6", in Live la barra "server 4.15.4".
+
+4.21.6 / server 4.15.4 — RICALIBRAZIONE CON LA TRACCIA COMPLETA (20/10-2/11, 6.498 partite; dettagli in
+  analisi/traccia-completa-2026-11-02.md, parte 2). Ogni regola controllata su due metà: 20-27/10 e 29/10-2/11.
+  - 🔥 GOL 2T PARTITA DA GOL: parte solo se il book si aspetta ancora almeno i gol previsti prima per il tempo che resta
+    ("keep" ≥ 1: la partita non è più lenta del previsto). Finestra allargata 47'-58'. Stima 91% fino al 50', poi 86%.
+    Rigiocato: 188/214 (88%) contro 83% del mercato; prima 86,5%.
+  - 🔥 GOL 1T PARTITA DA GOL: stessa condizione keep ≥ 1, fuori le giovanili dei Paesi forti. 213/284 (75%) = stima,
+    mercato 71%. Resta in prova.
+  - 🎯 PROSSIMO GOL 2T: vinceva 92/97 (95%) e mostravamo 85-86%. Ora stima 94% (quota minima ~1.06): con il mercato
+    all'85-88% la quota bet365 è sopra la minima, cioè c'è valore. La soglia del mercato resta 85% (tra 80% e 85% = mercato).
+  - 📊 CONTROLLI DOPO IL SEGNALE (+5/+10/+15'): tabella rifatta. Nel 2° tempo il vantaggio resta anche dopo (87%, 84%,
+    78% contro 80%, 74%, 65% del book): arriva "🟢 tiene ancora" con la quota da cui entrare. Il ritmo nel 2T non conta.
+    Nel 1° tempo il vantaggio c'è solo a +5' col ritmo che tiene; dopo è la % del book (🟡 in bilico).
+  - 🎯 Gol 1T favorita: non ancora verificabile (le quote 1X2 nella traccia ci sono solo da oggi). Rifai l'export tra
+    5-7 giorni (7 giorni).
 
 4.21.5 / server 4.15.3
   - NIENTE PIÙ NOTIFICA "📊 CONTROLLO ▸ ⚽ GOL · non serve più entrare": se arriva il gol la serie dei controlli si ferma

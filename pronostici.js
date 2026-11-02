@@ -1810,6 +1810,7 @@ var TIP_CAL_ADJ = { /* [pari, avanti di 1, avanti di 2+] */
    158 segnali vinti 87%. Meno segnali e quelli che restano vincono di più. */
 var TIP_GOAL_GREEN = 0.87, TIP_GOAL_WARM = { 1: 0.70, 2: 0.74 };
 var TIP_TM2_MINP = 0.85; /* 4.14.0 — prossimo gol 2T: mercato bet365 minimo (solo top campionati e prime divisioni) */
+var TIP_TM2_P = 0.94; /* 4.21.6 — stima del prossimo gol 2T (vedi tipTargetGoal) */
 var TIP_TM3_UP = 0.02; /* 4.3.1 — correzione del gol 2T sull'1-0 (vedi tipTargetGoal) */
 function tipGoalProb(M, half, lgG, diff) {
   var C = TIP_CAL[half] || TIP_CAL[2], ab = C[M.src === 'quote' ? 'quote' : 'linea'], m = Math.max(0.01, Math.min(0.995, M.p));
@@ -1994,6 +1995,10 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
      4.3.8 — tolta la regola del minuto della 4.3.7: con i segnali del 25/10 dal 50' in poi 14/14, in totale 46'-49' 88% (223) e
      dal 50' 86% (44), nessuna differenza vera. Negli altri campionati l'1-0 è sempre OTTIMA. */
   if (k === 'tm2' && top2) green = Math.min(green, 0.8); /* 4.14.0 — con mercato ≥ 85% nei top: sempre OTTIMA */
+  /* 4.21.6 — PROSSIMO GOL 2T: traccia completa 20/10-2/11, top campionati e prime divisioni con mercato ≥ 85%: 92/97 (94,8%)
+     contro 88% del mercato e 85,6% che mostravamo (A 95,7% · B 95,8% con mercato 85-88%). Tra 80% e 85% di mercato 82% =
+     mercato: la soglia resta 85%. Stima: 94%, o mercato + 2 punti se più alto (massimo 97%). */
+  if (k === 'tm2') p = Math.max(TIP_TM2_P, Math.min(0.97, M.p + 0.02));
   if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
   if (k === 'tm1' && M.p >= TIP_TM1_MID[0] && M.p < TIP_TM1_MID[1]) p = Math.max(0.01, p - TIP_TM1_MID_DOWN); /* 4.20.4 — vedi TIP_TM1_MID */
   if (k === 'tm1' && fav && fav.st === 'sotto') p = Math.max(0.01, p - TIP_FAV1_SOTTO); /* 4.20.8 — favorita sotto: −8 */
@@ -2066,14 +2071,22 @@ function tipTrialKeyX(x) { return x && /^t[chk][12]$/.test(x.k) && x.cn != null 
    Serie minori dei Paesi forti dentro (1T 15/21, 2T 21/23: come gli altri). 4.20.10 — dentro anche le coppe internazionali
    (archivio e traccia: 🔥 1T 27/32, 🔥 2T 32/39, in linea con gli altri). Fuori i femminili. Non parte se nello stesso
    momento parte già il gol 1T favorita / prossimo gol 2T della stessa partita. */
-/* 4.21.5 — TRACCIA COMPLETA 20/10-2/11 (765 partite, soprattutto campionati della notte: Americhe e Asia), filtri rigiocati
-   con questo motore e confrontati con i finali:
-     🔥 1T  36/48 (75%) contro 77% mostrato (20-27/10 28/35, 29/10-2/11 7/12) → stima 75%. Finestra confermata: 10'-19' 73-75%,
-            20'-24' 69%, 25'-29' 39%.
-     🔥 2T  campionati principali 26/31 (84%), stima 86% → resta; tutti i campionati tranne femminili 113/129 (88%).
-            Sull'1-1 con linea 3.25+ 9/14 (64%) contro 84% del mercato: pochi casi, da seguire.
-   Gol 1T favorita: nella traccia mancavano le quote 1X2 prepartita (aggiunte dalla 4.21.5): non verificabile qui. */
-var TIP_GG = { 1: { from: 12, to: 19, line: 3.5, p: 0.75 }, 2: { from: 47, to: 54, line: 3.25, p: 0.86 } };
+/* 4.21.6 / server 4.15.4 — TRACCIA COMPLETA 20/10-2/11 (6.498 partite, tutte le ore e tutti i campionati), filtri rigiocati
+   con questo motore e confrontati con i finali. Due metà per controllo: A = 20-27/10, B = 29/10-2/11.
+   KEEP = gol che il book si aspetta ancora (linea live − gol fatti) diviso quelli attesi prima per il tempo che resta
+   (linea prepartita × minuti rimasti / 94). Sotto 1 = la partita è più lenta del previsto e il book l'ha già visto.
+     🔥 2T campionati principali, 47'-54' (regola di prima)   282/326 (86,5%) · mercato 84%
+        con keep ≥ 1                                        A 90,6% · B 89,0%  (mercato 84-86%)
+        con keep < 1                                        A 77,8% · B 83,7%  (sotto o al mercato) → fuori
+        keep ≥ 1 per minuto: 47'-50' 122/132 (92%, mercato 87%) · 51'-54' 86% (83%) · 55'-58' 121/139 (87%, 80%)
+                             · 59'-62' 78% (77%) → finestra 47'-58', stima 91% fino al 50', poi 86%.
+        Linea 3.0-3.25 con keep ≥ 1: 83% = mercato → la soglia 3.25 resta. Fuori dai principali B 80,6%: restano fuori.
+     🔥 1T 12'-19', linea 3.5+, tiro in porta recente        308/424 (72,6%) · mercato 71% (A 75,5% · B 68,3%)
+        con keep ≥ 1                                        267/357 (74,8%) · mercato 71% (A 77% · B 71,5%)
+        con keep < 1                                        B 52% → fuori
+        giovanili dei Paesi forti                           25/40 (62,5%) contro 72% del mercato → fuori
+   Gol 1T favorita: le quote 1X2 nella traccia ci sono solo dal 2/11 (28 righe): si rifà con la prossima traccia. */
+var TIP_GG = { 1: { from: 12, to: 19, line: 3.5, p: 0.75 }, 2: { from: 47, to: 58, line: 3.25, p: 0.86, early: 50, pEarly: 0.91 } }, TIP_GG_KEEP = 1;
 function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
   var W = TIP_GG[half];
   if (!W || !x || women || !U.finite(min) || min < W.from || min > W.to) return null;
@@ -2085,6 +2098,10 @@ function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
   /* 4.21.1 — 🔥 2T solo nei CAMPIONATI PRINCIPALI (prime divisioni, top, serie minori dei Paesi forti): export 1-2/11 36/37 (97%)
      contro 84/102 (82%) degli altri, a quota minima 1.16 → solo lì, ed è STABILE */
   if (half === 2 && tierG !== 'major') return null;
+  if (half === 1 && lgG === 'youth+') return null; /* 4.21.6 — giovanili dei Paesi forti: 🔥 1T sotto il mercato */
+  /* 4.21.6 — KEEP ≥ 1: il book si aspetta ancora almeno i gol previsti prima per il tempo che resta (vedi TIP_GG) */
+  var llv = Number(x.liveLine), keep = U.finite(llv) && pl > 0 ? Math.max(0, llv - G) / (pl * Math.max(0.3, (94 - min) / 94)) : null;
+  if (keep == null || keep < TIP_GG_KEEP - 1e-9) return null;
   var sot = null, pv = prev8 && min - prev8.min >= 5 && min - prev8.min <= 15 ? prev8 : prev && min - prev.min >= 5 && min - prev.min <= 15 ? prev : null;
   if (half === 1) {
     if (!pv || !pv.side) return null;
@@ -2093,8 +2110,8 @@ function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
     sot = a.t + b.t - pa.t - pb.t;
     if (sot < 1) return null;
   }
-  return { k: half === 1 ? 't1x' : 't2x', p: W.p, green: TIP_GOAL_GREEN, warm: 0.70,
-    o: { rule: '4.20.9', pl: pl, ll: x.liveLine, lgG: lgG, sotRecent: sot, prevMin: pv ? pv.min : null } };
+  return { k: half === 1 ? 't1x' : 't2x', p: W.early && min <= W.early ? W.pEarly : W.p, green: TIP_GOAL_GREEN, warm: 0.70,
+    o: { rule: '4.21.6', pl: pl, ll: x.liveLine, keep: Math.round(keep * 100) / 100, lgG: lgG, sotRecent: sot, prevMin: pv ? pv.min : null } };
 }
 function tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev) {
   var out = [], ok = function (v) { return U.finite(v) && v >= 0; };
@@ -3729,9 +3746,18 @@ function tipEntryAdvice(e) {
      2T +15’     84%            64%           75%          70%
    I tiri in porta nel frattempo non distinguono (1T +10’: senza tiri 67%, con 1+ tiri 55%): si guarda il ritmo.
    Valori arrotondati verso il basso dove i casi sono pochi. Vantaggio sul book ≥ 4 punti → tiene; −3..+3 → in bilico;
-   sotto → non conviene più. */
-var TIP_PROG = { 1: { 5: [75, 72, 57], 10: [66, 60, 50], 15: [60, 56, 25] }, 2: { 5: [85, 81, 81], 10: [89, 77, 77], 15: [83, 68, 68] } },
-  TIP_PROG_B = { 1: { 5: 67, 10: 60, 15: 54 }, 2: { 5: 81, 10: 77, 15: 70 } }, TIP_PROG0 = { 1: 77, 2: 88 };
+   sotto → non conviene più.
+   4.21.6 / server 4.15.4 — RIFATTA CON LA TRACCIA COMPLETA 20/10-2/11 (segnali rigiocati ancora senza gol al controllo):
+     1T (513 segnali tipo gol 1T e 🔥 1T)  ritmo ≥ media   70-100%   sotto 70%    book
+         +5’                               73% (162)       66%       69%          65%   → solo col ritmo che tiene c'è vantaggio
+         +10’                              58%             61%       65%          57%   → seconda metà (29/10-2/11) = book
+         +15’                              49%             52%       57%          47%   → idem
+     2T (223 prossimo gol 2T + 🔥 2T)      +5’ 87% (book 80) · +10’ 84% (74) · +15’ 78% (65), uguale in tutte e due le metà;
+                                           il ritmo NON distingue (spesso va meglio chi rallenta) → un solo valore.
+   Nel 2T il vantaggio resta anche dopo: senza gol la quota sale più in fretta della %, si può ancora entrare.
+   Valori un po' sotto dove la seconda metà era più bassa. Vantaggio sul book ≥ 4 → tiene; −3..+3 → in bilico; sotto → no. */
+var TIP_PROG = { 1: { 5: [73, 67, 67], 10: [59, 59, 59], 15: [49, 49, 49] }, 2: { 5: [86, 86, 86], 10: [82, 82, 82], 15: [75, 75, 75] } },
+  TIP_PROG_B = { 1: { 5: 65, 10: 57, 15: 47 }, 2: { 5: 80, 10: 74, 15: 65 } }, TIP_PROG0 = { 1: 77, 2: 90 };
 function tipProgress(e) {
   if (!e || e.res != null || !TIP_ENTRY_K[e.k] || !U.finite(e.min)) return null;
   var y = null; (tipUI.scanRows || []).forEach(function (r) { if (r && r.x && e.afId && r.x.afId === e.afId) y = r; });
@@ -3788,7 +3814,7 @@ function tipProgSheet(e) {
   }
   var C = e.prog && e.prog.cps, VN = { ok: '🟢 tiene', mid: '🟡 in bilico', stop: '🔴 non conviene più' };
   if (C) h += row('📊 Controlli inviati', ['5', '10', '15'].filter(function (c) { return VN[C[c]]; }).map(function (c) { return '+' + c + '’ ' + VN[C[c]]; }).concat(C.goal ? ['⚽ gol'] : []).join(' · '));
-  return '<h3 class="sheet-section">Entrare o aspettare</h3><div class="sg-rows">' + h + '</div><p class="sheet-note">A +5, +10 e +15’ senza gol conta il ritmo (attacchi pericolosi al minuto) rispetto a prima del segnale: se cala sotto il 70% la % scende più in fretta della quota. I tiri in porta nel frattempo non cambiano il quadro.</p>';
+  return '<h3 class="sheet-section">Entrare o aspettare</h3><div class="sg-rows">' + h + '</div><p class="sheet-note">A +5, +10 e +15’ senza gol conta il ritmo (attacchi pericolosi al minuto) rispetto a prima del segnale: nel 1T conta solo a +5’ (col ritmo che tiene c’è ancora vantaggio, poi la % è quella del book). Nel 2T il vantaggio resta anche a +10 e +15’: la quota sale e si può ancora entrare.</p>';
 }
 function tipLvRow(e, o) {
   o = o || {};
