@@ -1,8 +1,17 @@
-Bet Tracker 4.21.7 · server pronostici-avvisi 4.15.4
+Bet Tracker 4.21.8 · server pronostici-avvisi 4.15.5
 
-1) Se non l'hai ancora fatto: ridistribuisci la funzione Supabase "pronostici-avvisi" (server 4.15.4).
-2) Sostituisci app.js, app.css, pronostici.js, pronostici.css, suite.js, index.html, sw.js e pubblica l'app.
-Dopo: in Altro l'app deve dire "4.21.7", in Live la barra "server 4.15.4".
+1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): femminili.
+2) Sostituisci pronostici.js, app.js, index.html, sw.js e pubblica l'app (se non hai pubblicato la 4.21.7, anche app.css,
+   pronostici.css e suite.js).
+Dopo: in Altro l'app deve dire "4.21.8", in Live la barra "server 4.15.5".
+
+4.21.8 / server 4.15.5 — FEMMINILI (in prova)
+  - 🔥 Gol 2T partita da gol e 🎯 Prossimo gol 2T anche nelle prime divisioni femminili più forti: WSL, Liga F,
+    Frauen-Bundesliga, D1 Arkema, Serie A, NWSL, Damallsvenskan, Toppserien, WE League, A-League Women.
+    Stesse regole degli uomini, stima 92%, sempre IN PROVA (🧪).
+  - Traccia 20/10-2/11: 🔥 2T 31/31 (mercato 86%), prossimo gol 2T 26/26 (mercato 89%), uguali nelle due metà.
+    Rigiocati col motore: 21/21 e 20/20. Nelle altre femminili e nel 1° tempo nessun vantaggio sul mercato → fuori.
+  - Statistiche › Dividi per › Campionato: nuova riga "Femminili (prime divisioni)".
 
 4.21.7 — solo app
   - BARRA IN BASSO PIÙ BASSA, come in Bilancio e Noi Due: a ~18px dal bordo sull'iPhone (prima ~42px).

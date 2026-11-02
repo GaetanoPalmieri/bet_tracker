@@ -1555,6 +1555,7 @@ var TIP_STABLE_K = { t2x: 1, tm2: 1, tm3: 1, tr1: 1, tr2: 1 }; /* 4.21.1 — ⭐
 var TIP_TM2_STABLE_P = 0.88;
 function tipIsTrial(e) {
   if (!e || !e.trial) return false;
+  if ((e.k === 'tm2' || e.k === 't2x') && e.factors && e.factors.lgG === 'women') return true; /* 4.21.8 — femminili: in prova */
   if (e.k === 'tm2') { var pm = e.factors && e.factors.pMkt; return !(pm >= TIP_TM2_STABLE_P - 1e-9); }
   if (!TIP_STABLE_K[e.k]) return true;
   var g = e.factors && e.factors.lgG;
@@ -1925,6 +1926,7 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   var recent = x && U.finite(x.lastGoal) && min - x.lastGoal >= 0 && min - x.lastGoal <= 6;
   /* 4.2.7 — serie minori dei Paesi forti e coppe internazionali: sotto il mercato vero in tutti e due i tempi → niente segnali gol */
   var lgG = tipLgGroup(lgN, tier);
+  var wTop = half === 2 && lgG === 'women' && tipWomenTop(lgN); /* 4.21.8 — prime divisioni femminili, solo 2° tempo */
   /* 4.3.2 — gol 2T sull'1-0 anche nei femminili e nelle serie minori dei Paesi forti (archivio 9-22/10: 196 partite, 83% contro
      81% del mercato, come i minori). Le serie minori dei Paesi forti restano fuori da tutti gli altri segnali gol. */
   var amer = tipLgAmericas(lgN); /* 4.4.0 */
@@ -1946,13 +1948,13 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
        2+ gol e book ≥ 78%                       5/10  (50%)             → mai con 2 o più gol
      Pochi casi: restano IN PROVA. */
   if (half === 1 && (G >= 2 || (G === 0 && M.src !== 'quote') || (G === 1 && !(M.p >= 0.75)))) return null;
-  var tm3Ok = half === 2 && !lowV && G === 1 && !recent && !uefa && !amer && min <= 70 && (tier === 'minor' || tier === 'minor+' || tier === 'women' || lgG === 'lower');
+  var tm3Ok = half === 2 && !wTop && !lowV && G === 1 && !recent && !uefa && !amer && min <= 70 && (tier === 'minor' || tier === 'minor+' || tier === 'women' || lgG === 'lower');
   /* 4.14.0 — 2° TEMPO: solo 🎯 prossimo gol 2T, a qualsiasi quota dal 46', nei TOP CAMPIONATI (5 grandi leghe, Eredivisie,
      Portogallo, coppe europee, nazionali) e nelle PRIME DIVISIONI, con mercato bet365 ≥ 85%. Archivio bet365 22/9-22/10
      (13.818 partite): 273 segnali (~9 al giorno), 90,8% vinte contro 87,6% del prezzo, uguale nelle due metà (90,9% / 90,8%),
      quota media 1.09. Tutti gli altri campionati: 88% = prezzo. Elenchi di singoli campionati scelti sui risultati: in prova
      sulle settimane dopo scendono all'81% (sotto il prezzo), quindi niente elenchi, solo gruppi. */
-  var top2 = half === 2 && (lgG === 'first' || lgG === 'top7' || tipLeagueTop({ league: lgN, home: x && x.home, away: x && x.away }));
+  var top2 = half === 2 && (lgG === 'first' || lgG === 'top7' || wTop || tipLeagueTop({ league: lgN, home: x && x.home, away: x && x.away }));
   if (half === 2 && (!top2 || !(M.p >= TIP_TM2_MINP))) return null;
   if ((lgG === 'cup' && !top2 && half !== 1) || (lgG === 'lower' && !tm3Ok && half !== 1)) return null; /* 4.20.9 — 1T: serie minori dei Paesi forti dentro (in prova); 4.20.10 — anche le coppe internazionali (in prova) */
   var k = half === 1 ? 'tm1' : 'tm2';
@@ -1995,7 +1997,7 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
   /* 4.21.6 — PROSSIMO GOL 2T: traccia completa 20/10-2/11, top campionati e prime divisioni con mercato ≥ 85%: 92/97 (94,8%)
      contro 88% del mercato e 85,6% che mostravamo (A 95,7% · B 95,8% con mercato 85-88%). Tra 80% e 85% di mercato 82% =
      mercato: la soglia resta 85%. Stima: 94%, o mercato + 2 punti se più alto (massimo 97%). */
-  if (k === 'tm2') p = Math.max(TIP_TM2_P, Math.min(0.97, M.p + 0.02));
+  if (k === 'tm2') p = wTop ? TIP_W2_P : Math.max(TIP_TM2_P, Math.min(0.97, M.p + 0.02)); /* 4.21.8 — femminili: 92% */
   if (k === 'tm3') { p = Math.min(0.95, p + TIP_TM3_UP); green = lgG === 'women' || lgG === 'lower' ? 1 : warm; } /* 4.3.4 — un solo livello: vince 87% sia da OTTIMA sia da DA VALUTARE, la % non distingue → sempre OTTIMA */
   if (k === 'tm1' && M.p >= TIP_TM1_MID[0] && M.p < TIP_TM1_MID[1]) p = Math.max(0.01, p - TIP_TM1_MID_DOWN); /* 4.20.4 — vedi TIP_TM1_MID */
   if (k === 'tm1' && fav && fav.st === 'sotto') p = Math.max(0.01, p - TIP_FAV1_SOTTO); /* 4.20.8 — favorita sotto: −8 */
@@ -2086,15 +2088,16 @@ function tipTrialKeyX(x) { return x && /^t[chk][12]$/.test(x.k) && x.cn != null 
 var TIP_GG = { 1: { from: 12, to: 19, line: 3.5, p: 0.75 }, 2: { from: 47, to: 58, line: 3.25, p: 0.86, early: 50, pEarly: 0.91 } }, TIP_GG_KEEP = 1;
 function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
   var W = TIP_GG[half];
-  if (!W || !x || women || !U.finite(min) || min < W.from || min > W.to) return null;
+  if (!W || !x || (women && half === 1) || !U.finite(min) || min < W.from || min > W.to) return null;
   var pl = Number(x.preLine);
   if (!U.finite(pl) || pl < W.line - 1e-9) return null;
   if (U.finite(x.lineJump) && x.lineJump >= 0.5) return null;
   var lgN = String(x.league || ''), tierG = tipLeagueTier({ league: lgN, home: x.home, away: x.away }), lgG = tipLgGroup(lgN, tierG);
-  if (lgG === 'women') return null; /* 4.20.10 — coppe internazionali dentro */
+  var wTop = half === 2 && lgG === 'women' && tipWomenTop(lgN); /* 4.21.8 — prime divisioni femminili (in prova) */
+  if ((lgG === 'women' || women) && !wTop) return null; /* 4.20.10 — coppe internazionali dentro */
   /* 4.21.1 — 🔥 2T solo nei CAMPIONATI PRINCIPALI (prime divisioni, top, serie minori dei Paesi forti): export 1-2/11 36/37 (97%)
      contro 84/102 (82%) degli altri, a quota minima 1.16 → solo lì, ed è STABILE */
-  if (half === 2 && tierG !== 'major') return null;
+  if (half === 2 && tierG !== 'major' && !wTop) return null;
   if (half === 1 && lgG === 'youth+') return null; /* 4.21.6 — giovanili dei Paesi forti: 🔥 1T sotto il mercato */
   /* 4.21.6 — KEEP ≥ 1: il book si aspetta ancora almeno i gol previsti prima per il tempo che resta (vedi TIP_GG) */
   var llv = Number(x.liveLine), keep = U.finite(llv) && pl > 0 ? Math.max(0, llv - G) / (pl * Math.max(0.3, (94 - min) / 94)) : null;
@@ -2107,7 +2110,7 @@ function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
     sot = a.t + b.t - pa.t - pb.t;
     if (sot < 1) return null;
   }
-  return { k: half === 1 ? 't1x' : 't2x', p: W.early && min <= W.early ? W.pEarly : W.p, green: TIP_GOAL_GREEN, warm: 0.70,
+  return { k: half === 1 ? 't1x' : 't2x', p: wTop ? TIP_W2_P : W.early && min <= W.early ? W.pEarly : W.p, green: TIP_GOAL_GREEN, warm: 0.70,
     o: { rule: '4.21.6', pl: pl, ll: x.liveLine, keep: Math.round(keep * 100) / 100, lgG: lgG, sotRecent: sot, prevMin: pv ? pv.min : null } };
 }
 function tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev) {
@@ -2513,6 +2516,13 @@ function tipLeagueTier(m) {
   return tipLeagueStrong(m) ? 'minor+' : 'minor';
 }
 var TIP_LG_WOMEN = /women|femenin|feminin|frauen|damallsvenskan|toppserien|\bwsl\b|liga f\b|\(w\)|\bw$/i;
+/* 4.21.8 / server 4.15.5 — FEMMINILI: solo le prime divisioni dei campionati femminili più forti, e solo 🔥 gol 2T partita da
+   gol e prossimo gol 2T, IN PROVA. Traccia completa 20/10-2/11: 🔥 2T 31/31 (mercato 86%), prossimo gol 2T con mercato ≥ 85%
+   26/26 (mercato 89%), uguali nelle due metà (19/19 e 12/12, 13/13 e 13/13). Nelle altre femminili 85% e 87%, al mercato o
+   sotto; il 1° tempo è sotto il mercato anche nelle prime divisioni (7/11) → resta fuori. Elenco scelto prima di guardare i
+   risultati (prime divisioni); pochi casi → stima prudente 92%. */
+var TIP_LG_WTOP = /^(England Super League Women|Spain Primera (Division )?Women|Spain Liga F|Germany (Frauen )?Bundesliga Women|Germany Frauen-Bundesliga|France (Division 1|D1|Premiere Ligue) Women|Italy Serie A Women|USA NWSL( Women)?|Sweden Damallsvenskan|Norway Toppserien( Women)?|Japan (Women Empowerment League|WE League)|Australia A-League Women)$/i, TIP_W2_P = 0.92;
+function tipWomenTop(league) { return TIP_LG_WTOP.test(String(league || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s*·\s*/g, ' ').trim()); }
 /* 3.91.0 — TOP CAMPIONATI E COPPE: le 5 grandi leghe, Eredivisie, Portogallo, coppe europee e grandi tornei
    per nazionali. I nomi arrivano in due forme ("England Premier League" dal live, "Premier League" dai pronostici):
    si accetta il nome esatto, con o senza il Paese davanti, così "Brazil Serie A" o "Premier League 2" restano fuori. */
@@ -2562,7 +2572,7 @@ function tipRuleOk(e) {
   if (e.k === 'tm1' || e.k === 'tm1s') { var fp = (e.factors || {}).favP; return typeof fp === 'number' && fp >= TIP_FAV1_MIN - 1e-9; }
   if (e.k !== 'tm2') return true;
   var f = e.factors || {}, g = f.lgG || '';
-  return (g === 'first' || g === 'top7' || tipLeagueTop(e)) && (f.pMkt == null || f.pMkt >= TIP_TM2_MINP - 1e-9);
+  return (g === 'first' || g === 'top7' || tipLeagueTop(e) || (g === 'women' && tipWomenTop(e.league))) && (f.pMkt == null || f.pMkt >= TIP_TM2_MINP - 1e-9);
 }
 /* 3.90.0 — una volta: segnali agganciati alla partita sbagliata (nome simile, identificativo diverso da quello del
    pronostico). Escono da statistiche e storico: dati live di una partita, forza prepartita di un'altra. */
@@ -5872,7 +5882,7 @@ var TIP_ST_LSPLIT = [['k', 'Giocata'], ['day', 'Giorno'], ['lg', 'Campionato'], 
 function tipStLiveSplit(L, key) {
   var by = function (fn, keys, lab, drill) { return keys.map(function (k) { return [lab(k), L.filter(function (e) { return fn(e) === k; }), drill ? 'data-st-drill="' + drill + ':' + k + '"' : '']; }); };
   if (key === 'day') { var bd = {}; L.forEach(function (e) { (bd[tipLiveDay(e)] = bd[tipLiveDay(e)] || []).push(e); }); return tipStDayRows(bd); }
-  if (key === 'lg') return { rows: [['⭐ Top campionati e coppe', L.filter(tipLeagueTop), 'data-st-drill="lg:top"'], ['Serie minori Paesi forti', L.filter(function (e) { return (e.factors || {}).lgG === 'lower'; })], ['Coppe internazionali', L.filter(function (e) { return (e.factors || {}).lgG === 'cup'; })]].concat(Object.keys(TIP_LG_NAME).map(function (g) { return [TIP_LG_NAME[g], L.filter(function (e) { return (e.lg || tipLeagueTier(e)) === g; }), 'data-st-drill="lg:' + g + '"']; })) };
+  if (key === 'lg') return { rows: [['⭐ Top campionati e coppe', L.filter(tipLeagueTop), 'data-st-drill="lg:top"'], ['Serie minori Paesi forti', L.filter(function (e) { return (e.factors || {}).lgG === 'lower'; })], ['Coppe internazionali', L.filter(function (e) { return (e.factors || {}).lgG === 'cup'; })], ['Femminili (prime divisioni)', L.filter(function (e) { return (e.factors || {}).lgG === 'women' && tipWomenTop(e.league); })]].concat(Object.keys(TIP_LG_NAME).map(function (g) { return [TIP_LG_NAME[g], L.filter(function (e) { return (e.lg || tipLeagueTier(e)) === g; }), 'data-st-drill="lg:' + g + '"']; })) };
   if (key === 'p') return { rows: [[0, 75], [75, 80], [80, 85], [85, 90], [90, 101]].map(function (b) { return [b[0] ? (b[1] > 100 ? b[0] + '% e oltre' : b[0] + '–' + b[1] + '%') : 'sotto 75%', L.filter(function (e) { var q = (e.p || 0) * 100; return q >= b[0] && q < b[1]; })]; }) };
   if (key === 'g') return { rows: [0, 1, 2, 3].map(function (g) { return [g === 3 ? '3 gol o più' : g + (g === 1 ? ' gol' : ' gol'), L.filter(function (e) { var G = (e.gh || 0) + (e.ga || 0); return g === 3 ? G >= 3 : G === g; })]; }) };
   if (key === 'min') return { rows: [[0, 15], [15, 30], [30, 46], [46, 60], [60, 75], [75, 200]].map(function (b) { return [b[1] > 100 ? 'dal 75’' : b[0] + '’–' + (b[1] - 1) + '’', L.filter(function (e) { var m = e.min || 0; return m >= b[0] && m < b[1]; })]; }) };
