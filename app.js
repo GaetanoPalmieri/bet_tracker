@@ -1,4 +1,4 @@
-const APP_VERSION = '4.20.11';
+const APP_VERSION = '4.21.4';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -2983,7 +2983,7 @@ function diaryPage(which) {
     '<section class="card diary-card"><h2>Per giorno della settimana</h2><p class="muted diary-hint">Risultato medio nel periodo scelto, per giorno.</p>' +
     diaryWeekdayChart(points) +
     '</section>';
-  return money + chart + bars + stats + weekday + monthly + log;
+  return diaryBubCard() + money + chart + bars + stats + weekday + monthly + log;
 }
 
 /* ---------- 2.1.0 — Per giorno della settimana ---------- */
@@ -4431,3 +4431,105 @@ document.addEventListener(
   },
   true,
 );
+/* ===== BOLLE "ANALISI" (comuni alle app) =====
+   Cerchi con l'area proporzionale al valore, impaccati attorno al centro (stile app della banca): il più grande al
+   centro, gli altri appoggiati vicino. Un valore a zero resta una bolla piccola e spenta. Senza librerie. */
+function bubPack(items, W, H) {
+  var vals = items.map(function (it) { return Math.max(0, Number(it.value) || 0); });
+  var max = Math.max.apply(null, vals.concat([0]));
+  var R = Math.min(W, H) * 0.34, Rmin = R * 0.36, gap = Math.min(W, H) * 0.025;
+  var C = items.map(function (it, i) { return { i: i, r: vals[i] > 0 && max > 0 ? Math.max(Rmin, R * Math.sqrt(vals[i] / max)) : Rmin * 0.92 }; });
+  var order = C.slice().sort(function (a, b) { return b.r - a.r; }), placed = [];
+  order.forEach(function (c, n) {
+    if (!n) { c.x = 0; c.y = 0; placed.push(c); return; }
+    var best = null, A = 0, gx = 0, gy = 0;
+    placed.forEach(function (q) { var w = q.r * q.r; A += w; gx += q.x * w; gy += q.y * w; });
+    gx /= A; gy /= A;
+    placed.forEach(function (p) {
+      for (var k = 0; k < 72; k++) {
+        var a = (k / 72) * Math.PI * 2, d = p.r + c.r + gap, x = p.x + Math.cos(a) * d, y = p.y + Math.sin(a) * d;
+        var ok = placed.every(function (q) { return Math.hypot(q.x - x, q.y - y) >= q.r + c.r + gap - 0.01; });
+        if (!ok) continue;
+        /* vicino al baricentro (gruppo compatto); la seconda va in alto a destra come nella banca */
+        var score = Math.hypot((x - gx) * (H / W), (y - gy)) + (n === 1 ? Math.abs(Math.atan2(y, x) + 0.55) * 4 : 0);
+        if (!best || score < best.s) best = { x: x, y: y, s: score };
+      }
+    });
+    c.x = best ? best.x : 0; c.y = best ? best.y : 0; placed.push(c);
+  });
+  var x0 = Math.min.apply(null, C.map(function (c) { return c.x - c.r; })), x1 = Math.max.apply(null, C.map(function (c) { return c.x + c.r; }));
+  var y0 = Math.min.apply(null, C.map(function (c) { return c.y - c.r; })), y1 = Math.max.apply(null, C.map(function (c) { return c.y + c.r; }));
+  var pad = Math.min(W, H) * 0.04, s = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (y1 - y0), 1.25);
+  var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  return C.map(function (c) { return { x: W / 2 + (c.x - cx) * s, y: H / 2 + (c.y - cy) * s, r: c.r * s }; });
+}
+/* items: [{key, label, value, text (cifra già scritta), color, ink?}] → bolle; attr(it) = attributo per il tocco */
+function bubChartHtml(items, o) {
+  o = o || {};
+  var W = 340, H = o.h || 260, P = bubPack(items, W, H), esc = o.esc || function (s) { return String(s); };
+  return '<div class="bub-wrap" style="aspect-ratio:' + W + '/' + H + '">' + items.map(function (it, i) {
+    var p = P[i], zero = !(Number(it.value) > 0), d = p.r * 2, fs = Math.max(11, Math.min(26, p.r * 0.3)), ls = Math.max(9, Math.min(14, p.r * 0.15));
+    var small = p.r < 34;
+    return '<button type="button" class="bub' + (zero ? ' zero' : '') + (it.on ? ' on' : '') + '" ' + (o.attr ? o.attr(it) : '') +
+      ' style="left:' + ((p.x - p.r) / W * 100).toFixed(2) + '%;top:' + ((p.y - p.r) / H * 100).toFixed(2) + '%;width:' + (d / W * 100).toFixed(2) + '%;--bc:' + (zero ? 'var(--bub-zero)' : it.color) + ';--bi:' + (it.ink || (zero ? 'var(--bub-zero-ink)' : '#0b0d0c')) + ';animation-delay:' + (i * 60) + 'ms" aria-label="' + esc(it.label + ': ' + it.text) + '">' +
+      '<b style="font-size:' + fs.toFixed(1) + 'px">' + esc(it.text) + '</b>' + (small ? '' : '<small style="font-size:' + ls.toFixed(1) + 'px">' + esc(it.label) + '</small>') + '</button>';
+  }).join('') + '</div>';
+}
+/* legenda come nella banca: pallino, nome, cifra sotto */
+function bubLegendHtml(items, o) {
+  o = o || {};
+  var esc = o.esc || function (s) { return String(s); };
+  return '<div class="bub-leg">' + (o.title ? '<p class="bub-leg-t">' + esc(o.title) + '</p>' : '') + items.map(function (it) {
+    var zero = !(Number(it.value) > 0);
+    return '<' + (o.attr ? 'button type="button" ' + o.attr(it) : 'div') + ' class="bub-li' + (o.attr ? ' tap' : '') + '"><i style="--bc:' + (zero ? 'var(--bub-zero)' : it.color) + '"></i><span><b>' + esc(it.label) + '</b><small>' + esc(it.sub || it.text) + '</small></span>' + (it.side ? '<em>' + esc(it.side) + '</em>' : '') + (o.attr ? '<u aria-hidden="true">›</u>' : '') + '</' + (o.attr ? 'button' : 'div') + '>';
+  }).join('') + '</div>';
+}
+/* mesi in alto (set · ott · nov): months = [{key, label}] */
+function bubMonthsHtml(months, sel, attrName) {
+  return '<div class="bub-months" role="tablist">' + months.map(function (m) {
+    return '<button type="button" role="tab" aria-selected="' + (m.key === sel) + '" class="' + (m.key === sel ? 'on' : '') + '" ' + attrName + '="' + m.key + '">' + m.label + '</button>';
+  }).join('') + '</div>';
+}
+function bubLastMonths(n, endIso) {
+  var MS = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'], d = endIso ? new Date(endIso + '-01T12:00:00') : new Date(), out = [];
+  for (var i = n - 1; i >= 0; i--) { var x = new Date(d.getFullYear(), d.getMonth() - i, 1); out.push({ key: x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0'), label: MS[x.getMonth()], long: x.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }) }); }
+  return out;
+}
+
+/* 4.21.0 — ANALISI A BOLLE nel Saldo (Andamento): mesi in alto (set · ott · nov), bolle Vinto / Perso / Depositi /
+   Prelievi del mese (versamenti esclusi da vinto e perso), elenco sotto; un tocco apre i giorni o i movimenti. */
+function diaryBubData(ym) {
+  var series = diarySeries(), days = series.filter(function (p) { return p.date.slice(0, 7) === ym && p.delta != null; });
+  var up = days.filter(function (p) { return p.delta > 0; }), dn = days.filter(function (p) { return p.delta < 0; });
+  var fl = realFlows().filter(function (t) { return dayKey(t.date).slice(0, 7) === ym; });
+  var dep = fl.filter(function (t) { return t.amount > 0; }), wd = fl.filter(function (t) { return t.amount < 0; });
+  var sum = function (a, f) { return a.reduce(function (s, x) { return s + Math.abs(f(x)); }, 0); };
+  var money = function (v) { return Math.round(v).toLocaleString('it-IT') + ' €'; };
+  var W = sum(up, function (p) { return p.delta; }), L = sum(dn, function (p) { return p.delta; }), D = sum(dep, function (t) { return t.amount; }), P = sum(wd, function (t) { return t.amount; });
+  return [
+    { key: 'win', label: 'Vinto', value: W, text: money(W), sub: U.money(W) + ' · ' + up.length + (up.length === 1 ? ' giorno in aumento' : ' giorni in aumento'), color: 'var(--bub-in)', days: up },
+    { key: 'loss', label: 'Perso', value: L, text: money(L), sub: U.money(L) + ' · ' + dn.length + (dn.length === 1 ? ' giorno in calo' : ' giorni in calo'), color: 'var(--bub-loss)', days: dn },
+    { key: 'dep', label: 'Depositi', value: D, text: money(D), sub: U.money(D) + ' · ' + dep.length + (dep.length === 1 ? ' versamento' : ' versamenti'), color: 'var(--bub-dep)', flows: dep },
+    { key: 'wd', label: 'Prelievi', value: P, text: money(P), sub: U.money(P) + ' · ' + wd.length + (wd.length === 1 ? ' prelievo' : ' prelievi'), color: 'var(--bub-save)', flows: wd },
+  ];
+}
+function diaryBubCard() {
+  var months = bubLastMonths(3), sel = diaryUI.bubM && months.some(function (m) { return m.key === diaryUI.bubM; }) ? diaryUI.bubM : months[2].key;
+  var items = diaryBubData(sel), mo = months.find(function (m) { return m.key === sel; }), net = items[0].value - items[1].value;
+  var has = items.some(function (i) { return i.value > 0; });
+  return '<section class="card diary-card bub-card"><div class="bub-head"><div><h2>Analisi</h2><p>' + (has ? 'Risultato del mese <b class="' + sClass(net) + '">' + sMoney(U.round(net)) + '</b> · ' : '') + U.esc(mo.long) + '</p></div></div>' +
+    bubMonthsHtml(months, sel, 'data-bubm') +
+    (has ? bubChartHtml(items, { esc: U.esc, attr: function (it) { return 'data-bubk="' + it.key + '"'; } }) + bubLegendHtml(items, { esc: U.esc, title: 'Riepilogo', attr: function (it) { return 'data-bubk="' + it.key + '"'; } })
+      : '<p class="bub-empty">Nessun giorno segnato a ' + U.esc(mo.long) + '.</p>') + '</section>';
+}
+document.addEventListener('click', function (ev) {
+  var m = ev.target.closest && ev.target.closest('.diary-card.bub-card [data-bubm]');
+  if (m) { diaryUI.bubM = m.getAttribute('data-bubm'); render(); return; }
+  var k = ev.target.closest && ev.target.closest('.diary-card.bub-card [data-bubk]');
+  if (!k) return;
+  var months = bubLastMonths(3), sel = diaryUI.bubM || months[2].key, it = diaryBubData(sel).find(function (x) { return x.key === k.getAttribute('data-bubk'); });
+  if (!it) return;
+  var rows = it.days ? it.days.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).map(function (p) { return '<div class="bub-srow"><span>' + U.esc(dLabel(p.date)) + '</span><b class="' + sClass(p.delta) + '">' + sMoney(p.delta) + '</b></div>'; })
+    : it.flows.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).map(function (t) { return '<div class="bub-srow"><span>' + U.esc(U.date(t.date)) + '</span><b class="' + (t.amount < 0 ? 'negative' : 'positive') + '">' + (t.amount < 0 ? '−' : '+') + U.money(Math.abs(t.amount)) + '</b></div>'; });
+  sheetModal(sheetHead(it.label, { sub: (months.find(function (x) { return x.key === sel; }) || {}).long || '' }) + '<div class="bub-slist">' + (rows.join('') || '<p class="muted">Niente in questo mese.</p>') + '</div>');
+});

@@ -1,0 +1,92 @@
+BET TRACKER 1.1.8
+
+AGGIORNAMENTO
+Carica TUTTI i file di questo ZIP nella stessa posizione della precedente app, conservando cartella icons e manifest. Non caricare soltanto index.html: ora codice e stile sono anche nei file app.js, app.css, shared.js e shared.css.
+Mantieni lo stesso indirizzo e lo stesso browser per ritrovare i dati. Esporta prima un backup dalla versione precedente e non cancellare i dati del sito.
+
+NOVITA
+- Esiti per evento nelle multiple; evento annullato con quota effettiva 1 e quota originale conservata.
+- Esito complessivo automatico o manuale, cash out e incasso effettivo.
+- Annulla per 12 secondi dopo un esito rapido.
+- Data giocata e data liquidazione separate, filtri con inizio e fine del periodo.
+- Ricerca per evento/pronostico, calendario con numero e risultato delle giocate selezionate.
+- Grafico con date e dettaglio al tocco, confronto singole/multiple.
+- Pronostici preferiti e recenti, Over 0.5–10.5 HT/FT e testo libero.
+- Movimenti modificabili e retrodatabili, saldo iniziale modificabile, limite mensile facoltativo sulle puntate.
+- Backup con riepilogo prima del ripristino, data di esportazione richiesta e recupero anche in caso di dati locali corrotti.
+- Altri esiti, Modifica ed Elimina sempre visibili sulla stessa riga nelle scommesse in corso e nello storico.
+- Barra di navigazione in stile Money Tracker, pulsante inferiore Home neutro.
+- Animazioni di pressione su tutti i pulsanti, rispettando la preferenza di movimento ridotto.
+- Campi data e ora compatti; icone ICO e PNG, inclusa icona Apple alla radice.
+
+DATI
+La migrazione conserva le giocate e i movimenti precedenti. Gli esiti precedenti senza una data di liquidazione possono essere corretti da Altri esiti scommessa; non vengono inventate date per i grafici.
+Percentuale vinte = vinte / (vinte + perse) × 100, con conteggio visibile. Esclude in corso, annullate e cash out. Ogni multipla conta una sola volta. Nessun esito vinto/perso: —. In Statistiche rispetta i filtri. Il limite mensile conta tutte le puntate inserite nel mese e non blocca la registrazione.
+I dati rimangono locali. La data ultima esportazione indica la richiesta di download; verifica che il file sia stato effettivamente salvato.
+
+VERIFICA
+Testate interazioni nel DOM, saldi/esiti, annullamenti, filtri, backup e errori di salvataggio. La resa grafica e i comportamenti specifici di Safari/iPhone richiedono una verifica sul dispositivo.
+
+ICONA
+Pubblica tutto il contenuto dello ZIP nella cartella del sito. Se iPhone conserva la vecchia icona, rimuovi solo il collegamento dalla schermata Home e aggiungilo di nuovo da Safari dopo aver aggiornato la pagina. Non cancellare i dati del sito.
+
+INSERIMENTO COMPATTO 1.1.2
+Puntata e riepilogo data in alto. La data è già compilata: tocca Modifica per cambiarla. Partita su una riga, pronostico e quota affiancati. Nelle multiple è aperto un solo evento; gli altri mostrano partita, pronostico e quota in una riga espandibile. Aggiungi evento controlla prima che quello corrente sia completo. La rimozione aggiorna numerazione e quota. Barra inferiore con quota totale, incasso potenziale e Salva. Gli stessi miglioramenti valgono per la modifica di una scommessa esistente.
+Verificati inserimento singola e multipla a cinque eventi, modifica/rimozione, pronostici, totali e salvataggio senza duplicati. Resa su Safari/iPhone da verificare sul dispositivo.
+
+
+AGGIORNAMENTO 1.1.4
+- Scommesse in corso: pulsanti rapidi Vinta/Persa spostati in alto a destra, più grandi e solo a icona.
+- Nuova/Modifica scommessa: Salva spostato nell’header in alto a destra con sola icona di spunta.
+- Rimossa la X di chiusura dall’editor scommessa; si chiude toccando/cliccando fuori dal pannello.
+- Selezione Esito/Pronostico spostata in un pannello dedicato separato, con scelte rapide e inserimento personalizzato.
+
+
+AGGIORNAMENTO 1.1.5
+- Card scommesse in corso e storico più compatte.
+- Altri esiti, Modifica ed Elimina riuniti sulla stessa linea.
+- Preferito ridotto alla sola icona stella: ☆ non preferito, ★ preferito.
+- I pronostici salvati come preferiti compaiono ora in una sezione Preferiti dedicata, in alto nel pannello Scegli esito / pronostico.
+- Toccando di nuovo la stella il pronostico viene rimosso dai preferiti.
+
+
+AGGIORNAMENTO 1.1.6
+- Nuove scommesse con puntata predefinita di 10,00 €; la spunta di salvataggio usa 10,00 € anche se il campo viene lasciato vuoto.
+- Selezione esito a due livelli: prima la tipologia, poi il valore specifico.
+- Tipologie iniziali: OVER FT, OVER HT, OVER MINUTI, OVER ASIATICO FT e OVER ASIATICO HT.
+- OVER FT/HT: valori da 0.5 a 10.5.
+- OVER MINUTI: entro 10, 20, 30, 40, 50, 60, 70 e 80 minuti.
+- OVER ASIATICO FT/HT: valori da 1 a 5.
+- Pulsante Indietro nel secondo livello; Preferiti ancora disponibili direttamente nel primo pannello.
+
+
+AGGIORNAMENTO 1.1.7
+- Swipe verso sinistra sul contenuto principale per passare alla scheda successiva, come toccando la relativa voce della barra di navigazione.
+- Sequenza: Home → Scommesse → Statistiche → Altro.
+- Su Altro lo swipe a sinistra non ricomincia da Home.
+- La gesture è disattivata quando sono aperti modali/pannelli e quando il gesto parte da pulsanti, campi, link o controlli interattivi, per evitare cambi scheda involontari.
+
+
+AGGIORNAMENTO 1.1.8
+- Swipe verso sinistra per avanzare: Home → Scommesse → Statistiche → Altro.
+- Swipe verso destra per tornare alla scheda precedente.
+- Nessun loop alle estremità: Home resta la prima scheda e Altro l'ultima.
+- Aggiunta transizione visiva coerente con il verso dello swipe: la scheda corrente scorre fuori e la successiva/precedente entra dal lato opposto.
+- La transizione rispetta l'impostazione di sistema “Riduci movimento”.
+- Restano esclusi dallo swipe modali, pannello esiti e controlli interattivi per evitare cambi involontari.
+
+
+Novità 1.1.13
+- Selettore strutturato Partita / evento per club e nazionali.
+- Club: prima Maschile/Femminile, poi Prima squadra/Giovanile; per le giovanili scelta fascia U23/U21/U20/U19/U18/U17/U16/U15; paese con bandiera, campionato e due squadre.
+- Nazionali: prima Maschile/Femminile, poi Prima squadra/Giovanile; per le giovanili scelta fascia U23/U21/U20/U19/U18/U17/U16/U15; competizione/tipo partita e due nazionali.
+- Catalogo locale ampio con arricchimento online delle leghe tramite TheSportsDB quando disponibile.
+- Il campo evento resta sempre modificabile manualmente.
+
+
+Novità 1.1.15
+- Rimossa la voce generica “Prima squadra” nel percorso club.
+- Club: Maschile/Femminile → Campionati senior o giovanili → Paese → divisioni/campionati reali.
+- Le divisioni vengono caricate online da TheSportsDB quando disponibile e ordinate per livello; fallback locale offline.
+- Le squadre della lega selezionata vengono proposte online come suggerimenti, mantenendo sempre la scrittura libera.
+- Nazionali: categoria Senior/Giovanile separata, con sesso e fascia d’età.

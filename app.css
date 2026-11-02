@@ -1804,3 +1804,50 @@ main .alt-sec .flow-row{background:transparent!important;border:0!important;bord
 main .alt-sec .flow-row .flow-actions button{min-height:30px!important;padding:0 10px!important;font-size:12px!important;margin:0!important}
 .alt-empty{margin:4px 0 0;font-size:13px}
 .alt-sec .actions{display:flex;gap:8px;flex-wrap:wrap}
+/* ===== Bolle "Analisi" (comuni alle app) ===== */
+:root{--bub-zero:rgba(120,128,136,.16);--bub-zero-ink:rgba(120,128,136,.85);--bub-in:#16c46a;--bub-out:#7c4dff;--bub-save:#f5b53d}
+.bub-card{padding:16px 16px 10px}
+.bub-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.bub-head h2,.bub-head h3{margin:0;font-size:22px;font-weight:800;letter-spacing:-.4px}
+.bub-head p{margin:3px 0 0;font-size:13px;color:var(--suite-text-soft,#888)}
+.bub-months{display:flex;gap:22px;margin:14px 2px 2px;overflow-x:auto;scrollbar-width:none}
+.bub-months::-webkit-scrollbar{display:none}
+.bub-months button{appearance:none;-webkit-appearance:none;border:0!important;background:none!important;box-shadow:none!important;padding:4px 0!important;margin:0!important;min-height:0!important;font:inherit;font-size:15px!important;font-weight:700!important;color:var(--suite-text-soft,#888)!important;opacity:.75;cursor:pointer}
+.bub-months button.on{color:var(--suite-text,#111)!important;opacity:1}
+.bub-wrap{position:relative;width:100%;margin:6px 0 4px}
+.bub{position:absolute;aspect-ratio:1;border-radius:50%!important;border:0!important;margin:0!important;padding:0!important;min-height:0!important;background:var(--bc)!important;color:var(--bi)!important;box-shadow:none!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;cursor:pointer;animation:bubIn .5s cubic-bezier(.2,.9,.3,1.2) both;transition:transform .15s}
+.bub:active{transform:scale(.96)}
+.bub b{font-weight:800;line-height:1.05;letter-spacing:-.3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bub small{font-weight:600;opacity:.82;line-height:1.1;max-width:80%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bub.on{box-shadow:0 0 0 3px var(--suite-bg,#fff),0 0 0 5px var(--bc)!important}
+@keyframes bubIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.bub{animation:none}}
+.bub-leg{display:grid;gap:2px;margin:8px 0 2px}
+.bub-leg-t{margin:6px 2px 6px;font-size:15px;font-weight:800}
+.bub-li{appearance:none;-webkit-appearance:none;display:flex!important;align-items:center;gap:14px;width:100%;margin:0!important;padding:9px 4px!important;min-height:0!important;border:0!important;border-radius:12px!important;background:transparent!important;color:inherit!important;text-align:left;box-shadow:none!important;font:inherit}
+.bub-li.tap{cursor:pointer}
+.bub-li.tap:active{background:color-mix(in srgb,var(--suite-text,#111) 6%,transparent)!important}
+.bub-li i{flex:none;width:22px;height:22px;border-radius:50%;background:var(--bc)}
+.bub-li span{flex:1 1 auto;min-width:0;display:grid;gap:2px}
+.bub-li b{font-size:15.5px;font-weight:750}
+.bub-li small{font-size:13px;color:var(--suite-text-soft,#888);font-variant-numeric:tabular-nums}
+.bub-li em{font-style:normal;font-size:12.5px;font-weight:800;color:var(--suite-text-soft,#888);font-variant-numeric:tabular-nums}
+.bub-li u{text-decoration:none;font-size:20px;color:var(--suite-text-soft,#888);opacity:.6}
+.bub-seg{display:inline-flex;gap:3px;padding:3px;border-radius:999px;background:color-mix(in srgb,var(--suite-text,#111) 6%,transparent);flex:none}
+.bub-seg button{appearance:none;border:0!important;margin:0!important;min-height:30px!important;padding:0 12px!important;border-radius:999px!important;background:transparent!important;color:var(--suite-text-soft,#888)!important;font:inherit;font-size:12.5px!important;font-weight:800!important;box-shadow:none!important}
+.bub-seg button.on{background:var(--suite-text,#111)!important;color:var(--suite-bg,#fff)!important}
+.bub-empty{margin:18px 0;text-align:center;font-size:13.5px;color:var(--suite-text-soft,#888)}
+.bub-card,.bub-card .bub-head,.bub-card .bub-leg{text-align:left!important}
+.bub-head{padding-right:46px}
+.bub-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.bub-row .bub-months{margin:0 2px}
+
+/* bet: colori e dettagli delle bolle */
+:root{--bub-loss:#ff6b5e;--bub-dep:#4c8ff5}
+.bub-card .bub-head h2{font-size:22px!important;margin:0!important}
+.bub-card .bub-head p b{font-weight:800}
+.bub-slist{display:grid;gap:6px;max-height:70vh;overflow-y:auto}
+.bub-srow{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--suite-glass-edge);font-size:14px}
+.bub-srow b{font-variant-numeric:tabular-nums}
+.st-bub{margin-bottom:10px}
+.bub b,.bub small{color:var(--bi)!important}

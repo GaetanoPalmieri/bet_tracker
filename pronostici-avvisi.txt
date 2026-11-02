@@ -21,7 +21,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.14.9
+// Versione app: 4.15.2 (2/11: export della traccia completa, tutte le partite, un giorno alla volta) · 4.15.1 (2/11: 📊 controlli dopo il segnale a +5/+10/+15’ con notifica a parte, gol 1T anche sull’1-0 se il book è ≥75%) · 4.15.0 (2/11: gol 1T solo sullo 0-0 con le quote vere del 1T, niente ⭐, 🔥 2T solo nei campionati principali, quota raggiunta fuori)
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1189,13 +1189,13 @@ var TIP_PLAY_NAME = {
 };
 var TIP_PLAY_SHORT = { t2w: 'aspetta unico', t1w: 'aspetta 1T', t1st: 'step 1T', t1s15: '1T ≥1.50', t1s18: '1T ≥1.80', t2st3: 'step 60-80-fine', t2st2: 'step 80-fine', t2u15: 'unico ≥1.50', t2u18: 'unico ≥1.80',
   tp1: '1T a pressione', tp2: '2T a pari', tc1: '+1 angolo finale', tc2: '+2 angoli finali', th1: '+1 angolo 1T', th2: '+2 angoli 1T', tq1: '1T sotto pressione', tq2: 'favorita spinge', tg1: 'gol 1T presto', tn2: 'gol 70-80', tf1: '+1 1T partita da gol', tf2: '+1 2T partita da gol',
-  tm1: '🎯 gol 1T favorita', tm1s: '⭐ gol 1T favorita', t1x: '🔥 gol 1T partita da gol', t2x: '🔥 gol 2T partita da gol', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T avanti di 1 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
+  tm1: '🎯 gol 1T favorita', tm1s: '🎯 gol 1T favorita (80%+)', t1x: '🔥 gol 1T partita da gol', t2x: '🔥 gol 2T partita da gol', tm2: '🎯 prossimo gol 2T', tm3: '🎯 gol 2T sull’1-0', tv2: '🎯 gol 2T avanti di 1 a quota', tk1: '🎯 angolo 1T', tk2: '🎯 angolo finale' };
 TIP_PLAY_NAME.tm1 = '🎯 Prossimo gol entro l’intervallo';
 /* 4.10.0 — ⭐ PROSSIMO GOL 1T: lo stesso segnale quando la stima è 80% o più (dal vivo 91/108, 84%, contro 78% di tutti i
    1T; quota media ~1.25). È un filtro a parte (statistiche, preferiti, notifiche); il "prossimo gol 1T" senza stella
    resta per le stime sotto l'80%. Stessa partita e stesso punteggio = una sola voce: la chiave è quella del 1T. */
 TIP_PLAY_NAME.tm1s = '⭐ Prossimo gol entro l’intervallo, stima 80% o più';
-var TIP_TM1_STAR = 0.80;
+var TIP_TM1_STAR = 2; /* 4.21.1 — niente più ⭐: dal 29/10 al 2/11 il ⭐ (stima ≥80%) ha vinto 63/85 (74%) contro 107/136 (79%) del 🎯 normale. Un solo segnale, in prova */
 /* 4.20.4 / server 4.14.4 — ⭐ PROSSIMO GOL 1T CON PREZZO BET365 76-80%: la stima arrivava all'81-83% (⭐) ma vincevano molto meno.
    Segnali veri 22-31/10 con prezzo 76-80%: 70/98 (71,4%) contro 81,8% stimato (22-26/10 74,6%, 27-31/10 65,7%); archivio bet365
    4 settimane (senza tiri in porta) 74,9% contro 77,8% del prezzo. Con prezzo sotto il 76% 77% = stima, da 80% in su 27/30.
@@ -1586,6 +1586,18 @@ function tipTargetGoal(min, half, x, G, sd, prev8, prev, women) {
      (−1/−2 punti): nessuna regola, ma la favorita si registra nei fattori per controllarlo dal vivo. */
   var fav = tipFavState(x);
   if (half === 1 && !(fav && fav.p >= TIP_FAV1_MIN - 1e-9)) return null; /* 4.20.8 — gol 1T solo con favorita forte (anche se è sotto) */
+  /* 4.21.1 — GOL 1T SOLO SUL PRIMO GOL E CON LE QUOTE VERE DEL 1° TEMPO. Export 25/10-2/11 (261 chiamate chiuse):
+       quote vere 1T, 0-0            33/37 (89%)  · book 77%
+       quote vere 1T, già un gol     45/62 (73%)  · book 75%  → il 2° gol nel 1T il book lo prezza giusto (difficile)
+       solo linea della partita      120/162 (74%) · book 73% → la stima dalla linea intera non basta
+     Le partite che segnano tanto nel 1T restano coperte dal 🔥 gol 1T partita da gol.
+     4.21.2 — CON UN GOL GIÀ FATTO tornano solo le PIÙ PROBABILI PER IL BOOK (export 25/10-2/11, 153 chiamate 1T con gol):
+       tutte                                   115/153 (75%) · book 74%  → nessun vantaggio
+       nostra stima alta (80%+)                 38/53  (72%) · book 77%  → la nostra % alta non aiuta (le "ottime" 1T sono 1 su 153)
+       esattamente 1 gol e book ≥ 75%           24/29  (83%) · book 78%  → qui sì (gol nei primi 10-13’, il book resta sicuro)
+       2+ gol e book ≥ 78%                       5/10  (50%)             → mai con 2 o più gol
+     Pochi casi: restano IN PROVA. */
+  if (half === 1 && (G >= 2 || (G === 0 && M.src !== 'quote') || (G === 1 && !(M.p >= 0.75)))) return null;
   var tm3Ok = half === 2 && !lowV && G === 1 && !recent && !uefa && !amer && min <= 70 && (tier === 'minor' || tier === 'minor+' || tier === 'women' || lgG === 'lower');
   /* 4.14.0 — 2° TEMPO: solo 🎯 prossimo gol 2T, a qualsiasi quota dal 46', nei TOP CAMPIONATI (5 grandi leghe, Eredivisie,
      Portogallo, coppe europee, nazionali) e nelle PRIME DIVISIONI, con mercato bet365 ≥ 85%. Archivio bet365 22/9-22/10
@@ -1711,8 +1723,11 @@ function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
   var pl = Number(x.preLine);
   if (!U.finite(pl) || pl < W.line - 1e-9) return null;
   if (U.finite(x.lineJump) && x.lineJump >= 0.5) return null;
-  var lgN = String(x.league || ''), lgG = tipLgGroup(lgN, tipLeagueTier({ league: lgN, home: x.home, away: x.away }));
+  var lgN = String(x.league || ''), tierG = tipLeagueTier({ league: lgN, home: x.home, away: x.away }), lgG = tipLgGroup(lgN, tierG);
   if (lgG === 'women') return null; /* 4.20.10 — coppe internazionali dentro */
+  /* 4.21.1 — 🔥 2T solo nei CAMPIONATI PRINCIPALI (prime divisioni, top, serie minori dei Paesi forti): export 1-2/11 36/37 (97%)
+     contro 84/102 (82%) degli altri, a quota minima 1.16 → solo lì, ed è STABILE */
+  if (half === 2 && tierG !== 'major') return null;
   var sot = null, pv = prev8 && min - prev8.min >= 5 && min - prev8.min <= 15 ? prev8 : prev && min - prev.min >= 5 && min - prev.min <= 15 ? prev : null;
   if (half === 1) {
     if (!pv || !pv.side) return null;
@@ -1844,7 +1859,7 @@ function tipPlayKey(id, ctx) { return id + '|' + (ctx.half || 1) + '|' + (ctx.gh
    22-25/10 la % mostrata è giusta (stima e vinte entro 1-2 punti) e i risultati reggono tutti i giorni. Restano IN PROVA gli
    angoli e l'1-0 nei femminili e nelle serie minori dei Paesi forti (appena aggiunto, 4.3.2). Nel registro il campo trial
    resta com'era (serve a tenere separati i segnali della stessa partita): stabile o in prova si legge con tipIsTrial. */
-var TIP_STABLE_K = { tm1s: 1, tm2: 1, tm3: 1 }; /* 4.3.4 — prossimo gol 1T e avanti di 1 a quota restano in prova */
+var TIP_STABLE_K = { t2x: 1, tm2: 1, tm3: 1 }; /* 4.21.1 / server 4.15.0 — ⭐ tm1s in prova, 🔥 2T stabile (solo campionati principali) */ /* 4.3.4 — prossimo gol 1T e avanti di 1 a quota restano in prova */
 /* 4.14.1 — STABILE / IN PROVA. ⭐ prossimo gol 1T (stima 80% o più) stabile, 🎯 prossimo gol 1T sotto l'80% in prova.
    Prossimo gol 2T (top campionati e prime divisioni): stabile con mercato bet365 ≥ 88% (archivio 22/9-22/10: 87 segnali,
    96,6% vinte, ~3 al giorno, quota ~1.06), in prova tra 85% e 88% (186 segnali, 88,2%, ~6 al giorno, quota ~1.10). */
@@ -1934,7 +1949,7 @@ var TIP_K_OFF = { t1s18: 1, t2u18: 1, tp1: 1, tp2: 1, tc2: 1, th2: 1, tq1: 1, th
    punteggio: parte quando le squadre spingono (almeno un tiro in porta negli ultimi 5-15 minuti e mercato bet365 ≥ 70%).
    Più la sua ⏳ quota raggiunta. Tutti gli altri segnali live (2° tempo, angoli, step, partite da gol) sono spenti: non vengono
    generati, non notificano e non contano nelle statistiche (restano nell'Archivio e negli export). */
-var TIP_LIVE_ONLY = { tm1: 1, tm1s: 1, tr1: 1, tm2: 1, t1x: 1, t2x: 1 }; /* 4.20.9 — 🔥 partita da gol */ /* 4.14.0 — torna il prossimo gol 2T (solo top campionati e prime divisioni) */
+var TIP_LIVE_ONLY = { tm1: 1, tm1s: 1, tm2: 1, t1x: 1, t2x: 1 }; /* 4.21.1 — via la quota raggiunta (46% a quota media 1.76, export 2/11) */ /* 4.20.9 — 🔥 partita da gol */ /* 4.14.0 — torna il prossimo gol 2T (solo top campionati e prime divisioni) */
 ['t1st', 't1s15', 't1s18', 't2st3', 't2st2', 't2u15', 't2u18', 't2w', 't1w', 'tp1', 'tp2', 'tc1', 'tc2', 'th1', 'th2', 'tq1', 'tq2', 'tg1', 'tn2', 'tf1', 'tf2', 'tm3', 'tv2', 'tk1', 'tk2', 'tr2', 'tr1'].forEach(function (k) { TIP_K_OFF[k] = 1; }); /* 4.20.8 — spenta anche la quota raggiunta 1T */
 var TIP_K_FLOOR = { t1s15: 0.65, t2u15: 0.63, t1s18: 0.65, t2u18: 0.63, t2st2: 0.63, t2st3: 0.63, t1st: 0.74, t1w: 0.65, t2w: 0.65 };
 var TIP_K_EXTRA = {};
@@ -2289,10 +2304,26 @@ function tipWaitText(i: any, Q: number, short?: boolean) {
 /* 4.9.0 — IL FILTRO IN EVIDENZA NELLA NOTIFICA: il titolo comincia con il filtro che ha generato il segnale, poi % e
    livello (OTTIMA / DA VALUTARE) e, se il filtro è in prova, "in prova". Sotto: la giocata, le squadre, il campionato,
    minuto/risultato/quote. Le quote raggiunte dicono da quale filtro nascono. */
-const TIP_FILTER_NAME: any = { tm1: "Gol 1T favorita", tm1s: "⭐ Gol 1T favorita", t1x: "🔥 Gol 1T partita da gol", t2x: "🔥 Gol 2T partita da gol", /* 4.14.9 — nomi come nell'app */ tm2: "Prossimo gol 2T", tm3: "Gol 2T sull’1-0", tv2: "Avanti di 1 a quota", tk1: "Angolo 1T", tk2: "Angolo finale" };
+const TIP_FILTER_NAME: any = { tm1: "Gol 1T favorita", tm1s: "Gol 1T favorita (80%+)", t1x: "🔥 Gol 1T partita da gol", t2x: "🔥 Gol 2T partita da gol", /* 4.14.9 — nomi come nell'app */ tm2: "Prossimo gol 2T", tm3: "Gol 2T sull’1-0", tv2: "Avanti di 1 a quota", tk1: "Angolo 1T", tk2: "Angolo finale" };
 function tipFilterName(k: string) {
   const n = TIP_FILTER_NAME[k] || String(TIP_PLAY_SHORT[k] || k || "").replace(/^🎯\s*/, "");
   return n ? n.charAt(0).toUpperCase() + n.slice(1) : "";
+}
+/* 4.21.1 / server 4.15.0 — ENTRARE SUBITO O ASPETTARE (come nell'app): ritmo della partita al segnale = attacchi pericolosi
+   al minuto (le due squadre, dal 1’). Segnali gol 27/10-2/11 con la traccia live:
+     1T ritmo 1,3+ 79% · subito +8% · dopo 10’ +3%  → entra subito, conviene fortemente
+     1T più basso  75% · subito  0% · dopo 10’ −4%  → subito o lascia stare
+     2T ritmo 1,3+ 94% · subito +10% · dopo 10’ +12% → conviene, anche tra 5-10’
+     2T più basso  85% · subito +2% · dopo 10’ +3%  → nessuna fretta, rivaluta tra 5-10’ */
+const TIP_ENTRY_K: any = { tm1: 1, tm1s: 1, t1x: 1, t2x: 1, tm2: 1, tm3: 1 };
+function tipEntryAdvice(e: any) {
+  if (!e || !TIP_ENTRY_K[e.k]) return null;
+  const half = (e.half || 0) === 1 || e.k === "tm1" || e.k === "tm1s" || e.k === "t1x" ? 1 : 2;
+  const sd = e.stats && e.stats.side;
+  const da = sd && sd[0] && sd[1] && U.finite(sd[0].da) && U.finite(sd[1].da) ? sd[0].da + sd[1].da : null;
+  const r = da != null && e.min > 0 ? da / Math.max(1, e.min) : null, hi = r != null && r >= 1.3;
+  if (half === 1) return r == null ? "⚡ Entra subito: nel 1T aspettare non paga" : hi ? "⚡ Entra subito: conviene fortemente" : "⚡ Subito o lascia: margine sottile";
+  return hi ? "✅ Conviene, anche tra 5-10’" : "⏳ Nessuna fretta: rivaluta tra 5-10’";
 }
 function message(e: any, x: any, upgraded: boolean, A?: any) {
   /* 4.2.0 — notifica pulita. Titolo (in grassetto): icone, % e LA giocata col numero del gol o dell'angolo;
@@ -2312,6 +2343,7 @@ function message(e: any, x: any, upgraded: boolean, A?: any) {
   return {
     title: `${upgraded ? "⬆ " : ""}${tipIsTrial(e) ? "🧪" : "🛡️"} ${tipFilterName(k)} · ${Math.round((e.p || 0) * 100)}% ${lvl}`, /* 4.9.1 — 🛡 stabile · 🧪 in prova */
     body: [`👉 ${play}`, `${e.home} – ${e.away}`, e.league ? `🏆 ${e.league}` : "", when,
+      tipEntryAdvice(e) || "", /* 4.21.1 — entrare subito o aspettare */
       /* 4.14.9 — perché è partito: favorita (gol 1T favorita) o linea gol prepartita (🔥 partita da gol) */
       (k === "tm1" || k === "tm1s") && typeof e.factors?.favP === "number" ? `💪 favorita ${Math.round(e.factors.favP * 100)}%${e.factors?.favSt === "sotto" ? " (sotto)" : ""}` : "",
       (k === "t1x" || k === "t2x") && U.finite(Number(e.factors?.pl)) ? `🔥 linea gol prepartita ${Number(e.factors.pl).toFixed(2).replace(/0$/, "")}` : "",
@@ -2781,6 +2813,98 @@ async function quotaWatch(u: any, list: any[], now: number, known: Map<string, a
   }
   return out;
 }
+/* 4.21.2 / server 4.15.1 — 📊 CONTROLLI DOPO IL SEGNALE. Per ogni segnale gol che ti è arrivato, finché il risultato non
+   cambia, il server riguarda la partita a +5, +10 e +15’ e ti manda una notifica DIVERSA da quelle dei segnali: titolo
+   "📊 CONTROLLO +10’ ▸ 🟡 IN BILICO" (🟢 tiene · 🟡 in bilico · 🔴 non conviene più), stima aggiornata e quota da cui
+   conviene ancora entrare. Se arriva il gol: "📊 CONTROLLO ▸ ⚽ GOL". Una sola serie per partita (anche con più segnali),
+   tag a parte (sostituisce il controllo precedente, non il segnale). Conta il RITMO: attacchi pericolosi al minuto dopo il
+   segnale contro la media della partita fino al segnale. Traccia live 30/10-2/11, segnali ancora senza gol (vinte · book):
+              ritmo ≥ media   70-100%   sotto 70%    book
+     1T +5’      75%            74%       57%         67%
+     1T +10’     66%            60%       52%         60%
+     1T +15’     60%            64%       15% (2/13)  54%
+     2T +5’      85%            80%       85%         81%
+     2T +10’     90%            77%       79%         77%
+     2T +15’     84%            64%       75%         70%
+   I tiri in porta nel frattempo non distinguono. Stessa tabella dell'app (tipProgress). */
+const TIP_PROG: any = { 1: { 5: [75, 72, 57], 10: [66, 60, 50], 15: [60, 56, 25] }, 2: { 5: [85, 81, 81], 10: [89, 77, 77], 15: [83, 68, 68] } };
+const TIP_PROG_B: any = { 1: { 5: 67, 10: 60, 15: 54 }, 2: { 5: 81, 10: 77, 15: 70 } }, TIP_PROG0: any = { 1: 77, 2: 88 };
+function tipSideSumS(sd: any, k: string) { return sd && sd[0] && sd[1] && U.finite(sd[0][k]) && U.finite(sd[1][k]) ? sd[0][k] + sd[1][k] : null; }
+function tipProgEval(e: any, x: any, el: number, cp: number, half: number, sd0: any) {
+  const sd = x.stats && x.stats.side;
+  const da0 = tipSideSumS(sd0, "da"), da1 = tipSideSumS(sd, "da"), t0 = tipSideSumS(sd0, "t"), t1 = tipSideSumS(sd, "t");
+  const base = da0 != null && e.min > 0 ? da0 / Math.max(1, e.min) : null, rate = da0 != null && da1 != null && da1 >= da0 ? (da1 - da0) / Math.max(1, el) : null;
+  const ratio = base && rate != null ? rate / base : null, cls = ratio == null ? 1 : ratio >= 1 ? 0 : ratio >= 0.7 ? 1 : 2;
+  const pt = TIP_PROG[half][cp][cls], edge = pt - TIP_PROG_B[half][cp];
+  const p = Math.max(0.05, Math.min(0.97, (U.finite(e.p) ? e.p : TIP_PROG0[half] / 100) * pt / TIP_PROG0[half]));
+  const v = edge >= 4 ? "ok" : edge > -3 ? "mid" : "stop";
+  return { el, cp, ratio: ratio == null ? null : Math.round(ratio * 100) / 100, sot: t0 != null && t1 != null ? Math.max(0, t1 - t0) : null, p: Math.round(p * 1000) / 1000, q: Math.ceil(100 / p) / 100, v };
+}
+function tipProgRitmo(r: number | null) { return r == null ? "ritmo n.d." : r >= 1.15 ? "ritmo in crescita" : r >= 1 ? "ritmo che tiene" : "ritmo " + Math.round((r - 1) * 100).toString().replace("-", "−") + "%"; }
+function messageProg(e: any, x: any, P: any, half: number) {
+  const hm = e.t ? new Date(e.t).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }) : "";
+  const sc = `${x.goals[0] || 0}-${x.goals[1] || 0}`, from = `↪ segnale delle ${hm} (${e.min}’) · ${tipFilterName(e.k)}`;
+  if (!P) return {
+    title: `📊 CONTROLLO ▸ ⚽ GOL al ${x.elapsed}’`,
+    body: [`${e.home} – ${e.away} · ${sc}`, "Obiettivo raggiunto: non serve più entrare", from].join("\n"),
+    tag: "bet-prog-" + e.afId, renotify: true, url: "./?live=" + encodeURIComponent(e.afId || ""),
+  };
+  const head = P.v === "ok" ? "🟢 TIENE ANCORA" : P.v === "mid" ? "🟡 IN BILICO" : "🔴 NON CONVIENE PIÙ";
+  const act = P.v === "ok" ? `si può ancora entrare da @${P.q.toFixed(2)}` : P.v === "mid" ? `non aggiungere (solo da @${P.q.toFixed(2)})` : "non investire più qui";
+  return {
+    title: `📊 CONTROLLO +${P.cp}’ ▸ ${head}`,
+    body: [`${e.home} – ${e.away} · ${sc} al ${x.elapsed}’${half === 1 ? " 1T" : ""}`, `${tipProgRitmo(P.ratio)}` + (P.sot == null ? "" : P.sot ? ` · tiri in porta +${P.sot}` : " · nessun tiro in porta"), `Ora ~${Math.round(P.p * 100)}% → ${act}`, from].join("\n"),
+    tag: "bet-prog-" + e.afId, renotify: true, url: "./?live=" + encodeURIComponent(e.afId || ""),
+  };
+}
+async function progressWatch(u: any, list: any[], now: number, originals: Map<string, any>) {
+  const A = u.prefs || {}, out = { checked: 0, sent: 0 };
+  if (A.progOff) return out;
+  const byId = new Map((list || []).map((x: any) => [x.afId, x]));
+  const groups = new Map<string, any[]>();
+  for (const e of originals.values()) {
+    if (!e || !TIP_ENTRY_K[e.k] || e.res != null || e.conditional || e.costly || e.src !== "server" || !e.push || !e.push.sent) continue;
+    if (!e.t || now - e.t > 45 * 60e3 || typeof e.afId !== "string" || !U.finite(e.min)) continue;
+    const half = (e.half || 0) === 1 || e.k === "tm1" || e.k === "tm1s" || e.k === "t1x" ? 1 : 2;
+    const gk = e.afId + "|" + half + "|" + (e.gh || 0) + "-" + (e.ga || 0);
+    if (!groups.has(gk)) groups.set(gk, []);
+    groups.get(gk)!.push(e);
+  }
+  for (const es of groups.values()) {
+    es.sort((a: any, b: any) => (a.t || 0) - (b.t || 0));
+    const e = es[0], x: any = byId.get(e.afId);
+    if (!x || !Array.isArray(x.goals) || !U.finite(x.elapsed)) continue;
+    const done: any = Object.assign({}, ...es.map((z: any) => (z.prog && z.prog.cps) || {}));
+    const half = (e.half || 0) === 1 || e.k === "tm1" || e.k === "tm1s" || e.k === "t1x" ? 1 : 2;
+    const G0 = (e.gh || 0) + (e.ga || 0), G = (x.goals[0] || 0) + (x.goals[1] || 0), st = String(x.status || "");
+    const inHalf = half === 1 ? st === "1H" && x.elapsed <= 47 : st === "2H";
+    out.checked++;
+    let P: any = null, cpKey = "";
+    if (G !== G0) {
+      if (done.goal || done.end || !inHalf || G < G0) continue;
+      if (G - G0 < (Number(e.need) || 1)) continue;
+      cpKey = "goal";
+    } else {
+      if (!inHalf) continue;
+      const el = x.elapsed - e.min, cp = el >= 15 ? 15 : el >= 10 ? 10 : el >= 5 ? 5 : 0;
+      if (!cp || el > 22 || done[cp] || done.end) continue;
+      /* statistiche al segnale: quelle salvate nel segnale o, se mancano, la scansione più vicina al minuto del segnale */
+      let sd0: any = e.stats && e.stats.side;
+      if (!sd0) { const H = tipLiveHist(e.id).filter((z: any) => (z.half || 1) === half && Math.abs(z.min - e.min) <= 2 && z.side).sort((a: any, b: any) => Math.abs(a.min - e.min) - Math.abs(b.min - e.min)); if (H.length) sd0 = H[0].side; }
+      P = tipProgEval(e, x, el, cp, half, sd0);
+      cpKey = String(cp);
+    }
+    const cps = Object.assign({}, done, { [cpKey]: P ? P.v : "goal" });
+    if (P) for (const c of [5, 10]) if (c < P.cp && !cps[c]) cps[c] = "salto";
+    if (P && P.v === "stop") cps.end = 1; /* dopo "non conviene più" niente altri controlli */
+    e.prog = { cps, last: P ? Object.assign({ min: x.elapsed, at: now }, P) : { goal: true, min: x.elapsed, at: now } };
+    const { error } = await admin.from("pronostici_segnali").update({ data: e, updated_at: new Date().toISOString() }).eq("user_id", u.id).eq("key", e.key);
+    if (error) { console.error("controlli", error.message); continue; }
+    const payload = messageProg(e, x, P, half);
+    for (const s of u.subs) if ((await send(s, payload)) === "ok") out.sent++;
+  }
+  return out;
+}
 async function runCron() {
   let pre: any = null, liveErr: any = null;
   if (TC_TOKEN) {
@@ -2863,7 +2987,7 @@ async function runAlerts() {
   const now = Date.now();
   const list = liveCache || await scanList();
   const oddsCache = new Map<string, number | null>();
-  let sent = 0, newSig = 0, evaluated = 0, qNew = 0;
+  let sent = 0, newSig = 0, evaluated = 0, qNew = 0, progSent = 0;
   const qWatch: any = {};
   for (const u of users) {
     /* stato del motore per questo utente: i suoi pronostici, i suoi parametri, lo storico delle scansioni */
@@ -2973,6 +3097,8 @@ async function runAlerts() {
       sent += qr.sent; newSig += qr.created; qNew += qr.created;
       for (const w of qr.watch) qWatch[w.afId] = { half: w.half, G: w.G, Q: Math.min(w.Q, qWatch[w.afId]?.Q ?? 9), at: now };
     } catch (e) { console.error("quota raggiunta", (e as Error).message); }
+    /* 4.21.2 — 📊 controlli dopo il segnale (+5 / +10 / +15’) */
+    try { const pr = await progressWatch(u, list, now, originals); progSent += pr.sent; } catch (e) { console.error("controlli", (e as Error).message); }
     /* storico delle scansioni (serve al modello completo dopo 5 minuti) */
     if (snaps.length) {
       tipLiveHistMany(snaps);
@@ -2982,7 +3108,7 @@ async function runAlerts() {
   /* pulizia: segnali più vecchi di 10 giorni */
   if (new Date(now).getUTCMinutes() < 3) await admin.from("pronostici_segnali").delete().lt("created_at", new Date(now - 60 * 86400e3).toISOString()); /* 3.99.0 — 60 giorni (prima 10): servono all'export */
   try { await setState("qWatch", qWatch); } catch { /* ok */ }
-  return { users: users.length, live: list.length, evaluated, newSignals: newSig, quotaReached: qNew, sent, bzCalls, cpu: cpuInfo };
+  return { users: users.length, live: list.length, evaluated, newSignals: newSig, quotaReached: qNew, sent, progSent, bzCalls, cpu: cpuInfo };
 }
 
 /* 4.14.3 — RISPOSTE COMPRESSE (gzip). Supabase (piano gratuito) conta i dati in uscita: 6,8 GB su 5 a ottobre. La lista
@@ -3023,6 +3149,32 @@ async function handleReq(req: Request): Promise<Response> {
   if (error || !au?.user) return json({ error: "Accesso non valido: rifai l'accesso alla sincronizzazione." }, 401);
   let body: any = {};
   try { body = await req.json(); } catch { /* vuoto */ }
+  /* 4.21.3 / server 4.15.2 — TRACCIA COMPLETA PER L'ANALISI. Il server salva TUTTE le partite live ogni ~5 minuti e le tiene
+     14 giorni (TRACE_DAYS), ma l'export del retraining prende solo le partite con un tuo segnale, degli ultimi 3 giorni e
+     dall'export precedente (era ~260 partite). Qui: un giorno alla volta (UTC), tutte le partite, righe compatte (array, senza
+     nomi ripetuti), a pagine da 2.000 per id. Solo lettura, nessun dato personale. Colonne in TRACE_COLS. */
+  if (body.action === "trace_full") {
+    const day = String(body.day || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return json({ error: "Giorno non valido" }, 400);
+    const t0 = Date.parse(day + "T00:00:00Z");
+    if (!Number.isFinite(t0) || t0 < Date.now() - (TRACE_DAYS + 1) * 86400e3 || t0 > Date.now()) return json({ error: "Il server tiene la traccia solo " + TRACE_DAYS + " giorni" }, 400);
+    const cursor = Math.max(0, Math.floor(Number(body.cursor) || 0)), size = 2000;
+    let q = admin.from("pronostici_traccia").select("id,af_id,min,st,league,home,away,d,created_at")
+      .gte("created_at", new Date(t0).toISOString()).lt("created_at", new Date(t0 + 86400e3).toISOString());
+    if (cursor) q = q.gt("id", cursor);
+    const { data, error: e } = await q.order("id", { ascending: true }).limit(size);
+    if (e) return json({ error: e.message }, 500);
+    const teams: any = {}, n2 = (v: any) => Array.isArray(v) ? v.map((z: any) => (z == null ? null : Number(z))) : null;
+    const og = (o: any) => o && o.line != null ? [o.min ?? null, o.line, o.over ?? null, o.under ?? null] : null;
+    const rows = (data || []).map((r: any) => {
+      if (!teams[r.af_id]) teams[r.af_id] = [r.league || "", r.home || "", r.away || ""];
+      const d = r.d || {};
+      return [r.af_id, Date.parse(r.created_at), r.min, r.st, n2(d.g), n2(d.s), n2(d.t), n2(d.da), n2(d.att), n2(d.pos), n2(d.red), n2(d.c), d.ll ?? null, d.pl ?? null, og(d.go && d.go.ht), og(d.go && d.go.ft)];
+    });
+    const last = data && data.length ? data[data.length - 1].id : null;
+    return json({ day, rows, teams, next: data && data.length === size ? last : null,
+      cols: ["af_id", "t", "min", "st", "g", "s", "t_porta", "da", "att", "pos", "red", "c", "ll", "pl", "go_ht", "go_ft"], ver: "4.15.2" });
+  }
   if (body.action === "training") {
     const table = body.kind === "finals" ? "pronostici_finali" : body.kind === "trace" ? "pronostici_traccia" : body.kind === "signals" ? "pronostici_segnali" : body.kind === "hist" ? "pronostici_storico_quote" : null;
     if (!table) return json({ error: "Tipo di registro non valido" }, 400);
@@ -3055,7 +3207,7 @@ async function handleReq(req: Request): Promise<Response> {
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
     const tb: any = (await getState("tcTables")) || {}, tbK = Object.keys(tb).filter((k) => k !== "_off");
     const tables = { leagues: tbK.length, ok: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.t).length, 0), err: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.err).length, 0), off: tb._off || null };
-    return json({ ver: "4.14.9", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.15.2", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -3068,7 +3220,7 @@ async function handleReq(req: Request): Promise<Response> {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.14.9" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.15.2" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -3082,14 +3234,16 @@ async function handleReq(req: Request): Promise<Response> {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.14.9" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.15.2" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
     const { data: subs } = await admin.from("push_subscriptions").select("*").eq("app", APP).eq("user_id", au.user.id).eq("enabled", true);
     if (!subs?.length) return json({ error: "Nessun telefono iscritto: attiva prima le notifiche in Altro › Notifiche." });
     let sent = 0;
-    for (const s of subs) if ((await send(s, { title: "🎯🟢 84% · 3° angolo entro il 45’", body: "Squadra di casa – Squadra ospite\n🏆 Israel Liga Leumit\n⏱ 35’ 1T · 1-0 · angoli 2 · angolo 1T", tag: "bet-live-test", url: "./?live=1" })) === "ok") sent++;
+    for (const s of subs) if ((await send(s, { title: "🛡️ Gol 1T favorita · 80% 🟠 DA VALUTARE", body: "👉 1° gol entro il 45’\nSquadra di casa – Squadra ospite\n🏆 Israel Liga Leumit\n⏱ 18’ 1T · 0-0 · quota 1.40 · minima 1.25\n⚡ Entra subito: conviene fortemente", tag: "bet-live-test", url: "./?live=1" })) === "ok") sent++;
+    /* 4.21.2 — e un 📊 controllo di esempio, per vedere la differenza */
+    for (const s of subs) await send(s, { title: "📊 CONTROLLO +10’ ▸ 🟡 IN BILICO", body: "Squadra di casa – Squadra ospite · 0-0 al 28’ 1T\nritmo −25% · tiri in porta +1\nOra ~61% → non aggiungere (solo da @1.64)\n↪ segnale delle 10:38 (18’) · Gol 1T favorita", tag: "bet-prog-test", renotify: true, url: "./?live=1" });
     if (!vapidOk) return json({ error: "Su Supabase mancano i segreti BET_VAPID_PUBLIC_KEY e BET_VAPID_PRIVATE_KEY (GUIDA_NOTIFICHE, passo 2)." });
     return json({ sent });
   }

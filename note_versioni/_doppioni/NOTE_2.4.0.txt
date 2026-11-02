@@ -1,0 +1,15 @@
+VERSIONE 2.4.0
+
+Home > Agenda rifatta
+- Numeri dei giorni molto piu' grandi, variazioni piu' leggibili, celle piu' alte.
+- Nome del mese piu' grande: toccalo o tienilo premuto e si apre l'elenco con i 3 mesi
+  prima e i 3 dopo (come nelle altre app). I mesi futuri sono visibili ma spenti.
+
+Per tutte le app (file condivisi suite.js e suite-tokens.css)
+- Pulsanti d'azione come icone: Salva / Conferma / Fatto = spunta, Elimina / Rimuovi = cestino,
+  Modifica = matita, Annulla / Chiudi = X, Duplica = due fogli, Aggiungi = +.
+  Nel messaggio in basso dopo un'eliminazione, "Annulla" diventa la freccia indietro.
+  Il nome dell'azione resta per il lettore vocale. I menu che si aprono tenendo premuto
+  restano con icona + scritta.
+- Tenendo premuto su un testo non si seleziona piu' e non compare il menu "Copia" di iOS.
+  Nei campi dove si scrive la selezione funziona come prima.

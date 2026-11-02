@@ -1,0 +1,19 @@
+Bet Tracker 2.1.4
+Base: esclusivamente bet-tracker-2.1.0(1).zip allegato.
+
+- Intestazione scorrevole: resta fisso solo + Scommessa.
+- Margine superiore aggiuntivo oltre la safe area iPhone.
+- Sfondo esteso a tutta l'altezza della finestra, anche con pochi contenuti in Scommesse.
+- Trasparenza aumentata per schede, dialoghi, selettori, suggerimenti e popup.
+- X di chiusura neutre senza sfondo o riquadro, anche nei selettori evento/esito.
+- Calendario saldi ridisegnato; oggi evidenziato, giorni futuri disabilitati.
+- Rimossa la sezione Come funziona dalla home.
+- Versione e cache offline aggiornate; struttura dei dati invariata.
+
+Installazione aggiornamento: sostituire i file del sito con il contenuto dello ZIP,
+riaprire la PWA online e accettare l'aggiornamento quando proposto.
+Non è necessario eliminare la PWA o cancellare i dati.
+
+Verifiche: sintassi JavaScript e casi calendario superati.
+La resa grafica e la safe area della PWA richiedono verifica su iPhone reale:
+il browser di test non era disponibile nell'ambiente di lavoro.
