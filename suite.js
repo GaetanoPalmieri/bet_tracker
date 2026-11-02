@@ -327,7 +327,7 @@
   }
 
   function statusText(A) {
-    if (!session) return 'Non collegato: i dati restano solo su questo telefono.';
+    if (!session) return 'Non collegato.';
     var m = A.meta();
     var last = m.lastSync ? new Date(m.lastSync).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'mai';
     if (A.status === 'syncing') return 'Sincronizzo…';

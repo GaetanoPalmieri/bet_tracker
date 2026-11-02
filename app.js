@@ -1,4 +1,4 @@
-const APP_VERSION = '4.21.6';
+const APP_VERSION = '4.21.7';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -578,7 +578,7 @@ function filters() {
           .map(([v, l]) => `<option value="${v}" ${filter.status === v ? 'selected' : ''}>${l}</option>`)
           .join('')}</select>`
       : ''
-  }<label>Cerca evento o pronostico</label><input id="query" type="search" value="${U.esc(filter.query)}" placeholder="Squadra, evento, Over…"><small>Il risultato giornaliero usa il riferimento data selezionato.</small>${filter.from && filter.to && filter.from > filter.to ? '<p class="error">La data iniziale deve precedere quella finale.</p>' : ''}</div>`;
+  }<label>Cerca evento o pronostico</label><input id="query" type="search" value="${U.esc(filter.query)}" placeholder="Squadra, evento, Over…">${filter.from && filter.to && filter.from > filter.to ? '<p class="error">La data iniziale deve precedere quella finale.</p>' : ''}</div>`;
 }
 function limitCard() {
   const rows = db.bets.filter((b) => U.inRange(b.date, U.bounds('month'))),
@@ -626,8 +626,8 @@ function render() {
           (t) =>
             `<div class="flow-row alt-flow ${t.amount < 0 ? 'out' : 'in'}"><span class="flow-ic" aria-hidden="true">${t.amount < 0 ? '↑' : '↓'}</span><div class="flow-main"><b>${t.amount < 0 ? 'Prelievo' : 'Deposito'}</b><small>${U.date(t.date)}</small></div><strong class="${t.amount < 0 ? 'negative' : 'positive'}">${t.amount < 0 ? '−' : '+'}${U.money(Math.abs(t.amount))}</strong><div class="flow-actions"><button data-tx-edit="${t.id}">Modifica</button><button class="danger" data-tx-delete="${t.id}">Elimina</button></div></div>`,
         )
-        .join('') || '<p class="muted alt-empty">Nessun deposito o prelievo: li segni da Saldo.</p>'
-    }</div></details><details class="card alt-sec" data-alt="backup"${altOpen('backup')}><summary><span class="alt-t"><b>Backup e ripristino</b><small>Ultima esportazione: ${db.settings.lastExport ? U.date(db.settings.lastExport) : 'mai'}</small></span></summary><div class="alt-body"><p class="muted">Dati salvati sul telefono e, se colleghi la sincronizzazione, anche online.</p><div class="actions"><button id="export">Esporta JSON</button><button id="import">Importa backup</button></div><input type="file" accept=".json,application/json" id="import-file" hidden></div></details><div class="card app-version-card"><h2>Versione app</h2><p class="muted">Bet Tracker ${APP_VERSION} · gli aggiornamenti vengono controllati automaticamente.</p><button type="button" id="check-app-update">Controlla aggiornamenti</button></div>`;
+        .join('') || '<p class="muted alt-empty">Nessun deposito o prelievo.</p>'
+    }</div></details><details class="card alt-sec" data-alt="backup"${altOpen('backup')}><summary><span class="alt-t"><b>Backup e ripristino</b><small>Ultima esportazione: ${db.settings.lastExport ? U.date(db.settings.lastExport) : 'mai'}</small></span></summary><div class="alt-body"><div class="actions"><button id="export">Esporta JSON</button><button id="import">Importa backup</button></div><input type="file" accept=".json,application/json" id="import-file" hidden></div></details><div class="card app-version-card"><h2>Versione app</h2><p class="muted">Bet Tracker ${APP_VERSION}</p><button type="button" id="check-app-update">Controlla aggiornamenti</button></div>`;
   }
   if (tab !== 'tips' && tab !== 'live') document.querySelector('header .tip-htools')?.remove(); /* 3.89.0 — pulsanti dei Pronostici solo nella loro scheda */
   main.innerHTML = html;
@@ -1236,7 +1236,7 @@ function eventGroupButton(id, label, sub = '') {
 function legHTML(l = {}, index = 0) {
   const pick = U.esc(l.pick || ''),
     meta = encodeURIComponent(JSON.stringify(l.meta || {}));
-  return `<details class="leg compact-leg" data-leg-status="${l.status || 'pending'}" data-event-meta="${U.esc(meta)}" ${index === 0 ? 'open' : ''}><summary><span class="leg-number">${index + 1}</span><span class="leg-summary"><b class="leg-title">${U.esc(l.event || 'Nuovo evento')}</b><small class="leg-pick">${U.esc(l.pick || 'Partita e pronostico')}</small></span><b class="leg-quote">${l.odds ? Number(l.odds).toFixed(2) : '—'}</b><span class="leg-chevron">⌄</span></summary><div class="leg-fields"><label>Partita / evento<input class="event" required maxlength="220" placeholder="Es. Inter – Milan" value="${U.esc(l.event || '')}"></label><button class="event-trigger" type="button"><span>⚽ Seleziona campionato / nazionale</span><span aria-hidden="true">›</span></button><small class="event-trigger-help">Oppure continua a scrivere liberamente l’evento nel campo sopra.</small><div class="pick-odds-row"><label>Esito / pronostico<div class="pick-selector"><input class="pick" type="hidden" value="${pick}"><button class="pick-trigger" type="button" aria-haspopup="dialog"><span class="pick-trigger-text">${pick || 'Seleziona esito'}</span><span class="pick-trigger-arrow" aria-hidden="true">›</span></button></div></label><label>Quota<input class="odds" type="number" inputmode="decimal" min="1" max="10000" step="any" required placeholder="1.85" value="${l.odds || ''}"></label></div><div class="leg-tools"><button class="favorite-toggle" type="button" data-favorite aria-label="Aggiungi pronostico ai preferiti" title="Aggiungi ai preferiti" aria-pressed="false">☆</button><button class="danger" type="button" data-remove-leg aria-label="Rimuovi evento">✕ Rimuovi</button></div></div></details>`;
+  return `<details class="leg compact-leg" data-leg-status="${l.status || 'pending'}" data-event-meta="${U.esc(meta)}" ${index === 0 ? 'open' : ''}><summary><span class="leg-number">${index + 1}</span><span class="leg-summary"><b class="leg-title">${U.esc(l.event || 'Nuovo evento')}</b><small class="leg-pick">${U.esc(l.pick || 'Partita e pronostico')}</small></span><b class="leg-quote">${l.odds ? Number(l.odds).toFixed(2) : '—'}</b><span class="leg-chevron">⌄</span></summary><div class="leg-fields"><label>Partita / evento<input class="event" required maxlength="220" placeholder="Es. Inter – Milan" value="${U.esc(l.event || '')}"></label><button class="event-trigger" type="button"><span>⚽ Seleziona campionato / nazionale</span><span aria-hidden="true">›</span></button><small class="event-trigger-help"></small><div class="pick-odds-row"><label>Esito / pronostico<div class="pick-selector"><input class="pick" type="hidden" value="${pick}"><button class="pick-trigger" type="button" aria-haspopup="dialog"><span class="pick-trigger-text">${pick || 'Seleziona esito'}</span><span class="pick-trigger-arrow" aria-hidden="true">›</span></button></div></label><label>Quota<input class="odds" type="number" inputmode="decimal" min="1" max="10000" step="any" required placeholder="1.85" value="${l.odds || ''}"></label></div><div class="leg-tools"><button class="favorite-toggle" type="button" data-favorite aria-label="Aggiungi pronostico ai preferiti" title="Aggiungi ai preferiti" aria-pressed="false">☆</button><button class="danger" type="button" data-remove-leg aria-label="Rimuovi evento">✕ Rimuovi</button></div></div></details>`;
 }
 function betForm(b) {
   const title = b ? 'Modifica scommessa' : 'Nuova scommessa',
@@ -1451,7 +1451,7 @@ function betForm(b) {
         ),
       )
       .join('');
-    eventBody.innerHTML = `<div class="event-division-list">${rows || '<p class="muted">Nessun campionato trovato.</p>'}${eventGroupButton('competition:__manual__', 'Altro / scrivi campionato', 'Inserimento manuale')}</div><small class="muted">Le leghe online vengono lette da TheSportsDB; il catalogo locale resta disponibile in assenza di rete.</small>`;
+    eventBody.innerHTML = `<div class="event-division-list">${rows || '<p class="muted">Nessun campionato trovato.</p>'}${eventGroupButton('competition:__manual__', 'Altro / scrivi campionato', 'Inserimento manuale')}</div>`;
     bindEventButtons();
   }
   function renderEventStep(step = '') {
@@ -2220,7 +2220,7 @@ function diaryRangePoints(series) {
 /* ---------- Grafico: andamento del saldo (linea + area) ---------- */
 function diaryLineChart(points, live) {
   if (!points.length)
-    return '<div class="diary-empty-chart">Segna il saldo per qualche giorno: qui vedrai l’andamento.</div>';
+    return '<div class="diary-empty-chart">Nessun giorno segnato.</div>';
   var W = 360,
     H = 190,
     L = 40,
@@ -2419,7 +2419,7 @@ function diaryLineChart(points, live) {
     '"/><circle class="dc-cross-dot" r="6"/></g>' +
     hits +
     '</svg>' +
-    '<p class="diary-chart-detail" data-dc-detail="line" aria-live="polite">Tocca il grafico per vedere il dettaglio di un giorno.</p>'
+    '<p class="diary-chart-detail" data-dc-detail="line" aria-live="polite"></p>'
   );
 }
 
@@ -2546,7 +2546,7 @@ function diaryBarChart(points) {
     axis +
     rects +
     '</svg>' +
-    '<p class="diary-chart-detail" data-dc-detail="bar" aria-live="polite">Verde: giorni in aumento · Rosso: giorni in calo. Tocca una barra.</p>'
+    '<p class="diary-chart-detail" data-dc-detail="bar" aria-live="polite"></p>'
   );
 }
 
@@ -2801,7 +2801,7 @@ function diaryPage(which) {
     '">' +
     (allCh ? sMoney(allCh.value) : '—') +
     '</b><span>' +
-    (allCh ? (allCh.from.start ? 'dal saldo iniziale, versamenti esclusi' : 'dal primo giorno segnato, versamenti esclusi') : 'servono più giorni') +
+    (allCh ? (allCh.from.start ? 'dal saldo iniziale' : 'dal ' + dShort(allCh.from.date)) : 'servono più giorni') +
     '</span></div></div></section>';
 
   var points = diaryRangePoints(series);
@@ -2978,7 +2978,7 @@ function diaryPage(which) {
 
 
   if (!series.length)
-    return money + '<section class="card diary-card"><p class="muted">Segna il saldo per qualche giorno: qui compariranno grafici e statistiche.</p></section>';
+    return money + '<section class="card diary-card"><p class="muted">Nessun giorno segnato.</p></section>';
   var weekday =
     '<section class="card diary-card"><h2>Per giorno della settimana</h2><p class="muted diary-hint">Risultato medio nel periodo scelto, per giorno.</p>' +
     diaryWeekdayChart(points) +
@@ -3012,7 +3012,7 @@ function diaryWeekdayChart(points) {
       return r.n;
     });
   if (used.length < 2)
-    return '<div class="diary-empty-chart">Servono più giorni segnati per confrontare i giorni della settimana.</div>';
+    return '<div class="diary-empty-chart">Servono più giorni segnati.</div>';
   var W = 360,
     H = 170,
     L = 12,
@@ -3327,7 +3327,7 @@ function diaryVsBets(points) {
   return (
     legend +
     svg +
-    '<p class="diary-chart-detail" data-dc-detail="vs" aria-live="polite">Tocca il grafico per il dettaglio di un giorno.</p>' +
+    '<p class="diary-chart-detail" data-dc-detail="vs" aria-live="polite"></p>' +
     table
   );
 }
@@ -3493,7 +3493,7 @@ function moneySheet(kind, o) {
     var lbl = msDayLabel(dd);
     if (!prev || dayBal == null || !U.finite(dayBal)) {
       out.innerHTML = isSaldo
-        ? '<p class="ms-hint">Primo giorno segnato: da qui partono i conti.</p>'
+        ? ''
         : '<div class="ms-res"><span>Sul conto dopo</span><b>' + U.money(U.round(startBal + (isWd ? -a : a))) + '</b></div>';
       return;
     }
@@ -3503,7 +3503,7 @@ function moneySheet(kind, o) {
       depD = U.round(dayTx.filter(function (x) { return x.amount > 0; }).reduce(function (n, x) { return n + x.amount; }, 0) + (kind === 'deposit' ? a : 0));
     out.innerHTML =
       '<div class="ms-res ' + sClass(res) + '"><span>Risultato di ' + lbl + '</span><b>' + sMoney(res) + '</b></div>' +
-      '<p class="ms-hint">' + (prev.start ? 'Rispetto al saldo iniziale' : 'Rispetto a ' + (prev.date === dAdd(dd, -1) ? 'ieri' : dShort(prev.date))) + ' (' + U.money(prev.balance) + ')' +
+      '<p class="ms-ref">' + (prev.start ? 'Rispetto al saldo iniziale' : 'Rispetto a ' + (prev.date === dAdd(dd, -1) ? 'ieri' : dShort(prev.date))) + ' (' + U.money(prev.balance) + ')' +
       (wdD || depD ? '; non contano ' + [wdD ? 'prelievi ' + U.money(wdD) : '', depD ? 'depositi ' + U.money(depD) : ''].filter(Boolean).join(' e ') : '') + '.</p>';
   };
   d.querySelectorAll('[data-ms-day]').forEach(function (b) {
@@ -3879,8 +3879,8 @@ function openDayPanel(date) {
     sheetHead(title.charAt(0).toUpperCase() + title.slice(1)) +
       '<div class="ms day-ms">' +
       (res != null
-        ? '<div class="ms-res ' + sClass(res) + '"><span>Risultato del giorno</span><b>' + sMoney(res) + '</b></div><p class="ms-hint">Rispetto a ' + (entry.prev.start ? 'saldo iniziale' : dShort(entry.prev.date)) + ' (' + U.money(entry.prev.balance) + '); depositi e prelievi non contano.</p>'
-        : '<p class="ms-hint">' + (entry ? 'Primo giorno segnato.' : 'Saldo del giorno non segnato.') + '</p>') +
+        ? '<div class="ms-res ' + sClass(res) + '"><span>Risultato del giorno</span><b>' + sMoney(res) + '</b></div><p class="ms-ref">Rispetto a ' + (entry.prev.start ? 'saldo iniziale' : dShort(entry.prev.date)) + ' (' + U.money(entry.prev.balance) + ')</p>'
+        : (entry ? '' : '<p class="ms-ref">Saldo del giorno non segnato.</p>')) +
       '<div class="sd-evs">' + rows + '</div>' +
       '<div class="sd-actions">' + (entry ? '' : '<button type="button" class="sd-main" id="day-diary2">✎ Segna il saldo del giorno</button>') +
       '<button type="button" class="sd-btn out" id="day-wd"><span aria-hidden="true">↑</span>Prelievo</button><button type="button" class="sd-btn in" id="day-dep"><span aria-hidden="true">↓</span>Deposito</button></div></div>',
@@ -4185,11 +4185,11 @@ function renderPushCard() {
   if (!pushSupported()) {
     status =
       pushIsIOS() && !pushStandalone()
-        ? 'Per ricevere le notifiche apri Bet Tracker dall’icona sulla schermata Home (iPhone con iOS 16.4 o successivo).'
-        : 'Questo browser non supporta le notifiche push.';
+        ? 'Apri Bet Tracker dall’icona sulla Home.'
+        : 'Notifiche non supportate da questo browser.';
   } else if (!(window.SuiteSync && SuiteSync.signedIn)) {
     status =
-      'Collega prima la sincronizzazione qui sopra: il promemoria parte dal server e controlla se hai già segnato il saldo.';
+      'Sincronizzazione non collegata.';
   } else if (!pushState.loaded) {
     status = 'Controllo…';
     dot = 'busy';
@@ -4197,9 +4197,7 @@ function renderPushCard() {
     dot = 'on';
     var hour = Number(pushState.row.notify_hour != null ? pushState.row.notify_hour : 21);
     status =
-      'Attive su questo telefono: alle ' +
-      String(hour).padStart(2, '0') +
-      ':00 ti ricordo di segnare il saldo, solo se non l’hai ancora fatto.';
+      'Promemoria alle ' + String(hour).padStart(2, '0') + ':00';
     inner =
       '<div class="push-settings"><label class="push-line"><span>Ora del promemoria</span><select id="pushHourSelect" aria-label="Ora del promemoria">' +
       pushHourOptions(hour) +
@@ -4212,8 +4210,8 @@ function renderPushCard() {
   } else {
     status =
       Notification.permission === 'denied'
-        ? 'Notifiche bloccate per Bet Tracker: riattivale in Impostazioni › Notifiche › Bet Tracker, poi torna qui.'
-        : 'Ricevi la sera un promemoria per segnare il saldo del giorno (solo se non l’hai già segnato).';
+        ? 'Notifiche bloccate nelle Impostazioni del telefono.'
+        : 'Promemoria spento.';
     inner =
       '<button type="button" class="suite-sync-primary primary push-on-btn" id="pushOnBtn"' +
       (pushState.busy || Notification.permission === 'denied' ? ' disabled' : '') +

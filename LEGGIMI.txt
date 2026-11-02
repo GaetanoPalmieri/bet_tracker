@@ -1,9 +1,14 @@
-Bet Tracker 4.21.6 · server pronostici-avvisi 4.15.4
+Bet Tracker 4.21.7 · server pronostici-avvisi 4.15.4
 
-1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): ricalibrazione con la traccia completa.
-2) Sostituisci pronostici.js, app.js, index.html, sw.js e pubblica l'app (se non hai ancora pubblicato la 4.21.5,
-   anche app.css e pronostici.css).
-Dopo: in Altro l'app deve dire "4.21.6", in Live la barra "server 4.15.4".
+1) Se non l'hai ancora fatto: ridistribuisci la funzione Supabase "pronostici-avvisi" (server 4.15.4).
+2) Sostituisci app.js, app.css, pronostici.js, pronostici.css, suite.js, index.html, sw.js e pubblica l'app.
+Dopo: in Altro l'app deve dire "4.21.7", in Live la barra "server 4.15.4".
+
+4.21.7 — solo app
+  - BARRA IN BASSO PIÙ BASSA, come in Bilancio e Noi Due: a ~18px dal bordo sull'iPhone (prima ~42px).
+  - NIENTE PIÙ FRASI INFORMATIVE in tutte le sezioni: tolte spiegazioni, legende, istruzioni e sottotitoli descrittivi
+    (Prepartita, Live, Statistiche, Saldo, Altro, pannelli e moduli). Restano i dati, gli stati vuoti brevi ("Nessun…"),
+    gli avvisi di un problema (es. "⚠ Avvisi spenti", pronostici vecchi) e le conferme prima di cancellare.
 
 4.21.6 / server 4.15.4 — RICALIBRAZIONE CON LA TRACCIA COMPLETA (20/10-2/11, 6.498 partite; dettagli in
   analisi/traccia-completa-2026-11-02.md, parte 2). Ogni regola controllata su due metà: 20-27/10 e 29/10-2/11.

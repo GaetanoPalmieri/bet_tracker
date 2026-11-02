@@ -1909,3 +1909,19 @@ main .card.sd-hero.sd-hero2.down{background:radial-gradient(130% 120% at 100% -1
 :root[data-theme="light"] .sd-hero2 .sd-btn.out span{color:#ffd28a!important}:root[data-theme="light"] .sd-hero2 .sd-btn.in span{color:#8ff5c9!important}
 @media (max-width:370px){.sd-hero2 .sd-int{font-size:42px}.sd-hero2 .sd-dec{font-size:23px}.sd-hero2 .sd-tile{padding:7px 7px}.sd-hero2 .sd-tile b{font-size:13px}}
 main .card.sd-hero.sd-hero2.cx-closed{padding-top:12px!important;padding-bottom:12px!important}
+
+/* 4.21.7 — BARRA IN BASSO PIÙ BASSA, come in Bilancio e Noi Due (1.58.1 / 1.42.1): prima stava 8px sopra la zona della
+   linea Home dell'iPhone (~42px dal bordo), ora ci entra per metà e resta a ~18px dal bordo (6px sui telefoni senza). */
+:root { --tab-bottom: max(6px, calc(env(safe-area-inset-bottom) - 16px)); }
+html:root body nav.tabbar.tabbar-bottom { bottom: var(--tab-bottom) !important; }
+html:root body main { padding-bottom: calc(96px + var(--tab-bottom)) !important; }
+
+/* 4.21.7 — NIENTE FRASI INFORMATIVE: spiegazioni, legende e istruzioni non si vedono più in nessuna sezione (anche quelle
+   che il codice crea al volo). Restano i dati (classe tip-dato), i sottotitoli (tip-subh), gli avvisi di un problema
+   (tip-warn) e gli stati vuoti brevi ("Nessun …"). */
+.tip-hint,.st2-hint,.diary-hint,.sheet-note,.ms-hint,.suite-theme-hint,.vs-note,.event-source,#event-panel-help,#pick-panel-help,.event-trigger-help,
+.tip-type-desc,.fv-desc,.fv-legend,.tip-live-caution,.tip-fhint,.lv2-hint:empty{display:none!important}
+.tip-dato:empty{display:none}
+.tip-dato{margin:6px 2px 0;font-size:12px;line-height:1.4;color:var(--suite-text-soft)}
+.tip-subh{margin:12px 2px 4px;font-size:12px;color:var(--suite-text-soft)}
+dialog#editor.sheet .ms-ref{margin:6px 2px 0!important;font-size:12px;color:var(--suite-text-soft);line-height:1.4}
