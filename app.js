@@ -1,4 +1,4 @@
-const APP_VERSION = '4.22.2';
+const APP_VERSION = '4.22.3';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -3639,6 +3639,25 @@ function sdSpark(series) {
     '<path d="' + line + ' L' + W + ' ' + H + ' L0 ' + H + ' Z" fill="url(#sdSparkG)"/><path d="' + line + '" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
     '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="3.2" fill="#fff"/></svg>';
 }
+/* 4.22.3 — ANDAMENTO DEL VINTO IN TOTALE (dal primo giorno a oggi): per ogni giorno segnato saldo − saldo iniziale −
+   depositi + prelievi fino a quel giorno (perf della serie meno il saldo iniziale), lo stesso numero di "Vinto in totale".
+   Linea tratteggiata sullo zero: sopra sei in vincita, sotto in perdita. */
+function sdSparkRes(series) {
+  var ini = U.round((db.accounts[0] || {}).initial || 0);
+  var pts = series.filter(function (p) { return U.finite(p.perf); }).map(function (p) { return U.round(p.perf - ini); });
+  if (series.start) pts.unshift(0);
+  if (pts.length > 120) { var step = (pts.length - 1) / 119, smp = []; for (var k = 0; k < 120; k++) smp.push(pts[Math.round(k * step)]); pts = smp; }
+  if (pts.length < 2) return '';
+  var W = 300, H = 52, lo = Math.min(0, Math.min.apply(null, pts)), hi = Math.max(0, Math.max.apply(null, pts)), rg = hi - lo || 1;
+  var Y = function (v) { return Math.round((H - 5 - (v - lo) / rg * (H - 12)) * 10) / 10; };
+  var xy = pts.map(function (v, i) { return [Math.round(i / (pts.length - 1) * W * 10) / 10, Y(v)]; });
+  var line = xy.map(function (q, i) { return (i ? 'L' : 'M') + q[0] + ' ' + q[1]; }).join(' '), y0 = Y(0), last = xy[xy.length - 1];
+  return '<svg class="sd-spark sd-spark-res" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sdResG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
+    '<path d="' + line + ' L' + W + ' ' + y0 + ' L0 ' + y0 + ' Z" fill="url(#sdResG)"/>' +
+    '<path d="M0 ' + y0 + ' L' + W + ' ' + y0 + '" stroke="#fff" stroke-opacity=".45" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>' +
+    '<path d="' + line + '" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="3.2" fill="#fff"/></svg>';
+}
 function sdMoneyBig(n) {
   var t = U.money(n), m = /^(.*?)([,.]\d{2})(\s*€.*)$/.exec(t);
   return m ? '<span class="sd-int">' + U.esc(m[1]) + '</span><span class="sd-dec">' + U.esc(m[2] + m[3]) + '</span>' : '<span class="sd-int">' + U.esc(t) + '</span>';
@@ -3662,18 +3681,19 @@ function saldoHomeHtml() {
     (w7 ? pill('7 giorni', w7.value) : '') + (wdToday ? '<span class="sd-pill out"><i aria-hidden="true">↑</i><b>' + U.money(wdToday) + '</b><small>prelevati oggi</small></span>' : '');
   var chip = te ? '<span class="sd-chip ok"><i aria-hidden="true">✓</i>' + (te.updatedAt ? 'Aggiornato alle ' + hm(te.updatedAt) : 'Aggiornato oggi') + '</span>' : '<span class="sd-chip todo"><i aria-hidden="true"></i>Da aggiornare</span>';
   var tile = function (cls, ic, label, val, vcls) { return '<div class="sd-tile ' + cls + '"><small><i class="sd-tic" aria-hidden="true">' + ic + '</i>' + label + '</small><b class="' + (vcls || '') + '">' + val + '</b></div>'; };
-  /* 4.22.2 — VINTO / PERSO IN EVIDENZA: subito sotto la cifra sul conto, grande e colorato (verde se sei sopra quanto hai
-     versato, rosso se sotto), con oggi e 7 giorni accanto. Prima era una casella piccola tra Versato e Prelevato. */
+  /* 4.22.3 — VINTO / PERSO IN EVIDENZA, CARTA COMPATTA: la cifra sul conto e il vinto (o perso) in totale nella stessa riga,
+     il risultato in una pastiglia colorata (bianca con la cifra verde se sei sopra, rossa se sei sotto); il grafico mostra
+     l'andamento del vinto in totale dal primo giorno (sdSparkRes). */
   var rc = P.res > 0.004 ? 'up' : P.res < -0.004 ? 'dn' : 'eq';
-  var resBox = '<div class="sd-res ' + rc + '"><div class="sd-res-l"><small>' + (rc === 'up' ? 'Vinto in totale' : rc === 'dn' ? 'Perso in totale' : 'In pari') + '</small>' +
-    '<b class="sd-res-v"><i aria-hidden="true">' + (rc === 'up' ? '▲' : rc === 'dn' ? '▼' : '●') + '</i>' + sdMoneyBig(Math.abs(P.res)).replace('<span class="sd-int">', '<span class="sd-int">' + (rc === 'up' ? '+' : rc === 'dn' ? '−' : '')) + '</b></div>' +
-    '<div class="sd-pills">' + pills + '</div></div>';
+  var resBox = '<div class="sd-res ' + rc + '"><small>' + (rc === 'up' ? 'Vinto in totale' : rc === 'dn' ? 'Perso in totale' : 'In pari') + '</small>' +
+    '<b class="sd-res-v"><i aria-hidden="true">' + (rc === 'up' ? '▲' : rc === 'dn' ? '▼' : '●') + '</i>' + sdMoneyBig(Math.abs(P.res)).replace('<span class="sd-int">', '<span class="sd-int">' + (rc === 'up' ? '+' : rc === 'dn' ? '−' : '')) + '</b></div>';
+  var spark = sdSparkRes(series);
   var hero =
     '<section class="card sd-hero sd-hero2' + (todayRes != null && todayRes < 0 ? ' down' : '') + '" data-cx="saldo-hero">' +
     '<div class="sd-top"><span class="sd-lab">Sul conto</span><b class="sd-mini">' + U.money(P.cur) + ' <span class="sd-mini-r ' + rc + '">' + sMoney(P.res) + '</span></b>' + chip + '</div>' +
-    '<div class="sd-big">' + sdMoneyBig(P.cur) + '</div>' +
-    resBox +
-    sdSpark(series) +
+    '<div class="sd-row"><div class="sd-big">' + sdMoneyBig(P.cur) + '</div>' + resBox + '</div>' +
+    '<div class="sd-pills">' + pills + '</div>' +
+    (spark ? '<div class="sd-sparkw">' + spark + '<small class="sd-spark-l">' + (rc === 'dn' ? 'Perso' : 'Vinto') + ' in totale' + (series.length ? ' dal ' + U.esc(dShort((series.start || series[0]).date)) : '') + '</small></div>' : '') +
     '<div class="sd-tiles sd-tiles2">' + tile('dep', '↓', 'Versato', U.money(P.dep)) + tile('wd', '↑', 'Prelevato', U.money(P.wd)) + '</div>' +
     '<div class="sd-actions"><button type="button" class="sd-main" data-ms="saldo"><span aria-hidden="true">✎</span> Aggiorna saldo</button><button type="button" class="sd-btn out" data-ms="withdraw"><span aria-hidden="true">↑</span>Prelievo</button><button type="button" class="sd-btn in" data-ms="deposit"><span aria-hidden="true">↓</span>Deposito</button></div></section>';
   /* movimenti di oggi */

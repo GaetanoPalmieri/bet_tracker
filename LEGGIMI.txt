@@ -1,9 +1,18 @@
-Bet Tracker 4.22.2 · server pronostici-avvisi 4.16.0
+Bet Tracker 4.22.3 · server pronostici-avvisi 4.16.0
 
-Solo app (il server resta 4.16.0): sostituisci app.js, app.css, pronostici.js, pronostici.css, index.html, sw.js e pubblica.
+Solo app (il server resta 4.16.0): sostituisci app.js, app.css, index.html, sw.js e pubblica (pronostici.js e
+pronostici.css solo se non hai pubblicato la 4.22.2).
 (Se il server non è ancora 4.16.0: prima ridistribuisci "pronostici-avvisi" con pronostici-avvisi.txt.)
-Dopo: in Altro l'app deve dire "4.22.2", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
+Dopo: in Altro l'app deve dire "4.22.3", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
 Analisi completa: analisi/analisi-2026-11-03.md.
+
+4.22.3 — solo app (server 4.16.0)
+  - SALDO PIÙ COMPATTO: la cifra sul conto e il vinto (o perso) in totale stanno nella stessa riga; il risultato è una
+    pastiglia colorata a destra (bianca con la cifra verde se sei sopra, rossa se sei sotto). Sotto "oggi" e "7 giorni",
+    poi Versato e Prelevato su una riga ciascuno. La carta torna alta come prima della 4.22.2.
+  - IL GRAFICO DELLA CARTA ORA È L'ANDAMENTO DEL VINTO IN TOTALE dal primo giorno a oggi (prima era il saldo sul conto):
+    per ogni giorno segnato saldo − saldo iniziale − depositi + prelievi fino a quel giorno, lo stesso numero della pastiglia.
+    La linea tratteggiata è lo zero: sopra sei in vincita, sotto in perdita. Sopra il grafico "Vinto in totale dal …".
 
 4.22.2 — solo app (server 4.16.0)
   - PARTITE: lo stato ha un colore per voce, come il bordo delle righe: Prossime verde acqua, In corso blu, Finite viola,
