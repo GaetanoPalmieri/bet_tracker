@@ -1,4 +1,4 @@
-const APP_VERSION = '4.22.3';
+const APP_VERSION = '4.23.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -2031,7 +2031,7 @@ main.addEventListener(
    NB: qui si usa var (non let/const) per lo stato del modulo, perché render()
    viene chiamata all'avvio prima che questa parte del file sia eseguita.
    ===================================================================== */
-var diaryUI = { range: '30', month: null };
+var diaryUI = { range: 'all', month: null }; /* 4.23.0 — Andamento di base su Tutto */
 var DIARY_RANGES = [
   ['7', '7G'],
   ['30', '30G'],
@@ -2550,6 +2550,302 @@ function diaryBarChart(points) {
   );
 }
 
+/* ---------- 4.23.0 — ANDAMENTO RIFATTO ----------
+   1) ANDAMENTO (in cima, di base "Risultato netto"): quanto hai vinto o perso dal primo giorno, senza depositi e prelievi,
+      lo stesso numero di "Vinto in totale" nel Saldo. Sopra il grafico la lettura: valore, giorno e quanto è cambiato.
+      Tocca o TRASCINA il dito sul grafico: la lettura segue il dito giorno per giorno (verde sopra lo zero, rosso sotto).
+      Segnati il massimo e il minimo del periodo. "Saldo" mostra il saldo segnato (sale anche con i depositi).
+   2) RISULTATO GIORNO PER GIORNO (seconda): barre per giorno, settimana o mese. "Auto" sceglie da solo: fino a 45 barre i
+      giorni, poi le settimane, oltre le 30 settimane i mesi: con tanti giorni resta leggibile. Toccando (o trascinando)
+      una barra la lettura in alto dice subito periodo, risultato e il resto (saldo, giorni ▲/▼, migliore e peggiore). */
+var DIARY_BAR_UNITS = [['', 'Auto'], ['d', 'Giorni'], ['w', 'Settimane'], ['m', 'Mesi']];
+function anVal(p, mode, ini) { return mode === 'saldo' ? p.balance : U.round(p.perf - ini); }
+function anSpanLabel(points) {
+  if (diaryUI.range === 'all') return points.length ? 'dal ' + dShort(points[0].date) : '';
+  var r = DIARY_RANGES.find(function (x) { return x[0] === diaryUI.range; });
+  return r ? ({ '7': 'in 7 giorni', '30': 'in 30 giorni', '90': 'in 90 giorni', '365': 'in un anno' })[r[0]] || '' : '';
+}
+function anReadHtml(main, mainCls, title, side, sideCls, sideLab, sel) {
+  return '<div class="an-read' + (sel ? ' sel' : '') + '"' + (sel ? ' data-an-clear role="button" tabindex="0" aria-label="Torna al riepilogo"' : '') + '><div class="an-rl"><b class="' + (mainCls || '') + '">' + main + '</b><small>' + title + '</small></div>' +
+    (side != null ? '<div class="an-rr"><b class="' + (sideCls || '') + '">' + side + '</b><small>' + sideLab + '</small></div>' : '') + '</div>';
+}
+function diaryNetChart(points, series) {
+  var mode = diaryUI.chartMode === 'saldo' ? 'saldo' : 'risultato', ini = U.round((db.accounts[0] || {}).initial || 0);
+  var pts = points.slice();
+  if (mode === 'risultato' && diaryUI.range === 'all' && series.start) pts.unshift(series.start);
+  if (!pts.length) return '<div class="diary-empty-chart">Nessun giorno segnato.</div>';
+  var vals = pts.map(function (p) { return anVal(p, mode, ini); });
+  var W = 360, H = 200, L = 8, R = 48, T = 14, B = 24;
+  var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+  if (mode === 'risultato') { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  if (hi - lo < 1) { hi += 1; lo -= 1; }
+  var pad = (hi - lo) * 0.1; hi += pad; lo -= mode === 'risultato' && lo >= 0 ? 0 : pad;
+  var d0 = pts[0].date, d1 = pts[pts.length - 1].date, span = Math.max(1, dDays(d0, d1));
+  var X = function (date) { return pts.length === 1 ? (L + W - R) / 2 : L + (W - L - R) * dDays(d0, date) / span; };
+  var Y = function (v) { return T + (H - T - B) * (1 - (v - lo) / (hi - lo)); };
+  var xs = pts.map(function (p) { return Math.round(X(p.date) * 10) / 10; }), ys = vals.map(function (v) { return Math.round(Y(v) * 10) / 10; });
+  var line = xs.map(function (x, i) { return (i ? 'L' : 'M') + x + ' ' + ys[i]; }).join(' ');
+  var y0 = mode === 'risultato' ? Math.round(Y(0) * 10) / 10 : H - B;
+  var area = pts.length > 1 ? line + ' L' + xs[xs.length - 1] + ' ' + y0 + ' L' + xs[0] + ' ' + y0 + ' Z' : '';
+  var ticks = [hi - pad, (hi + lo) / 2, lo + (mode === 'risultato' && lo >= 0 ? 0 : pad)];
+  if (mode === 'risultato') ticks = [Math.max.apply(null, vals), 0, Math.min.apply(null, vals)].filter(function (v, i, a) { return a.indexOf(v) === i; });
+  var grid = ticks.map(function (v) {
+    var y = Y(v).toFixed(1);
+    return '<line class="an-grid' + (mode === 'risultato' && v === 0 ? ' zero' : '') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text class="an-ax" x="' + (W - R + 6) + '" y="' + (Number(y) + 4) + '">' + (mode === 'risultato' && v > 0 ? '+' : '') + eurShort(v) + '</text>';
+  }).join('');
+  var mid = pts.length > 2 ? pts[Math.floor(pts.length / 2)].date : null;
+  var xl = '<text class="an-ax" x="' + L + '" y="' + (H - 6) + '">' + dShort(d0) + '</text>' +
+    (mid && mid !== d0 && mid !== d1 ? '<text class="an-ax" x="' + X(mid).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle">' + dShort(mid) + '</text>' : '') +
+    (d1 !== d0 ? '<text class="an-ax" x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">' + dShort(d1) + '</text>' : '');
+  var iMax = vals.indexOf(Math.max.apply(null, vals)), iMin = vals.lastIndexOf(Math.min.apply(null, vals)), last = pts.length - 1;
+  var mark = function (i, cls, lab) {
+    if (pts.length < 4 || i === last) return '';
+    var up = cls === 'max', ty = up ? Math.max(10, ys[i] - 8) : Math.min(H - B - 2, ys[i] + 14);
+    var anchor = xs[i] < L + 30 ? 'start' : xs[i] > W - R - 30 ? 'end' : 'middle';
+    return '<circle class="an-mk ' + cls + '" cx="' + xs[i] + '" cy="' + ys[i] + '" r="3"/><text class="an-mkt ' + cls + '" x="' + xs[i] + '" y="' + ty + '" text-anchor="' + anchor + '">' + lab + '</text>';
+  };
+  var fmtV = function (v) { return mode === 'risultato' ? sMoney(v) : U.money(v); };
+  var marks = (iMax !== iMin ? mark(iMax, 'max', 'max ' + (mode === 'risultato' && vals[iMax] > 0 ? '+' : '') + eurShort(vals[iMax])) + mark(iMin, 'min', 'min ' + eurShort(vals[iMin])) : '');
+  var clip = mode === 'risultato' ? '<clipPath id="anUp"><rect x="0" y="0" width="' + W + '" height="' + y0 + '"/></clipPath><clipPath id="anDn"><rect x="0" y="' + y0 + '" width="' + W + '" height="' + (H - y0) + '"/></clipPath>' : '';
+  var body = mode === 'risultato'
+    ? (area ? '<path class="an-area up" clip-path="url(#anUp)" d="' + area + '"/><path class="an-area dn" clip-path="url(#anDn)" d="' + area + '"/>' : '') +
+      '<path class="an-line up" clip-path="url(#anUp)" d="' + line + '"/><path class="an-line dn" clip-path="url(#anDn)" d="' + line + '"/>'
+    : (area ? '<path class="an-area sal" d="' + area + '"/>' : '') + '<path class="an-line sal" d="' + line + '"/>';
+  var lastDot = '<circle class="an-last ' + (mode === 'saldo' ? 'sal' : vals[last] >= 0 ? 'up' : 'dn') + '" cx="' + xs[last] + '" cy="' + ys[last] + '" r="4"/>';
+  /* lettura per ogni punto */
+  var first = vals[0], tot = U.round(vals[last] - first), sideLab = anSpanLabel(pts);
+  /* su Tutto il cambio del periodo sarebbe uguale al valore: a destra il mese in corso */
+  if (diaryUI.range === 'all') {
+    var mStart = d1.slice(0, 8) + '01', bi = -1;
+    for (var q = pts.length - 1; q >= 0; q--) if (pts[q].date < mStart) { bi = q; break; }
+    tot = U.round(vals[last] - (bi >= 0 ? vals[bi] : vals[0]));
+    sideLab = 'questo mese';
+  }
+  diaryUI.netData = { W: W, H: H, T: T, B: B, xs: xs, ys: ys, mode: mode,
+    def: anReadHtml(fmtV(vals[last]), mode === 'risultato' ? sClass(vals[last]) : '', (mode === 'risultato' ? (vals[last] >= 0 ? 'Vinto in totale' : 'Perso in totale') : 'Saldo') + ' · ' + U.esc(dLabel(d1)),
+      pts.length > 1 ? sMoney(tot) : null, sClass(tot), U.esc(sideLab), false),
+    rows: pts.map(function (p, i) {
+      var dl = p.start ? null : p.delta;
+      var side = i === 0 && !p.start ? null : p.start ? '—' : dl != null ? sMoney(dl) : '—';
+      var lab = p.start ? 'saldo iniziale' : dl != null ? 'quel giorno' + (p.moved && Math.abs(p.moved) >= 0.005 ? ' · ' + (p.moved > 0 ? 'depositati ' : 'prelevati ') + U.money(Math.abs(p.moved)) : '') : 'primo giorno';
+      return anReadHtml(fmtV(vals[i]), mode === 'risultato' ? sClass(vals[i]) : '', U.esc(p.start ? 'Inizio · ' + dLabel(p.date) : dLabel(p.date, { weekday: 'long', day: 'numeric', month: 'long' })) + (p.note ? ' · ' + U.esc(p.note) : ''),
+        side, dl != null ? sClass(dl) : '', lab, true);
+    }) };
+  return '<div class="an-wrap" data-an-wrap="net">' + diaryUI.netData.def +
+    '<svg class="an-chart" data-scrub="net" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (mode === 'risultato' ? 'Risultato netto' : 'Saldo') + ' dal ' + dShort(d0) + ' al ' + dShort(d1) + '">' +
+    '<defs>' + clip + '<linearGradient id="anGU" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--bt-up)" stop-opacity=".38"/><stop offset="1" stop-color="var(--bt-up)" stop-opacity=".04"/></linearGradient>' +
+    '<linearGradient id="anGD" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--bt-down)" stop-opacity=".38"/><stop offset="1" stop-color="var(--bt-down)" stop-opacity=".04"/></linearGradient>' +
+    '<linearGradient id="anGS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--bt-line-color)" stop-opacity=".3"/><stop offset="1" stop-color="var(--bt-line-color)" stop-opacity="0"/></linearGradient></defs>' +
+    grid + body + marks + lastDot + xl +
+    '<g class="an-cross" hidden><line x1="0" x2="0" y1="' + T + '" y2="' + (H - B) + '"/><circle r="5.5"/></g>' +
+    '<rect class="an-hit" x="0" y="0" width="' + W + '" height="' + H + '"/></svg></div>';
+}
+/* barre: giorni, settimane o mesi */
+function anWeekStart(iso) { var d = dParse(iso), k = (d.getDay() + 6) % 7; return dAdd(iso, -k); }
+function diaryDayBars(points) {
+  var days = points.filter(function (p) { return p.delta != null; });
+  if (!days.length) return '<div class="diary-empty-chart">Servono almeno due giorni segnati.</div>';
+  var unit = diaryUI.barUnit || '';
+  if (!unit) { var nw = {}; days.forEach(function (p) { nw[anWeekStart(p.date)] = 1; }); unit = days.length <= 45 ? 'd' : Object.keys(nw).length <= 30 ? 'w' : 'm'; }
+  var buckets = [], by = {};
+  days.forEach(function (p) {
+    var k = unit === 'd' ? p.date : unit === 'w' ? anWeekStart(p.date) : p.date.slice(0, 7);
+    var b = by[k];
+    if (!b) { b = by[k] = { k: k, v: 0, n: 0, up: 0, dn: 0, best: null, worst: null, last: p, first: p }; buckets.push(b); }
+    b.v = U.round(b.v + p.delta); b.n++; if (p.delta > 0.004) b.up++; else if (p.delta < -0.004) b.dn++;
+    if (!b.best || p.delta > b.best.delta) b.best = p; if (!b.worst || p.delta < b.worst.delta) b.worst = p; b.last = p;
+  });
+  var W = 360, H = 170, L = 8, R = 44, T = 12, B = 22;
+  var vs = buckets.map(function (b) { return b.v; }), mx = Math.max(0, Math.max.apply(null, vs)), mn = Math.min(0, Math.min.apply(null, vs));
+  if (mx - mn < 1) { mx += 0.5; mn -= 0.5; }
+  var Y = function (v) { return T + (H - T - B) * (mx - v) / (mx - mn); }, y0 = Y(0);
+  var slot = (W - L - R) / buckets.length, bw = Math.max(1.5, Math.min(26, slot * (buckets.length > 60 ? 0.9 : 0.72)));
+  var xs = [];
+  var rects = buckets.map(function (b, i) {
+    var cx = L + slot * i + slot / 2, top = Math.min(Y(b.v), y0), h = Math.max(1.5, Math.abs(Y(b.v) - y0));
+    xs.push(Math.round(cx * 10) / 10);
+    return '<rect class="an-bar ' + (b.v > 0.004 ? 'up' : b.v < -0.004 ? 'dn' : 'flat') + '" data-an-bar="' + i + '" x="' + (cx - bw / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + Math.min(3, bw / 2).toFixed(1) + '"/>';
+  }).join('');
+  var lab = function (b, long) {
+    if (unit === 'd') return long ? dLabel(b.k, { weekday: 'long', day: 'numeric', month: 'long' }) : dShort(b.k);
+    if (unit === 'w') { var e = dAdd(b.k, 6); return (long ? 'Settimana ' : '') + dParse(b.k).getDate() + (b.k.slice(5, 7) !== e.slice(5, 7) ? ' ' + dShort(b.k).split(' ')[1] : '') + '–' + dShort(e); }
+    var t = dParse(b.k + '-01').toLocaleDateString('it-IT', long ? { month: 'long', year: 'numeric' } : { month: 'short' }).replace('.', '');
+    return long ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+  };
+  var axis = '<line class="an-grid zero" x1="' + L + '" x2="' + (W - R) + '" y1="' + y0.toFixed(1) + '" y2="' + y0.toFixed(1) + '"/>' +
+    (mx > 0.6 ? '<text class="an-ax" x="' + (W - R + 6) + '" y="' + (Y(mx) + 4).toFixed(1) + '">+' + eurShort(mx) + '</text>' : '') +
+    (mn < -0.6 ? '<text class="an-ax" x="' + (W - R + 6) + '" y="' + (Y(mn) + 4).toFixed(1) + '">' + eurShort(mn) + '</text>' : '') +
+    '<text class="an-ax" x="' + (W - R + 6) + '" y="' + (y0 + 4).toFixed(1) + '">0</text>' +
+    '<text class="an-ax" x="' + L + '" y="' + (H - 5) + '">' + U.esc(lab(buckets[0])) + '</text>' +
+    (buckets.length > 1 ? '<text class="an-ax" x="' + (W - R) + '" y="' + (H - 5) + '" text-anchor="end">' + U.esc(lab(buckets[buckets.length - 1])) + '</text>' : '');
+  /* lettura: riepilogo del periodo (di base) e una per barra */
+  var tot = U.round(vs.reduce(function (s, v) { return s + v; }, 0)), up = days.filter(function (p) { return p.delta > 0.004; }).length, dn = days.filter(function (p) { return p.delta < -0.004; }).length;
+  var best = days.reduce(function (a, p) { return !a || p.delta > a.delta ? p : a; }, null), worst = days.reduce(function (a, p) { return !a || p.delta < a.delta ? p : a; }, null);
+  var unitName = { d: 'giorni', w: 'settimane', m: 'mesi' }[unit];
+  var streak = function (p) {
+    var i = days.indexOf(p), s = p.delta > 0.004 ? 1 : p.delta < -0.004 ? -1 : 0, n = 0;
+    if (!s) return '';
+    while (i - n >= 0 && (days[i - n].delta > 0.004 ? 1 : days[i - n].delta < -0.004 ? -1 : 0) === s) n++;
+    return n > 1 ? ' · ' + n + '° di fila in ' + (s > 0 ? 'aumento' : 'calo') : '';
+  };
+  diaryUI.barsData = { W: W, H: H, T: T, B: B, xs: xs, ys: null,
+    def: anReadHtml(sMoney(tot), sClass(tot), buckets.length + ' ' + unitName + ' · ' + U.esc(anSpanLabel(days)), up + ' ▲ · ' + dn + ' ▼', '', 'migliore ' + sMoney(best.delta).replace(/,\d\d\s*€$/, '') + ' · peggiore ' + sMoney(worst.delta).replace(/,\d\d\s*€$/, ''), false),
+    rows: buckets.map(function (b) {
+      if (unit === 'd') return anReadHtml(sMoney(b.v), sClass(b.v), U.esc(lab(b, true)) + (b.last.note ? ' · ' + U.esc(b.last.note) : ''), U.money(b.last.balance), '', 'saldo' + U.esc(streak(b.last)), true);
+      return anReadHtml(sMoney(b.v), sClass(b.v), U.esc(lab(b, true)), b.up + ' ▲ · ' + b.dn + ' ▼', '', 'migliore ' + sMoney(b.best.delta).replace(/,\d\d\s*€$/, '') + ' (' + U.esc(dShort(b.best.date)) + ') · peggiore ' + sMoney(b.worst.delta).replace(/,\d\d\s*€$/, '') + ' (' + U.esc(dShort(b.worst.date)) + ')', true);
+    }) };
+  var units = '<div class="an-units" role="group" aria-label="Raggruppa">' + DIARY_BAR_UNITS.map(function (u) {
+    var on = (diaryUI.barUnit || '') === u[0];
+    var eff = !diaryUI.barUnit && u[0] === unit; /* in Auto si vede anche l'unità scelta da sola */
+    return '<button type="button" class="' + (on ? 'on' : '') + (eff ? ' eff' : '') + '" data-bar-unit="' + u[0] + '" aria-pressed="' + on + '">' + u[1] + '</button>';
+  }).join('') + '</div>';
+  return units + '<div class="an-wrap" data-an-wrap="bars">' + diaryUI.barsData.def +
+    '<svg class="an-chart an-bars" data-scrub="bars" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Risultato per ' + unitName + '">' + axis + rects +
+    '<rect class="an-hit" x="0" y="0" width="' + W + '" height="' + H + '"/></svg></div>';
+}
+/* interazione: tocca o trascina sul grafico, la lettura in alto segue il dito; tocca la lettura per tornare al riepilogo */
+function diaryScrubShow(kind, i) {
+  var D = kind === 'net' ? diaryUI.netData : diaryUI.barsData, wrap = main.querySelector('[data-an-wrap="' + kind + '"]');
+  if (!D || !wrap) return;
+  var read = wrap.querySelector('.an-read'), svg = wrap.querySelector('svg');
+  if (i == null) {
+    if (read) read.outerHTML = D.def;
+    if (svg) { svg.classList.remove('has-sel'); svg.querySelectorAll('.an-bar.sel').forEach(function (x) { x.classList.remove('sel'); }); var g0 = svg.querySelector('.an-cross'); if (g0) g0.setAttribute('hidden', ''); }
+    return;
+  }
+  if (read && D.rows[i]) read.outerHTML = D.rows[i];
+  if (!svg) return;
+  if (kind === 'net') {
+    var g = svg.querySelector('.an-cross');
+    if (g) { g.removeAttribute('hidden'); g.querySelector('line').setAttribute('x1', D.xs[i]); g.querySelector('line').setAttribute('x2', D.xs[i]); g.querySelector('circle').setAttribute('cx', D.xs[i]); g.querySelector('circle').setAttribute('cy', D.ys[i]); }
+  } else {
+    svg.classList.add('has-sel');
+    svg.querySelectorAll('.an-bar.sel').forEach(function (x) { x.classList.remove('sel'); });
+    var b = svg.querySelector('[data-an-bar="' + i + '"]'); if (b) b.classList.add('sel');
+  }
+}
+function diaryScrubBind() {
+  main.querySelectorAll('[data-scrub]').forEach(function (svg) {
+    var kind = svg.getAttribute('data-scrub'), down = false;
+    var pick = function (ev) {
+      var D = kind === 'net' ? diaryUI.netData : diaryUI.barsData;
+      if (!D || !D.xs.length) return;
+      var r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * D.W, best = 0, bd = Infinity;
+      D.xs.forEach(function (v, i) { var d = Math.abs(v - x); if (d < bd) { bd = d; best = i; } });
+      if (svg._anI !== best) { svg._anI = best; diaryScrubShow(kind, best); try { if (down && ev.pointerType === 'touch' && navigator.vibrate) navigator.vibrate(3); } catch (e) { /* ok */ } }
+    };
+    svg.addEventListener('pointerdown', function (ev) { down = true; try { svg.setPointerCapture(ev.pointerId); } catch (e) { /* ok */ } pick(ev); });
+    svg.addEventListener('pointermove', function (ev) { if (down || ev.pointerType === 'mouse') pick(ev); });
+    ['pointerup', 'pointercancel'].forEach(function (n) { svg.addEventListener(n, function () { down = false; }); });
+  });
+  main.querySelectorAll('[data-an-wrap]').forEach(function (w) {
+    w.addEventListener('click', function (ev) {
+      if (!(ev.target.closest && ev.target.closest('[data-an-clear]'))) return;
+      var svg = w.querySelector('svg'); if (svg) svg._anI = null;
+      diaryScrubShow(w.getAttribute('data-an-wrap'), null);
+    });
+  });
+  main.querySelectorAll('[data-bar-unit]').forEach(function (b) {
+    b.onclick = function () { diaryUI.barUnit = b.getAttribute('data-bar-unit'); render(); };
+  });
+}
+/* ---------- 4.23.0 — CALENDARIO RIFATTO ----------
+   - In alto i mesi in una striscia (dal primo mese segnato a oggi), ognuno con il suo risultato: un tocco e ci sei.
+     Si apre sul mese scelto, sempre visibile. Niente più menu a tendina (il testo "questo mese" faceva slittare le righe).
+   - ‹ › accanto al nome del mese e, sul calendario, scorri col dito a sinistra o a destra per cambiare mese.
+   - Una griglia sola: intestazione L M M G V S D una volta, sette giorni per riga e a destra il totale della settimana.
+   - Sotto: giorni segnati e risultato del mese. */
+function calMonthRes(series, key) {
+  var inM = series.filter(function (p) { return p.date.slice(0, 7) === key; });
+  if (!inM.length) return null;
+  var before = series.filter(function (p) { return p.date < key + '-01'; });
+  var base = before.length ? before[before.length - 1].perf : series.start ? series.start.perf : inM[0].perf;
+  return U.round(inM[inM.length - 1].perf - base);
+}
+function calMonthsList(series) {
+  var now = dToday().slice(0, 7), first = series.length ? series[0].date.slice(0, 7) : now;
+  if (series.start && series.start.date && series.start.date.slice(0, 7) < first) first = series.start.date.slice(0, 7);
+  var d = dParse(first + '-01'), lim = dParse(now + '-01'), out = [];
+  var six = new Date(lim.getFullYear(), lim.getMonth() - 5, 1);
+  if (d > six) d = six;
+  while (d <= lim && out.length < 60) { out.push(U.local(d).slice(0, 7)); d = new Date(d.getFullYear(), d.getMonth() + 1, 1); }
+  return out;
+}
+function diaryCalendar2(series) {
+  var today = dToday(), nowM = today.slice(0, 7), month = diaryUI.month || nowM;
+  if (month > nowM) month = nowM;
+  var first = dParse(month + '-01'), y = first.getFullYear(), m = first.getMonth();
+  var offset = (first.getDay() + 6) % 7, count = new Date(y, m + 1, 0).getDate();
+  var byDate = {};
+  series.forEach(function (p) { byDate[p.date] = p; });
+  var inMonth = series.filter(function (p) { return p.date.slice(0, 7) === month; });
+  var maxAbs = Math.max.apply(null, [1].concat(inMonth.map(function (p) { return Math.abs(p.delta || 0); })));
+  var months = calMonthsList(series), curYear = nowM.slice(0, 4);
+  var strip = '<div class="cal2-strip" data-cal-strip role="tablist" aria-label="Mese">' + months.map(function (k) {
+    var r = calMonthRes(series, k), on = k === month, dd = dParse(k + '-01');
+    var name = dd.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '') + (k.slice(0, 4) !== curYear ? ' ' + k.slice(2, 4) : '');
+    return '<button type="button" role="tab" aria-selected="' + on + '" class="cal2-m' + (on ? ' on' : '') + (k === nowM ? ' now' : '') + '" data-cal-m="' + k + '"><b>' + U.esc(name) + '</b><small class="' + (r == null ? '' : sClass(r)) + '">' + (r == null ? '—' : (r > 0.004 ? '+' : '') + eurShort(r)) + '</small></button>';
+  }).join('') + '</div>';
+  var cells = [];
+  for (var k = 0; k < offset; k++) cells.push(null);
+  for (var i = 1; i <= count; i++) {
+    var key = month + '-' + String(i).padStart(2, '0'), p = byDate[key];
+    cells.push({ i: i, key: key, p: p, d: p && p.delta != null ? p.delta : null, today: key === today, future: key > today });
+  }
+  while (cells.length % 7) cells.push(null);
+  var dayBtn = function (x) {
+    if (!x) return '<span class="cal2-d empty" aria-hidden="true"></span>';
+    var tone = x.d > 0.004 ? 'up' : x.d < -0.004 ? 'down' : x.p ? 'flat' : '';
+    var a = x.d != null ? Math.round(18 + 52 * Math.min(1, Math.abs(x.d) / maxAbs)) : 0;
+    var val = x.p ? (x.d != null ? (x.d > 0.004 ? '+' : x.d < -0.004 ? '−' : '') + eurShort(Math.abs(x.d)) : '•') : '';
+    var mv = !x.future && dayHasMovements(x.key);
+    return '<button type="button" class="wk-day cal2-d' + (x.p ? ' has' : '') + (mv ? ' mv mv-' + dayFlowSign(x.key) : '') + (tone ? ' ' + tone : '') + (x.today ? ' today' : '') + (x.future ? ' future' : '') +
+      '" style="--a:' + a + '%" data-dcal="' + x.key + '"' + (x.future ? ' disabled' : '') +
+      ' aria-label="' + dLabel(x.key, { weekday: 'long', day: 'numeric', month: 'long' }) + (x.p ? ', saldo ' + U.money(x.p.balance) : ', non segnato') + (mv ? ', con movimenti' : '') + '"><b>' + x.i + '</b><span>' + val + '</span></button>';
+  };
+  var WD = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+  var grid = '<div class="cal2-grid cal2-head" aria-hidden="true">' + WD.map(function (w) { return '<i>' + w + '</i>'; }).join('') + '<i class="cal2-wt">sett.</i></div>';
+  for (var w = 0; w < cells.length; w += 7) {
+    var wk = cells.slice(w, w + 7), withD = wk.filter(function (x) { return x && x.d != null; });
+    var tot = U.round(withD.reduce(function (s, x) { return s + x.d; }, 0)), cur = wk.some(function (x) { return x && x.today; });
+    grid += '<div class="cal2-grid' + (cur ? ' cur' : '') + '">' + wk.map(dayBtn).join('') +
+      '<span class="cal2-wt ' + (withD.length ? sClass(tot) : '') + '">' + (withD.length ? (tot > 0.004 ? '+' : '') + eurShort(tot) : '') + '</span></div>';
+  }
+  var mRes = calMonthRes(series, month), isCurrent = month >= nowM;
+  var monthLabel = first.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+  monthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  return '<div class="cal2">' + strip +
+    '<div class="cal2-nav"><button type="button" class="cal2-arr" data-dcal-month="-1" aria-label="Mese precedente"' + (months[0] >= month ? ' disabled' : '') + '>‹</button>' +
+    '<div class="cal2-title"><b>' + U.esc(monthLabel) + '</b><small class="' + (mRes == null ? '' : sClass(mRes)) + '">' + (mRes == null ? 'nessun giorno segnato' : sMoney(mRes) + ' · ' + inMonth.length + (inMonth.length === 1 ? ' giorno' : ' giorni')) + '</small></div>' +
+    '<button type="button" class="cal2-arr" data-dcal-month="1" aria-label="Mese successivo"' + (isCurrent ? ' disabled' : '') + '>›</button></div>' +
+    '<div class="cal2-body" data-cal-swipe>' + grid + '</div>' +
+    (isCurrent ? '' : '<button type="button" class="cal2-today" data-cal-m="' + nowM + '">Torna a questo mese</button>') + '</div>';
+}
+function calBind() {
+  main.querySelectorAll('[data-cal-m]').forEach(function (b) {
+    b.onclick = function () { diaryUI.month = b.getAttribute('data-cal-m'); render(); };
+  });
+  var strip = main.querySelector('[data-cal-strip]');
+  if (strip) { var on = strip.querySelector('.cal2-m.on'); if (on) strip.scrollLeft = Math.max(0, on.offsetLeft - strip.clientWidth / 2 + on.offsetWidth / 2); }
+  var body = main.querySelector('[data-cal-swipe]');
+  if (!body) return;
+  var x0 = null, y0 = 0, swiped = 0;
+  body.addEventListener('pointerdown', function (ev) { x0 = ev.clientX; y0 = ev.clientY; });
+  body.addEventListener('pointerup', function (ev) {
+    if (x0 == null) return;
+    var dx = ev.clientX - x0, dy = ev.clientY - y0; x0 = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    var cur = diaryUI.month || dToday().slice(0, 7), dt = dParse(cur + '-01');
+    dt.setMonth(dt.getMonth() + (dx < 0 ? 1 : -1));
+    var next = U.local(dt).slice(0, 7), list = calMonthsList(diarySeries());
+    if (next > dToday().slice(0, 7) || next < list[0]) return;
+    swiped = Date.now();
+    diaryUI.month = next;
+    render();
+  });
+  body.addEventListener('pointercancel', function () { x0 = null; });
+  body.addEventListener('click', function (ev) { if (Date.now() - swiped < 400) { ev.stopPropagation(); ev.preventDefault(); } }, true);
+}
 /* ---------- Agenda del mese ---------- */
 function diaryCalendar(series) {
   /* 2.5.0 — Agenda a settimane: un blocco per settimana con il totale, dentro i 7 giorni.
@@ -2761,90 +3057,27 @@ function diaryPage(which) {
       kpi('Dall’inizio', diaryChange(series, 'all')) +
       '</div>';
     /* 4.21.5 — Calendario sopra Oggi, senza la riga di spiegazione */
-    var agenda = '<section class="card diary-card" data-cx="calendario"><h2>Calendario</h2>' + diaryCalendar(series) + '</section>';
+    var agenda = '<section class="card diary-card" data-cx="calendario"><h2>Calendario</h2>' + diaryCalendar2(series) + '</section>'; /* 4.23.0 */
     var H = saldoHomeHtml();
     return H.hero + agenda + H.day + kpis;
   }
 
   /* ---------- Statistiche ---------- */
-  var flows = realFlows();
-  var dep = U.round(flows.filter((t) => t.amount > 0).reduce((n, t) => n + t.amount, 0)),
-    wd = U.round(flows.filter((t) => t.amount < 0).reduce((n, t) => n - t.amount, 0)),
-    ini = U.round(db.accounts[0].initial),
-    netIn = U.round(ini + dep - wd),
-    allCh = diaryChange(series, 'all');
-  var money =
-    '<section class="card diary-card money-card"><h2>I tuoi soldi</h2><div class="money-grid">' +
-    '<div><small>Saldo iniziale</small><b>' +
-    U.money(ini) +
-    '</b><span>' +
-    (startDate() ? 'dal ' + dLabel(startDate()) : 'non impostato') +
-    '</span></div>' +
-    '<div><small>Depositi</small><b class="' + (dep ? 'positive' : '') + '">' + (dep ? '+' : '') +
-    U.money(dep) +
-    '</b><span>' +
-    flows.filter((t) => t.amount > 0).length +
-    ' versamenti</span></div>' +
-    '<div><small>Prelievi</small><b class="' + (wd ? 'negative' : '') + '">' + (wd ? '−' : '') +
-    U.money(wd) +
-    '</b><span>' +
-    flows.filter((t) => t.amount < 0).length +
-    ' prelievi</span></div>' +
-    '<div><small>Messi in gioco</small><b>' +
-    U.money(netIn) +
-    '</b><span>iniziale + depositi − prelievi</span></div>' +
-    '<div class="wide"><small>Saldo attuale</small><b>' +
-    U.money(cur) +
-    '</b></div>' +
-    '<div class="wide"><small>Risultato netto</small><b class="' +
-    (allCh ? sClass(allCh.value) : '') +
-    '">' +
-    (allCh ? sMoney(allCh.value) : '—') +
-    '</b><span>' +
-    (allCh ? (allCh.from.start ? 'dal saldo iniziale' : 'dal ' + dShort(allCh.from.date)) : 'servono più giorni') +
-    '</span></div></div></section>';
-
   var points = diaryRangePoints(series);
-  var mode = diaryUI.chartMode || 'saldo';
-  var chartPts =
-    mode === 'risultato'
-      ? points.map(function (p) {
-          var base = (series.start || series[0]).perf;
-          return Object.assign({}, p, { balance: U.round(p.perf - base) });
-        })
-      : points;
+  /* 4.23.0 — Andamento in cima, di base Risultato netto (via "I tuoi soldi": ripeteva la carta del Saldo) */
+  var mode = diaryUI.chartMode === 'saldo' ? 'saldo' : 'risultato';
   var seg =
-    '<div class="diary-seg" role="group" aria-label="Periodo">' +
+    '<div class="diary-seg an-range" role="group" aria-label="Periodo">' +
     DIARY_RANGES.map(function (r) {
-      return (
-        '<button type="button" data-diary-range="' +
-        r[0] +
-        '" class="' +
-        (diaryUI.range === r[0] ? 'active' : '') +
-        '" aria-pressed="' +
-        (diaryUI.range === r[0]) +
-        '">' +
-        r[1] +
-        '</button>'
-      );
+      return '<button type="button" data-diary-range="' + r[0] + '" class="' + (diaryUI.range === r[0] ? 'active' : '') + '" aria-pressed="' + (diaryUI.range === r[0]) + '">' + r[1] + '</button>';
     }).join('') +
     '</div>';
   var modeSeg =
-    '<div class="diary-seg diary-mode" role="group" aria-label="Cosa mostrare"><button type="button" data-chart-mode="saldo" class="' +
-    (mode === 'saldo' ? 'active' : '') +
-    '">Saldo</button><button type="button" data-chart-mode="risultato" class="' +
-    (mode === 'risultato' ? 'active' : '') +
-    '">Risultato netto</button></div>';
-  var chart =
-    '<section class="card diary-card"><div class="diary-card-head"><h2>Andamento</h2></div>' +
-    seg +
-    modeSeg +
-    diaryLineChart(chartPts, null) +
-    (mode === 'risultato'
-      ? '<p class="muted diary-hint">Quanto hai guadagnato o perso in totale, senza depositi e prelievi.</p>'
-      : '<p class="muted diary-hint">Il saldo che hai segnato: sale anche quando depositi e scende quando prelevi.</p>') +
-    '</section>';
-  var bars = '<section class="card diary-card"><h2>Risultato giorno per giorno</h2>' + diaryBarChart(points) + '</section>';
+    '<div class="diary-seg diary-mode an-mode" role="group" aria-label="Cosa mostrare"><button type="button" data-chart-mode="risultato" class="' +
+    (mode === 'risultato' ? 'active' : '') + '">Risultato netto</button><button type="button" data-chart-mode="saldo" class="' +
+    (mode === 'saldo' ? 'active' : '') + '">Saldo</button></div>';
+  var chart = '<section class="card diary-card an-card" data-cx="andamento"><h2>Andamento</h2>' + modeSeg + diaryNetChart(points, series) + seg + '</section>';
+  var bars = '<section class="card diary-card an-card" data-cx="giorno-per-giorno"><h2>Risultato giorno per giorno</h2>' + diaryDayBars(points) + '</section>';
   var st = diaryStats(points),
     stats = '';
   if (st) {
@@ -2978,12 +3211,12 @@ function diaryPage(which) {
 
 
   if (!series.length)
-    return money + '<section class="card diary-card"><p class="muted">Nessun giorno segnato.</p></section>';
+    return '<section class="card diary-card"><p class="muted">Nessun giorno segnato.</p></section>';
   var weekday =
     '<section class="card diary-card"><h2>Per giorno della settimana</h2><p class="muted diary-hint">Risultato medio nel periodo scelto, per giorno.</p>' +
     diaryWeekdayChart(points) +
     '</section>';
-  return diaryBubCard() + money + chart + bars + stats + weekday + monthly + log;
+  return chart + bars + diaryBubCard() + stats + weekday + monthly + log;
 }
 
 /* ---------- 2.1.0 — Per giorno della settimana ---------- */
@@ -3939,6 +4172,8 @@ function openDayPanel(date) {
 /* ---------- Eventi ---------- */
 function bindDiary() {
   bindDiaryExtra();
+  diaryScrubBind(); /* 4.23.0 — grafici dell'Andamento: tocca o trascina */
+  calBind(); /* 4.23.0 — calendario: mesi in striscia e scorrimento */
   /* 4.9.0 — pannello unico Aggiorna saldo / Prelievo / Deposito */
   main.querySelectorAll('[data-ms]').forEach(function (b) {
     b.onclick = function () {

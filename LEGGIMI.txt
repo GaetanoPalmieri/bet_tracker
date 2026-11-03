@@ -1,10 +1,31 @@
-Bet Tracker 4.22.3 · server pronostici-avvisi 4.16.0
+Bet Tracker 4.23.0 · server pronostici-avvisi 4.16.0
 
 Solo app (il server resta 4.16.0): sostituisci app.js, app.css, index.html, sw.js e pubblica (pronostici.js e
-pronostici.css solo se non hai pubblicato la 4.22.2).
+pronostici.css solo se non hai pubblicato la 4.22.2 o successive).
 (Se il server non è ancora 4.16.0: prima ridistribuisci "pronostici-avvisi" con pronostici-avvisi.txt.)
-Dopo: in Altro l'app deve dire "4.22.3", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
+Dopo: in Altro l'app deve dire "4.23.0", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
 Analisi completa: analisi/analisi-2026-11-03.md.
+
+4.23.0 — solo app (server 4.16.0)
+  - SALDO › ANDAMENTO RIFATTO
+      · Via "I tuoi soldi" (saldo iniziale, depositi, prelievi, messi in gioco, saldo attuale): ripeteva la carta del Saldo.
+      · In cima ANDAMENTO, di base "Risultato netto" e "Tutto": quanto hai vinto o perso dal primo giorno, senza depositi e
+        prelievi (lo stesso numero di "Vinto in totale"). Sopra il grafico la lettura: valore, giorno e, a destra, il mese
+        in corso (o il cambio del periodo scelto). Tocca o TRASCINA il dito sul grafico: la lettura segue il dito giorno per
+        giorno, con quanto è cambiato quel giorno e i depositi/prelievi. Tocca la lettura per tornare al riepilogo.
+        Verde sopra lo zero, rosso sotto; segnati massimo e minimo. "Saldo" mostra il saldo segnato. Periodo sotto il grafico.
+      · Secondo RISULTATO GIORNO PER GIORNO: barre per Giorni, Settimane o Mesi; "Auto" sceglie da solo (fino a 45 barre i
+        giorni, poi le settimane, oltre 30 settimane i mesi), così con tanti giorni resta leggibile. In alto il riepilogo del
+        periodo (totale, giorni ▲/▼, migliore e peggiore); tocca o trascina su una barra e la lettura dice subito periodo,
+        risultato e saldo (o ▲/▼ e migliore/peggiore per settimane e mesi), con la barra evidenziata.
+      · Poi Analisi, Statistiche del periodo, Per giorno della settimana, Mese per mese e Registro come prima.
+  - SALDO › CALENDARIO RIFATTO
+      · I mesi in una striscia in alto (dal primo mese segnato a oggi), ognuno con il suo risultato: un tocco e ci sei.
+        Niente più menu a tendina (la scritta "questo mese" faceva slittare il testo).
+      · Frecce ‹ › grandi accanto al nome del mese (con il risultato e i giorni segnati sotto); sul calendario scorri col dito
+        a sinistra o a destra per cambiare mese. "Torna a questo mese" quando sei in un mese passato.
+      · Una griglia sola: L M M G V S D una volta in alto, sette giorni per riga e a destra il totale della settimana; la
+        settimana in corso è evidenziata.
 
 4.22.3 — solo app (server 4.16.0)
   - SALDO PIÙ COMPATTO: la cifra sul conto e il vinto (o perso) in totale stanno nella stessa riga; il risultato è una
