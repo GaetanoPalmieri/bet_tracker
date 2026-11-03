@@ -1671,7 +1671,7 @@ main button.pst-hb.on:not(#_){border-color:rgba(24,152,136,.85)!important}
 .pr-pk.eph{border-style:dashed;background:transparent;color:var(--suite-text-soft);opacity:.85}
 .pr-pk.eph b{color:var(--suite-text-soft)}
 .pr-tb.pr-eph{font-weight:800}
-/* 4.22.0 — Partite: stato e "Con pronostico / Tutte le partite" su due righe, nomi interi */
+/* 4.22.1 — Partite: stato e "Con pronostico / Tutte le partite" su due righe, nomi interi */
 .pr-seg.pr-seg2{display:grid!important;gap:3px}
 .pr-seg.pr-ephseg{grid-template-columns:1fr 1fr}
 .pr-seg2 button{display:grid!important;justify-items:center;align-content:center;gap:1px;min-height:42px!important;height:auto!important;padding:4px 2px!important;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.1}

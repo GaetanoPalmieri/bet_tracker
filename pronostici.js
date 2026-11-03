@@ -5202,12 +5202,12 @@ function tipListPanel(list) {
     shown.sort(function (a, b) { return b._sv - a._sv || tipKickoff(a) - tipKickoff(b); });
   }
   var views = [['open', 'Prossime'], ['live', 'In corso'], ['done', 'Finite']].concat(dayCnt.check ? [['check', 'Verifica']] : []).concat([['all', 'Tutte']]);
-  /* 4.22.0 — stato su due righe (nome e numero sotto): niente più nomi tagliati ("Prossim…", "Verifica…") */
+  /* 4.22.1 — stato su due righe (nome e numero sotto): niente più nomi tagliati ("Prossim…", "Verifica…") */
   var seg = '<div class="lv3-seg pr-seg pr-seg2" role="tablist" style="grid-template-columns:repeat(' + views.length + ',minmax(0,1fr))">' + views.map(function (v) {
     var on = tipUI.view === v[0];
     return '<button type="button" role="tab" aria-selected="' + on + '" class="' + (on ? 'on' : '') + '" data-tip-view="' + v[0] + '" data-no-icon><b>' + v[1] + '</b><small>' + dayCnt[v[0]] + '</small></button>';
   }).join('') + '</div>';
-  /* 4.22.0 — partite con pronostico / tutte le partite (anche senza pronostico sopra soglia), al posto del vecchio ＋ */
+  /* 4.22.1 — partite con pronostico / tutte le partite (anche senza pronostico sopra soglia), al posto del vecchio ＋ */
   var ephAll = tipEphList(), nEph = ephAll.filter(inDay).length, nPk = list.filter(function (m) { return !m._eph && inDay(m); }).length;
   if (ephAll.length || tipUI.preNoEph) seg += '<div class="lv3-seg pr-seg pr-seg2 pr-ephseg" role="tablist" aria-label="Quali partite">' +
     '<button type="button" role="tab" aria-selected="' + !!tipUI.preNoEph + '" class="' + (tipUI.preNoEph ? 'on' : '') + '" data-pre-eph="1" data-no-icon><b>Con pronostico</b><small>' + nPk + '</small></button>' +

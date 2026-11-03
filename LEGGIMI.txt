@@ -1,9 +1,16 @@
-Bet Tracker 4.22.0 · server pronostici-avvisi 4.16.0
+Bet Tracker 4.22.1 · server pronostici-avvisi 4.16.0
 
 1) PRIMA il server: ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt).
 2) Poi sostituisci pronostici.js, pronostici.css, app.js, index.html, sw.js e pubblica l'app.
-Dopo: in Altro l'app deve dire "4.22.0", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
+Dopo: in Altro l'app deve dire "4.22.1", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
 Analisi completa: analisi/analisi-2026-11-03.md.
+
+4.22.1 — solo app (server 4.16.0)
+  - PARTITE: al posto del pulsante ＋ la scelta "Con pronostico / Tutte le partite" sotto lo stato (di base Tutte), con il
+    numero di partite. Quelle senza pronostico hanno le probabilità del modello in pastiglie grigie tratteggiate, niente
+    stella, fuori dalle statistiche; un tocco apre probabilità e quote.
+  - PARTITE: lo stato (Prossime · In corso · Finite · Verifica · Tutte) va su due righe, nome sopra e numero sotto: niente
+    più nomi tagliati ("Prossim…", "Verifica…").
 
 4.22.0 / server 4.16.0 — 1° TEMPO, DOPPIONI, STATISTICHE PULITE, FILTRI DELLE STATISTICHE, PREPARTITA
   - IL 2/11 IL 1° TEMPO È ANDATO MALE PER TUTTI: sulla traccia completa 2-3/11 (275 partite) nelle partite 0-0 tra 10' e 19'
@@ -41,11 +48,8 @@ Analisi completa: analisi/analisi-2026-11-03.md.
     mercato" sono la prima scelta di Dividi per.
   - PREPARTITA: PIÙ PARTITE. Il server preparava 146 partite per oggi (3/11) ma l'app teneva solo le 8 con un pronostico
     sopra soglia: una sera di Champions ne mostrava una. Due cause:
-      · in Partite ora ci sono tutte: sotto lo stato c'è la scelta "Con pronostico / Tutte le partite" (di base Tutte).
-        Quelle senza pronostico hanno le probabilità del modello in grigio (tratteggiate), niente stella, fuori dalle
-        statistiche; un tocco apre le probabilità e le quote. Non si salvano nei dati sincronizzati;
-  - PARTITE: lo stato (Prossime · In corso · Finite · Verifica · Tutte) va su due righe, nome sopra e numero sotto: niente
-    più nomi tagliati ("Prossim…", "Verifica…").
+      · in Partite ora ci sono tutte: quelle senza pronostico con le probabilità del modello in grigio, senza stella e
+        fuori dalle statistiche; non si salvano nei dati sincronizzati;
       · il modello sottostimava i gol (linea bet365 × 0,80): pronostici 19/10-2/11 Over 1.5 89% contro 83% mostrato, Over 2.5
         83% contro 71%. Server: × 0,90. Più partite normali (linea 2.75-3.25) arrivano alla soglia.
 
