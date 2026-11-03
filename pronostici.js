@@ -2128,10 +2128,14 @@ function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
   if (U.finite(x.lineJump) && x.lineJump >= 0.5) return null;
   var lgN = String(x.league || ''), tierG = tipLeagueTier({ league: lgN, home: x.home, away: x.away }), lgG = tipLgGroup(lgN, tierG);
   var wTop = half === 2 && lgG === 'women' && tipWomenTop(lgN); /* 4.21.8 — prime divisioni femminili (in prova) */
+  /* 4.23.1 / server 4.16.1 — UEFA YOUTH LEAGUE nel 🔥 gol 2T, IN PROVA: le U19 dei grandi club fanno gol (3/11: tutte e 6 le
+     partite finite con gol nel 2T; le 3 che avevano la condizione del 🔥 2T, gol arrivato in tutte). Le altre giovanili restano
+     fuori (1-2/11: 34/43, 79%). Nei fattori ylTrial = 1, così si controlla a parte in Statistiche (gruppo giovanili). */
+  var ylT = half === 2 && /UEFA Youth League/i.test(lgN);
   if ((lgG === 'women' || women) && !wTop) return null; /* 4.20.10 — coppe internazionali dentro */
   /* 4.21.1 — 🔥 2T solo nei CAMPIONATI PRINCIPALI (prime divisioni, top, serie minori dei Paesi forti): export 1-2/11 36/37 (97%)
      contro 84/102 (82%) degli altri, a quota minima 1.16 → solo lì, ed è STABILE */
-  if (half === 2 && tierG !== 'major' && !wTop) return null;
+  if (half === 2 && tierG !== 'major' && !wTop && !ylT) return null;
   if (half === 1 && lgG === 'youth+') return null; /* 4.21.6 — giovanili dei Paesi forti: 🔥 1T sotto il mercato */
   /* 4.21.6 — KEEP ≥ 1: il book si aspetta ancora almeno i gol previsti prima per il tempo che resta (vedi TIP_GG) */
   /* 4.22.0 — nel 1° tempo con mezzo scalino di tolleranza (vedi TIP_KEEP_STEP) */
@@ -2147,7 +2151,7 @@ function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
   }
   var kk = half === 1 ? 't1x' : 't2x';
   return { k: kk, p: wTop ? TIP_W2_P : W.early && min <= W.early ? W.pEarly : W.p, green: TIP_GOAL_GREEN, warm: 0.70,
-    o: { rule: '4.22.0', rv: TIP_RULE_V[kk] || undefined, pl: pl, ll: x.liveLine, keep: Math.round(keep * 100) / 100, lgG: lgG, sotRecent: sot, prevMin: pv ? pv.min : null } };
+    o: { rule: '4.22.0', rv: TIP_RULE_V[kk] || undefined, pl: pl, ll: x.liveLine, keep: Math.round(keep * 100) / 100, lgG: lgG, ylTrial: ylT ? 1 : undefined, sotRecent: sot, prevMin: pv ? pv.min : null } };
 }
 function tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev) {
   var out = [], ok = function (v) { return U.finite(v) && v >= 0; };
@@ -3731,7 +3735,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '4.16.0', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0 */
+  var v = tipUI.serverVer, need = '4.16.1', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League) */
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
@@ -4131,7 +4135,7 @@ function tipLivePanel(list) {
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
   var S = tipUI.scan;
   /* 3.99.8 — barra su due righe: LIVE + ora, poi partite e versione del server (niente più testo tagliato a destra) */
-  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.16.0') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0 */
+  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.16.1') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
   var svTxt = sv ? (sv === 'vecchia' ? 'vecchio' : sv) : '';
   /* 4.8.1 — STATO IN EVIDENZA: riquadro in cima con l'ora dell'ultimo controllo (ambra se più vecchio di 5 minuti) e un
      pulsante "Aggiorna" grande, che durante il controllo gira senza cambiare larghezza (prima la scritta veniva tagliata). */

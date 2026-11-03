@@ -1,10 +1,19 @@
-Bet Tracker 4.23.0 · server pronostici-avvisi 4.16.0
+Bet Tracker 4.23.1 · server pronostici-avvisi 4.16.1
 
-Solo app (il server resta 4.16.0): sostituisci app.js, app.css, index.html, sw.js e pubblica (pronostici.js e
-pronostici.css solo se non hai pubblicato la 4.22.2 o successive).
-(Se il server non è ancora 4.16.0: prima ridistribuisci "pronostici-avvisi" con pronostici-avvisi.txt.)
-Dopo: in Altro l'app deve dire "4.23.0", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
+App e server: sostituisci pronostici.js, app.js, index.html, sw.js e pubblica; poi ridistribuisci la funzione
+"pronostici-avvisi" con pronostici-avvisi.txt (senza il server 4.16.1 le notifiche della Youth League nel 2T non partono).
+(Se non hai pubblicato la 4.23.0: anche app.css, pronostici.css.)
+Dopo: in Altro l'app deve dire "4.23.1", in Live la barra "server 4.16.1" (con un server più vecchio compare ⚠).
 Analisi completa: analisi/analisi-2026-11-03.md.
+
+4.23.1 — app e server 4.16.1
+  - 🔥 GOL 2T ANCHE NELLA UEFA YOUTH LEAGUE, IN PROVA. Fino a oggi il 2° tempo escludeva tutte le giovanili (1-2/11: 34 su
+    43, 79%, contro il 97% dei campionati principali). Il 3/11 tutte e 6 le partite di Youth League finite hanno avuto un
+    gol nel 2T e le 3 con la condizione del 🔥 2T (linea prepartita ≥ 3.25, 47'-58', keep ≥ 1) l'hanno preso tutte:
+    Feyenoord-Inter al 51', Barcellona-Aston Villa al 47', Atlético-Bayern al 52'. Stesse condizioni degli altri
+    campionati; le altre giovanili restano fuori. I segnali hanno ylTrial = 1 nei fattori e si vedono a parte in
+    Statistiche (gruppo giovanili): se dopo qualche turno scendono sotto l'obiettivo, si tolgono.
+  - Rigiocata la traccia 2-3/11: stessi segnali di prima negli altri campionati (app e server uguali, nessun errore).
 
 4.23.0 — solo app (server 4.16.0)
   - SALDO › ANDAMENTO RIFATTO
