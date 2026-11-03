@@ -5202,22 +5202,26 @@ function tipListPanel(list) {
     shown.sort(function (a, b) { return b._sv - a._sv || tipKickoff(a) - tipKickoff(b); });
   }
   var views = [['open', 'Prossime'], ['live', 'In corso'], ['done', 'Finite']].concat(dayCnt.check ? [['check', 'Verifica']] : []).concat([['all', 'Tutte']]);
-  var seg = '<div class="lv3-seg pr-seg" role="tablist">' + views.map(function (v) {
+  /* 4.22.0 — stato su due righe (nome e numero sotto): niente più nomi tagliati ("Prossim…", "Verifica…") */
+  var seg = '<div class="lv3-seg pr-seg pr-seg2" role="tablist" style="grid-template-columns:repeat(' + views.length + ',minmax(0,1fr))">' + views.map(function (v) {
     var on = tipUI.view === v[0];
-    return '<button type="button" role="tab" aria-selected="' + on + '" class="' + (on ? 'on' : '') + '" data-tip-view="' + v[0] + '">' + v[1] + ' <i>' + dayCnt[v[0]] + '</i></button>';
+    return '<button type="button" role="tab" aria-selected="' + on + '" class="' + (on ? 'on' : '') + '" data-tip-view="' + v[0] + '" data-no-icon><b>' + v[1] + '</b><small>' + dayCnt[v[0]] + '</small></button>';
   }).join('') + '</div>';
+  /* 4.22.0 — partite con pronostico / tutte le partite (anche senza pronostico sopra soglia), al posto del vecchio ＋ */
+  var ephAll = tipEphList(), nEph = ephAll.filter(inDay).length, nPk = list.filter(function (m) { return !m._eph && inDay(m); }).length;
+  if (ephAll.length || tipUI.preNoEph) seg += '<div class="lv3-seg pr-seg pr-seg2 pr-ephseg" role="tablist" aria-label="Quali partite">' +
+    '<button type="button" role="tab" aria-selected="' + !!tipUI.preNoEph + '" class="' + (tipUI.preNoEph ? 'on' : '') + '" data-pre-eph="1" data-no-icon><b>Con pronostico</b><small>' + nPk + '</small></button>' +
+    '<button type="button" role="tab" aria-selected="' + !tipUI.preNoEph + '" class="' + (tipUI.preNoEph ? '' : 'on') + '" data-pre-eph="0" data-no-icon><b>Tutte le partite</b><small>' + (nPk + nEph) + '</small></button></div>';
   var sortName = (TIP_SORTS.find(function (o) { return o[0] === tipUI.sort; }) || TIP_SORTS[0])[1];
   var nStar = list.filter(function (m) { return tipIsStar(m); }).length;
   var tools = '<div class="pr-tools"><span class="tip-search pr-search">' + TIP_IC.search + '<input id="tip-q" type="search" placeholder="Cerca squadra o campionato" value="' + U.esc(tipUI.q || '') + '" aria-label="Cerca squadra o campionato"></span>' +
     '<button type="button" class="pr-tb' + (tipUI.league ? ' on' : '') + '" data-tip-filter="league" aria-label="Campionato">🏆</button>' +
     '<button type="button" class="pr-tb' + (byProb ? ' on' : '') + '" data-tip-filter="sort" aria-label="Ordina">⇅</button>' +
-    '<button type="button" class="pr-tb' + (tipUI.starOnly ? ' on' : '') + '" data-tip-staronly aria-label="Solo preferite">' + (tipUI.starOnly ? '★' : '☆') + (nStar ? '<i>' + nStar + '</i>' : '') + '</button>' +
-    (function () { var nE = tipEphList().length; return nE || tipUI.preNoEph ? '<button type="button" class="pr-tb pr-eph' + (tipUI.preNoEph ? '' : ' on') + '" data-pre-eph aria-pressed="' + !tipUI.preNoEph + '" aria-label="Anche le partite senza pronostico">＋' + (nE ? '<i>' + nE + '</i>' : '') + '</button>' : ''; })() + '</div>';
+    '<button type="button" class="pr-tb' + (tipUI.starOnly ? ' on' : '') + '" data-tip-staronly aria-label="Solo preferite">' + (tipUI.starOnly ? '★' : '☆') + (nStar ? '<i>' + nStar + '</i>' : '') + '</button></div>';
   var act = [];
   if (tipUI.league) act.push('🏆 ' + U.esc(tipUI.league));
   if (byProb) act.push('⇅ ' + U.esc(sortName));
   if (tipUI.starOnly) act.push('★ Solo preferite');
-  if (tipUI.preNoEph) act.push('Solo con pronostico');
   var actHtml = act.length ? '<div class="pr-act">' + act.map(function (a) { return '<span class="pr-actc">' + a + '</span>'; }).join('') + '<button type="button" class="pr-reset" data-tip-reset>✕ Azzera</button></div>' : '';
   var top = tipPreTopSet(list);
   var row = function (m) {
@@ -6208,7 +6212,7 @@ function tipDetailEph(m) {
 document.addEventListener('click', function (ev) {
   var b = ev.target.closest && ev.target.closest('[data-pre-eph]');
   if (!b) return;
-  tipUI.preNoEph = !tipUI.preNoEph;
+  tipUI.preNoEph = b.getAttribute('data-pre-eph') === '1';
   render();
 });
 function tipTopList(list, days) {
