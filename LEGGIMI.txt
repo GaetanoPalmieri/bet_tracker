@@ -1,9 +1,50 @@
-Bet Tracker 4.21.8 · server pronostici-avvisi 4.15.5
+Bet Tracker 4.22.0 · server pronostici-avvisi 4.16.0
 
-1) Ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt): femminili.
-2) Sostituisci pronostici.js, app.js, index.html, sw.js e pubblica l'app (se non hai pubblicato la 4.21.7, anche app.css,
-   pronostici.css e suite.js).
-Dopo: in Altro l'app deve dire "4.21.8", in Live la barra "server 4.15.5".
+1) PRIMA il server: ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt).
+2) Poi sostituisci pronostici.js, pronostici.css, app.js, index.html, sw.js e pubblica l'app.
+Dopo: in Altro l'app deve dire "4.22.0", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
+Analisi completa: analisi/analisi-2026-11-03.md.
+
+4.22.0 / server 4.16.0 — 1° TEMPO, DOPPIONI, STATISTICHE PULITE, FILTRI DELLE STATISTICHE, PREPARTITA
+  - IL 2/11 IL 1° TEMPO È ANDATO MALE PER TUTTI: sulla traccia completa 2-3/11 (275 partite) nelle partite 0-0 tra 10' e 19'
+    il gol prima dell'intervallo è arrivato nel 54% dei casi contro il 61% che prezzava il book (con le quote vere 59% contro
+    69%). Nel 2° tempo invece in linea o sopra il book. I segnali 1T dopo la 4.21.6: 11/18 (61%), sopra la media della
+    giornata ma sotto la stima. Non è un filtro "rotto": un giorno storto su pochi segnali. Le correzioni sotto tolgono
+    però tre difetti veri.
+  - QUOTE VERE DEL 1° TEMPO PRIMA DELLE ALTRE (server): il gol 1T favorita sullo 0-0 parte solo con le quote vere del 1T,
+    ma il server le leggeva per 6 partite a giro scelte per % più alta e quelle del 2T passavano sempre davanti: nel 1T le
+    quote c'erano nel 3-15% dei controlli (7% la sera). Per questo il 2/11 il gol 1T favorita è partito 12 volte contro le 83
+    dell'1/11. Ora le quote si chiedono solo per chi le usa: prima il 1T con favorita 65%+ (0-0, poi 1 gol), poi il
+    prossimo gol 2T nei top campionati. Fino a 8 partite a giro.
+  - KEEP CON MEZZO SCALINO NEL 1° TEMPO: la linea gol live va a scalini di 0,25 e una partita al ritmo giusto poteva avere
+    keep 0,99 ed essere scartata. Al Gharafa – Al Qadisiya (favorita 76%, linea 3.75): keep 0,997 al 12' e 0,995 sull'0-1 al
+    18', poi 0-4 all'intervallo. Ora nel 1T si tollera mezzo scalino: rigiocata, quella partita dà 🔥 1T al 18' (vinto).
+    Il 2° tempo resta con keep ≥ 1 (90% sulla traccia 20/10-2/11).
+  - Al Ittihad – Al Ain: nessuna favorita (43%), linea 3.25 e il book l'ha abbassata a 2.75 entro il 12': per i dati non
+    era "evidente". Nessun filtro la chiama e non si inventa una regola su una partita.
+  - UNA SOLA GIOCATA PER PARTITA E PUNTEGGIO: 🎯 prossimo gol 2T e 🔥 gol 2T (o 🎯 gol 1T e 🔥 gol 1T) sulla stessa partita e
+    lo stesso punteggio sono la stessa scommessa. Prima partivano tutti e due a qualche minuto di distanza (19 volte dal
+    25/10, es. Atalanta – Parma 0-2 al 47' e al 49') e contavano doppio. Ora parte solo il primo (server e app); nelle
+    statistiche i doppioni vecchi contano una volta.
+  - ATALANTA – PARMA: 1T vinto (gol al 41'), prossimo gol 2T sullo 0-2 vinto (gol al 58'); perso il 🔥 2T al 57' sullo 0-3.
+    Il 2T con keep ≥ 1 tiene anche sulla traccia 2-3/11 (11/13 contro 5/8 sotto): nessuna regola cambiata per una partita.
+  - STATISTICHE SENZA FILTRI SPENTI O VECCHI: ogni segnale nuovo porta la versione della sua regola. Statistiche e Live ›
+    Oggi contano solo i filtri accesi e i segnali fatti con la regola di oggi; ⭐ gol 1T favorita 80%+ (spento dalla 4.21.1)
+    non compare più. 🎯 gol 1T favorita e 🔥 gol 1T ripartono da zero con la regola nuova; 🔥 gol 2T dal 2/11 (4.21.6).
+    I segnali di prima restano nell'🗄 Archivio e negli export. Quando un filtro cambia si alza TIP_RULE_V e succede da solo.
+  - STATISTICHE: FILTRI RIFATTI. In cima una barra sola: cerca squadra o campionato (filtra mentre scrivi), periodo con il
+    numero di segnali, i filtri (Live) o i mercati (Prepartita) come caselle con % e vinte–perse, scelte veloci (tempo,
+    esito, livello, ⭐ top campionati) e "Altri" (campionato, gol, minuto, favorita, campione, profilo, ritmo; nel
+    Prepartita campionato e probabilità) nella stessa barra. Ogni scelta mostra quanti segnali restano con le altre scelte.
+    ★ Viste salvate: "＋ Salva vista" e la combinazione torna con un tocco (anche sugli altri telefoni). L'ultima scelta
+    resta chiudendo l'app. Scorrendo resta in alto una riga con cosa stai guardando e il risultato. "Per filtro" e "Per
+    mercato" sono la prima scelta di Dividi per.
+  - PREPARTITA: PIÙ PARTITE. Il server preparava 146 partite per oggi (3/11) ma l'app teneva solo le 8 con un pronostico
+    sopra soglia: una sera di Champions ne mostrava una. Due cause:
+      · in Partite ora ci sono tutte (pulsante ＋ per toglierle): quelle senza pronostico con le probabilità del modello in
+        grigio, senza stella e fuori dalle statistiche; non si salvano nei dati sincronizzati;
+      · il modello sottostimava i gol (linea bet365 × 0,80): pronostici 19/10-2/11 Over 1.5 89% contro 83% mostrato, Over 2.5
+        83% contro 71%. Server: × 0,90. Più partite normali (linea 2.75-3.25) arrivano alla soglia.
 
 4.21.8 / server 4.15.5 — FEMMINILI (in prova)
   - 🔥 Gol 2T partita da gol e 🎯 Prossimo gol 2T anche nelle prime divisioni femminili più forti: WSL, Liga F,
