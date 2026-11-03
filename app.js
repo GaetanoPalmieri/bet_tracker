@@ -1,4 +1,4 @@
-const APP_VERSION = '4.22.1';
+const APP_VERSION = '4.22.2';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -3662,13 +3662,19 @@ function saldoHomeHtml() {
     (w7 ? pill('7 giorni', w7.value) : '') + (wdToday ? '<span class="sd-pill out"><i aria-hidden="true">↑</i><b>' + U.money(wdToday) + '</b><small>prelevati oggi</small></span>' : '');
   var chip = te ? '<span class="sd-chip ok"><i aria-hidden="true">✓</i>' + (te.updatedAt ? 'Aggiornato alle ' + hm(te.updatedAt) : 'Aggiornato oggi') + '</span>' : '<span class="sd-chip todo"><i aria-hidden="true"></i>Da aggiornare</span>';
   var tile = function (cls, ic, label, val, vcls) { return '<div class="sd-tile ' + cls + '"><small><i class="sd-tic" aria-hidden="true">' + ic + '</i>' + label + '</small><b class="' + (vcls || '') + '">' + val + '</b></div>'; };
+  /* 4.22.2 — VINTO / PERSO IN EVIDENZA: subito sotto la cifra sul conto, grande e colorato (verde se sei sopra quanto hai
+     versato, rosso se sotto), con oggi e 7 giorni accanto. Prima era una casella piccola tra Versato e Prelevato. */
+  var rc = P.res > 0.004 ? 'up' : P.res < -0.004 ? 'dn' : 'eq';
+  var resBox = '<div class="sd-res ' + rc + '"><div class="sd-res-l"><small>' + (rc === 'up' ? 'Vinto in totale' : rc === 'dn' ? 'Perso in totale' : 'In pari') + '</small>' +
+    '<b class="sd-res-v"><i aria-hidden="true">' + (rc === 'up' ? '▲' : rc === 'dn' ? '▼' : '●') + '</i>' + sdMoneyBig(Math.abs(P.res)).replace('<span class="sd-int">', '<span class="sd-int">' + (rc === 'up' ? '+' : rc === 'dn' ? '−' : '')) + '</b></div>' +
+    '<div class="sd-pills">' + pills + '</div></div>';
   var hero =
     '<section class="card sd-hero sd-hero2' + (todayRes != null && todayRes < 0 ? ' down' : '') + '" data-cx="saldo-hero">' +
-    '<div class="sd-top"><span class="sd-lab">Sul conto</span><b class="sd-mini">' + U.money(P.cur) + '</b>' + chip + '</div>' +
+    '<div class="sd-top"><span class="sd-lab">Sul conto</span><b class="sd-mini">' + U.money(P.cur) + ' <span class="sd-mini-r ' + rc + '">' + sMoney(P.res) + '</span></b>' + chip + '</div>' +
     '<div class="sd-big">' + sdMoneyBig(P.cur) + '</div>' +
-    '<div class="sd-pills">' + pills + '</div>' +
+    resBox +
     sdSpark(series) +
-    '<div class="sd-tiles">' + tile('dep', '↓', 'Versato', U.money(P.dep)) + tile('res', '±', 'Vinto / perso', sMoney(P.res), sClass(P.res)) + tile('wd', '↑', 'Prelevato', U.money(P.wd)) + '</div>' +
+    '<div class="sd-tiles sd-tiles2">' + tile('dep', '↓', 'Versato', U.money(P.dep)) + tile('wd', '↑', 'Prelevato', U.money(P.wd)) + '</div>' +
     '<div class="sd-actions"><button type="button" class="sd-main" data-ms="saldo"><span aria-hidden="true">✎</span> Aggiorna saldo</button><button type="button" class="sd-btn out" data-ms="withdraw"><span aria-hidden="true">↑</span>Prelievo</button><button type="button" class="sd-btn in" data-ms="deposit"><span aria-hidden="true">↓</span>Deposito</button></div></section>';
   /* movimenti di oggi */
   var items = mv.map(function (x) {

@@ -5205,13 +5205,13 @@ function tipListPanel(list) {
   /* 4.22.1 — stato su due righe (nome e numero sotto): niente più nomi tagliati ("Prossim…", "Verifica…") */
   var seg = '<div class="lv3-seg pr-seg pr-seg2" role="tablist" style="grid-template-columns:repeat(' + views.length + ',minmax(0,1fr))">' + views.map(function (v) {
     var on = tipUI.view === v[0];
-    return '<button type="button" role="tab" aria-selected="' + on + '" class="' + (on ? 'on' : '') + '" data-tip-view="' + v[0] + '" data-no-icon><b>' + v[1] + '</b><small>' + dayCnt[v[0]] + '</small></button>';
+    return '<button type="button" role="tab" aria-selected="' + on + '" class="pv-' + v[0] + (on ? ' on' : '') + '" data-tip-view="' + v[0] + '" data-no-icon><b>' + v[1] + '</b><small>' + dayCnt[v[0]] + '</small></button>'; /* 4.22.2 — un colore per stato */
   }).join('') + '</div>';
   /* 4.22.1 — partite con pronostico / tutte le partite (anche senza pronostico sopra soglia), al posto del vecchio ＋ */
   var ephAll = tipEphList(), nEph = ephAll.filter(inDay).length, nPk = list.filter(function (m) { return !m._eph && inDay(m); }).length;
   if (ephAll.length || tipUI.preNoEph) seg += '<div class="lv3-seg pr-seg pr-seg2 pr-ephseg" role="tablist" aria-label="Quali partite">' +
-    '<button type="button" role="tab" aria-selected="' + !!tipUI.preNoEph + '" class="' + (tipUI.preNoEph ? 'on' : '') + '" data-pre-eph="1" data-no-icon><b>Con pronostico</b><small>' + nPk + '</small></button>' +
-    '<button type="button" role="tab" aria-selected="' + !tipUI.preNoEph + '" class="' + (tipUI.preNoEph ? '' : 'on') + '" data-pre-eph="0" data-no-icon><b>Tutte le partite</b><small>' + (nPk + nEph) + '</small></button></div>';
+    '<button type="button" role="tab" aria-selected="' + !!tipUI.preNoEph + '" class="pv-pk' + (tipUI.preNoEph ? ' on' : '') + '" data-pre-eph="1" data-no-icon><b>★ Con pronostico</b><small>' + nPk + '</small></button>' +
+    '<button type="button" role="tab" aria-selected="' + !tipUI.preNoEph + '" class="pv-allm' + (tipUI.preNoEph ? '' : ' on') + '" data-pre-eph="0" data-no-icon><b>Tutte le partite</b><small>' + (nPk + nEph) + '</small></button></div>';
   var sortName = (TIP_SORTS.find(function (o) { return o[0] === tipUI.sort; }) || TIP_SORTS[0])[1];
   var nStar = list.filter(function (m) { return tipIsStar(m); }).length;
   var tools = '<div class="pr-tools"><span class="tip-search pr-search">' + TIP_IC.search + '<input id="tip-q" type="search" placeholder="Cerca squadra o campionato" value="' + U.esc(tipUI.q || '') + '" aria-label="Cerca squadra o campionato"></span>' +

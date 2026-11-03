@@ -1,9 +1,18 @@
-Bet Tracker 4.22.1 · server pronostici-avvisi 4.16.0
+Bet Tracker 4.22.2 · server pronostici-avvisi 4.16.0
 
-1) PRIMA il server: ridistribuisci la funzione Supabase "pronostici-avvisi" (pronostici-avvisi.txt).
-2) Poi sostituisci pronostici.js, pronostici.css, app.js, index.html, sw.js e pubblica l'app.
-Dopo: in Altro l'app deve dire "4.22.1", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
+Solo app (il server resta 4.16.0): sostituisci app.js, app.css, pronostici.js, pronostici.css, index.html, sw.js e pubblica.
+(Se il server non è ancora 4.16.0: prima ridistribuisci "pronostici-avvisi" con pronostici-avvisi.txt.)
+Dopo: in Altro l'app deve dire "4.22.2", in Live la barra "server 4.16.0" (con un server più vecchio compare ⚠).
 Analisi completa: analisi/analisi-2026-11-03.md.
+
+4.22.2 — solo app (server 4.16.0)
+  - PARTITE: lo stato ha un colore per voce, come il bordo delle righe: Prossime verde acqua, In corso blu, Finite viola,
+    Verifica ambra (tratteggiato), Tutte neutro. ★ Con pronostico ambra, Tutte le partite verde acqua. La voce scelta ha lo
+    sfondo del suo colore.
+  - SALDO: VINTO / PERSO IN EVIDENZA. Subito sotto la cifra sul conto c'è un riquadro grande con il risultato totale
+    (quanto hai sul conto meno quanto hai versato, più quanto hai prelevato): bianco con la cifra verde se sei sopra, rosso
+    se sei sotto, con "oggi" e "7 giorni" dentro. Sotto restano Versato e Prelevato. Con il riquadro chiuso a tendina, accanto
+    alla cifra sul conto c'è anche il risultato.
 
 4.22.1 — solo app (server 4.16.0)
   - PARTITE: al posto del pulsante ＋ la scelta "Con pronostico / Tutte le partite" sotto lo stato (di base Tutte), con il

@@ -1925,3 +1925,27 @@ html:root body main { padding-bottom: calc(96px + var(--tab-bottom)) !important;
 .tip-dato{margin:6px 2px 0;font-size:12px;line-height:1.4;color:var(--suite-text-soft)}
 .tip-subh{margin:12px 2px 4px;font-size:12px;color:var(--suite-text-soft)}
 dialog#editor.sheet .ms-ref{margin:6px 2px 0!important;font-size:12px;color:var(--suite-text-soft);line-height:1.4}
+/* 4.22.2 — SALDO: vinto / perso in evidenza sotto la cifra sul conto */
+.sd-hero2 .sd-res{position:relative;z-index:1;display:grid;gap:9px;padding:11px 13px 12px;border-radius:16px;margin-top:-2px}
+.sd-hero2 .sd-res.up{background:rgba(255,255,255,.94);color:#0b5e45;box-shadow:0 6px 18px -8px rgba(0,0,0,.35)}
+.sd-hero2 .sd-res.dn{background:linear-gradient(135deg,#e5534b,#b8322b);color:#fff;box-shadow:0 6px 18px -8px rgba(120,20,20,.6)}
+.sd-hero2 .sd-res.eq{background:rgba(0,0,0,.2);color:#fff}
+.sd-hero2 .sd-res-l{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sd-hero2 .sd-res-l small{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.sd-hero2 .sd-res-v{display:inline-flex;align-items:baseline;gap:2px;font-family:var(--suite-font-display);font-weight:850;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sd-hero2 .sd-res-v i{font-style:normal;font-size:16px;margin-right:5px;align-self:center}
+.sd-hero2 .sd-res-v .sd-int{font-size:36px}
+.sd-hero2 .sd-res-v .sd-dec{font-size:20px;opacity:.85;margin-left:1px}
+.sd-hero2 .sd-res .sd-pills{gap:6px}
+.sd-hero2 .sd-res.up .sd-pill{background:rgba(11,94,69,.09);border-color:rgba(11,94,69,.16)}
+.sd-hero2 .sd-res.up .sd-pill b{color:#0b5e45}
+.sd-hero2 .sd-res.up .sd-pill small{color:rgba(11,94,69,.75)}
+.sd-hero2 .sd-res.up .sd-pill.pos i{color:#119a6c}.sd-hero2 .sd-res.up .sd-pill.neg i{color:#c8352d}.sd-hero2 .sd-res.up .sd-pill.out i{color:#b86e00}
+.sd-hero2 .sd-res.up .sd-pill.neg{background:rgba(200,53,45,.1);border-color:rgba(200,53,45,.2)}
+.sd-hero2 .sd-res.dn .sd-pill{background:rgba(0,0,0,.18);border-color:rgba(255,255,255,.18)}
+.sd-hero2 .sd-tiles.sd-tiles2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sd-hero2 .sd-mini-r{font-size:13px;font-weight:800;margin-left:4px}
+.sd-hero2 .sd-mini-r.up{color:#a6ffd8}.sd-hero2 .sd-mini-r.dn{color:#ffc2b8}
+@media (max-width:370px){.sd-hero2 .sd-res-v .sd-int{font-size:31px}.sd-hero2 .sd-res-v .sd-dec{font-size:18px}}
+.sd-hero2 .sd-res.dn .sd-res-l small{opacity:.95}
+.sd-hero2 .sd-res.up .sd-res-l small{color:#0b5e45;opacity:.75}
