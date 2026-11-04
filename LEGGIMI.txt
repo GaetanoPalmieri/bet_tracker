@@ -1,10 +1,26 @@
-Bet Tracker 4.23.1 · server pronostici-avvisi 4.16.1
+Bet Tracker 4.24.0 · server pronostici-avvisi 4.17.0
 
 App e server: sostituisci pronostici.js, app.js, index.html, sw.js e pubblica; poi ridistribuisci la funzione
-"pronostici-avvisi" con pronostici-avvisi.txt (senza il server 4.16.1 le notifiche della Youth League nel 2T non partono).
-(Se non hai pubblicato la 4.23.0: anche app.css, pronostici.css.)
-Dopo: in Altro l'app deve dire "4.23.1", in Live la barra "server 4.16.1" (con un server più vecchio compare ⚠).
-Analisi completa: analisi/analisi-2026-11-03.md.
+"pronostici-avvisi" con pronostici-avvisi.txt (senza il server 4.17.0 le notifiche seguono ancora le regole di prima).
+Dopo: in Altro l'app deve dire "4.24.0", in Live la barra "server 4.17.0" (con un server più vecchio compare ⚠).
+Analisi completa: analisi/analisi-2026-11-04.md.
+
+4.24.0 — app e server 4.17.0 (analisi 4/11: segnali del 3/11 e rigioco della traccia 29/10-4/11)
+  - I filtri live vincevano quanto dice il book (🔥 2T 82% con mercato 83%, 🔥 1T 70% con mercato 71%): si tengono solo i
+    casi in cui si vince PIÙ del mercato, stabili in tutta la settimana e confermati dai segnali veri.
+  - 🔥 GOL 2T SOLO CON 0-2 GOL al segnale. Con 3+ gol il book si aspetta ancora gol ma la partita spesso si ferma:
+    40/54 (74%) con mercato 84%, segnali veri 10/17. Con 0-2 gol 60/68 (88%) con mercato 82%, veri 14/16.
+    Il 3/11 avrebbe fatto 8/9 invece di 12/16. Circa metà dei segnali.
+  - 🔥 GOL 1T SOLO CON 0-1 GOL E FUORI DALLE SERIE MINORI DEI PAESI FORTI (Isthmian, Northern Premier, Challenge Cup
+    scozzese, Liga Premier messicana…). Con 2+ gol al 12'-19' 10/23; serie minori dei Paesi forti 43/66 (65%) con mercato
+    71%. Quello che resta: 58/72 (81%) con mercato 71%, segnali veri 22/27 (il resto 12/22). Circa metà dei segnali.
+  - Statistiche e Live › Oggi: anche i segnali 🔥 di prima contano solo se hanno le condizioni di oggi (gli altri restano
+    nell'🗄 Archivio e negli export).
+  - PREPARTITA: la correzione con lo storico alza le stime fino a +5 punti (era +1). Dal 28/10 al 3/11 276/297 (93%) con
+    stima 84%, anche appena sopra la soglia: le stime restavano basse e le Top corte. Ora stime più vicine al vero e Top più
+    piene. Le soglie per dare un pronostico non cambiano.
+  - Rigiocata la traccia 29/10-4/11: app e server danno gli stessi segnali, nessun errore. 🎯 gol 1T favorita e 🎯 prossimo
+    gol 2T invariati.
 
 4.23.1 — app e server 4.16.1
   - 🔥 GOL 2T ANCHE NELLA UEFA YOUTH LEAGUE, IN PROVA. Fino a oggi il 2° tempo escludeva tutte le giovanili (1-2/11: 34 su

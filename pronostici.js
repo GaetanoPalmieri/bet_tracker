@@ -2120,6 +2120,8 @@ function tipTrialKeyX(x) { return x && /^t[chk][12]$/.test(x.k) && x.cn != null 
         giovanili dei Paesi forti                           25/40 (62,5%) contro 72% del mercato → fuori
    Gol 1T favorita: le quote 1X2 nella traccia ci sono solo dal 2/11 (28 righe): si rifà con la prossima traccia. */
 var TIP_GG = { 1: { from: 12, to: 19, line: 3.5, p: 0.75 }, 2: { from: 47, to: 58, line: 3.25, p: 0.86, early: 50, pEarly: 0.91 } }, TIP_GG_KEEP = 1;
+/* 4.24.0 / server 4.17.0 — gol già segnati al massimo: 1T 1, 2T 2 (vedi tipGoalGame) */
+var TIP_GG_MAXG = { 1: 1, 2: 2 };
 function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
   var W = TIP_GG[half];
   if (!W || !x || (women && half === 1) || !U.finite(min) || min < W.from || min > W.to) return null;
@@ -2137,6 +2139,12 @@ function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
      contro 84/102 (82%) degli altri, a quota minima 1.16 → solo lì, ed è STABILE */
   if (half === 2 && tierG !== 'major' && !wTop && !ylT) return null;
   if (half === 1 && lgG === 'youth+') return null; /* 4.21.6 — giovanili dei Paesi forti: 🔥 1T sotto il mercato */
+  /* 4.24.0 / server 4.17.0 — QUANTI GOL CI SONO GIÀ (analisi 4/11: rigioco della traccia 29/10-4/11 e segnali veri).
+     2T con 3+ gol: 40/54 (74%) con mercato 84%, veri 10/17 → 🔥 2T solo con 0-2 gol: 60/68 (88%) con mercato 82%, veri 14/16.
+     1T con 2+ gol: 10/23 (43%); serie minori dei Paesi forti 43/66 (65%) con mercato 71% → 🔥 1T solo con 0-1 gol e fuori
+     dalle serie minori dei Paesi forti: 58/72 (81%) con mercato 71%, veri 22/27 (il resto 12/22). */
+  if (G > TIP_GG_MAXG[half]) return null;
+  if (half === 1 && lgG === 'minor+') return null;
   /* 4.21.6 — KEEP ≥ 1: il book si aspetta ancora almeno i gol previsti prima per il tempo che resta (vedi TIP_GG) */
   /* 4.22.0 — nel 1° tempo con mezzo scalino di tolleranza (vedi TIP_KEEP_STEP) */
   var llv = Number(x.liveLine), keep = tipKeepRaw(llv, pl, G, min, half === 1 ? TIP_KEEP_STEP : 0);
@@ -2151,7 +2159,7 @@ function tipGoalGame(min, half, x, G, sd, prev8, prev, women) {
   }
   var kk = half === 1 ? 't1x' : 't2x';
   return { k: kk, p: wTop ? TIP_W2_P : W.early && min <= W.early ? W.pEarly : W.p, green: TIP_GOAL_GREEN, warm: 0.70,
-    o: { rule: '4.22.0', rv: TIP_RULE_V[kk] || undefined, pl: pl, ll: x.liveLine, keep: Math.round(keep * 100) / 100, lgG: lgG, ylTrial: ylT ? 1 : undefined, sotRecent: sot, prevMin: pv ? pv.min : null } };
+    o: { rule: '4.24.0', rv: TIP_RULE_V[kk] || undefined, pl: pl, ll: x.liveLine, keep: Math.round(keep * 100) / 100, lgG: lgG, ylTrial: ylT ? 1 : undefined, sotRecent: sot, prevMin: pv ? pv.min : null } };
 }
 function tipTargetPlays(min, half, x, prev8, g, G, st, sd, r, pr, prev) {
   var out = [], ok = function (v) { return U.finite(v) && v >= 0; };
@@ -2637,6 +2645,13 @@ function tipRuleSince(k) {
 function tipRuleOk(e) {
   /* 4.20.8 — gol 1T favorita: nelle statistiche solo i segnali con favorita 65%+ (anche quelli di prima con la stessa condizione) */
   if (e.k === 'tm1' || e.k === 'tm1s') { var fp = (e.factors || {}).favP; return typeof fp === 'number' && fp >= TIP_FAV1_MIN - 1e-9; }
+  /* 4.24.0 — 🔥 partita da gol: nelle statistiche solo i segnali con le condizioni di oggi, anche quelli di prima
+     (2T al massimo 2 gol; 1T al massimo 1 gol e fuori dalle serie minori dei Paesi forti) */
+  if (e.k === 't2x' || e.k === 't1x') {
+    var gG = (Number(e.gh) || 0) + (Number(e.ga) || 0);
+    if (e.k === 't2x') return gG <= TIP_GG_MAXG[2];
+    return gG <= TIP_GG_MAXG[1] && ((e.factors || {}).lgG || '') !== 'minor+';
+  }
   if (e.k !== 'tm2') return true;
   var f = e.factors || {}, g = f.lgG || '';
   return (g === 'first' || g === 'top7' || tipLeagueTop(e) || (g === 'women' && tipWomenTop(e.league))) && (f.pMkt == null || f.pMkt >= TIP_TM2_MINP - 1e-9);
@@ -3735,7 +3750,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '4.16.1', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League) */
+  var v = tipUI.serverVer, need = '4.17.0', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League) */
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
@@ -4135,7 +4150,7 @@ function tipLivePanel(list) {
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
   var S = tipUI.scan;
   /* 3.99.8 — barra su due righe: LIVE + ora, poi partite e versione del server (niente più testo tagliato a destra) */
-  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.16.1') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
+  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.17.0') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
   var svTxt = sv ? (sv === 'vecchia' ? 'vecchio' : sv) : '';
   /* 4.8.1 — STATO IN EVIDENZA: riquadro in cima con l'ora dell'ultimo controllo (ambra se più vecchio di 5 minuti) e un
      pulsante "Aggiorna" grande, che durante il controllo gira senza cambiare larghezza (prima la scritta veniva tagliata). */
@@ -7186,6 +7201,7 @@ function tipCalRows() {
   tipUI._cal = by;
   return by;
 }
+var TIP_CAL_UP = 5; /* 4.24.0 — era 1 */
 function tipCal(k, p) {
   var rows = (tipCalRows()[k] || []).filter(function (r) { return Math.abs(r[0] - p) <= 4; });
   if (!rows.length) return p;
@@ -7194,8 +7210,10 @@ function tipCal(k, p) {
     e = rows.reduce(function (s, r) { return s + r[0] / 100; }, 0);
   /* correzione = (vinti reali − attesi) diluita */
   /* 3.14.0 — prudenza: verso il basso si corregge del tutto, verso l'alto al massimo +1 punto */
+  /* 4.24.0 — verso l'alto fino a +5 punti: dal 28/10 al 3/11 276/297 vinti (93%) con stima 84%, e anche appena sopra la
+     soglia (Over 0.5 1T al 76-79% 42/48, Over 2.5 al 56-71% 20/22): con +1 le stime restavano basse e le Top corte */
   var d = ((w - e) / (rows.length + K)) * 100;
-  return Math.round(Math.max(1, Math.min(99, p + Math.min(d, 1))));
+  return Math.round(Math.max(1, Math.min(99, p + Math.min(d, TIP_CAL_UP))));
 }
 /* ---------- 3.9.0 — Liste Top ----------
    Per ogni giorno e per ogni mercato: si parte dalla partita più solida e si aggiungono
