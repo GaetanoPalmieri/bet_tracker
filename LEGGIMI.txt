@@ -1,9 +1,22 @@
-Bet Tracker 4.24.0 · server pronostici-avvisi 4.17.0
+Bet Tracker 4.24.1 · server pronostici-avvisi 4.17.1
 
 App e server: sostituisci pronostici.js, app.js, index.html, sw.js e pubblica; poi ridistribuisci la funzione
-"pronostici-avvisi" con pronostici-avvisi.txt (senza il server 4.17.0 le notifiche seguono ancora le regole di prima).
-Dopo: in Altro l'app deve dire "4.24.0", in Live la barra "server 4.17.0" (con un server più vecchio compare ⚠).
-Analisi completa: analisi/analisi-2026-11-04.md.
+"pronostici-avvisi" con pronostici-avvisi.txt (le notifiche 📊 CONTROLLO le manda il server).
+(Se non hai pubblicato la 4.24.0 / 4.17.0, questa la contiene.)
+Dopo: in Altro l'app deve dire "4.24.1", in Live la barra "server 4.17.1" (con un server più vecchio compare ⚠).
+Analisi: analisi/analisi-2026-11-04.md.
+
+4.24.1 — app e server 4.17.1
+  - 📊 CONTROLLI DOPO IL SEGNALE (+5/+10/+15') RIVISTI. Controlli veri 2-4/11 (gol poi arrivato · promesso · book):
+      2T 🟢 tiene: +5' 19/30 (63%) · 86% · 80% · +10' 14/25 (56%) · 82% · 74% · +15' 10/21 (48%) · 75% · 65%
+      1T 🟡 in bilico: +5' 19/33 (58%) · 65% book · +10' 11/25 (44%) · 57% · +15' 9/23 (39%) · 47%
+    Erano troppo ottimisti, soprattutto sui segnali che la 4.24.0 ha già tolto (2T con 3+ gol 6/12, 4/10, 3/9).
+  - 2° TEMPO: 🟡 IN BILICO invece di 🟢 TIENE ANCORA, con stime prudenti pari al book (~80% al +5', ~74% al +10',
+    ~65% al +15') e la quota minima da cui avrebbe senso entrare. Con i soli segnali 4.24.0 il rigioco dice 85/79/70%
+    contro il book 79/72/64%, i segnali veri (pochi) 72/67/58%: torna 🟢 solo se i dati nuovi lo confermano.
+  - 1° TEMPO: 🔴 NON CONVIENE PIÙ al +10' e al +15' quando gli attacchi pericolosi dopo il segnale scendono sotto il 70%
+    della media della partita (prima: 4/13 e 1/9 vinte, contro un book del 55% e 47%). Al +5' resta com'era.
+  - Fra qualche giorno la tabella dei controlli si ricalcola sui soli segnali 4.24.0.
 
 4.24.0 — app e server 4.17.0 (analisi 4/11: segnali del 3/11 e rigioco della traccia 29/10-4/11)
   - I filtri live vincevano quanto dice il book (🔥 2T 82% con mercato 83%, 🔥 1T 70% con mercato 71%): si tengono solo i

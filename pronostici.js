@@ -3750,7 +3750,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '4.17.0', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League) */
+  var v = tipUI.serverVer, need = '4.17.1', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League) */
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
@@ -3845,7 +3845,15 @@ function tipEntryAdvice(e) {
                                            il ritmo NON distingue (spesso va meglio chi rallenta) → un solo valore.
    Nel 2T il vantaggio resta anche dopo: senza gol la quota sale più in fretta della %, si può ancora entrare.
    Valori un po' sotto dove la seconda metà era più bassa. Vantaggio sul book ≥ 4 → tiene; −3..+3 → in bilico; sotto → no. */
-var TIP_PROG = { 1: { 5: [73, 67, 67], 10: [59, 59, 59], 15: [49, 49, 49] }, 2: { 5: [86, 86, 86], 10: [82, 82, 82], 15: [75, 75, 75] } },
+/* 4.24.1 / server 4.17.1 — CONTROLLATI CON I CONTROLLI VERI 2-4/11 (una serie per partita, gol poi arrivato · promesso · book):
+     2T 🟢 +5' 19/30 (63%) · 86% · 80%   +10' 14/25 (56%) · 82% · 74%   +15' 10/21 (48%) · 75% · 65%
+     1T 🟡 +5' 19/33 (58%) · 67-73% · 65%   +10' 11/25 (44%) · 59% · 57%   +15' 9/23 (39%) · 49% · 47%
+   Troppo ottimisti, soprattutto per i segnali che la 4.24.0 ha tolto (2T con 3+ gol 6/12, 4/10, 3/9). Con i soli segnali
+   4.24.0 il rigioco 29/10-4/11 dà 2T 85/79/70% (book 79/72/64) ma i veri 72/67/58% (pochi): finché i dati nuovi non lo
+   confermano, nel 2T valori prudenti uguali al book → 🟡 IN BILICO (non più 🟢 "si può ancora entrare").
+   1T con il ritmo sotto il 70% della media: +10' 4/13 (31%, book 55%), +15' 1/9 (11%, book 47%) → 🔴 NON CONVIENE PIÙ.
+   Da ricalcolare fra qualche giorno sui soli segnali 4.24.0. */
+var TIP_PROG = { 1: { 5: [73, 67, 67], 10: [59, 59, 45], 15: [49, 49, 30] }, 2: { 5: [80, 80, 80], 10: [74, 74, 74], 15: [65, 65, 65] } },
   TIP_PROG_B = { 1: { 5: 65, 10: 57, 15: 47 }, 2: { 5: 80, 10: 74, 15: 65 } }, TIP_PROG0 = { 1: 77, 2: 90 };
 function tipProgress(e) {
   if (!e || e.res != null || !TIP_ENTRY_K[e.k] || !U.finite(e.min)) return null;
@@ -4150,7 +4158,7 @@ function tipLivePanel(list) {
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
   var S = tipUI.scan;
   /* 3.99.8 — barra su due righe: LIVE + ora, poi partite e versione del server (niente più testo tagliato a destra) */
-  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.17.0') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
+  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.17.1') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
   var svTxt = sv ? (sv === 'vecchia' ? 'vecchio' : sv) : '';
   /* 4.8.1 — STATO IN EVIDENZA: riquadro in cima con l'ora dell'ultimo controllo (ambra se più vecchio di 5 minuti) e un
      pulsante "Aggiorna" grande, che durante il controllo gira senza cambiare larghezza (prima la scritta veniva tagliata). */
