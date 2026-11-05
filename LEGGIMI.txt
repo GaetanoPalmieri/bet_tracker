@@ -1,10 +1,21 @@
-Bet Tracker 4.24.1 · server pronostici-avvisi 4.17.1
+Bet Tracker 4.24.2 · server pronostici-avvisi 4.17.2
 
 App e server: sostituisci pronostici.js, app.js, index.html, sw.js e pubblica; poi ridistribuisci la funzione
 "pronostici-avvisi" con pronostici-avvisi.txt (le notifiche 📊 CONTROLLO le manda il server).
-(Se non hai pubblicato la 4.24.0 / 4.17.0, questa la contiene.)
-Dopo: in Altro l'app deve dire "4.24.1", in Live la barra "server 4.17.1" (con un server più vecchio compare ⚠).
-Analisi: analisi/analisi-2026-11-04.md.
+(Se non hai pubblicato la 4.24.1 / 4.17.1 o la 4.24.0 / 4.17.0, questa le contiene.)
+Dopo: in Altro l'app deve dire "4.24.2", in Live la barra "server 4.17.2" (con un server più vecchio compare ⚠).
+Analisi: analisi/analisi-2026-11-05.md.
+
+4.24.2 — app e server 4.17.2 (analisi 5/11: primo giorno con la 4.24.0, dal 4/11 alle 10: 42/48 segnali vinti)
+  - 📊 CONTROLLI DEL 1° TEMPO SENZA 🔴. Il 4/11 i 6 "🔴 non conviene più" del 1T sono finiti tutti con il gol nel 1T
+    (Cardiff, Pafos U19, Dinamo Zagabria U19, Copenaghen U19, Al Gharafa Res., America RJ U20). Con i casi di prima
+    +10' 8/17 (47%) e +15' 3/11 (27%): proprio la stima mostrata (45% / 30%), la partita è prezzata giusta, non persa.
+    Nel 1T ora il peggio è 🟡 IN BILICO, con la stessa stima; dopo il 🟡 i controlli continuano. Si rivede con ~30 casi.
+  - PREPARTITA: la correzione con lo storico alza le stime fino a +8 punti (era +5). Con il +5 il 4/11 93/96 vinti (97%)
+    con stima 86%, dall'1 al 4/11 220/231 (95%) con stima 85%; anche i pronostici fuori dalla Top 45/46. Soglie invariate.
+  - 🔥 gol 2T e 🔥 gol 1T, 🎯 gol 1T favorita e 🎯 prossimo gol 2T: nessuna modifica (2T 18/20 con mercato 83%, 1T favorita
+    13/14 con mercato 75%). Youth League nel 🔥 2T resta com'è, anche il Domestic Champions Path.
+  - Rigiocata la traccia 3-5/11: stessi segnali di prima, nessun errore.
 
 4.24.1 — app e server 4.17.1
   - 📊 CONTROLLI DOPO IL SEGNALE (+5/+10/+15') RIVISTI. Controlli veri 2-4/11 (gol poi arrivato · promesso · book):

@@ -3750,7 +3750,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '4.17.1', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League) */
+  var v = tipUI.serverVer, need = '4.17.2', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League); 4.24.2 — 4.17.2 (1T senza 🔴) */
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
@@ -3853,6 +3853,10 @@ function tipEntryAdvice(e) {
    confermano, nel 2T valori prudenti uguali al book → 🟡 IN BILICO (non più 🟢 "si può ancora entrare").
    1T con il ritmo sotto il 70% della media: +10' 4/13 (31%, book 55%), +15' 1/9 (11%, book 47%) → 🔴 NON CONVIENE PIÙ.
    Da ricalcolare fra qualche giorno sui soli segnali 4.24.0. */
+/* 4.24.2 / server 4.17.2 — 1° TEMPO SENZA 🔴. Il 4/11 i 6 🔴 "non conviene più" del 1T sono finiti tutti con il gol nel 1T
+   (Cardiff, Pafos U19, Dinamo Zagabria U19, Copenaghen U19, Al Gharafa Res., America RJ U20). Con i casi di prima: +10' 8/17
+   (47%), +15' 3/11 (27%) = la stima mostrata (45% / 30%): la partita è prezzata giusta, non persa. Nel 1T il peggio è
+   🟡 IN BILICO (stessa stima); si rivede con ~30 casi. */
 var TIP_PROG = { 1: { 5: [73, 67, 67], 10: [59, 59, 45], 15: [49, 49, 30] }, 2: { 5: [80, 80, 80], 10: [74, 74, 74], 15: [65, 65, 65] } },
   TIP_PROG_B = { 1: { 5: 65, 10: 57, 15: 47 }, 2: { 5: 80, 10: 74, 15: 65 } }, TIP_PROG0 = { 1: 77, 2: 90 };
 function tipProgress(e) {
@@ -3881,7 +3885,7 @@ function tipProgress(e) {
   var ratio = base && rate != null ? rate / base : null, cls = ratio == null ? 1 : ratio >= 1 ? 0 : ratio >= 0.7 ? 1 : 2;
   var pt = TIP_PROG[half][cp][cls], edge = pt - TIP_PROG_B[half][cp];
   var p = Math.max(0.05, Math.min(0.97, (U.finite(e.p) ? e.p : TIP_PROG0[half] / 100) * pt / TIP_PROG0[half]));
-  var v = edge >= 4 ? 'ok' : edge > -3 ? 'mid' : 'stop';
+  var v = edge >= 4 ? 'ok' : edge > -3 || half === 1 ? 'mid' : 'stop'; /* 4.24.2 — nel 1T niente 🔴 (vedi TIP_PROG) */
   return { el: el, cp: cp, min: y.min, ratio: ratio, rate: rate, base: base, sot: t0 != null && t1 != null ? Math.max(0, t1 - t0) : null, p: p, q: Math.ceil(100 / p) / 100, v: v,
     b: v === 'ok' ? 'Tiene' : v === 'mid' ? 'In bilico' : 'Non conviene più',
     t: v === 'ok' ? 'si può ancora entrare' : v === 'mid' ? 'non aggiungere' : 'non investire qui' };
@@ -4158,7 +4162,7 @@ function tipLivePanel(list) {
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
   var S = tipUI.scan;
   /* 3.99.8 — barra su due righe: LIVE + ora, poi partite e versione del server (niente più testo tagliato a destra) */
-  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.17.1') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
+  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.17.2') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
   var svTxt = sv ? (sv === 'vecchia' ? 'vecchio' : sv) : '';
   /* 4.8.1 — STATO IN EVIDENZA: riquadro in cima con l'ora dell'ultimo controllo (ambra se più vecchio di 5 minuti) e un
      pulsante "Aggiorna" grande, che durante il controllo gira senza cambiare larghezza (prima la scritta veniva tagliata). */
@@ -7209,7 +7213,9 @@ function tipCalRows() {
   tipUI._cal = by;
   return by;
 }
-var TIP_CAL_UP = 5; /* 4.24.0 — era 1 */
+/* 4.24.2 — fino a +8 (era +5): con il +5 il 4/11 93/96 vinti (97%) con stima 86%, 1-4/11 220/231 (95%) con stima 85%;
+   anche fuori dalla Top 45/46. Sempre diluita (K = 15) e solo verso il vero dei pronostici vicini. */
+var TIP_CAL_UP = 8; /* 4.24.0 — era 1; 4.24.2 — era 5 */
 function tipCal(k, p) {
   var rows = (tipCalRows()[k] || []).filter(function (r) { return Math.abs(r[0] - p) <= 4; });
   if (!rows.length) return p;
