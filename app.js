@@ -1,4 +1,4 @@
-const APP_VERSION = '4.24.3';
+const APP_VERSION = '4.24.4';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -2803,22 +2803,45 @@ function diaryCalendar2(series) {
       '" style="--a:' + a + '%" data-dcal="' + x.key + '"' + (x.future ? ' disabled' : '') +
       ' aria-label="' + dLabel(x.key, { weekday: 'long', day: 'numeric', month: 'long' }) + (x.p ? ', saldo ' + U.money(x.p.balance) : ', non segnato') + (mv ? ', con movimenti' : '') + '"><b>' + x.i + '</b><span>' + val + '</span></button>';
   };
+  /* 4.24.4 — CALENDARIO PIÙ LEGGIBILE: sette colonne piene (niente colonna "sett." stretta), giorni più alti con numero e
+     cifra grandi; sopra il riepilogo del mese (risultato, giorni ▲/▼, migliore e peggiore); sotto le settimane in righe
+     intere con il loro totale e una barra. */
   var WD = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
-  var grid = '<div class="cal2-grid cal2-head" aria-hidden="true">' + WD.map(function (w) { return '<i>' + w + '</i>'; }).join('') + '<i class="cal2-wt">sett.</i></div>';
+  var grid = '<div class="cal2-grid cal2-head" aria-hidden="true">' + WD.map(function (w) { return '<i>' + w + '</i>'; }).join('') + '</div>';
+  var weeks = [];
   for (var w = 0; w < cells.length; w += 7) {
     var wk = cells.slice(w, w + 7), withD = wk.filter(function (x) { return x && x.d != null; });
     var tot = U.round(withD.reduce(function (s, x) { return s + x.d; }, 0)), cur = wk.some(function (x) { return x && x.today; });
-    grid += '<div class="cal2-grid' + (cur ? ' cur' : '') + '">' + wk.map(dayBtn).join('') +
-      '<span class="cal2-wt ' + (withD.length ? sClass(tot) : '') + '">' + (withD.length ? (tot > 0.004 ? '+' : '') + eurShort(tot) : '') + '</span></div>';
+    var real = wk.filter(Boolean);
+    grid += '<div class="cal2-grid' + (cur ? ' cur' : '') + '">' + wk.map(dayBtn).join('') + '</div>';
+    if (withD.length) weeks.push({ from: real[0].i, to: real[real.length - 1].i, tot: tot, n: withD.length, cur: cur });
   }
-  var mRes = calMonthRes(series, month), isCurrent = month >= nowM;
-  var monthLabel = first.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
-  monthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
-  return '<div class="cal2">' + strip +
-    '<div class="cal2-nav"><button type="button" class="cal2-arr" data-dcal-month="-1" aria-label="Mese precedente"' + (months[0] >= month ? ' disabled' : '') + '>‹</button>' +
-    '<div class="cal2-title"><b>' + U.esc(monthLabel) + '</b><small class="' + (mRes == null ? '' : sClass(mRes)) + '">' + (mRes == null ? 'nessun giorno segnato' : sMoney(mRes) + ' · ' + inMonth.length + (inMonth.length === 1 ? ' giorno' : ' giorni')) + '</small></div>' +
-    '<button type="button" class="cal2-arr" data-dcal-month="1" aria-label="Mese successivo"' + (isCurrent ? ' disabled' : '') + '>›</button></div>' +
-    '<div class="cal2-body" data-cal-swipe>' + grid + '</div>' +
+  var mon3 = first.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '');
+  var wMax = Math.max.apply(null, [1].concat(weeks.map(function (x) { return Math.abs(x.tot); })));
+  var weekList = weeks.length ? '<div class="cal2-weeks"><p class="cal2-wh">Settimane</p>' + weeks.map(function (x) {
+    var wPct = Math.round(6 + 94 * Math.min(1, Math.abs(x.tot) / wMax));
+    return '<div class="cal2-wk' + (x.cur ? ' cur' : '') + '"><span class="cal2-wk-d">' + (x.from === x.to ? x.from : x.from + '–' + x.to) + ' ' + U.esc(mon3) + (x.cur ? ' <em>questa</em>' : '') + '</span>' +
+      '<span class="cal2-wk-bar ' + sClass(x.tot) + '"><i style="width:' + wPct + '%"></i></span>' +
+      '<b class="' + sClass(x.tot) + '">' + sMoney(x.tot) + '</b></div>';
+  }).join('') + '</div>' : '';
+  var dz = inMonth.filter(function (p) { return p.delta != null; });
+  var nUp = dz.filter(function (p) { return p.delta > 0.004; }).length, nDn = dz.filter(function (p) { return p.delta < -0.004; }).length;
+  var best = dz.length ? dz.reduce(function (a, b) { return b.delta > a.delta ? b : a; }) : null, worst = dz.length ? dz.reduce(function (a, b) { return b.delta < a.delta ? b : a; }) : null;
+  var dShort = function (p) { return Number(p.date.slice(8, 10)) + ' ' + mon3; };
+  var eurS = function (v) { return (v > 0.004 ? '+' : v < -0.004 ? '−' : '') + eurShort(Math.abs(v)) + ' €'; };
+  var stBox = function (lbl, v, p) { var ok = p && (v > 0 ? p.delta > 0.004 : p.delta < -0.004); return '<div class="cal2-st"><small>' + lbl + '</small><b class="' + (ok ? sClass(p.delta) : '') + '">' + (ok ? eurS(p.delta) : '—') + '</b><em>' + (ok ? dShort(p) : '&nbsp;') + '</em></div>'; };
+  var sumRow = dz.length ? '<div class="cal2-sum">' +
+    '<div class="cal2-st"><small>Giorni</small><b><span class="positive">' + nUp + ' ▲</span> <span class="negative">' + nDn + ' ▼</span></b><em>' + dz.length + ' segnati</em></div>' +
+    stBox('Migliore', 1, best) + stBox('Peggiore', -1, worst) + '</div>' : '';
+  var isCurrent = month === nowM, iM = months.indexOf(month), prevM = iM > 0 ? months[iM - 1] : '', nextM = iM >= 0 && iM < months.length - 1 ? months[iM + 1] : '';
+  var res = calMonthRes(series, month), monName = first.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+  var nav = '<div class="cal2-nav">' +
+    '<button type="button" class="cal2-arr" aria-label="Mese prima"' + (prevM ? ' data-cal-m="' + prevM + '"' : ' disabled') + '>‹</button>' +
+    '<div class="cal2-title"><b>' + U.esc(monName.charAt(0).toUpperCase() + monName.slice(1)) + '</b>' +
+    '<small class="' + (res == null ? '' : sClass(res)) + '">' + (res == null ? 'nessun giorno segnato' : sMoney(res) + ' · ' + dz.length + (dz.length === 1 ? ' giorno' : ' giorni')) + '</small></div>' +
+    '<button type="button" class="cal2-arr" aria-label="Mese dopo"' + (nextM ? ' data-cal-m="' + nextM + '"' : ' disabled') + '>›</button></div>';
+  return '<div class="cal2 cal3">' + strip + nav +
+    sumRow + '<div class="cal2-body" data-cal-swipe>' + grid + '</div>' + weekList +
     (isCurrent ? '' : '<button type="button" class="cal2-today" data-cal-m="' + nowM + '">Torna a questo mese</button>') + '</div>';
 }
 function calBind() {

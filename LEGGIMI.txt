@@ -1,10 +1,20 @@
-Bet Tracker 4.24.3 · server pronostici-avvisi 4.17.3
+Bet Tracker 4.24.4 · server pronostici-avvisi 4.17.3
 
 App e server: sostituisci pronostici.js, app.js, index.html, sw.js e pubblica; poi ridistribuisci la funzione
 "pronostici-avvisi" con pronostici-avvisi.txt (le notifiche 📊 CONTROLLO le manda il server).
-(Se non hai pubblicato la 4.24.2 / 4.17.2, la 4.24.1 / 4.17.1 o la 4.24.0 / 4.17.0, questa le contiene.)
-Dopo: in Altro l'app deve dire "4.24.3", in Live la barra "server 4.17.3" (con un server più vecchio compare ⚠).
+(Se non hai pubblicato la 4.24.3 / 4.17.3, la 4.24.2 / 4.17.2, la 4.24.1 / 4.17.1 o la 4.24.0 / 4.17.0, questa le contiene.)
+Dopo: in Altro l'app deve dire "4.24.4", in Live la barra "server 4.17.3" (con un server più vecchio compare ⚠).
 Analisi: analisi/analisi-2026-11-05.md.
+
+4.24.4 — solo app (server 4.17.3)
+  - SALDO › CALENDARIO PIÙ LEGGIBILE
+      · Sette colonne piene: via la colonna "sett." stretta a destra. Giorni più alti, numero del giorno e cifra molto più
+        grandi (17 e 12,5 punti, prima 13 e 9); le frecce ↓ ↑ dei depositi/prelievi più visibili.
+      · Sopra la griglia il riepilogo del mese in tre riquadri: Giorni (▲ / ▼ e quanti segnati), Migliore e Peggiore con
+        la cifra e il giorno.
+      · Sotto la griglia le SETTIMANE, una per riga: giorni (es. "2–8 nov", "questa" per quella in corso), barra verde o
+        rossa lunga quanto il risultato e il totale in euro.
+      · Mesi in alto, frecce ‹ › e titolo del mese più grandi.
 
 4.24.3 — app e server 4.17.3 (per capire se battiamo davvero il book)
   - QUOTA BET365 A OGNI SEGNALE GOL. Quando parte un 🔥 gol 1T/2T, 🎯 gol 1T favorita o 🎯 prossimo gol 2T, il server legge
