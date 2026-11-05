@@ -21,7 +21,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.17.2 (5/11: 📊 controlli del 1T senza 🔴, al massimo in bilico) · 4.17.1 (4/11: 📊 controlli prudenti, 2T in bilico, 1T 🔴 col ritmo che cala) · 4.17.0 (4/11: 🔥 gol 2T solo con 0-2 gol, 🔥 gol 1T solo con 0-1 gol e fuori dalle serie minori dei Paesi forti) · 4.16.1 (3/11: 🔥 gol 2T anche nella UEFA Youth League, in prova) · 4.16.0 (3/11: 1T con mezzo scalino di keep, quote vere 1T prima delle altre, una sola giocata per partita e punteggio tra i filtri gol, versione della regola nei segnali, prepartita con linea gol ×0,90) · 4.15.5 (2/11: femminili, solo prime divisioni forti, 🔥 gol 2T e prossimo gol 2T in prova, stima 92%) · 4.15.4 (2/11: ricalibrazione con la traccia completa: 🔥 con keep ≥ 1, 🔥 2T fino al 58’, prossimo gol 2T stimato 94%, nuova tabella dei controlli) · 4.15.3 (2/11: export della traccia con pagine da 1.000 righe e quote 1X2 nella traccia, niente notifica "⚽ GOL" dopo il segnale, 🔥 1T stima 75%) · 4.15.2 (2/11: export della traccia completa, tutte le partite, un giorno alla volta) · 4.15.1 (2/11: 📊 controlli dopo il segnale a +5/+10/+15’ con notifica a parte, gol 1T anche sull’1-0 se il book è ≥75%) · 4.15.0 (2/11: gol 1T solo sullo 0-0 con le quote vere del 1T, niente ⭐, 🔥 2T solo nei campionati principali, quota raggiunta fuori)
+// Versione app: 4.17.3 (5/11: quota bet365 registrata a ogni segnale gol, per il conto in euro) · 4.17.2 (5/11: 📊 controlli del 1T senza 🔴, al massimo in bilico) · 4.17.1 (4/11: 📊 controlli prudenti, 2T in bilico, 1T 🔴 col ritmo che cala) · 4.17.0 (4/11: 🔥 gol 2T solo con 0-2 gol, 🔥 gol 1T solo con 0-1 gol e fuori dalle serie minori dei Paesi forti) · 4.16.1 (3/11: 🔥 gol 2T anche nella UEFA Youth League, in prova) · 4.16.0 (3/11: 1T con mezzo scalino di keep, quote vere 1T prima delle altre, una sola giocata per partita e punteggio tra i filtri gol, versione della regola nei segnali, prepartita con linea gol ×0,90) · 4.15.5 (2/11: femminili, solo prime divisioni forti, 🔥 gol 2T e prossimo gol 2T in prova, stima 92%) · 4.15.4 (2/11: ricalibrazione con la traccia completa: 🔥 con keep ≥ 1, 🔥 2T fino al 58’, prossimo gol 2T stimato 94%, nuova tabella dei controlli) · 4.15.3 (2/11: export della traccia con pagine da 1.000 righe e quote 1X2 nella traccia, niente notifica "⚽ GOL" dopo il segnale, 🔥 1T stima 75%) · 4.15.2 (2/11: export della traccia completa, tutte le partite, un giorno alla volta) · 4.15.1 (2/11: 📊 controlli dopo il segnale a +5/+10/+15’ con notifica a parte, gol 1T anche sull’1-0 se il book è ≥75%) · 4.15.0 (2/11: gol 1T solo sullo 0-0 con le quote vere del 1T, niente ⭐, 🔥 2T solo nei campionati principali, quota raggiunta fuori)
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -2544,6 +2544,54 @@ async function lgTrack(list: any[], wanted: string[] = []) {
   return added;
 }
 
+/* riga TotalCorner delle quote gol: [minuto, linea, over, under, ora, gol casa, gol ospite] → l'ultima */
+function goalOddsLast(L: any) {
+  const rows = (Array.isArray(L) ? L : []).filter((x: any) => Array.isArray(x) && x.length >= 4);
+  if (!rows.length) return null;
+  rows.sort((a: any, b: any) => (tcNum(a[0]) ?? -1) - (tcNum(b[0]) ?? -1) || String(a[4] ?? "").localeCompare(String(b[4] ?? "")));
+  const x = rows[rows.length - 1], o: any = { min: tcNum(x[0]), line: tcLine(x[1]), over: tcNum(x[2]), under: tcNum(x[3]) };
+  const gh = tcNum(x[5]), ga = tcNum(x[6]);
+  if (gh != null && ga != null) o.g = [gh, ga];
+  return o.line != null ? o : null;
+}
+/* 4.17.3 — QUOTA BET365 AL MOMENTO DEL SEGNALE, per ogni segnale gol (🔥 1T/2T, 🎯 1T favorita, 🎯 prossimo gol 2T).
+   Analisi 5/11: i segnali sembrano vincere qualche punto più del book, ma solo 40 segnali su 1.045 avevano la quota vera
+   registrata: non si poteva dire se si guadagna davvero (il margine del book ~5% si mangia buona parte del vantaggio).
+   Quando parte un segnale nuovo, se la partita non ha quote gol fresche (stesso tempo, stesso punteggio, al massimo 4'),
+   si chiedono subito a TotalCorner (al massimo 4 partite a giro) e nel segnale si scrive la quota del prossimo gol:
+   qb = quota over della linea gol+0,5 (vera), qe = ricavata dalla linea asiatica con lo stesso margine; pMkt = % del book.
+   Le Statistiche (💰 Alle quote bet365 vere) fanno così il conto in euro anche per i 🔥. Non cambia quando parte un segnale. */
+function goalOddsFresh(x: any, half: number, min: number, G: number) {
+  const o = x && x.goalOdds ? x.goalOdds[half === 1 ? "ht" : "ft"] : null;
+  if (!o || !U.finite(o.line) || !U.finite(o.over) || !U.finite(o.under)) return false;
+  if (U.finite(o.min) && Math.abs(o.min - min) > 4) return false;
+  return !(Array.isArray(o.g) && o.g.length === 2 && U.finite(o.g[0]) && U.finite(o.g[1]) && o.g[0] + o.g[1] !== G);
+}
+async function goalOddsForSignal(x: any, y: any, bud: { n: number }) {
+  const G = ((y.x.goals || [])[0] || 0) + ((y.x.goals || [])[1] || 0);
+  if (goalOddsFresh(y.x, y.half, y.min, G)) return;
+  if (bud.n >= 4 || tcLeft() <= 0 || typeof x?.afId !== "string" || !x.afId.startsWith("tc:")) return;
+  bud.n++;
+  const j = await tcGet("/match/odds/" + x.afId.slice(3), { columns: "goalList,goalHalfList" });
+  const d = Array.isArray(j?.data) ? j.data[0] : j?.data;
+  const val = { ft: goalOddsLast(d?.goal_list ?? d?.goalList), ht: goalOddsLast(d?.goal_half_list ?? d?.goalHalfList) };
+  if (!val.ft && !val.ht) return;
+  x.goalOdds = val; y.x.goalOdds = val; if (y.r) y.r.goalOdds = val;
+}
+function tipSigBook(e: any, y: any) {
+  const G = ((y.x.goals || [])[0] || 0) + ((y.x.goals || [])[1] || 0);
+  if (!goalOddsFresh(y.x, y.half, y.min, G)) return;
+  const M: any = tipMktNext(y.x, y.min, y.half, G);
+  if (!M || M.src !== "quote" || !(M.p > 0)) return;
+  const f = e.factors = e.factors || {};
+  if (!Number(f.qb) && !Number(f.qe)) {
+    if (M.book > 1) f.qb = Math.round(M.book * 100) / 100;
+    else if (M.ovr > 1) f.qe = Math.round(100 / (M.p * M.ovr)) / 100;
+  }
+  if (f.pMkt == null) f.pMkt = Math.round(M.p * 1000) / 1000;
+  const o = y.x.goalOdds[y.half === 1 ? "ht" : "ft"];
+  f.bk = { line: o.line, over: o.over, under: o.under, min: o.min ?? null };
+}
 /* 3.99.4 — QUOTE GOL LIVE (bet365 via TotalCorner) per le partite vicine a un segnale gol: 1T 10’-38’ con mercato
    ≥63%, 2T 46’-80’ con mercato ≥70% (dalla sola linea). Al massimo 6 richieste per giro, tenute 100 secondi.
    L’ultima riga di goal_list / goal_half_list = { min, line, over, under }. Viaggia con la partita (x.goalOdds). */
@@ -2581,16 +2629,7 @@ async function goalOddsEnrich(list: any[]) {
   }).filter(Boolean).sort((a: any, b: any) => a.d - b.d);
   if (!cand.length && !wc.length) return 0;
   const cache: any = (await getState("goalOdds")) || {}, now = Date.now();
-  const last = (L: any) => {
-    const rows = (Array.isArray(L) ? L : []).filter((x: any) => Array.isArray(x) && x.length >= 4);
-    if (!rows.length) return null;
-    rows.sort((a: any, b: any) => (tcNum(a[0]) ?? -1) - (tcNum(b[0]) ?? -1) || String(a[4] ?? "").localeCompare(String(b[4] ?? "")));
-    /* riga TotalCorner: [minuto, linea, over, under, ora, gol casa, gol ospite] */
-    const x = rows[rows.length - 1], o: any = { min: tcNum(x[0]), line: tcLine(x[1]), over: tcNum(x[2]), under: tcNum(x[3]) };
-    const gh = tcNum(x[5]), ga = tcNum(x[6]);
-    if (gh != null && ga != null) o.g = [gh, ga];
-    return o.line != null ? o : null;
-  };
+  const last = goalOddsLast;
   let asked = 0, askedW = 0;
   for (const { r, w } of [...cand.map((c: any) => ({ r: c.r, w: false })), ...wc.map((c: any) => ({ r: c.r, w: true }))]) {
     const c = cache[r.afId];
@@ -3125,6 +3164,7 @@ async function runAlerts() {
     const off0 = list.length ? (Number(offAll[u.id]) || 0) % list.length : 0;
     const order = list.slice(off0).concat(list.slice(0, off0));
     let cpu = 0, stopIdx = -1, idx = -1;
+    const qBud = { n: 0 }; /* 4.17.3 — quote chieste per i segnali nuovi in questo giro */
     for (const x of order) {
       idx++;
       if (cpu > TIP_CPU_MAX) { stopIdx = idx; break; }
@@ -3153,6 +3193,8 @@ async function runAlerts() {
           if (wasT && !upT) continue;
           if (!wasT && TIP_GOAL_FAM[tp.k] && famSeen.has(famPre(eT.key))) continue; /* 4.16.0 — stessa giocata di un altro filtro */
           if (originals.get(eT.key)) eT = tipSignalRevision(originals.get(eT.key), eT);
+          /* 4.17.3 — quota bet365 del prossimo gol al momento del segnale (vedi goalOddsForSignal) */
+          if (!wasT && TIP_GOAL_FAM[tp.k]) { try { await goalOddsForSignal(x, y, qBud); tipSigBook(eT, y); } catch (e) { console.error("quota al segnale", x.afId, (e as Error).message); } }
           /* 3.72.0 — anche i segnali IN PROVA arrivano sul telefono, con le stesse preferenze delle altre giocate */
           const whyT = tipAlertWhy(u.prefs, eT) || (u.prefs.stars && !tipIsStar(y.m) ? "non è tra le preferite" : "");
           const pushT = !whyT;
@@ -3294,7 +3336,7 @@ async function handleReq(req: Request): Promise<Response> {
     });
     const last = data && data.length ? data[data.length - 1].id : null;
     return json({ day, rows, teams, next: data && data.length >= size ? last : null,
-      cols: ["af_id", "t", "min", "st", "g", "s", "t_porta", "da", "att", "pos", "red", "c", "ll", "pl", "go_ht", "go_ft", "x12"], ver: "4.17.2" });
+      cols: ["af_id", "t", "min", "st", "g", "s", "t_porta", "da", "att", "pos", "red", "c", "ll", "pl", "go_ht", "go_ft", "x12"], ver: "4.17.3" });
   }
   if (body.action === "training") {
     const table = body.kind === "finals" ? "pronostici_finali" : body.kind === "trace" ? "pronostici_traccia" : body.kind === "signals" ? "pronostici_segnali" : body.kind === "hist" ? "pronostici_storico_quote" : null;
@@ -3328,7 +3370,7 @@ async function handleReq(req: Request): Promise<Response> {
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
     const tb: any = (await getState("tcTables")) || {}, tbK = Object.keys(tb).filter((k) => k !== "_off");
     const tables = { leagues: tbK.length, ok: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.t).length, 0), err: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.err).length, 0), off: tb._off || null };
-    return json({ ver: "4.17.2", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.17.3", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -3341,7 +3383,7 @@ async function handleReq(req: Request): Promise<Response> {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.17.2" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.17.3" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -3355,7 +3397,7 @@ async function handleReq(req: Request): Promise<Response> {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.17.2" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.17.3" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {

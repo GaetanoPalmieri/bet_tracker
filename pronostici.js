@@ -1527,6 +1527,21 @@ function tipQuotaInfo(e) {
   var min = 1 / e.p;
   return { min: min, q: q, est: est, value: q ? q / min - 1 : null, ok: !!q && q >= min * (1 + TIP_VALUE_MARGIN) };
 }
+/* 4.24.3 — segnali gol con la quota bet365 al momento del segnale (Statistiche › 💰 Alle quote bet365 vere) */
+var TIP_QV_K = { tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1, t1x: 1, t2x: 1 };
+function tipQvByK(QV) {
+  var by = {};
+  QV.forEach(function (e) { (by[e.k] = by[e.k] || []).push(e); });
+  return Object.keys(by).sort().map(function (k) { return [U.esc(TIP_PLAY_SHORT[k] || k), by[k]]; });
+}
+/* vinte contro book: la % del book (pMkt) al momento del segnale, sulle chiuse */
+function tipQvBookLine(QV) {
+  var C = QV.filter(function (e) { return (e.res === 1 || e.res === 0) && Number((e.factors || {}).pMkt) > 0; });
+  if (!C.length) return '';
+  var w = C.filter(function (e) { return e.res === 1; }).length, b = C.reduce(function (s2, e) { return s2 + Number(e.factors.pMkt); }, 0);
+  var d = Math.round((w - b) / C.length * 100);
+  return '<p class="st2-hint">Vinte <b>' + Math.round(w / C.length * 100) + '%</b> contro <b>' + Math.round(b / C.length * 100) + '%</b> del book (' + (d >= 0 ? '+' : '−') + Math.abs(d) + ' punti, ' + C.length + ' chiuse)' + (C.length < 100 ? ' · ancora pochi casi per dirlo' : '') + '</p>';
+}
 function tipHasValue(e) { var i = tipQuotaInfo(e); return !!(i && i.ok); }
 var TIP_WAIT_K = { tr1: 1, tr2: 1 }, TIP_WAIT_SRC = { tm1: 1, tm1s: 1, tm2: 1, tm3: 1, tv2: 1 };
 var TIP_WAIT_NAME = { tr1: '⏳ quota raggiunta 1T', tr2: '⏳ quota raggiunta 2T' };
@@ -2352,6 +2367,8 @@ function tipPlayApply(L, o) {
   if (!cur) { L.push(o.e); return; }
   if (o.e.push) cur.push = o.e.push; /* 3.82.0 — esito della notifica dal server */
   if (o.e.prog) cur.prog = o.e.prog; /* 4.21.2 — 📊 controlli dopo il segnale fatti dal server */
+  /* 4.24.3 — quota bet365 al segnale registrata dal server: si copia se qui manca */
+  if (o.e.factors && (o.e.factors.qb || o.e.factors.qe) && !(cur.factors && (cur.factors.qb || cur.factors.qe))) { cur.factors = cur.factors || {}; ['qb', 'qe', 'pMkt', 'bk'].forEach(function (k) { if (o.e.factors[k] != null && cur.factors[k] == null) cur.factors[k] = o.e.factors[k]; }); }
   /* 3.87.0 — esito chiuso dal server (registro dei finali): si copia se qui è ancora in attesa */
   if (cur.res == null && o.e.res != null && o.e.settledBy) ['res', 'ft', 'ht', 'cornersFinal', 'cornersHt', 'resultConfirmed', 'resultSource', 'confirmedAt', 'goalsAt', 'settledBy'].forEach(function (k) { if (o.e[k] !== undefined) cur[k] = o.e[k]; });
   if (cur.tier === 'try' && o.e.tier === 'excellent') {
@@ -3750,7 +3767,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '4.17.2', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League); 4.24.2 — 4.17.2 (1T senza 🔴) */
+  var v = tipUI.serverVer, need = '4.17.3', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League); 4.24.2 — 4.17.2 (1T senza 🔴) */
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
@@ -4162,7 +4179,7 @@ function tipLivePanel(list) {
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
   var S = tipUI.scan;
   /* 3.99.8 — barra su due righe: LIVE + ora, poi partite e versione del server (niente più testo tagliato a destra) */
-  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.17.2') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
+  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.17.3') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
   var svTxt = sv ? (sv === 'vecchia' ? 'vecchio' : sv) : '';
   /* 4.8.1 — STATO IN EVIDENZA: riquadro in cima con l'ora dell'ultimo controllo (ambra se più vecchio di 5 minuti) e un
      pulsante "Aggiorna" grande, che durante il controllo gira senza cambiare larghezza (prima la scritta veniva tagliata). */
@@ -6093,11 +6110,13 @@ function tipStatsLive2(bub) {
     (L.length ? tipStPeekTab(tipStLevelRows(L, smp, tipStatWait()), tipStatCount, 'lvl') : '') + '</section>';
   if (!L.length) return html + (bub || '') + (QL.exc.length ? '<section class="card st2-card">' + tipQualityBox(L, QL.exc, 'riep') + '</section>' : '');
   /* 4.7.0 — resa alle quote bet365 vere (solo i segnali gol con la quota vera registrata) */
-  var QV = L.filter(function (e) { var i = TIP_TARGET[e.k] && !/^t[ck]/.test(e.k) ? tipQuotaInfo(e) : null; return i && i.q; });
+  /* 4.24.3 — anche i 🔥 gol 1T / 2T: dal server 4.17.3 ogni segnale gol ha la quota bet365 del momento */
+  var QV = L.filter(function (e) { var i = TIP_QV_K[e.k] ? tipQuotaInfo(e) : null; return i && i.q; });
   if (QV.length) {
     var cntQ = function (arr) { var c = tipStatCount(arr), pl = 0; arr.forEach(function (e) { var i = tipQuotaInfo(e); if (e.res === 1) pl += 10 * (i.q - 1); else if (e.res === 0) pl -= 10; }); c.pl = pl; return c; };
-    html += '<section class="card st2-card"><p class="st2-h">💰 Alle quote bet365 vere · 10 € a segnale</p>' + tipStPeekTab([['Tutti con quota vera', QV], ['<span class="lv2-qv">💰 Con valore</span>', QV.filter(tipHasValue), '', 'quota vera ≥ minima +3%'], ['Senza valore', QV.filter(function (e) { return !tipHasValue(e); })]], cntQ, 'qv') +
-      '<p class="muted st2-hint">Quota minima = 1 diviso la %. Il segno ≈ vuol dire quota ricavata dalla linea asiatica.</p></section>';
+    html += '<section class="card st2-card"><p class="st2-h">💰 Alle quote bet365 vere · 10 € a segnale</p>' + tipStPeekTab([['Tutti con quota vera', QV], ['<span class="lv2-qv">💰 Con valore</span>', QV.filter(tipHasValue), '', 'quota vera ≥ minima +3%'], ['Senza valore', QV.filter(function (e) { return !tipHasValue(e); })]].concat(tipQvByK(QV)), cntQ, 'qv') +
+      tipQvBookLine(QV) +
+      '<p class="muted st2-hint">Quota minima = 1 diviso la %. Il segno ≈ vuol dire quota ricavata dalla linea asiatica. Per guadagnare non basta vincere più del book: con il suo margine (~5%) serve vincere 4-5 punti più del book.</p></section>';
   }
   html += '<section class="card st2-card" data-cx="st-split"><p class="st2-h">Dividi per</p>' + tipStSplitRow(TIP_ST_LSPLIT, key, true) + tipStPeekTab(S.rows, tipStatCount, 'sp-' + key) + tipStMoreBtn(S.more, 'data-hist-more', 'giorni') +
     '<p class="muted st2-hint">Tocca una riga per vedere i suoi segnali qui sotto. % sulle chiuse, “prev.” = prevista, € teorici con la puntata base.</p></section>';
