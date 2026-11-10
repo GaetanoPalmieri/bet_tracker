@@ -829,6 +829,8 @@ function tipCanSync() {
 }
 function tipFnErr(e) {
   var t = String((e && e.message) || e || '');
+  /* 4.26.1 — il server non ha partite live recenti: il giro ogni 2 minuti (cron bet-avvisi-live) è fermo */
+  if (/non ancora pronti/i.test(t)) return 'Il giro del server è fermo (niente dati live da più di 5 minuti): su Supabase › SQL Editor esegui supabase/avvisi-live.sql.';
   if (e && e.auth) return 'Fai l’accesso in Altro › Sincronizzazione per i dati automatici.';
   if (/404/.test(t) && /function|not found|NOT_FOUND/i.test(t)) return 'Su Supabase manca la funzione pronostici-dati: vedi GUIDA_DATI_AUTOMATICI.';
   if (/API_FOOTBALL_KEY/.test(t)) return 'Su Supabase manca il segreto API_FOOTBALL_KEY.';
@@ -1193,8 +1195,13 @@ async function tipScanFetch() {
   var r = null;
   /* 4.20.2 — medie dei campionati (~45 KB) solo all'apertura e ogni ora: meno dati scaricati da Supabase */
   var needLg = !tipUI.lgAvg || !tipUI._lgAt || Date.now() - tipUI._lgAt > 3600e3;
-  try { r = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'scan', lg: needLg } }); } catch (e) { r = null; }
-  if (!r || !Array.isArray(r.live)) r = await SuiteSync.api(TIP_FN, { method: 'POST', json: { action: 'scan', odds: true } });
+  var e1 = null;
+  try { r = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'scan', lg: needLg } }); } catch (e) { r = null; e1 = e; }
+  /* 4.26.1 — se anche la lettura diretta fallisce e il server dice "non ancora pronti", il problema vero è il giro fermo */
+  if (!r || !Array.isArray(r.live)) {
+    try { r = await SuiteSync.api(TIP_FN, { method: 'POST', json: { action: 'scan', odds: true } }); }
+    catch (e2) { throw e1 && /non ancora pronti/i.test(String(e1.message || '')) ? e1 : e2; }
+  }
   if (r.lgAvg) { tipUI.lgAvg = r.lgAvg; tipUI._lgAt = Date.now(); }
   if (r.lateCor) tipUI.lateCor = r.lateCor; /* 3.99.0 — storico angoli finali per campionato */
   tipUI.scan = { at: Date.now(), list: r.live || [], oddsNote: r.oddsNote || null, remaining: r.remaining };
