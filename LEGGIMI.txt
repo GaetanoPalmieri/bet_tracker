@@ -1,18 +1,31 @@
-Bet Tracker 4.27.0 · server pronostici-avvisi 4.19.0
+Bet Tracker 4.28.1 · server pronostici-avvisi 4.20.1
 
 PER AGGIORNARE
   1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
   2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
-  Dopo: in Altro "4.27.0", in Live la barra "server 4.19.0" (con un server più vecchio compare ⚠).
+  Dopo: in Altro "4.28.1", in Live la barra "server 4.20.1" (con un server più vecchio compare ⚠).
 
 CARTELLE
   (principale)    l'app: solo i file che usa
   supabase/       pronostici-avvisi.txt, pronostici-dati.txt (funzioni), avvisi-live.sql, promemoria.sql,
                   ripristino-server.sql (ricrea tabelle e giro se sono state cancellate);
                   vecchie/ = migrazioni già applicate
-  analisi/        analisi ed export usati per le decisioni (ultima: analisi-2026-11-09.md)
+  analisi/        analisi ed export usati per le decisioni (ultima: analisi-2026-11-10.md)
   note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
                   PULIZIA-4.25.0.txt = file tolti
+
+4.28.1 — app e server 4.20.1 (ripubblicare la funzione pronostici-avvisi)
+  - 🎯 GOL 1T FAVORITA solo con linea gol prepartita 3,25+: segnali veri 107/128 (84%, book 74%, +98 €); sotto 3,25 12/19
+    (63%, book 69%, −24 €) → tolti, anche dalle statistiche. Negli altri filtri linea prepartita e favorita non danno una
+    regola che tenga (dettagli in analisi/analisi-2026-11-10.md).
+
+4.28.0 — app e server 4.20.0 (ripubblicare la funzione pronostici-avvisi)
+  - 💥 TIRI E RITMO, due filtri nuovi IN PROVA (DA VALUTARE, notifiche come gli altri gol):
+      💥 gol 1T  20'-25', linea gol prepartita 3,5+, keep ≥ 1, ≥ 0,35 tiri al minuto, ultimi ~10' ≥ 5 tiri e ≥ 1 in porta
+                 → +1 gol entro l'intervallo · traccia 20/10-5/11: 72/86 (84%), mercato 65%, quota ≈1,48, ~6 al giorno
+      💥 gol 2T  60'-68', linea gol prepartita 3,25+, ≥ 0,35 tiri al minuto, ultimi ~10' ≥ 4 tiri e ≥ 1 in porta
+                 → +1 gol entro la fine · 151/184 (82%), mercato 74%, quota ≈1,29, ~11 al giorno
+    Con o senza favorita (💪 FAVORITA sulla scheda se è al 65%+). Fuori i femminili. Dettagli: analisi/analisi-2026-11-10.md.
 
 4.27.0 — app e server 4.19.0 (ripubblicare la funzione pronostici-avvisi)
   - Tolte le notifiche 📊 CONTROLLO +5/+10/+15’ dopo i segnali (e il loro interruttore negli avvisi).
