@@ -1,9 +1,9 @@
-Bet Tracker 4.26.1 · server pronostici-avvisi 4.18.0
+Bet Tracker 4.27.0 · server pronostici-avvisi 4.19.0
 
 PER AGGIORNARE
   1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
   2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
-  Dopo: in Altro "4.26.1", in Live la barra "server 4.18.0" (con un server più vecchio compare ⚠).
+  Dopo: in Altro "4.27.0", in Live la barra "server 4.19.0" (con un server più vecchio compare ⚠).
 
 CARTELLE
   (principale)    l'app: solo i file che usa
@@ -13,6 +13,22 @@ CARTELLE
   analisi/        analisi ed export usati per le decisioni (ultima: analisi-2026-11-09.md)
   note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
                   PULIZIA-4.25.0.txt = file tolti
+
+4.27.0 — app e server 4.19.0 (ripubblicare la funzione pronostici-avvisi)
+  - Tolte le notifiche 📊 CONTROLLO +5/+10/+15’ dopo i segnali (e il loro interruttore negli avvisi).
+  - ⏰ PREPARTITA 10’ PRIMA: notifica circa 10 minuti prima del calcio d'inizio delle partite con un pronostico prepartita
+    (non tutte), con pronostico e %; più partite alla stessa ora in una notifica sola. Avvisi › "Tutti i pronostici" o
+    "⭐ Solo Top", oppure spento. Valgono i pronostici già calcolati dall'app (aprire Prepartita una volta al giorno).
+  - LIVELLI DI CAMPIONATO: ⭐ Top e coppe · Prime divisioni · Serie minori · Giovanili · Femminili.
+      Live (Adesso e Oggi): riga "Campionati" a scelta multipla con la % vinte di oggi per livello (si ricorda).
+      Avvisi › Campionati: le notifiche live arrivano solo dai livelli accesi.
+      Statistiche › Dividi per › Campionato: i 5 livelli in cima (tocca per filtrare), anche nel Prepartita.
+
+4.26.2 — solo app
+  - PREPARTITA: anche le FEMMINILI. Prima serviva +6 punti (come le giovanili) e non entravano quasi mai in pronostici e Top.
+    Ora come le serie maschili dello stesso livello: prime divisioni femminili forti (WSL, Liga F, Frauen-Bundesliga, D1,
+    Serie A Women, NWSL, Damallsvenskan, Toppserien, WE League, A-League Women) come le maggiori; altre femminili dei
+    Paesi forti +2 punti; tutte le altre +4 (come i campionati minori). Si seguono in Statistiche › Campionato › Femminili.
 
 4.26.1 — solo app
   - Live: se il server risponde "Dati live non ancora pronti" (il giro ogni 2 minuti è fermo da più di 5 minuti)

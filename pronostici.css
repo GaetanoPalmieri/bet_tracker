@@ -1694,3 +1694,8 @@ main button.pst-hb.on:not(#_){border-color:rgba(24,152,136,.85)!important}
 .pr-seg2 button[class*="pv-"]{padding-top:8px!important}
 :root[data-theme="light"] .pr-seg2 button.pv-open{--pv:#0f8a76}:root[data-theme="light"] .pr-seg2 button.pv-live{--pv:#2563eb}:root[data-theme="light"] .pr-seg2 button.pv-done{--pv:#7c3aed}
 :root[data-theme="light"] .pr-seg2 button.pv-check{--pv:#b86e00}:root[data-theme="light"] .pr-seg2 button.pv-pk{--pv:#b86e00}:root[data-theme="light"] .pr-seg2 button.pv-allm{--pv:#0f8a76}
+
+/* 4.27.0 — livelli di campionato nel Live (Adesso e Oggi) */
+.lv-lvrow{align-items:center}
+.lv-lvrow .lv-lvlbl{flex:none;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;opacity:.6;margin-right:2px}
+.lv-lvrow .lv-lvclr span{opacity:.8}

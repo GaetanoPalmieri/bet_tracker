@@ -21,7 +21,7 @@
 //
 // Segreti già presenti: BZZOIRO_KEY, BET_VAPID_PUBLIC_KEY, BET_VAPID_PRIVATE_KEY (+ quello del cron).
 // Tabelle: supabase/avvisi.sql. Pubblicare con "Verify JWT" DISATTIVATO: i controlli sono qui sotto.
-// Versione app: 4.18.0 (9/11: 🎯 gol 1T favorita solo sullo 0-0 e fuori dalle serie minori dei Paesi forti) · 4.17.4 (8/11: 🔥 gol 1T non dal 17' con linea gol live sotto 3,25) · 4.17.3 (5/11: quota bet365 registrata a ogni segnale gol, per il conto in euro) · 4.17.2 (5/11: 📊 controlli del 1T senza 🔴, al massimo in bilico) · 4.17.1 (4/11: 📊 controlli prudenti, 2T in bilico, 1T 🔴 col ritmo che cala) · 4.17.0 (4/11: 🔥 gol 2T solo con 0-2 gol, 🔥 gol 1T solo con 0-1 gol e fuori dalle serie minori dei Paesi forti) · 4.16.1 (3/11: 🔥 gol 2T anche nella UEFA Youth League, in prova) · 4.16.0 (3/11: 1T con mezzo scalino di keep, quote vere 1T prima delle altre, una sola giocata per partita e punteggio tra i filtri gol, versione della regola nei segnali, prepartita con linea gol ×0,90) · 4.15.5 (2/11: femminili, solo prime divisioni forti, 🔥 gol 2T e prossimo gol 2T in prova, stima 92%) · 4.15.4 (2/11: ricalibrazione con la traccia completa: 🔥 con keep ≥ 1, 🔥 2T fino al 58’, prossimo gol 2T stimato 94%, nuova tabella dei controlli) · 4.15.3 (2/11: export della traccia con pagine da 1.000 righe e quote 1X2 nella traccia, niente notifica "⚽ GOL" dopo il segnale, 🔥 1T stima 75%) · 4.15.2 (2/11: export della traccia completa, tutte le partite, un giorno alla volta) · 4.15.1 (2/11: 📊 controlli dopo il segnale a +5/+10/+15’ con notifica a parte, gol 1T anche sull’1-0 se il book è ≥75%) · 4.15.0 (2/11: gol 1T solo sullo 0-0 con le quote vere del 1T, niente ⭐, 🔥 2T solo nei campionati principali, quota raggiunta fuori)
+// Versione app: 4.19.0 (10/11: niente notifiche di controllo +5/10/15’, ⏰ prepartita 10’ prima, livelli di campionato nelle notifiche) · 4.18.0 (9/11: 🎯 gol 1T favorita solo sullo 0-0 e fuori dalle serie minori dei Paesi forti) · 4.17.4 (8/11: 🔥 gol 1T non dal 17' con linea gol live sotto 3,25) · 4.17.3 (5/11: quota bet365 registrata a ogni segnale gol, per il conto in euro) · 4.17.2 (5/11: 📊 controlli del 1T senza 🔴, al massimo in bilico) · 4.17.1 (4/11: 📊 controlli prudenti, 2T in bilico, 1T 🔴 col ritmo che cala) · 4.17.0 (4/11: 🔥 gol 2T solo con 0-2 gol, 🔥 gol 1T solo con 0-1 gol e fuori dalle serie minori dei Paesi forti) · 4.16.1 (3/11: 🔥 gol 2T anche nella UEFA Youth League, in prova) · 4.16.0 (3/11: 1T con mezzo scalino di keep, quote vere 1T prima delle altre, una sola giocata per partita e punteggio tra i filtri gol, versione della regola nei segnali, prepartita con linea gol ×0,90) · 4.15.5 (2/11: femminili, solo prime divisioni forti, 🔥 gol 2T e prossimo gol 2T in prova, stima 92%) · 4.15.4 (2/11: ricalibrazione con la traccia completa: 🔥 con keep ≥ 1, 🔥 2T fino al 58’, prossimo gol 2T stimato 94%, nuova tabella dei controlli) · 4.15.3 (2/11: export della traccia con pagine da 1.000 righe e quote 1X2 nella traccia, niente notifica "⚽ GOL" dopo il segnale, 🔥 1T stima 75%) · 4.15.2 (2/11: export della traccia completa, tutte le partite, un giorno alla volta) · 4.15.1 (2/11: 📊 controlli dopo il segnale a +5/+10/+15’ con notifica a parte, gol 1T anche sull’1-0 se il book è ≥75%) · 4.15.0 (2/11: gol 1T solo sullo 0-0 con le quote vere del 1T, niente ⭐, 🔥 2T solo nei campionati principali, quota raggiunta fuori)
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -1540,6 +1540,16 @@ var TIP_LG_INTCUP = /champions league|europa league|conference league|libertador
    Il gol nel 1T invece va come altrove (74% contro 72%): resta. */
 var TIP_LG_AMERICAS = /^(argentina|bolivia|brazil|chile|colombia|ecuador|paraguay|peru|uruguay|venezuela|mexico|usa|united states|canada|costa rica|el salvador|guatemala|honduras|nicaragua|panama|jamaica|puerto rico|dominican|haiti|trinidad|cuba|bermuda|belize|guyana|suriname)\b/i;
 function tipLgAmericas(league) { return TIP_LG_AMERICAS.test(String(league || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s*·\s*/g, ' ').trim()); }
+/* 4.27.0 / server 4.19.0 — LIVELLI DI CAMPIONATO per i filtri del Live, le notifiche e le Statistiche:
+   ⭐ Top e coppe (5 grandi leghe, Eredivisie, Portogallo, coppe internazionali) · Prime divisioni (le altre maggiori) ·
+   Serie minori (serie B dei Paesi forti e campionati minori) · Giovanili · Femminili. */
+var TIP_LV = [['top', '⭐ Top e coppe'], ['first', 'Prime divisioni'], ['minor', 'Serie minori'], ['youth', 'Giovanili'], ['women', 'Femminili']];
+function tipLvOf(e) {
+  var g = e && e.factors && e.factors.lgG;
+  if (!g) { var lg = (e && (e.league || (e.m && e.m.league))) || '', t = (e && e.lg) || tipLeagueTier({ league: lg, home: e && (e.home || (e.m && e.m.home)), away: e && (e.away || (e.m && e.m.away)) }); g = tipLgGroup(lg, t); }
+  return g === 'top7' || g === 'cup' ? 'top' : g === 'first' ? 'first' : g === 'youth' || g === 'youth+' ? 'youth' : g === 'women' ? 'women' : 'minor';
+}
+function tipLvName(v) { var x = TIP_LV.find(function (r) { return r[0] === v; }); return x ? x[1] : v; }
 function tipLgGroup(league, tier) {
   /* nomi in due forme: "England Premier League" (live) e "England · Premier League" (scansione): si uniscono */
   var lg = String(league || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s*·\s*/g, ' ').trim();
@@ -2357,6 +2367,7 @@ function tipAlertWhy(A, e) {
   else if (e.tier === 'excellent' ? A.excellent === false : !A.amber) return e.tier === 'excellent' ? 'OTTIME spente' : 'DA VALUTARE spente';
   if (A[tipAlertGroup(e.k)] === false) return 'tipo ' + ((TIP_ALERT_GROUPS.find(function (g) { return g[0] === tipAlertGroup(e.k); }) || [0, ''])[1]).toLowerCase() + ' spento';
   if (A.top && !tipLeagueTop(e)) return 'escluso da Solo top campionati';
+  if (A.lvOff && A.lvOff[tipLvOf(e)]) return 'campionati ' + tipLvName(tipLvOf(e)) + ' spenti'; /* 4.27.0 */
   if (A.quality !== false && !tipQualityPass(e)) return 'escluso da Solo qualità';
   if (A.off && A.off[e.k]) return 'segnale spento negli avvisi';
   if (A.valOnly && TIP_TARGET_SRV[e.k] && !tipHasValue(e)) return 'senza valore 💰'; /* 4.7.0 */
@@ -3132,6 +3143,50 @@ async function runCronPre() {
     return { error: (e as Error).message };
   }
 }
+/* server 4.19.0 — ⏰ PREPARTITA 10' PRIMA. Per le partite con un pronostico prepartita (quelli che l'app ha già calcolato e
+   sincronizzato: picks del pronostico, con la % mostrata nell'app), una notifica circa 10 minuti prima del calcio d'inizio.
+   Più partite alla stessa ora = una notifica sola. Una volta per partita (stato "preKo:<utente>").
+   Preferenze (predModel.alerts): preOff = spente; preTop = solo le partite in Top. Valgono con gli avvisi accesi. */
+function romeTs(date: string, time: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || "")) || !/^\d{1,2}:\d{2}$/.test(String(time || ""))) return null;
+  const [y, mo, d] = date.split("-").map(Number), [h, mi] = time.split(":").map(Number);
+  const guess = Date.UTC(y, mo - 1, d, h, mi), p = romeParts(guess);
+  const [py, pmo, pd] = p.date.split("-").map(Number), [ph, pmi] = p.time.split(":").map(Number);
+  return guess - (Date.UTC(py, pmo - 1, pd, ph, pmi) - guess);
+}
+async function preKickoffWatch(u: any, now: number) {
+  const A = u.prefs || {};
+  if (A.preOff) return { sent: 0, due: 0 };
+  const preds: any[] = Array.isArray(u.data?.predictions) ? u.data.predictions : [];
+  const sk = "preKo:" + u.id, done: any = (await getState(sk)) || {};
+  const due: any[] = [];
+  for (const m of preds) {
+    if (!m || !m.id || m.cancelled || done[m.id]) continue;
+    const ko = romeTs(m.date, m.time);
+    if (ko == null) continue;
+    const dt = ko - now;
+    if (dt <= 0 || dt > 11 * 60e3) continue;
+    const src = m.preIssue && Array.isArray(m.preIssue.picks) && m.preIssue.picks.length ? m.preIssue.picks : (Array.isArray(m.picks) ? m.picks : []);
+    const picks = src.filter((p: any) => p && typeof p.sel === "string" && typeof p.p === "number" && !/^(Under|No goal)/.test(p.sel) && !/angoli/i.test(p.sel)).sort((a: any, b: any) => b.p - a.p);
+    if (!picks.length) continue;
+    const top = !!(m.preIssue && m.preIssue.top && Object.keys(m.preIssue.top).length);
+    if (A.preTop && !top) continue;
+    due.push({ m, picks: picks.slice(0, 2), top, ko });
+  }
+  if (!due.length) return { sent: 0, due: 0 };
+  due.sort((a, b) => a.ko - b.ko);
+  const pk = (x: any) => x.picks.map((p: any) => p.sel + " " + Math.round(p.p) + "%").join(" · ");
+  const mins = Math.max(1, Math.round((due[0].ko - now) / 60e3));
+  const payload = due.length === 1
+    ? { title: "⏰ Tra " + mins + "’ · " + due[0].m.home + " – " + due[0].m.away, body: pk(due[0]) + (due[0].top ? " · ⭐ in Top" : "") + "\n🏆 " + (due[0].m.league || "") + " · " + due[0].m.time, tag: "bet-pre-" + due[0].m.id, url: "./" }
+    : { title: "⏰ Tra " + mins + "’ · " + due.length + " partite con pronostico", body: due.slice(0, 6).map((x) => x.m.time + " " + (x.top ? "⭐ " : "") + x.m.home + " – " + x.m.away + " · " + pk(x)).join("\n") + (due.length > 6 ? "\n+ altre " + (due.length - 6) : ""), tag: "bet-pre-" + due[0].m.date + "-" + due[0].m.time, url: "./" };
+  let sent = 0;
+  for (const s of u.subs) if ((await send(s, payload)) === "ok") sent++;
+  for (const x of due) done[x.m.id] = now;
+  for (const k of Object.keys(done)) if (now - done[k] > 36 * 3600e3) delete done[k];
+  await setState(sk, done);
+  return { sent, due: due.length };
+}
 const TIP_CPU_MAX = 900; /* 4.14.2 — ms di calcolo del motore per giro (il resto del giro: scaricamento, salvataggi, prepartita) */
 let cpuInfo: any = null;
 async function runAlerts() {
@@ -3146,6 +3201,9 @@ async function runAlerts() {
     if (prefs.on) users.push({ id: uid, data: d, prefs, subs: ss });
   }
   if (!users.length) return { users: 0, note: "nessuno ha gli avvisi attivi" };
+  /* server 4.19.0 — ⏰ prepartita 10' prima (prima del motore live: non dipende dal limite di CPU) */
+  let preSent = 0;
+  for (const u of users) { try { preSent += (await preKickoffWatch(u, Date.now())).sent; } catch (e) { console.error("prepartita 10'", (e as Error).message); } }
   if (!BZ_KEY && !TC_TOKEN) return { error: "manca il segreto TOTALCORNER_TOKEN" };
 
   const now = Date.now();
@@ -3269,8 +3327,7 @@ async function runAlerts() {
       sent += qr.sent; newSig += qr.created; qNew += qr.created;
       for (const w of qr.watch) qWatch[w.afId] = { half: w.half, G: w.G, Q: Math.min(w.Q, qWatch[w.afId]?.Q ?? 9), at: now };
     } catch (e) { console.error("quota raggiunta", (e as Error).message); }
-    /* 4.21.2 — 📊 controlli dopo il segnale (+5 / +10 / +15’) */
-    try { const pr = await progressWatch(u, list, now, originals); progSent += pr.sent; } catch (e) { console.error("controlli", (e as Error).message); }
+    /* server 4.19.0 — 📊 controlli dopo il segnale (+5 / +10 / +15’) TOLTI: niente più notifiche di controllo del ritmo */
     /* storico delle scansioni (serve al modello completo dopo 5 minuti) */
     if (snaps.length) {
       tipLiveHistMany(snaps);
@@ -3280,7 +3337,7 @@ async function runAlerts() {
   /* pulizia: segnali più vecchi di 10 giorni */
   if (new Date(now).getUTCMinutes() < 3) await admin.from("pronostici_segnali").delete().lt("created_at", new Date(now - 60 * 86400e3).toISOString()); /* 3.99.0 — 60 giorni (prima 10): servono all'export */
   try { await setState("qWatch", qWatch); } catch { /* ok */ }
-  return { users: users.length, live: list.length, evaluated, newSignals: newSig, quotaReached: qNew, sent, progSent, bzCalls, cpu: cpuInfo };
+  return { users: users.length, live: list.length, evaluated, newSignals: newSig, quotaReached: qNew, sent, progSent, preSent, bzCalls, cpu: cpuInfo };
 }
 
 /* 4.14.3 — RISPOSTE COMPRESSE (gzip). Supabase (piano gratuito) conta i dati in uscita: 6,8 GB su 5 a ottobre. La lista
@@ -3348,7 +3405,7 @@ async function handleReq(req: Request): Promise<Response> {
     });
     const last = data && data.length ? data[data.length - 1].id : null;
     return json({ day, rows, teams, next: data && data.length >= size ? last : null,
-      cols: ["af_id", "t", "min", "st", "g", "s", "t_porta", "da", "att", "pos", "red", "c", "ll", "pl", "go_ht", "go_ft", "x12"], ver: "4.18.0" });
+      cols: ["af_id", "t", "min", "st", "g", "s", "t_porta", "da", "att", "pos", "red", "c", "ll", "pl", "go_ht", "go_ft", "x12"], ver: "4.19.0" });
   }
   if (body.action === "training") {
     const table = body.kind === "finals" ? "pronostici_finali" : body.kind === "trace" ? "pronostici_traccia" : body.kind === "signals" ? "pronostici_segnali" : body.kind === "hist" ? "pronostici_storico_quote" : null;
@@ -3382,7 +3439,7 @@ async function handleReq(req: Request): Promise<Response> {
     const preDiag = { day: tp.day, page: tp.page, done: tp.done, cycleAt: tp.cycleAt, perDay: Object.fromEntries(Object.entries(tp.byDay || {}).map(([k, v]: any) => [k, (v || []).length])) };
     const tb: any = (await getState("tcTables")) || {}, tbK = Object.keys(tb).filter((k) => k !== "_off");
     const tables = { leagues: tbK.length, ok: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.t).length, 0), err: tbK.reduce((n, k) => n + Object.values(tb[k] || {}).filter((c: any) => c && c.err).length, 0), off: tb._off || null };
-    return json({ ver: "4.18.0", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
+    return json({ ver: "4.19.0", tcPreDiag: await getState("tcPreDiag"), tables, tcLiveDiag: await getState("tcLiveDiag"), tcpreErr: await getState("tcpreErr"), histBF: (({ queue, days, ...rest }: any) => ({ ...rest, queue: (queue || []).length, days }))((await getState("histBF")) || {}), histRaw: await getState("histRaw"), goalOddsRaw: await getState("goalOddsRaw"), cornerOddsRaw: await getState("cornerOddsRaw"), settle: await getState("settleLast"), prematch: preDiag });
   }
   if (body.action === "signals") {
     /* 3.94.1 — segnalibro sull'ULTIMO AGGIORNAMENTO (next), a pagine. Prima l'app avanzava con l'ora di creazione del
@@ -3395,7 +3452,7 @@ async function handleReq(req: Request): Promise<Response> {
     const { data, error: e2 } = await q.order("updated_at", { ascending: true }).order("key", { ascending: true }).limit(size);
     if (e2) return json({ error: e2.message }, 500);
     const rows = data || [], rem: any = await getState("bzRemaining");
-    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.18.0" });
+    return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.19.0" });
   }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
@@ -3409,7 +3466,7 @@ async function handleReq(req: Request): Promise<Response> {
     try {
       const f: any = await getPrematch(!!body.force);
       const rem: any = await getState("bzRemaining");
-      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.18.0" }));
+      return json(Object.assign({}, f, { bzRemaining: bzRem ?? rem?.v ?? null, prematchErr: await getState("tcpreErr"), ver: "4.19.0" }));
     } catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   if (body.action === "test") {
@@ -3417,8 +3474,8 @@ async function handleReq(req: Request): Promise<Response> {
     if (!subs?.length) return json({ error: "Nessun telefono iscritto: attiva prima le notifiche in Altro › Notifiche." });
     let sent = 0;
     for (const s of subs) if ((await send(s, { title: "🛡️ Gol 1T favorita · 80% 🟠 DA VALUTARE", body: "👉 1° gol entro il 45’\nSquadra di casa – Squadra ospite\n🏆 Israel Liga Leumit\n⏱ 18’ 1T · 0-0 · quota 1.40 · minima 1.25\n⚡ Entra subito: conviene fortemente", tag: "bet-live-test", url: "./?live=1" })) === "ok") sent++;
-    /* 4.21.2 — e un 📊 controllo di esempio, per vedere la differenza */
-    for (const s of subs) await send(s, { title: "📊 CONTROLLO +10’ ▸ 🟡 IN BILICO", body: "Squadra di casa – Squadra ospite · 0-0 al 28’ 1T\nritmo −25% · tiri in porta +1\nOra ~61% → non aggiungere (solo da @1.64)\n↪ segnale delle 10:38 (18’) · Gol 1T favorita", tag: "bet-prog-test", renotify: true, url: "./?live=1" });
+    /* server 4.19.0 — e un ⏰ prepartita di esempio (10' prima del calcio d'inizio) */
+    for (const s of subs) await send(s, { title: "⏰ Tra 10’ · Squadra di casa – Squadra ospite", body: "Over 1.5 88% · Over 0.5 1T 85% · ⭐ in Top\n🏆 Italy Serie A · 20:45", tag: "bet-pre-test", url: "./" });
     if (!vapidOk) return json({ error: "Su Supabase mancano i segreti BET_VAPID_PUBLIC_KEY e BET_VAPID_PRIVATE_KEY (GUIDA_NOTIFICHE, passo 2)." });
     return json({ sent });
   }
