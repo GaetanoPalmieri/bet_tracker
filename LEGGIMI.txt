@@ -1,0 +1,37 @@
+Bet Tracker 4.26.0 · server pronostici-avvisi 4.18.0
+
+PER AGGIORNARE
+  1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
+  2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
+  Dopo: in Altro "4.26.0", in Live la barra "server 4.18.0" (con un server più vecchio compare ⚠).
+
+CARTELLE
+  (principale)    l'app: solo i file che usa
+  supabase/       pronostici-avvisi.txt, pronostici-dati.txt (funzioni), avvisi-live.sql, promemoria.sql;
+                  vecchie/ = migrazioni già applicate
+  analisi/        analisi ed export usati per le decisioni (ultima: analisi-2026-11-09.md)
+  note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
+                  PULIZIA-4.25.0.txt = file tolti
+
+4.26.0 — solo app (server invariato 4.18.0)
+  - 🎯 OBIETTIVO DEL MESE in cima a Saldo (di base 900 € al mese, 30 € al giorno, stop a −30 € al giorno; "Modifica").
+    Fatto nel mese / obiettivo, barra con il punto del piano, avanti o indietro sul piano, dove chiudi a 30 € al giorno.
+    OGGI: obiettivo del giorno = quanto manca diviso i giorni rimasti, mai più di 30 € (se fai di più, dopo ti serve
+    meno; se sei indietro non ti chiede di più). "Segna il risultato di oggi" (Vinto/Perso + cifra) aggiorna il saldo
+    del giorno; vale anche "Aggiorna saldo" come prima (depositi e prelievi non contano).
+    A obiettivo raggiunto o a −30 € ti dice di fermarti, anche nella striscia in cima a Prepartita e Live.
+    Calendario del mese: verde = a obiettivo, chiaro = sotto, rosso = in perdita.
+
+4.25.0 — app e server 4.18.0 (export 9/11 mattina)
+  - 🎯 GOL 1T FAVORITA SOLO SULLO 0-0 E FUORI DALLE SERIE MINORI DEI PAESI FORTI. Segnali veri 3-8/11:
+      0-0 fuori dalle serie minori dei Paesi forti   78/101 (77%) · book 72% · +12 € (10 € alla quota del segnale)
+      con un gol già fatto (favorita avanti)          19/29 (66%) · book 79%  → tolti
+      serie minori dei Paesi forti                    18/28 (64%) · book 75%  → tolti (come nel 🔥 gol 1T)
+    Prima: 111/151 (73,5%) = book, −80 €. Il rigioco della traccia 2-8/11 conferma le serie minori dei Paesi forti
+    sotto (−7 punti). Linea prepartita, % della favorita e minuto: risultati opposti tra segnali veri e traccia, niente regola.
+    Statistiche: anche i 🎯 1T di prima contano solo se rispettano le nuove condizioni.
+  - PREPARTITA: Over 0.5 1T e Over 1.5 squadra solo con stima mostrata dall'85% (5-9/11 la fascia 80-84% 93/121, 77%,
+    con stima 82%: terzo controllo di fila sotto; 85-89% 88%, 90%+ 94%, in linea).
+  - PREPARTITA: Over 1.5 squadra fuori dalle Top (nelle Top 30/37, 81%, con stima 87%). Resta tra i pronostici.
+    Le Top già salvate restano valide nello storico.
+  - Cartella pulita: da 121 a 58 file.
