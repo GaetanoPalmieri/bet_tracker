@@ -1699,3 +1699,71 @@ main button.pst-hb.on:not(#_){border-color:rgba(24,152,136,.85)!important}
 .lv-lvrow{align-items:center}
 .lv-lvrow .lv-lvlbl{flex:none;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;opacity:.6;margin-right:2px}
 .lv-lvrow .lv-lvclr span{opacity:.8}
+
+/* 4.29.0 — PREPARTITA: striscia dei 7 giorni (giorno, data, partite previste) */
+.tip-days2 { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: 16px; margin: 0 -16px 14px; padding: 0 16px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.tip-days2::-webkit-scrollbar { display: none; }
+.tip-dayb2 {
+  flex: 0 0 74px; display: grid !important; gap: 0; justify-items: center; padding: 7px 4px 8px !important; margin: 0 !important;
+  border-radius: 14px !important; background: var(--suite-glass-card) !important; border: 1px solid var(--suite-glass-edge) !important;
+  color: var(--suite-text) !important; box-shadow: none !important; scroll-snap-align: start; min-height: 0 !important;
+}
+.tip-dayb2 small { font-size: 11px; font-weight: 600; color: var(--suite-text-soft); }
+.tip-dayb2 b { font: 700 15px/1.25 var(--suite-font-display); letter-spacing: -.01em; white-space: nowrap; }
+.tip-dayb2 span { font-size: 10.5px; color: var(--suite-text-soft); white-space: nowrap; }
+.tip-dayb2 span i { font-style: normal; font-weight: 700; color: var(--suite-text); }
+.tip-dayb2.on { background: var(--suite-teal-grad) !important; border-color: transparent !important; color: #fff !important; }
+.tip-dayb2.on small, .tip-dayb2.on span, .tip-dayb2.on span i { color: rgba(255,255,255,.92); }
+.tip-dayb2.empty:not(.on) { opacity: .5; }
+.tip-dayb2.all { flex-basis: 78px; }
+.tip-hubdays { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.tip-hubdays > span { gap: 0; padding: 5px 0 6px; }
+.tip-hubdays > span.empty { opacity: .5; }
+.tip-hubdays small { font-size: 10.5px; font-weight: 600; }
+.tip-hubdays em { font-style: normal; font-size: 10.5px; color: var(--suite-text-soft); }
+.tip-hubdays b { font: 700 15px var(--suite-font-display); }
+.tip-hubnote { font-size: 11px; color: var(--suite-text-soft); text-align: center; }
+/* 4.29.0 — statistiche prepartita: righe a una colonna, giornata che si apre e si chiude */
+.pst-day { position: relative; }
+.pst-dclose { position: absolute; top: 10px; right: 10px; z-index: 1; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px !important;
+  background: var(--suite-glass-row) !important; border: 1px solid var(--suite-glass-edge) !important; color: var(--suite-text-soft) !important; font-size: 13px; padding: 0 !important; box-shadow: none !important; }
+.pst-day .pst-dnav { margin-right: 36px; }
+.pst-r1 .st3-fr small { white-space: nowrap; }
+.pst-day { scroll-margin-top: 70px; }
+/* 4.29.0 — i 3 giorni prima nella striscia */
+.tip-dayb2.past { background: transparent !important; border-style: dashed !important; }
+.tip-dayb2.past span i { font-weight: 700; }
+.tip-dayb2.past.on { background: var(--suite-teal-grad) !important; border-style: solid !important; }
+.tip-dayb2.past.on span i { color: #fff; }
+.tip-daysep { flex: 0 0 1px; align-self: stretch; margin: 6px 2px; background: var(--suite-glass-edge); }
+/* 4.29.0 — AVVISI: interruttore, cosa arriva, filtri con 🔔, opzioni avanzate chiuse */
+.al-card { display: grid; gap: 8px; }
+.al-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.al-master { display: inline-flex !important; align-items: center; gap: 10px; padding: 8px 12px !important; border-radius: 14px !important; background: var(--suite-glass-row) !important;
+  border: 1px solid var(--suite-glass-edge) !important; color: var(--suite-text) !important; box-shadow: none !important; }
+.al-master b { font: 700 15px var(--suite-font-display); }
+.al-master.on { border-color: rgba(63,179,142,.55) !important; }
+.al-test { margin: 0 !important; }
+.al-sw { position: relative; flex: 0 0 auto; width: 42px; height: 24px; border-radius: 999px; background: rgba(140,150,170,.35); border: 0 !important; padding: 0 !important; box-shadow: none !important; display: inline-block; }
+.al-sw i { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s ease; }
+.al-sw.on, .al-master.on .al-sw { background: var(--tip-won, #3fb38e); }
+.al-sw.on i, .al-master.on .al-sw i { left: 21px; }
+.al-sum { margin: 0; font-size: 13px; color: var(--suite-text-soft); }
+.al-sum b { color: var(--suite-text); }
+.al-sum.warn { color: var(--tip-amber, #e0a33a); font-weight: 600; }
+.al-lims { display: flex; flex-wrap: wrap; gap: 6px; }
+.al-lim { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 4px 4px 10px; border-radius: 999px; background: rgba(224,163,58,.14); color: var(--suite-text); }
+.al-lim button, .al-blk button { font-size: 11.5px !important; font-weight: 700; padding: 3px 9px !important; border-radius: 999px !important; background: var(--suite-glass-card) !important;
+  border: 1px solid var(--suite-glass-edge) !important; color: var(--suite-text) !important; box-shadow: none !important; margin: 0 !important; min-height: 0 !important; }
+.al-h { margin: 8px 0 0; font-size: 12px; font-weight: 700; letter-spacing: .02em; color: var(--suite-text-soft); text-transform: uppercase; }
+.al-list { display: grid; gap: 6px; }
+.al-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px 9px 12px; border-radius: 14px; background: var(--suite-glass-row); border: 1px solid var(--suite-glass-edge); }
+.al-row:not(.on) { opacity: .78; }
+.al-rl { display: grid; gap: 1px; min-width: 0; }
+.al-rl b { font-size: 14px; }
+.al-rl i { font-style: normal; font-size: 11.5px; color: var(--suite-text-soft); }
+.al-rl small { font-size: 12px; color: var(--suite-text-soft); }
+.al-blk { color: var(--tip-amber, #e0a33a) !important; font-weight: 600; }
+.al-adv summary { font-weight: 700; }
+.al-row .al-sw, .al-master .al-sw { width: 42px !important; height: 24px !important; min-width: 0 !important; min-height: 0 !important; border-radius: 999px !important; margin: 0 !important; }
+.al-row:not(.on) .al-sw.on { background: rgba(63,179,142,.4); }

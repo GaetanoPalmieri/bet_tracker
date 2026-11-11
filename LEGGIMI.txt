@@ -1,9 +1,10 @@
-Bet Tracker 4.28.1 · server pronostici-avvisi 4.20.1
+Bet Tracker 4.29.0 · server pronostici-avvisi 4.21.0
 
 PER AGGIORNARE
   1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
   2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
-  Dopo: in Altro "4.28.1", in Live la barra "server 4.20.1" (con un server più vecchio compare ⚠).
+  3. Solo la prima volta con la 4.29.0: lancia supabase/migrazione-4.29.0.sql nel SQL Editor (meno traffico Supabase).
+  Dopo: in Altro "4.29.0", in Live la barra "server 4.21.0" (con un server più vecchio compare ⚠).
 
 CARTELLE
   (principale)    l'app: solo i file che usa
@@ -13,6 +14,38 @@ CARTELLE
   analisi/        analisi ed export usati per le decisioni (ultima: analisi-2026-11-10.md)
   note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
                   PULIZIA-4.25.0.txt = file tolti
+  Il server è SOLO supabase/pronostici-avvisi.txt: la copia nella cartella principale è vecchia (4.17.3), non usarla.
+
+4.29.0 — app e server 4.21.0 (ripubblicare la funzione pronostici-avvisi)
+  - 💥 GOL 1T TIRI E RITMO: niente notifiche e niente righe in Adesso / Oggi, resta solo nelle Statistiche (riga 📊, fuori
+    dal totale "Tutti i filtri"). Sui giorni nuovi 6-10/11 15/28 (54%) contro il 64% del book. Il 💥 2T resta com'è.
+  - 💪 GOL 2T FAVORITA CHE SPINGE, nuovo IN PROVA (DA VALUTARE, notifica come gli altri gol): 55'-72', favorita prepartita
+    65%+ che non vince, negli ultimi ~10' almeno 2 tiri della favorita e almeno l'80% dei tiri, linea prepartita 2,5+
+    → +1 gol entro la fine. Traccia 2-10/11 con le soglie scelte senza il giorno di prova: 56/70 (80%), book 72%.
+  - PREPARTITA PER 7 GIORNI (prima 3). I giorni lontani hanno meno partite: bet365 apre le quote più tardi.
+    Il server legge meno dati a ogni giro (prima rileggeva tutto il calendario e due volte il file a ogni giro di 2 minuti):
+    meno traffico Supabase.
+  - GIORNI PIÙ CHIARI in Partite e Top: 7 riquadri che scorrono con giorno, data e partite previste ("Gio · 12 nov · 41
+    partite"); in Home il riquadro Partite mostra i 7 giorni con le partite previste.
+  - AVVISI PIÙ CHIARI: interruttore, una riga che dice cosa ti arriva ("Ti arrivano 5 filtri su 6 · tutti i campionati"),
+    i filtri live con 🔔 uno per uno e, se un'impostazione ne blocca uno, il motivo e "Sblocca". OTTIME / DA VALUTARE,
+    stabili / in prova, solo top, solo preferite, solo con valore stanno in "Opzioni avanzate".
+  - NOTIFICHE PIÙ CHIARE: titolo = cosa giocare come su bet365, % e quota ("💪 Over 2.5 · 80% · quota 1.42"); sotto
+    partita, minuto · risultato · campionato, filtro e livello, il perché in una riga.
+  - I 3 GIORNI PRIMA nella striscia dei giorni (a sinistra, bordo tratteggiato): % vinti e "vinti/chiusi" (in Top solo
+    le Top). Un tocco apre il giorno: in Partite con tutte le partite, in Top nei "Giorni passati".
+  - RISULTATI DEL PREPARTITA ANCHE AD APP APERTA: ogni 5 minuti e quando si torna nell'app (prima solo aprendo la scheda
+    Prepartita o con ↻: le partite finite restavano "Verifica").
+  - QUOTE VERE: ogni segnale gol salva la quota bet365 del momento (ora anche 💥 1T, solo statistiche). L'archivio quote
+    (pronostici_storico_quote) ora va avanti ogni giorno: dalle 3 di notte salva le quote gol minuto per minuto delle
+    partite del giorno prima, poi continua all'indietro fino a 30 giorni (prima si fermava dopo il primo giro). Si tiene
+    45 giorni (era 120) e senza angoli, per non riempire il database. Finisce nell'export "Esporta per il retraining".
+  - MENO TRAFFICO SUPABASE (il progetto aveva superato la quota): a ogni giro il server non legge più tutto il salvataggio
+    dell'app (solo avvisi, parametri e pronostici di ±2 giorni, con migrazione-4.29.0.sql), dei segnali delle ultime 8 ore
+    legge solo chiave e livello, e per chiudere gli esiti solo i segnali ancora aperti. Senza la migrazione funziona lo
+    stesso ma legge tutto come prima.
+  - STATISTICHE PREPARTITA PIÙ SEMPLICI: una % per riga ("38 su 44"), la giornata si apre toccando un giorno, niente bolle
+    e niente tabella mercati doppia (i mercati sono nei riquadri in alto). Per le sole Top: "★ Solo Top" nei filtri.
 
 4.28.1 — app e server 4.20.1 (ripubblicare la funzione pronostici-avvisi)
   - 🎯 GOL 1T FAVORITA solo con linea gol prepartita 3,25+: segnali veri 107/128 (84%, book 74%, +98 €); sotto 3,25 12/19
