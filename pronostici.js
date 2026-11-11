@@ -929,12 +929,25 @@ async function tipAutoResults(opts) {
   }
   tipUI.resBusy = true;
   try {
-    var r = await SuiteSync.api(TIP_FN, {
-      method: 'POST',
-      json: { action: 'results', matches: todo.slice(0, 80).map(function (m) { return { id: m.id, date: m.date, time: m.time, home: m.home, away: m.away, league: m.league, afId: m.afId || null, needFg: hasHt(m) && !Number.isInteger(m.fg) }; }).concat(logList.slice(0, 60)).sort(function (a, b) { return (b.endBy ? 1 : 0) - (a.endBy ? 1 : 0) || (a.endBy || 0) - (b.endBy || 0); }) },
-    });
+    /* 4.29.0 — PRIMA IL REGISTRO DEI FINALI sul server degli avvisi (quello sempre acceso, nessuna richiesta a TotalCorner),
+       poi pronostici-dati solo per le partite che mancano. Prima si chiedeva tutto a pronostici-dati: se non rispondeva, le
+       partite restavano "Verifica" anche con il finale già registrato (11/11: 28 partite del 10/11 così). */
+    var reqAll = todo.slice(0, 120).map(function (m) { return { id: m.id, date: m.date, time: m.time, home: m.home, away: m.away, league: m.league, afId: m.afId || null, needFg: hasHt(m) && !Number.isInteger(m.fg) }; }).concat(logList.slice(0, 100));
+    var regBy = {};
+    try {
+      var reg = await SuiteSync.api(TIP_ALERT_FN, { method: 'POST', json: { action: 'results', matches: reqAll.filter(function (m) { return m.afId; }) } });
+      ((reg && reg.results) || []).forEach(function (x) { if (x && x.id && Array.isArray(x.ft)) regBy[x.id] = x; });
+    } catch (e0) { /* server avvisi vecchio: si prova solo pronostici-dati */ }
+    var rest = reqAll.filter(function (m) { return !regBy[m.id]; }).slice(0, 140).sort(function (a, b) { return (b.endBy ? 1 : 0) - (a.endBy ? 1 : 0) || (a.endBy || 0) - (b.endBy || 0); });
+    var r = { results: [] };
+    if (rest.length) {
+      try { r = await SuiteSync.api(TIP_FN, { method: 'POST', json: { action: 'results', matches: rest } }) || { results: [] }; }
+      catch (e1) { if (!Object.keys(regBy).length) throw e1; r = { results: [], err: tipFnErr(e1) }; }
+    }
     var byId = {};
     (r.results || []).forEach(function (x) { byId[x.id] = x; });
+    Object.keys(regBy).forEach(function (k) { byId[k] = regBy[k]; });
+    r.results = Object.keys(byId).map(function (k) { return byId[k]; });
     var n = 0, voids = 0;
     mutate(function (d) {
       d.predictions.forEach(function (m) {
@@ -5536,7 +5549,21 @@ function tipListPanel(list) {
       (!q || (m.home + ' ' + m.away + ' ' + m.league).toLowerCase().indexOf(q) >= 0) && (!tipUI.starOnly || tipIsStar(m));
   }).sort(function (a, b) { return tipKickoff(a) - tipKickoff(b) || a.league.localeCompare(b.league); });
   if (tipUI.view === 'done') shown.reverse();
-  var byProb = tipUI.sort !== 'time';
+  /* 4.29.0 — FILTRO PER ESITO (Over 1.5, Over 2.5, Gol 1T, Goal, Segna squadra, Over 1.5 squadra). Con "★ Con pronostico"
+     restano le partite con quel pronostico; con "Tutte le partite" tutte, con la % di quell'esito anche se sotto soglia
+     (es. il Gol 1T nei campionati maggiori sta di solito al 70-80%: sotto l'85% non diventa pronostico). In ordine di %. */
+  var mk = tipUI.mk || '', inScope = shown.slice();
+  var mkCnt = {}; TIP_LIST_MK.forEach(function (o) { mkCnt[o[0]] = inScope.filter(function (m) { return (m.picks || []).some(function (p) { return p.m === o[0]; }); }).length; });
+  if (mk) {
+    shown = inScope.filter(function (m) { var x = tipMkProb(m, mk); return x && (!tipUI.preNoEph ? true : !!x.pick); });
+    shown.forEach(function (m) { m._sv = tipMkProb(m, mk).p; });
+    shown.sort(function (a, b) { return b._sv - a._sv || tipKickoff(a) - tipKickoff(b); });
+  }
+  var mkRow = '<div class="pr-mkrow" role="tablist" aria-label="Esito">' + [['', 'Tutti gli esiti']].concat(TIP_LIST_MK).map(function (o) {
+    var on = mk === o[0];
+    return '<button type="button" role="tab" aria-selected="' + on + '" class="pr-mk' + (on ? ' on' : '') + '" data-tip-mk="' + o[0] + '"' + (o[0] ? ' style="--mk:var(--mk-' + o[0] + ')"' : '') + '>' + U.esc(o[1]) + (o[0] ? '<i>' + mkCnt[o[0]] + '</i>' : '') + '</button>';
+  }).join('') + '</div>';
+  var byProb = tipUI.sort !== 'time' && !mk;
   if (byProb) {
     shown.forEach(function (m) { m._sv = tipSortValue(m, tipUI.sort); });
     shown.sort(function (a, b) { return b._sv - a._sv || tipKickoff(a) - tipKickoff(b); });
@@ -5565,11 +5592,14 @@ function tipListPanel(list) {
   var actHtml = act.length ? '<div class="pr-act">' + act.map(function (a) { return '<span class="pr-actc">' + a + '</span>'; }).join('') + '<button type="button" class="pr-reset" data-tip-reset>✕ Azzera</button></div>' : '';
   var top = tipPreTopSet(list);
   var row = function (m) {
-    var chips = m._eph ? tipEphChips(m) : (m.picks || []).slice().sort(function (a, b) { return (top[m.id + '|' + b.m] ? 1 : 0) - (top[m.id + '|' + a.m] ? 1 : 0) || b.p - a.p; }).map(function (p) { return tipPk(m, p, !!top[m.id + '|' + p.m]); }).join('');
-    return tipRowC(m, chips, U.esc(m.league || '') + (m.fav ? ' · favorita ' + m.fav + '%' : '') + (byProb ? ' · ' + U.esc(tipCap(tipDayLabel(m.date))) : ''));
+    var chips;
+    if (mk) { var x = tipMkProb(m, mk); chips = x.pick ? tipPk(m, x.pick, !!top[m.id + '|' + mk]) : '<i class="pr-pk eph" style="--mk:var(--mk-' + mk + ')">' + U.esc(x.short) + ' <b>' + Math.round(x.p) + '%</b></i><small class="pr-under">sotto soglia</small>'; }
+    else chips = m._eph ? tipEphChips(m) : (m.picks || []).slice().sort(function (a, b) { return (top[m.id + '|' + b.m] ? 1 : 0) - (top[m.id + '|' + a.m] ? 1 : 0) || b.p - a.p; }).map(function (p) { return tipPk(m, p, !!top[m.id + '|' + p.m]); }).join('');
+    return tipRowC(m, chips, U.esc(m.league || '') + (m.fav ? ' · favorita ' + m.fav + '%' : '') + (byProb || mk ? ' · ' + U.esc(tipCap(tipDayLabel(m.date))) + ' ' + U.esc(m.time || '') : ''));
   };
   var body = '', lastDay = '';
-  if (byProb && shown.length) body += '<h2 class="tip-day no-cap"><span>' + U.esc(sortName) + '</span><small>dal più probabile · ' + shown.length + ' partite</small></h2><div class="pr-list">' + shown.map(row).join('') + '</div>';
+  if (mk && shown.length) body += '<h2 class="tip-day no-cap"><span>' + U.esc((TIP_LIST_MK.find(function (o) { return o[0] === mk; }) || [0, mk])[1]) + '</span><small>dal più probabile · ' + shown.length + ' partite</small></h2><div class="pr-list">' + shown.map(row).join('') + '</div>';
+  else if (byProb && shown.length) body += '<h2 class="tip-day no-cap"><span>' + U.esc(sortName) + '</span><small>dal più probabile · ' + shown.length + ' partite</small></h2><div class="pr-list">' + shown.map(row).join('') + '</div>';
   else shown.forEach(function (m, i) {
     if (m.date !== lastDay) {
       var n = shown.filter(function (x) { return x.date === m.date; }).length;
@@ -5579,9 +5609,30 @@ function tipListPanel(list) {
     body += row(m);
     if (i === shown.length - 1) body += '</div>';
   });
-  if (!shown.length) body = '<div class="card empty">' + (tipUI.view === 'check' ? 'Nessuna partita da verificare.' : tipUI.view === 'live' ? 'Nessuna partita in corso.' : 'Nessuna partita con questi filtri.') + '</div>';
-  return seg + tools + actHtml + '<div class="tip-list pr-wrap">' + body + '</div>';
+  if (!shown.length) body = '<div class="card empty">' + (mk && tipUI.preNoEph ? 'Nessun pronostico ' + U.esc((TIP_LIST_MK.find(function (o) { return o[0] === mk; }) || [0, ''])[1]) + (mk === 'ht05' ? ' (serve almeno l’85%: di solito solo partite con tanti gol attesi)' : '') + '. Tocca “Tutte le partite” per vedere la % di tutte.' : tipUI.view === 'check' ? 'Nessuna partita da verificare.' : tipUI.view === 'live' ? 'Nessuna partita in corso.' : 'Nessuna partita con questi filtri.') + '</div>';
+  return seg + mkRow + tools + actHtml + '<div class="tip-list pr-wrap">' + body + '</div>';
 }
+var TIP_LIST_MK = [['o15', 'Over 1.5'], ['o25', 'Over 2.5'], ['ht05', 'Gol 1T'], ['gg', 'Goal'], ['tg', 'Segna squadra'], ['t15', 'Over 1.5 squadra']];
+var TIP_MK_SHORT = { o15: 'O1.5', o25: 'O2.5', ht05: '1T', gg: 'GG', tg: 'Segna', t15: 'O1.5 sq.' };
+var tipChCache = typeof WeakMap === 'function' ? new WeakMap() : null;
+/* % di un esito per una partita: il pronostico se c'è, altrimenti la stima del modello (anche sotto soglia) */
+function tipMkProb(m, k) {
+  var pk = (m.picks || []).find(function (p) { return p.m === k; });
+  if (pk) return { p: pk.p, pick: pk };
+  var C = tipChCache && tipChCache.get(m);
+  if (!C) { try { var c0 = m._c || tipCalc(m, tipParams()); C = { c: c0, ch: tipChoices(c0) }; } catch (e) { C = { c: {}, ch: {} }; } if (tipChCache) tipChCache.set(m, C); } /* niente cache sull'oggetto: i pronostici salvati restano puliti */
+  if (k === 'o15' || k === 'o25' || k === 'ht05' || k === 'gg') return U.finite(C.c[k]) ? { p: C.c[k], short: TIP_MK_SHORT[k] } : null;
+  var x = C.ch[k];
+  if (!x || !U.finite(x.p)) return null;
+  return { p: x.p, short: TIP_MK_SHORT[k] + (tipSelSide(x.sel) ? ' osp.' : ' casa'), sel: x.sel };
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-tip-mk]');
+  if (!b) return;
+  var k = b.getAttribute('data-tip-mk');
+  tipUI.mk = tipUI.mk === k ? '' : k;
+  render();
+});
 /* 3.65.0 — STATISTICHE: Live e Prepartita separate, ognuna con Riepilogo e Storico.
    Periodo scelto da calendario (uno o più giorni), filtri in un pannello. */
 var TIP_LG_NAME = { major: 'Maggiori', 'minor+': 'Minori (Paesi forti)', minor: 'Minori', 'youth+': 'Giovanili (Paesi forti)', youth: 'Giovanili', women: 'Femminili' };

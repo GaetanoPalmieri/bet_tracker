@@ -3649,6 +3649,31 @@ async function handleReq(req: Request): Promise<Response> {
     const rows = data || [], rem: any = await getState("bzRemaining");
     return json({ signals: rows.map((r: any) => r.data), next: rows.length ? rows[rows.length - 1].updated_at : (body.cursor || null), more: rows.length === size, bzRemaining: rem?.v ?? null, ver: "4.21.0" });
   }
+  /* server 4.21.0 — RISULTATI DAL REGISTRO DEI FINALI per l'app (pronostici prepartita e consigli live): prima li dava solo
+     la funzione pronostici-dati; se quella non risponde (segreti, versione vecchia) le partite restavano "Verifica" anche con
+     il finale già nel registro. Solo lettura, nessuna richiesta a TotalCorner. */
+  if (body.action === "results") {
+    const ms = (Array.isArray(body.matches) ? body.matches : []).filter((m: any) => m && m.id && typeof m.afId === "string" && m.afId.startsWith("tc:")).slice(0, 300);
+    const ids = [...new Set(ms.map((m: any) => m.afId))] as string[], got = new Map<string, any>();
+    const okPair = (v: any) => Array.isArray(v) && v.length === 2 && v.every((n: any) => Number.isInteger(n) && n >= 0);
+    for (let i = 0; i < ids.length; i += 150) {
+      const { data, error } = await admin.from("pronostici_finali").select("af_id,home,away,goals,ht,corners,ht_corners,goal_list,confirmed_at").eq("confirmed", true).in("af_id", ids.slice(i, i + 150));
+      if (error) return json({ error: error.message }, 500);
+      for (const f of data || []) {
+        if (!okPair(f.goals)) continue;
+        const r: any = { afId: f.af_id, status: "FT", resultConfirmed: true, resultSource: "registro", confirmedAt: f.confirmed_at || null, ft: f.goals, name: (f.home || "") + " - " + (f.away || "") };
+        if (okPair(f.ht)) r.ht = f.ht;
+        if (okPair(f.corners)) r.corners = f.corners;
+        if (okPair(f.ht_corners)) r.htCorners = f.ht_corners;
+        const gl = Array.isArray(f.goal_list) ? f.goal_list : null;
+        if (gl && gl.length === f.goals[0] + f.goals[1]) { r.goals = gl; const g1 = gl.filter((g: any) => g.min <= 45); if (g1.length) r.fg = g1[0].min; }
+        r.dbg = { src: "registro" };
+        got.set(f.af_id, r);
+      }
+    }
+    const results = ms.filter((m: any) => got.has(m.afId)).map((m: any) => Object.assign({}, got.get(m.afId), { id: m.id }));
+    return json({ results, asked: ms.length, found: results.length, ver: "4.21.0" });
+  }
   if (body.action === "scan") {
     /* l'app legge le partite live già scaricate dal giro (al massimo 2-3 minuti fa): nessuna richiesta in più a TotalCorner */
     const c: any = await getState("tcLive");

@@ -32,6 +32,10 @@ CARTELLE
     stabili / in prova, solo top, solo preferite, solo con valore stanno in "Opzioni avanzate".
   - NOTIFICHE PIÙ CHIARE: titolo = cosa giocare come su bet365, % e quota ("💪 Over 2.5 · 80% · quota 1.42"); sotto
     partita, minuto · risultato · campionato, filtro e livello, il perché in una riga.
+  - RISULTATI DEL PREPARTITA: prima dal registro dei finali del server degli avvisi, poi pronostici-dati per le altre
+    (prima solo pronostici-dati: se non rispondeva restavano tutte "Verifica").
+  - PARTITE: filtro per esito (Over 1.5, Over 2.5, Gol 1T, Goal, Segna squadra, Over 1.5 squadra), in ordine di %; con
+    "Tutte le partite" anche la % sotto soglia.
   - I 3 GIORNI PRIMA nella striscia dei giorni (a sinistra, bordo tratteggiato): % vinti e "vinti/chiusi" (in Top solo
     le Top). Un tocco apre il giorno: in Partite con tutte le partite, in Top nei "Giorni passati".
   - RISULTATI DEL PREPARTITA ANCHE AD APP APERTA: ogni 5 minuti e quando si torna nell'app (prima solo aprendo la scheda

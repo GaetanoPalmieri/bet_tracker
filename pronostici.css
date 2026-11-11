@@ -1767,3 +1767,13 @@ main button.pst-hb.on:not(#_){border-color:rgba(24,152,136,.85)!important}
 .al-adv summary { font-weight: 700; }
 .al-row .al-sw, .al-master .al-sw { width: 42px !important; height: 24px !important; min-width: 0 !important; min-height: 0 !important; border-radius: 999px !important; margin: 0 !important; }
 .al-row:not(.on) .al-sw.on { background: rgba(63,179,142,.4); }
+/* 4.29.0 — Partite: filtro per esito */
+.pr-mkrow { display: flex; gap: 6px; overflow-x: auto; margin: 0 -16px 10px; padding: 0 16px 2px; scrollbar-width: none; }
+.pr-mkrow::-webkit-scrollbar { display: none; }
+.pr-mk { flex: 0 0 auto; display: inline-flex !important; align-items: center; gap: 6px; padding: 7px 12px !important; border-radius: 999px !important; margin: 0 !important; min-height: 0 !important;
+  background: var(--suite-glass-card) !important; border: 1px solid var(--suite-glass-edge) !important; color: var(--suite-text) !important; box-shadow: none !important; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.pr-mk[style] { border-left: 3px solid var(--mk, var(--suite-glass-edge)) !important; }
+.pr-mk i { font-style: normal; font-size: 11.5px; color: var(--suite-text-soft); font-weight: 700; }
+.pr-mk.on { background: var(--suite-teal-grad) !important; border-color: transparent !important; color: #fff !important; }
+.pr-mk.on i { color: rgba(255,255,255,.9); }
+.pr-under { font-size: 11px; color: var(--suite-text-soft); align-self: center; }
