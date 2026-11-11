@@ -1,10 +1,10 @@
-Bet Tracker 4.29.0 · server pronostici-avvisi 4.21.0
+Bet Tracker 4.29.1 · server pronostici-avvisi 4.21.1
 
 PER AGGIORNARE
   1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
   2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
-  3. Solo la prima volta con la 4.29.0: lancia supabase/migrazione-4.29.0.sql nel SQL Editor (meno traffico Supabase).
-  Dopo: in Altro "4.29.0", in Live la barra "server 4.21.0" (con un server più vecchio compare ⚠).
+  3. Se non l'hai già fatto: lancia supabase/migrazione-4.29.0.sql nel SQL Editor (meno traffico Supabase).
+  Dopo: in Altro "4.29.1", in Live la barra "server 4.21.1" (con un server più vecchio compare ⚠).
 
 CARTELLE
   (principale)    l'app: solo i file che usa
@@ -15,6 +15,9 @@ CARTELLE
   note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
                   PULIZIA-4.25.0.txt = file tolti
   Il server è SOLO supabase/pronostici-avvisi.txt: la copia nella cartella principale è vecchia (4.17.3), non usarla.
+
+4.29.1 — app e server 4.21.1: stessa 4.29.0 con il numero nuovo (con lo stesso numero l'app installata non si
+  aggiornava: il telefono teneva i file vecchi). Contiene tutto quello sotto.
 
 4.29.0 — app e server 4.21.0 (ripubblicare la funzione pronostici-avvisi)
   - 💥 GOL 1T TIRI E RITMO: niente notifiche e niente righe in Adesso / Oggi, resta solo nelle Statistiche (riga 📊, fuori
