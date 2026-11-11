@@ -1,4 +1,4 @@
-const APP_VERSION = '4.29.1';
+const APP_VERSION = '4.30.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -47,6 +47,31 @@ function validDiary(d) {
       U.finite(e.balance) &&
       (e.note == null || typeof e.note === 'string'),
   );
+}
+/* 4.30.0 — UN GIORNO, UN SALDO. Se la sincronizzazione (due dispositivi, o una reinstallazione) porta due saldi per lo
+   stesso giorno, resta quello modificato per ultimo. Prima un doppione rendeva i dati "non validi": la sincronizzazione si
+   fermava (o l'app non leggeva i dati) e il calendario poteva mostrare il risultato del doppione, col segno sbagliato. */
+function diaryDedupe(d) {
+  if (!d || !Array.isArray(d.diary)) return 0;
+  const by = {},
+    out = [],
+    n0 = d.diary.length;
+  d.diary.forEach((e) => {
+    if (!e || typeof e !== 'object') return;
+    const k = String(e.date),
+      cur = by[k];
+    if (!cur) {
+      by[k] = { e, i: out.length };
+      out.push(e);
+      return;
+    }
+    if (String(e.updatedAt || '') >= String(cur.e.updatedAt || '')) {
+      out[cur.i] = e;
+      cur.e = e;
+    }
+  });
+  d.diary = out;
+  return n0 - out.length;
 }
 function validDBCore(d) {
   const id = (x) => typeof x === 'string' && /^[\w-]+$/.test(x),
@@ -290,6 +315,7 @@ try {
   const raw = localStorage.getItem(KEY);
   if (raw) {
     const data = unpackDB(JSON.parse(raw));
+    diaryDedupe(data); /* 4.30.0 */
     if (!validDB(data)) throw Error('Dati non validi');
     db = normalize(data);
   }
@@ -802,7 +828,6 @@ function render() {
   if (tab === 'stats' && typeof tipStatsTabBind === 'function') tipStatsTabBind();
   else if (tab === 'stats') bindDiary();
   if ((tab === 'tips' || tab === 'live') && typeof bindTips === 'function') bindTips();
-  if (tab === 'tips' || tab === 'live') { try { const gs = goalStripHtml(); if (gs) { main.insertAdjacentHTML('afterbegin', gs); bindGoal(main); } } catch (e) { /* ok */ } } /* 4.26.0 — striscia obiettivo */
   if (tab === 'accounts' && typeof renderPushCard === 'function') renderPushCard();
   try { cxEnhance(); } catch (e) { /* ok */ } /* 4.21.5 — riquadri a tendina */
 }
@@ -2073,6 +2098,7 @@ async function importData(e) {
   if (!file) return;
   try {
     const raw = JSON.parse(await file.text());
+    diaryDedupe(raw); /* 4.30.0 */
     if (!validDB(raw)) throw Error();
     const n = normalize(raw),
       d = sheetModal(
@@ -3246,7 +3272,7 @@ function diaryPage(which) {
     /* 4.21.5 — Calendario sopra Oggi, senza la riga di spiegazione */
     var agenda = '<section class="card diary-card" data-cx="calendario"><h2>Calendario</h2>' + diaryCalendar2(series) + '</section>'; /* 4.23.0 */
     var H = saldoHomeHtml();
-    return goalCardHtml() + H.hero + agenda + H.day + kpis; /* 4.26.0 — obiettivo in cima */
+    return H.hero + agenda + H.day + kpis; /* 4.30.0 — tolto l'obiettivo del mese */
   }
 
   /* ---------- Statistiche ---------- */
@@ -3856,9 +3882,9 @@ function moneySheet(kind, o) {
     '<input name="amt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0" required value="' + (amtVal === '' ? '' : U.round(amtVal)) + '"><i>€</i></span></label>' +
     (isWd
       ? '<div class="ms-left"><span class="ms-lbl">Quanto resta sul conto?</span>' +
-        '<div class="ms-opts"><button type="button" class="ms-opt" data-ms-left="win"><b>Erano vincite</b><small>resta ' + U.money(startBal) + '</small></button>' +
-        '<button type="button" class="ms-opt" data-ms-left="cap"><b>Tolti dal saldo</b><small data-ms-capv>resta ' + U.money(startBal) + '</small></button></div>' +
-        '<label class="ms-line"><span>Resta sul conto</span><input name="left" type="number" inputmode="decimal" step="0.01" min="0" required value="' + U.round(leftVal) + '"><i>€</i></label></div>'
+        '<div class="ms-opts"><button type="button" class="ms-opt" data-ms-left="cap"><b>Tolti dal saldo</b><small data-ms-capv>resta ' + U.money(startBal) + '</small></button>' +
+        '<button type="button" class="ms-opt" data-ms-left="win"><b>Vincite non segnate</b><small>resta ' + U.money(startBal) + '</small></button></div>' +
+        '<label class="ms-line"><span>Resta sul conto</span><input name="left" type="number" inputmode="decimal" step="0.01" min="0" required placeholder="scegli sopra" value="' + (t ? U.round(leftVal) : '') + '"><i>€</i></label></div>'
       : '') +
     '<div class="ms-when"><span class="ms-lbl">Giorno</span><div class="ms-chips">' + dayChip(today, 'Oggi') + dayChip(yest, 'Ieri') +
     '<button type="button" class="ms-chip' + (otherOn ? ' on' : '') + '" data-ms-other>' + (otherOn ? dShort(day) : 'Altro…') + '</button></div>' +
@@ -3893,7 +3919,7 @@ function moneySheet(kind, o) {
       var lv = Number(f.elements.left.value);
       d.querySelectorAll('[data-ms-left]').forEach(function (b) {
         var target = b.dataset.msLeft === 'win' ? startBal : Math.max(0, startBal - (ok ? a : 0));
-        b.classList.toggle('on', ok && Math.abs(lv - target) < 0.005);
+        b.classList.toggle('on', ok && f.elements.left.value !== '' && Math.abs(lv - target) < 0.005);
       });
     }
     if (!ok) {
@@ -3905,7 +3931,7 @@ function moneySheet(kind, o) {
       flowsDay = msDayFlows(dd, t && t.id) + (isSaldo ? 0 : (isWd ? -1 : 1) * a),
       dayBal;
     if (isSaldo) dayBal = a;
-    else if (isWd) dayBal = Number(f.elements.left.value);
+    else if (isWd) dayBal = f.elements.left.value === '' ? null : Number(f.elements.left.value); /* 4.30.0 */
     else {
       var e0 = diaryOn(dd);
       dayBal = e0 ? U.round(e0.balance + a - (t ? Math.abs(t.amount) : 0)) : null;
@@ -3968,7 +3994,9 @@ function moneySheet(kind, o) {
     if (ev.target && ev.target.name === 'left') leftMode = null;
     refresh();
   });
-  if (isWd && !t) leftMode = 'win';
+  /* 4.30.0 — niente scelta automatica: prima partiva da "Erano vincite" (resta il saldo di prima), giusto solo se le vincite
+     non erano ancora segnate. Se il saldo era già aggiornato il prelievo diventava una vincita del giorno (giorno verde
+     sbagliato). Ora scegli tu quanto resta. */
   refresh();
   if (!t && !existing)
     setTimeout(function () {
@@ -3995,7 +4023,7 @@ function moneySheet(kind, o) {
       return;
     }
     var left = isWd ? U.round(Number(f.elements.left.value)) : null;
-    if (isWd && (!U.finite(left) || left < 0)) return (err.textContent = 'Scrivi quanto resta sul conto.');
+    if (isWd && (f.elements.left.value === '' || !U.finite(left) || left < 0)) return (err.textContent = 'Scegli quanto resta sul conto.');
     var when = t && dayKey(t.date) === dd ? new Date(t.date) : dd === today ? new Date() : new Date(dd + 'T20:00:00');
     var ok = mutate(function (n) {
       var old = t ? n.transactions.find(function (x) { return x.id === t.id; }) : null;
@@ -4130,162 +4158,6 @@ function saldoHomeHtml() {
     (items.length ? '<div class="sd-evs">' + items.map(function (x) { return x.html; }).join('') + '</div>' : '<p class="muted sd-empty">Nessun movimento oggi.</p>') +
     '</section>';
   return { hero: hero, day: day };
-}
-
-/* =========================================================================================================
-   4.26.0 — OBIETTIVO DEL MESE (Saldo, in cima). Es. 900 € al mese = 30 € al giorno.
-   - Ogni giorno segni il risultato ("Segna il risultato di oggi": vinto/perso) oppure aggiorni il saldo come prima:
-     il risultato del giorno è sempre quello del diario (depositi e prelievi non contano).
-   - Obiettivo di oggi = quanto manca al mese diviso i giorni rimasti, MAI più dell'obiettivo al giorno (30 €):
-     se un giorno fai di più, nei giorni dopo ti serve meno; se sei indietro non ti chiede di più (niente rincorse).
-   - Raggiunto l'obiettivo di oggi, o persa la cifra di stop del giorno, l'app ti dice di fermarti (anche in
-     Prepartita e Live, nella striscia in alto).
-   db.settings.goal = { month: 900, day: 30, stop: 30 }  (month 0 = obiettivo spento)
-   ========================================================================================================= */
-function goalCfg() {
-  var g = (db.settings && db.settings.goal) || {};
-  var num = function (v, d) { return U.finite(Number(v)) && Number(v) >= 0 ? U.round(Number(v)) : d; };
-  return { month: num(g.month, 900), day: num(g.day, 30), stop: num(g.stop, 30) };
-}
-function goalState() {
-  var cfg = goalCfg(), today = dToday(), key = today.slice(0, 7);
-  var y = Number(key.slice(0, 4)), m = Number(key.slice(5, 7)), D = new Date(y, m, 0).getDate(), t = Number(today.slice(8, 10));
-  var series = diarySeries(), byDay = {};
-  series.forEach(function (p) { if (p.date.slice(0, 7) === key && p.delta != null) byDay[p.date] = p.delta; });
-  /* giorno per giorno: obiettivo del giorno (con quanto fatto prima) e risultato */
-  var run = 0, days = [], todayTarget = 0, before = 0;
-  for (var d = 1; d <= D; d++) {
-    var iso = key + '-' + String(d).padStart(2, '0');
-    var target = cfg.month > 0 ? Math.max(0, Math.min(cfg.day || Infinity, (cfg.month - run) / (D - d + 1))) : cfg.day;
-    target = U.round(target);
-    var r = Object.prototype.hasOwnProperty.call(byDay, iso) ? byDay[iso] : null;
-    if (iso === today) { todayTarget = target; before = U.round(run); }
-    var cls = iso > today ? 'fut' : r == null ? (iso === today ? 'none' : 'none') : r < -0.004 ? 'loss' : target > 0 && r >= target - 0.004 ? 'win' : r > 0.004 ? 'part' : target <= 0 ? 'win' : 'zero';
-    days.push({ iso: iso, d: d, r: r, target: target, cls: cls, today: iso === today });
-    if (r != null && iso <= today) run += r;
-  }
-  var res = U.round(run), todayRes = Object.prototype.hasOwnProperty.call(byDay, today) ? byDay[today] : null;
-  var left = U.round(cfg.month - res), daysLeft = D - t + 1;
-  var plan = cfg.month > 0 ? U.round((cfg.month * (t - 1)) / D) : 0;
-  var status = 'todo';
-  if (cfg.month > 0 && res >= cfg.month - 0.004) status = 'month';
-  else if (todayRes != null && cfg.stop > 0 && todayRes <= -cfg.stop + 0.004) status = 'stop';
-  else if (todayRes != null && todayTarget > 0 && todayRes >= todayTarget - 0.004) status = 'done';
-  var tr = todayRes == null ? 0 : todayRes;
-  return {
-    cfg: cfg, key: key, D: D, t: t, days: days, res: res, before: before, left: left, daysLeft: daysLeft,
-    ahead: U.round(before - plan), todayRes: todayRes, todayTarget: todayTarget, status: status,
-    proj: U.round(res + Math.max(0, cfg.day) * (daysLeft - (todayRes != null && status !== 'todo' ? 1 : 0)) - (status === 'todo' ? tr : 0)),
-    win: days.filter(function (x) { return x.cls === 'win' && !x.today; }).length + (status === 'done' || status === 'month' ? 1 : 0),
-    loss: days.filter(function (x) { return x.cls === 'loss'; }).length,
-    part: days.filter(function (x) { return (x.cls === 'part' || x.cls === 'zero') && !(x.today && status !== 'todo'); }).length,
-  };
-}
-function goalMsg(G) {
-  var tr = G.todayRes == null ? 0 : G.todayRes;
-  if (G.status === 'month') return { cls: 'done', ic: '🎉', txt: 'Obiettivo del mese raggiunto. Per questo mese basta.' };
-  if (G.status === 'done') return { cls: 'done', ic: '✓', txt: 'Obiettivo di oggi raggiunto: fermati qui, si riprende domani.' };
-  if (G.status === 'stop') return { cls: 'stop', ic: '⛔', txt: 'Hai perso ' + U.money(-tr) + ' oggi: per oggi fermati.' };
-  if (G.todayRes == null) return { cls: 'todo', ic: '', txt: 'Ti fermi a +' + U.money(G.todayTarget) + (G.cfg.stop > 0 ? ' o a −' + U.money(G.cfg.stop) : '') + '.' };
-  return { cls: 'todo', ic: '', txt: 'Mancano ' + U.money(Math.max(0, U.round(G.todayTarget - tr))) + (G.cfg.stop > 0 ? ' · stop a −' + U.money(G.cfg.stop) : '') };
-}
-function goalCardHtml() {
-  var G = goalState(), cfg = G.cfg;
-  if (!(cfg.month > 0)) return '<section class="card gl-card gl-off" data-cx-off><div class="gl-h"><h2>Obiettivo del mese</h2><button type="button" class="gl-set" data-goal-set>Imposta</button></div><p class="muted gl-p">Spento. Imposta quanto vuoi fare al mese e al giorno.</p></section>';
-  var mon = new Date(G.key + '-01T12:00:00').toLocaleDateString('it-IT', { month: 'long' });
-  var pc = Math.max(0, Math.min(100, (G.res / cfg.month) * 100)), planPc = Math.min(100, ((G.t - 1) / G.D) * 100);
-  var tr = G.todayRes == null ? 0 : G.todayRes, tp = G.todayTarget > 0 ? Math.max(0, Math.min(100, (tr / G.todayTarget) * 100)) : 100;
-  var msg = goalMsg(G);
-  var sub = G.status === 'month'
-    ? 'Fatto ' + U.money(G.res) + ' su ' + U.money(cfg.month)
-    : (G.ahead >= 0.5 ? 'Avanti di ' + U.money(G.ahead) : G.ahead <= -0.5 ? 'Indietro di ' + U.money(-G.ahead) : 'In linea') + ' sul piano (' + U.money(cfg.day) + ' al giorno) · ' + G.daysLeft + (G.daysLeft === 1 ? ' giorno' : ' giorni') +
-      ' · così chiudi a ' + U.money(G.proj);
-  var dots = G.days.map(function (x) {
-    var tt = x.r == null ? (x.cls === 'fut' ? '' : 'non segnato') : sMoney(x.r) + (x.target > 0 ? ' su ' + U.money(x.target) : '');
-    return '<span class="gl-dot ' + x.cls + (x.today ? ' today' : '') + '" title="' + x.d + ' ' + mon + (tt ? ': ' + tt : '') + '">' + x.d + '</span>';
-  }).join('');
-  return '<section class="card gl-card" data-cx-off>' +
-    '<div class="gl-h"><h2>Obiettivo di ' + U.esc(mon) + '</h2><button type="button" class="gl-set" data-goal-set aria-label="Modifica l\'obiettivo">Modifica</button></div>' +
-    '<div class="gl-month"><b class="' + sClass(G.res) + '">' + sMoney(G.res) + '</b><span>di ' + U.money(cfg.month) + '</span><em>' + (G.left > 0.004 ? 'mancano ' + U.money(G.left) : 'fatto ✓') + '</em></div>' +
-    '<div class="gl-bar" aria-hidden="true"><i style="width:' + pc.toFixed(1) + '%"></i><em style="left:' + planPc.toFixed(1) + '%"></em></div>' +
-    '<p class="gl-sub">' + sub + '</p>' +
-    '<div class="gl-today ' + msg.cls + '">' +
-    '<div class="gl-tl"><small>Oggi' + (G.todayTarget > 0 && G.status !== 'month' ? ' · obiettivo ' + U.money(G.todayTarget) : '') + '</small><b class="' + (G.todayRes == null ? '' : sClass(tr)) + '">' + (G.todayRes == null ? '—' : sMoney(tr)) + '</b></div>' +
-    (G.status === 'month' ? '' : '<div class="gl-tbar" aria-hidden="true"><i class="' + (tr < 0 ? 'neg' : '') + '" style="width:' + (tr < 0 ? Math.min(100, (-tr / (cfg.stop || cfg.day || 1)) * 100) : tp).toFixed(1) + '%"></i></div>') +
-    '<p class="gl-msg">' + (msg.ic ? '<i aria-hidden="true">' + msg.ic + '</i> ' : '') + msg.txt + '</p>' +
-    '<button type="button" class="gl-btn" data-goal-res>' + (G.todayRes == null ? 'Segna il risultato di oggi' : 'Correggi il risultato di oggi') + '</button></div>' +
-    '<div class="gl-days" aria-label="Giorni del mese">' + dots + '</div>' +
-    '<p class="gl-leg"><span class="gl-dot win"></span>' + G.win + ' a obiettivo <span class="gl-dot part"></span>' + G.part + ' sotto <span class="gl-dot loss"></span>' + G.loss + ' in perdita</p>' +
-    '</section>';
-}
-/* striscia in Prepartita e Live: com'è oggi, e "fermati" quando serve */
-function goalStripHtml() {
-  var G = goalState();
-  if (!(G.cfg.month > 0)) return '';
-  var msg = goalMsg(G), tr = G.todayRes == null ? null : G.todayRes;
-  if (msg.cls !== 'todo') return '<button type="button" class="gl-strip ' + msg.cls + '" data-goal-go><i aria-hidden="true">' + msg.ic + '</i><span>' + msg.txt + '</span></button>';
-  return '<button type="button" class="gl-strip todo" data-goal-go><span>Oggi <b class="' + (tr == null ? '' : sClass(tr)) + '">' + (tr == null ? '—' : sMoney(tr)) + '</b> / ' + U.money(G.todayTarget) + '</span><span>Mese <b class="' + sClass(G.res) + '">' + sMoney(G.res) + '</b> / ' + U.money(G.cfg.month) + '</span></button>';
-}
-function goalSettingsSheet() {
-  var c = goalCfg();
-  var row = function (name, lbl, v, hint) {
-    return '<label class="ms-line gl-line"><span>' + lbl + (hint ? '<small>' + hint + '</small>' : '') + '</span><input name="' + name + '" type="number" inputmode="decimal" step="1" min="0" value="' + (v || '') + '" placeholder="0"><i>€</i></label>';
-  };
-  var d = sheetModal(sheetHead('Obiettivo', { form: 'gl-set-form' }) +
-    '<form id="gl-set-form" class="ms" autocomplete="off">' +
-    row('month', 'Al mese', c.month, '0 = obiettivo spento') +
-    row('day', 'Al giorno', c.day, 'il massimo che ti chiede in un giorno') +
-    row('stop', 'Stop perdita al giorno', c.stop, 'oltre questa perdita ti dice di fermarti') +
-    '<p class="error" id="gl-set-err"></p></form>');
-  d.classList.add('ms-sheet');
-  var f = d.querySelector('form');
-  f.onsubmit = function (ev) {
-    ev.preventDefault();
-    var v = function (n) { var x = Number(f.elements[n].value || 0); return U.finite(x) && x >= 0 ? U.round(x) : NaN; };
-    var g = { month: v('month'), day: v('day'), stop: v('stop') };
-    if (![g.month, g.day, g.stop].every(U.finite)) return (d.querySelector('#gl-set-err').textContent = 'Scrivi importi validi.');
-    if (g.month > 0 && !(g.day > 0)) g.day = U.round(g.month / 30);
-    if (mutate(function (n) { n.settings.goal = g; })) { d.close(); U.toast('Obiettivo salvato'); }
-  };
-  return d;
-}
-function goalResultSheet() {
-  var today = dToday(), prev = msPrevOf(today), e = diaryOn(today);
-  if (!prev) { U.toast('Per il primo giorno scrivi quanto hai sul conto'); return moneySheet('saldo'); }
-  var G = goalState(), cur = G.todayRes, sign = cur != null && cur < 0 ? -1 : 1;
-  var base = U.round(prev.balance + msBetween(prev, today) + msDayFlows(today));
-  var d = sheetModal(sheetHead('Risultato di oggi', { form: 'gl-res-form', sub: G.todayTarget > 0 ? 'obiettivo ' + U.money(G.todayTarget) : '' }) +
-    '<form id="gl-res-form" class="ms" autocomplete="off">' +
-    '<div class="gl-seg" role="group"><button type="button" data-sign="1">Vinto</button><button type="button" data-sign="-1">Perso</button></div>' +
-    '<label class="ms-amt"><span>Quanto?</span><span class="ms-amt-row"><em data-sign-ic>+</em><input name="amt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0" required value="' + (cur != null ? U.round(Math.abs(cur)) : '') + '"><i>€</i></span></label>' +
-    '<p class="ms-ref" id="gl-res-out"></p><p class="error" id="gl-res-err"></p></form>');
-  d.classList.add('ms-sheet');
-  var f = d.querySelector('form'), out = d.querySelector('#gl-res-out');
-  var paint = function () {
-    d.querySelectorAll('[data-sign]').forEach(function (b) { b.classList.toggle('on', Number(b.dataset.sign) === sign); });
-    d.querySelector('[data-sign-ic]').textContent = sign > 0 ? '+' : '−';
-    var a = Number(f.elements.amt.value);
-    var ok = f.elements.amt.value !== '' && U.finite(a) && a >= 0;
-    out.textContent = ok ? 'Il saldo di oggi diventa ' + U.money(U.round(base + sign * a)) + ' (rispetto a ' + (prev.start ? 'saldo iniziale' : prev.date === dAdd(today, -1) ? 'ieri' : dShort(prev.date)) + ': ' + U.money(prev.balance) + ').' : '';
-  };
-  d.querySelectorAll('[data-sign]').forEach(function (b) { b.onclick = function () { sign = Number(b.dataset.sign); paint(); }; });
-  f.addEventListener('input', paint);
-  paint();
-  setTimeout(function () { try { f.elements.amt.focus(); f.elements.amt.select(); } catch (e) { /* ok */ } }, 60);
-  f.onsubmit = function (ev) {
-    ev.preventDefault();
-    var a = U.round(Number(f.elements.amt.value)), err = d.querySelector('#gl-res-err');
-    if (!U.finite(a) || a < 0) return (err.textContent = 'Scrivi un importo valido.');
-    var bal = U.round(base + sign * a);
-    if (bal < 0) return (err.textContent = 'Il saldo verrebbe sotto zero: controlla la cifra.');
-    if (diarySave(e || null, today, bal, (e && e.note) || '')) { d.close(); U.toast('Risultato di oggi segnato'); }
-  };
-  return d;
-}
-function bindGoal(root) {
-  (root || main).querySelectorAll('[data-goal-set]').forEach(function (b) { b.onclick = function (ev) { ev.stopPropagation(); goalSettingsSheet(); }; });
-  (root || main).querySelectorAll('[data-goal-res]').forEach(function (b) { b.onclick = function (ev) { ev.stopPropagation(); goalResultSheet(); }; });
-  (root || main).querySelectorAll('[data-goal-go]').forEach(function (b) { b.onclick = function () { diaryUI.homeView = 'home'; setTab('home'); window.scrollTo(0, 0); }; });
 }
 
 function diarySave(existing, date, value, note) {
@@ -4515,7 +4387,6 @@ function openDayPanel(date) {
 /* ---------- Eventi ---------- */
 function bindDiary() {
   bindDiaryExtra();
-  bindGoal(); /* 4.26.0 */
   diaryScrubBind(); /* 4.23.0 — grafici dell'Andamento: tocca o trascina */
   calBind(); /* 4.23.0 — calendario: mesi in striscia e scorrimento */
   /* 4.9.0 — pannello unico Aggiorna saldo / Prelievo / Deposito */
@@ -4638,8 +4509,27 @@ var syncBet = window.SuiteSync
       localUpdatedAt: function () {
         return db.updatedAt || null;
       },
+      /* 4.30.0 — unione come prima, ma per ogni saldo del giorno vince la modifica più recente (prima vinceva sempre la
+         copia salvata per ultima: i pronostici salvano di continuo, così un saldo corretto su un altro dispositivo poteva andare perso) */
+      merge: function (loc, rem, remoteNewer) {
+        var M = SuiteSync.mergeById,
+          out = remoteNewer ? M(rem, loc) : M(loc, rem);
+        try {
+          var best = {};
+          [].concat((loc && loc.diary) || [], (rem && rem.diary) || []).forEach(function (e) {
+            if (!e || e.id == null) return;
+            var c = best[e.id];
+            if (!c || String(e.updatedAt || '') > String(c.updatedAt || '')) best[e.id] = e;
+          });
+          if (out && Array.isArray(out.diary)) out.diary = out.diary.map(function (e) { return (e && best[e.id]) || e; });
+        } catch (e) {
+          /* ok: resta l'unione normale */
+        }
+        return out;
+      },
       setLocal: function (data) {
         var n = JSON.parse(JSON.stringify(data));
+        diaryDedupe(n); /* 4.30.0 */
         if (!validDB(n)) throw Error('Dati online non validi');
         var norm = normalize(unpackDB(n));
         storeLocal(norm); /* 4.24.5 — stesso salvataggio compatto (prima: copia intera, falliva a memoria piena) */

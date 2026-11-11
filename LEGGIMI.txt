@@ -1,10 +1,10 @@
-Bet Tracker 4.29.1 · server pronostici-avvisi 4.21.1
+Bet Tracker 4.30.0 · server pronostici-avvisi 4.21.1
 
 PER AGGIORNARE
   1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
   2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
   3. Se non l'hai già fatto: lancia supabase/migrazione-4.29.0.sql nel SQL Editor (meno traffico Supabase).
-  Dopo: in Altro "4.29.1", in Live la barra "server 4.21.1" (con un server più vecchio compare ⚠).
+  Dopo: in Altro "4.30.0", in Live la barra "server 4.21.1" (con un server più vecchio compare ⚠).
 
 CARTELLE
   (principale)    l'app: solo i file che usa
@@ -15,6 +15,16 @@ CARTELLE
   note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
                   PULIZIA-4.25.0.txt = file tolti
   Il server è SOLO supabase/pronostici-avvisi.txt: la copia nella cartella principale è vecchia (4.17.3), non usarla.
+
+4.30.0 — solo app (server invariato 4.21.1)
+  - Tolto l'OBIETTIVO DEL MESE (30 € al giorno): via il riquadro in cima a Saldo e la striscia in Prepartita e Live.
+  - Calendario del Saldo, giorni col segno giusto:
+    · un saldo per giorno: se la sincronizzazione porta due saldi per lo stesso giorno resta quello modificato per
+      ultimo (prima un doppione bloccava salvataggi/sincronizzazione o il giorno mostrava il risultato del doppione);
+    · sincronizzazione: per ogni saldo vince la modifica più recente (prima vinceva la copia salvata per ultima:
+      i pronostici salvano di continuo, così un saldo corretto su un altro dispositivo poteva andare perso);
+    · prelievo: niente più "Erano vincite" scelto da solo. Se il saldo era già aggiornato, il prelievo diventava una
+      vincita del giorno (giorno verde sbagliato). Ora scegli: "Tolti dal saldo" o "Vincite non segnate".
 
 4.29.1 — app e server 4.21.1: stessa 4.29.0 con il numero nuovo (con lo stesso numero l'app installata non si
   aggiornava: il telefono teneva i file vecchi). Contiene tutto quello sotto.
