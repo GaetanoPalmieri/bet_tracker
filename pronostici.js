@@ -4113,7 +4113,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '4.25.0', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League); 4.24.2 — 4.17.2 (1T senza 🔴) */
+  var v = tipUI.serverVer, need = '4.26.0', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League); 4.24.2 — 4.17.2 (1T senza 🔴) */
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
@@ -4542,7 +4542,7 @@ function tipLivePanel(list) {
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
   var S = tipUI.scan;
   /* 3.99.8 — barra su due righe: LIVE + ora, poi partite e versione del server (niente più testo tagliato a destra) */
-  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.25.0') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
+  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.26.0') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
   var svTxt = sv ? (sv === 'vecchia' ? 'vecchio' : sv) : '';
   /* 4.8.1 — STATO IN EVIDENZA: riquadro in cima con l'ora dell'ultimo controllo (ambra se più vecchio di 5 minuti) e un
      pulsante "Aggiorna" grande, che durante il controllo gira senza cambiare larghezza (prima la scritta veniva tagliata). */
@@ -5514,7 +5514,7 @@ function tipHead(title, sub) {
    contro il tuo tetto (10 al giorno) e il risultato contro l'obiettivo (30 €). Raggiunto l'obiettivo o finite le giocate
    lo dice chiaro: è il momento di fermarsi. Tetto e obiettivo: localStorage bet_goal = {"n":10,"eur":30}. */
 function tipGoalCfg() { var g = { n: 10, eur: 30 }; try { var j = JSON.parse(localStorage.getItem('bet_goal') || 'null'); if (j && j.n > 0) g.n = Math.round(j.n); if (j && j.eur > 0) g.eur = Number(j.eur); } catch (e) { /* ok */ } return g; }
-function tipGoalBar() {
+function tipGoalState() {
   var G = tipGoalCfg(), today = U.local().slice(0, 10), n = 0, wait = 0, w = 0, l = 0, pl = 0, seen = {};
   (((db.predModel || {}).playLog) || []).forEach(function (e) {
     if (!e || !e.played || tipLiveDay({ t: e.played.t || e.t }) !== today) return;
@@ -5522,13 +5522,73 @@ function tipGoalBar() {
     n++;
     if (e.played.res === 1 || e.played.res === 0) { pl += tipPlayedPL(e); if (e.played.res === 1) w++; else l++; } else wait++;
   });
-  var done = pl >= G.eur - 1e-9, full = n >= G.n, pctE = Math.max(0, Math.min(100, pl / G.eur * 100)), pctN = Math.min(100, n / G.n * 100);
-  var msg = done ? 'Obiettivo raggiunto: per oggi basta.' : full ? 'Giocate finite: per oggi basta.' : !n ? 'Segna le giocate con “✓ L’ho giocata” nella scheda del segnale.' : 'Mancano ' + (G.eur - pl).toFixed(2).replace('.', ',') + ' € · ' + (G.n - n) + (G.n - n === 1 ? ' giocata' : ' giocate');
-  return '<section class="goal' + (done ? ' done' : full ? ' full' : '') + '" aria-label="Obiettivo del giorno"><div class="goal-top"><b>Oggi</b><span class="goal-eur ' + (pl > 0 ? 'positive' : pl < 0 ? 'negative' : '') + '">' + (pl >= 0 ? '+' : '−') + Math.abs(pl).toFixed(2).replace('.', ',') + ' €<small> / ' + G.eur + ' €</small></span></div>' +
+  return { G: G, today: today, n: n, wait: wait, w: w, l: l, pl: pl, done: pl >= G.eur - 1e-9, full: n >= G.n };
+}
+/* 4.35.0 — obiettivo e tetto si cambiano dalla barra (✎); "Ferma gli avvisi": raggiunto l'obiettivo o finite le giocate
+   il server non manda più notifiche fino a domani (alerts.pauseDay = oggi, letto dal server 4.26.0). */
+function tipGoalBar() {
+  var S = tipGoalState(), G = S.G, n = S.n, wait = S.wait, w = S.w, l = S.l, pl = S.pl, done = S.done, full = S.full;
+  var pctE = Math.max(0, Math.min(100, pl / G.eur * 100)), A = tipAlertPrefs(), stop = A.goalStop !== false;
+  var msg = done ? 'Obiettivo raggiunto: per oggi basta.' : full ? 'Giocate finite: per oggi basta.' : !n ? 'Segna le giocate: tocco lungo su un segnale, o “✓ L’ho giocata” nella sua scheda.' : 'Mancano ' + (G.eur - pl).toFixed(2).replace('.', ',') + ' € · ' + (G.n - n) + (G.n - n === 1 ? ' giocata' : ' giocate');
+  if ((done || full) && stop && A.on) msg += ' Avvisi in pausa fino a domani.';
+  var form = tipUI.goalEdit ? '<div class="goal-form"><label>Obiettivo €<input type="number" inputmode="decimal" min="1" step="1" data-goal-eur value="' + G.eur + '"></label><label>Giocate<input type="number" inputmode="numeric" min="1" step="1" data-goal-n value="' + G.n + '"></label>' +
+    '<label class="goal-chk"><input type="checkbox" data-goal-stop' + (stop ? ' checked' : '') + '> Ferma gli avvisi quando ho finito</label><button type="button" data-goal-save>Salva</button></div>' : '';
+  return '<section class="goal' + (done ? ' done' : full ? ' full' : '') + '" aria-label="Obiettivo del giorno"><div class="goal-top"><b>Oggi <button type="button" class="goal-edit" data-goal-edit aria-label="Cambia obiettivo">✎</button></b><span class="goal-eur ' + (pl > 0 ? 'positive' : pl < 0 ? 'negative' : '') + '">' + (pl >= 0 ? '+' : '−') + Math.abs(pl).toFixed(2).replace('.', ',') + ' €<small> / ' + G.eur + ' €</small></span></div>' +
     '<div class="goal-bar"><i style="width:' + pctE.toFixed(0) + '%"></i></div>' +
     '<div class="goal-sub"><span class="goal-dots" aria-hidden="true">' + Array.apply(null, Array(Math.min(G.n, 14))).map(function (_, i) { return '<i class="' + (i < n ? 'on' : '') + '"></i>'; }).join('') + '</span><span>' + n + '/' + G.n + ' giocate' + (w + l ? ' · ' + w + ' vinte · ' + l + ' perse' : '') + (wait ? ' · ' + wait + ' ◷' : '') + '</span></div>' +
-    '<p class="goal-msg">' + msg + '</p></section>';
+    '<p class="goal-msg">' + msg + '</p>' + form + '</section>';
 }
+function tipGoalPauseCheck() {
+  try {
+    var S = tipGoalState(), A = tipAlertPrefs(), want = (S.done || S.full) && A.goalStop !== false ? S.today : '';
+    if ((A.pauseDay || '') === want || (!want && A.pauseDay !== S.today && !A.pauseDay)) return;
+    mutate(function (n) { n.predModel = n.predModel || {}; var a = n.predModel.alerts = Object.assign({}, n.predModel.alerts || {}); if (want) a.pauseDay = want; else delete a.pauseDay; });
+  } catch (e) { /* ok */ }
+}
+setInterval(tipGoalPauseCheck, 60e3);
+document.addEventListener('click', function (ev) {
+  var t = ev.target; if (!t.closest) return;
+  if (t.closest('[data-goal-edit]')) { tipUI.goalEdit = !tipUI.goalEdit; render(); return; }
+  var sv = t.closest('[data-goal-save]'); if (!sv) return;
+  var box = sv.closest('.goal'), eur = Number(box.querySelector('[data-goal-eur]').value), n = Math.round(Number(box.querySelector('[data-goal-n]').value)), stop = box.querySelector('[data-goal-stop]').checked;
+  if (!(eur > 0) || !(n > 0)) { U.toast('Scrivi obiettivo e giocate.'); return; }
+  try { localStorage.setItem('bet_goal', JSON.stringify({ n: n, eur: eur })); } catch (e) { /* ok */ }
+  mutate(function (d) { d.predModel = d.predModel || {}; var a = d.predModel.alerts = Object.assign({}, d.predModel.alerts || {}); if (stop) delete a.goalStop; else a.goalStop = false; });
+  tipUI.goalEdit = false; tipGoalPauseCheck(); render(); U.toast('Obiettivo: ' + eur + ' € · ' + n + ' giocate');
+});
+/* 4.35.0 — TOCCO LUNGO su un segnale (Adesso, Oggi, Statistiche) = "L'ho giocata" con la quota del segnale e l'ultima
+   puntata; un secondo tocco lungo la toglie. Senza quota nota si apre la scheda per scriverla. */
+(function () {
+  var tm = null, fired = false, sx = 0, sy = 0;
+  var clear = function () { if (tm) { clearTimeout(tm); tm = null; } };
+  document.addEventListener('pointerdown', function (ev) {
+    var b = ev.target.closest && ev.target.closest('button.lv2[data-lv-open]'); clear(); fired = false;
+    if (!b) return; sx = ev.clientX; sy = ev.clientY;
+    tm = setTimeout(function () {
+      tm = null; fired = true;
+      var e = tipLvFind(b.getAttribute('data-lv-open')); if (!e || TIP_WAIT_K[e.k]) return;
+      try { if (navigator.vibrate) navigator.vibrate(15); } catch (z) { /* ok */ }
+      if (e.played) {
+        var g = tipPlayGroup(e);
+        mutate(function (n) { (((n.predModel || {}).playLog) || []).forEach(function (x) { if (x && tipPlayGroup(x) === g) delete x.played; }); });
+        U.toast('Giocata tolta'); tipGoalPauseCheck(); render(); return;
+      }
+      var QI = tipQuotaInfo(e), f = e.factors || {}, q = (QI && QI.q) || f.qb || f.qe || e.book || null, st = 10;
+      if (!(q > 1)) { tipSignalSheet(e); U.toast('Quota non nota: scrivila nella scheda'); return; }
+      try { st = Number(localStorage.getItem('bet_stake_last')) || 10; } catch (z) { /* ok */ }
+      q = Math.round(q * 100) / 100;
+      var p = { k: e.k, q: q, s: st, min: e.min, legs: e.legs || [e.p], at: e.at, risk: st, n: 1, t: Date.now() };
+      if (e.res === 1 || e.res === 0) p.res = e.res;
+      tipPlayQueue({ e: e, played: p });
+      U.toast('Segnata: ' + q.toFixed(2) + ' · ' + st + '€ (tocco lungo per toglierla)');
+      setTimeout(function () { tipGoalPauseCheck(); render(); }, 50);
+    }, 550);
+  }, true);
+  document.addEventListener('pointermove', function (ev) { if (tm && (Math.abs(ev.clientX - sx) > 10 || Math.abs(ev.clientY - sy) > 10)) clear(); }, true);
+  ['pointerup', 'pointercancel', 'scroll'].forEach(function (n) { document.addEventListener(n, clear, true); });
+  document.addEventListener('click', function (ev) { if (fired) { fired = false; if (ev.target.closest && ev.target.closest('button.lv2[data-lv-open]')) { ev.stopImmediatePropagation(); ev.preventDefault(); } } }, true);
+  document.addEventListener('contextmenu', function (ev) { if (ev.target.closest && ev.target.closest('button.lv2[data-lv-open]')) ev.preventDefault(); });
+})();
 function tipHubPanel(list) {
   var today = U.local().slice(0, 10), P = tipParams(), T = tipTopFor(today, list, P), now = Date.now();
   var live = list.filter(tipIsLiveNow), L = ((db.predModel || {}).playLog) || [];
@@ -5672,7 +5732,10 @@ function tipsPage() {
   tipUI.panel = tipUI.panelBy[tab] = pn;
   var body = pn === 'top' ? tipTopBody(list) /* 4.16.0 — Prossimi giorni / Giorni passati, statistiche veloci */
     : pn === 'live' ? tipLivePanel(list) /* 3.99.3 — la barra di stato della sezione sostituisce l'intestazione */
-    : pn === 'list' ? (function () { var LA = tipUI.preNoEph ? list : list.concat(tipEphList()); return '<div class="pst-head">' + tipHead('Partite', '') + tipPreQuickBtn() + '</div>' + (tipUI.preStale ? '<p class="tip-amber-text tip-warn">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(LA, 'Tutti') + (tipUI.preQuick ? tipPreQuick(list) : '') + tipListPanel(LA); })()
+    : pn === 'list' ? (function () { var LA = tipUI.preNoEph ? list : list.concat(tipEphList()); return '<div class="pst-head">' + tipHead('Partite', '') +
+      /* 4.34.2 — interruttore veloce accanto al titolo (a destra): ★ = solo con pronostico (ambra), Tutte = tutte le partite */
+      (tipEphList().length || tipUI.preNoEph ? '<div class="pr-eph3" role="group" aria-label="Quali partite"><button type="button" class="pk' + (tipUI.preNoEph ? ' on' : '') + '" aria-pressed="' + !!tipUI.preNoEph + '" data-pre-eph="1" data-no-icon>★ Pronostico</button><button type="button" class="al' + (tipUI.preNoEph ? '' : ' on') + '" aria-pressed="' + !tipUI.preNoEph + '" data-pre-eph="0" data-no-icon>Tutte</button></div>' : '') +
+      tipPreQuickBtn() + '</div>' + (tipUI.preStale ? '<p class="tip-amber-text tip-warn">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(LA, 'Tutti') + (tipUI.preQuick ? tipPreQuick(list) : '') + tipListPanel(LA); })()
     : tipHubPanel(list);
   return tipNav(list) + '<div class="tip-body tip-body-' + pn + '">' + body + '</div>';
 }
@@ -5739,10 +5802,6 @@ function tipListPanel(list) {
   var tools = '<div class="pr-tools pr-tools2"><span class="tip-search pr-search">' + TIP_IC.search + '<input id="tip-q" type="search" placeholder="Cerca squadra o lega" value="' + U.esc(tipUI.q || '') + '" aria-label="Cerca squadra o campionato"></span>' +
     '<button type="button" class="pr-fbtn' + (nAct ? ' on' : '') + '" data-pf-open="list">' + TIP_IC_FILTER + '<span>Filtri</span>' + (nAct ? '<i>' + nAct + '</i>' : '') + '</button>' +
     '<button type="button" class="pr-tb' + (byProb ? ' on' : '') + '" data-tip-filter="sort" aria-label="Ordina">' + TIP_IC_SORT + '</button></div>';
-  /* 4.34.1 — INTERRUTTORE VELOCE, in piccolo sotto la ricerca: ★ Con pronostico / Tutte le partite (resta anche in Filtri) */
-  if (ephAll.length || tipUI.preNoEph) tools += '<div class="pr-eph2" role="group" aria-label="Quali partite">' +
-    '<button type="button" class="' + (tipUI.preNoEph ? 'on' : '') + '" aria-pressed="' + !!tipUI.preNoEph + '" data-pre-eph="1" data-no-icon>★ Con pronostico <i>' + nPk + '</i></button>' +
-    '<button type="button" class="' + (tipUI.preNoEph ? '' : 'on') + '" aria-pressed="' + !tipUI.preNoEph + '" data-pre-eph="0" data-no-icon>Tutte le partite <i>' + (nPk + nEph) + '</i></button></div>';
   var act = [];
   var VN = { open: 'Prossime', live: 'In corso', done: 'Finite', check: 'Verifica', all: 'Tutte' };
   if (tipUI.view !== 'open') act.push(['view', VN[tipUI.view] || tipUI.view]);
@@ -6504,11 +6563,15 @@ function tipStLevelRows(L, smp, waitL) {
   if (waitL.length) rows.push(['<span class="lv2-qtxt">⏳ Quota raggiunta</span>', waitL, W.length ? '' : 'data-st-drill="k:tr2"', 'al prezzo del book, contata a parte']);
   return rows;
 }
-var TIP_ST_LSPLIT = [['k', 'Filtro'], ['day', 'Giorno'], ['lg', 'Campionato'], ['p', 'Probabilità'], ['g', 'Gol segnati'], ['min', 'Minuto'], ['prof', 'Profilo'], ['rit', 'Ritmo'], ['fav', 'Favorita']];
+var TIP_ST_LSPLIT = [['k', 'Filtro'], ['q', 'Quota'], ['day', 'Giorno'], ['lg', 'Campionato'], ['p', 'Probabilità'], ['g', 'Gol segnati'], ['min', 'Minuto'], ['prof', 'Profilo'], ['rit', 'Ritmo'], ['fav', 'Favorita']];
 function tipStLiveSplit(L, key) {
   var by = function (fn, keys, lab, drill) { return keys.map(function (k) { return [lab(k), L.filter(function (e) { return fn(e) === k; }), drill ? 'data-st-drill="' + drill + ':' + k + '"' : '']; }); };
   if (key === 'day') { var bd = {}; L.forEach(function (e) { (bd[tipLiveDay(e)] = bd[tipLiveDay(e)] || []).push(e); }); return tipStDayRows(bd); }
   if (key === 'lg') return { rows: TIP_LV.map(function (r) { return ['<b>' + U.esc(r[1]) + '</b>', L.filter(function (e) { return tipLvOf(e) === r[0]; }), 'data-st-drill="lg:lv-' + r[0] + '"']; }).concat([['⭐ Top campionati e coppe', L.filter(tipLeagueTop), 'data-st-drill="lg:top"'], ['Serie minori Paesi forti', L.filter(function (e) { return (e.factors || {}).lgG === 'lower'; })], ['Coppe internazionali', L.filter(function (e) { return (e.factors || {}).lgG === 'cup'; })], ['Femminili (prime divisioni)', L.filter(function (e) { return (e.factors || {}).lgG === 'women' && tipWomenTop(e.league); })]].concat(Object.keys(TIP_LG_NAME).map(function (g) { return [TIP_LG_NAME[g], L.filter(function (e) { return (e.lg || tipLeagueTier(e)) === g; }), 'data-st-drill="lg:' + g + '"']; }))) };
+  /* 4.35.0 — PER FASCIA DI QUOTA (quota bet365 al segnale): per decidere sui segnali veri le quote minime dei filtri */
+  if (key === 'q') { var qOf = function (e) { var i = tipQuotaInfo(e); return i && i.q ? i.q : null; };
+    return { rows: [[1, 1.10], [1.10, 1.15], [1.15, 1.20], [1.20, 1.25], [1.25, 1.30], [1.30, 1.40], [1.40, 99]].map(function (b) { return [b[1] > 50 ? '1,40 e oltre' : b[0] === 1 ? 'sotto 1,10' : b[0].toFixed(2).replace('.', ',') + ' – ' + b[1].toFixed(2).replace('.', ','), L.filter(function (e) { var q = qOf(e); return q != null && q >= b[0] - 1e-9 && q < b[1] - 1e-9; })]; })
+      .concat([['Senza quota', L.filter(function (e) { return qOf(e) == null; })]]) }; }
   if (key === 'p') return { rows: [[0, 75], [75, 80], [80, 85], [85, 90], [90, 101]].map(function (b) { return [b[0] ? (b[1] > 100 ? b[0] + '% e oltre' : b[0] + '–' + b[1] + '%') : 'sotto 75%', L.filter(function (e) { var q = (e.p || 0) * 100; return q >= b[0] && q < b[1]; })]; }) };
   if (key === 'g') return { rows: [0, 1, 2, 3].map(function (g) { return [g === 3 ? '3 gol o più' : g + (g === 1 ? ' gol' : ' gol'), L.filter(function (e) { var G = (e.gh || 0) + (e.ga || 0); return g === 3 ? G >= 3 : G === g; })]; }) };
   if (key === 'min') return { rows: [[0, 15], [15, 30], [30, 46], [46, 60], [60, 75], [75, 200]].map(function (b) { return [b[1] > 100 ? 'dal 75’' : b[0] + '’–' + (b[1] - 1) + '’', L.filter(function (e) { var m = e.min || 0; return m >= b[0] && m < b[1]; })]; }) };
@@ -9235,7 +9298,7 @@ function tipSgPlayedBind(e, d) {
         if (e.res === 1 || e.res === 0) p.res = e.res; /* già chiuso: stesso esito del segnale */
         tipPlayQueue({ e: e, played: p });
         e.played = p; draw();
-        U.toast('Segnata: ' + q.toFixed(2) + ' · ' + s + '€');
+        U.toast('Segnata: ' + q.toFixed(2) + ' · ' + s + '€'); setTimeout(tipGoalPauseCheck, 50);
       };
     };
     if (x) x.onclick = function () {

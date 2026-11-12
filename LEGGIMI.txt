@@ -1,10 +1,10 @@
-Bet Tracker 4.34.1 · server pronostici-avvisi 4.25.0
+Bet Tracker 4.35.0 · server pronostici-avvisi 4.26.0
 
 PER AGGIORNARE
   1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
   2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
   3. Se non l'hai già fatto: lancia supabase/migrazione-4.29.0.sql nel SQL Editor (meno traffico Supabase).
-  Dopo: in Altro "4.34.1", in Live la barra "server 4.25.0" (con un server più vecchio compare ⚠).
+  Dopo: in Altro "4.35.0", in Live la barra "server 4.26.0" (con un server più vecchio compare ⚠).
 
 CARTELLE
   (principale)    l'app: solo i file che usa
@@ -15,6 +15,19 @@ CARTELLE
   note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
                   PULIZIA-4.25.0.txt = file tolti
   Il server è SOLO supabase/pronostici-avvisi.txt: la copia nella cartella principale è vecchia (4.17.3), non usarla.
+
+4.35.0 — app e server 4.26.0 (ripubblicare la funzione pronostici-avvisi)
+  - OBIETTIVO MODIFICABILE: ✎ accanto a "Oggi" nella barra dell'obiettivo: euro, numero di giocate e "Ferma gli avvisi
+    quando ho finito".
+  - AVVISI IN PAUSA A OBIETTIVO RAGGIUNTO (server 4.26.0): raggiunti gli euro o finite le giocate, fino a domani non
+    arrivano più notifiche. I segnali si registrano lo stesso in Live e Statistiche. Si spegne dalla stessa ✎.
+  - TOCCO LUNGO SU UN SEGNALE = "L'ho giocata" con la quota del segnale e l'ultima puntata; un altro tocco lungo la
+    toglie. Senza quota nota si apre la scheda per scriverla.
+  - STATISTICHE › DIVIDI PER › QUOTA: vinte, perse e % per fascia di quota bet365 al segnale (sotto 1,10 … 1,40 e oltre).
+
+4.34.2 — solo app (server resta 4.25.0)
+  - PREPARTITA › PARTITE: l'interruttore "★ Pronostico / Tutte" sta accanto al titolo, a destra, con il suo colore
+    (ambra = solo con pronostico). Non è più in mezzo sotto la ricerca.
 
 4.34.1 — solo app (server resta 4.25.0)
   - PREPARTITA › PARTITE: interruttore veloce, in piccolo sotto la ricerca, tra "★ Con pronostico" e "Tutte le partite"
