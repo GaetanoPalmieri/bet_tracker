@@ -2030,3 +2030,9 @@ button.pr-actc span { opacity: .7; font-size: 10px; }
 .lv2-mine{display:block;font-size:11.5px;margin-top:3px;opacity:.9}
 .lv2-mine.up b{color:var(--green,#2fbf8f)}
 .lv2-mine.dn b{color:#ff7a70}
+
+/* ===== 4.34.1 — interruttore veloce Con pronostico / Tutte le partite ===== */
+.pr-eph2{display:inline-flex;gap:2px;margin:8px 0 2px;padding:2px;border-radius:10px;background:rgba(255,255,255,.05)}
+.pr-eph2 button{border:0;background:none;color:inherit;font:inherit;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;opacity:.65;cursor:pointer;white-space:nowrap}
+.pr-eph2 button.on{background:rgba(47,191,143,.22);opacity:1}
+.pr-eph2 button i{font-style:normal;font-weight:600;opacity:.7;margin-left:3px}

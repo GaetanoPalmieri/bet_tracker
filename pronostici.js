@@ -5739,10 +5739,13 @@ function tipListPanel(list) {
   var tools = '<div class="pr-tools pr-tools2"><span class="tip-search pr-search">' + TIP_IC.search + '<input id="tip-q" type="search" placeholder="Cerca squadra o lega" value="' + U.esc(tipUI.q || '') + '" aria-label="Cerca squadra o campionato"></span>' +
     '<button type="button" class="pr-fbtn' + (nAct ? ' on' : '') + '" data-pf-open="list">' + TIP_IC_FILTER + '<span>Filtri</span>' + (nAct ? '<i>' + nAct + '</i>' : '') + '</button>' +
     '<button type="button" class="pr-tb' + (byProb ? ' on' : '') + '" data-tip-filter="sort" aria-label="Ordina">' + TIP_IC_SORT + '</button></div>';
+  /* 4.34.1 — INTERRUTTORE VELOCE, in piccolo sotto la ricerca: ★ Con pronostico / Tutte le partite (resta anche in Filtri) */
+  if (ephAll.length || tipUI.preNoEph) tools += '<div class="pr-eph2" role="group" aria-label="Quali partite">' +
+    '<button type="button" class="' + (tipUI.preNoEph ? 'on' : '') + '" aria-pressed="' + !!tipUI.preNoEph + '" data-pre-eph="1" data-no-icon>★ Con pronostico <i>' + nPk + '</i></button>' +
+    '<button type="button" class="' + (tipUI.preNoEph ? '' : 'on') + '" aria-pressed="' + !tipUI.preNoEph + '" data-pre-eph="0" data-no-icon>Tutte le partite <i>' + (nPk + nEph) + '</i></button></div>';
   var act = [];
   var VN = { open: 'Prossime', live: 'In corso', done: 'Finite', check: 'Verifica', all: 'Tutte' };
   if (tipUI.view !== 'open') act.push(['view', VN[tipUI.view] || tipUI.view]);
-  if (tipUI.preNoEph) act.push(['eph', '★ Con pronostico']);
   if (mk) act.push(['mk', (TIP_LIST_MK.find(function (o) { return o[0] === mk; }) || [0, mk])[1]]);
   if (tipUI.league) act.push(['league', '🏆 ' + tipUI.league]);
   if (tipUI.starOnly) act.push(['star', '★ Preferite']);
@@ -8923,7 +8926,7 @@ function tipFpOpen(title, build, act, reset, attrName) {
 }
 /* --- Prepartita › Partite --- */
 function tipPfActive() {
-  return (tipUI.view !== 'open' ? 1 : 0) + (tipUI.preNoEph ? 1 : 0) + (tipUI.mk ? 1 : 0) + (tipUI.league ? 1 : 0) + (tipUI.starOnly ? 1 : 0);
+  return (tipUI.view !== 'open' ? 1 : 0) + (tipUI.mk ? 1 : 0) + (tipUI.league ? 1 : 0) + (tipUI.starOnly ? 1 : 0);
 }
 function tipPfSheet() {
   var VIC = { open: '◷', live: '●', done: '✓', check: '?', all: '•' };
