@@ -1,10 +1,10 @@
-Bet Tracker 4.30.0 · server pronostici-avvisi 4.21.1
+Bet Tracker 4.34.0 · server pronostici-avvisi 4.25.0
 
 PER AGGIORNARE
   1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
   2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
   3. Se non l'hai già fatto: lancia supabase/migrazione-4.29.0.sql nel SQL Editor (meno traffico Supabase).
-  Dopo: in Altro "4.30.0", in Live la barra "server 4.21.1" (con un server più vecchio compare ⚠).
+  Dopo: in Altro "4.34.0", in Live la barra "server 4.25.0" (con un server più vecchio compare ⚠).
 
 CARTELLE
   (principale)    l'app: solo i file che usa
@@ -15,6 +15,64 @@ CARTELLE
   note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
                   PULIZIA-4.25.0.txt = file tolti
   Il server è SOLO supabase/pronostici-avvisi.txt: la copia nella cartella principale è vecchia (4.17.3), non usarla.
+
+4.34.0 — app e server 4.25.0 (ripubblicare la funzione pronostici-avvisi)
+  - 🎯 GOL 1-0 CAMPIONATI TOP PARTE DAL 41' (server 4.25.0): stessa regola (1-0 o 0-1, campionati principali, quota
+    1,20-1,45), ma già nel finale del 1° tempo; la giocata resta "un altro gol entro la FINE". Archivio: 41'-45' 39 su 43
+    (91%, book 77%), 46'-50' 86%, 51'-55' 82%: il vantaggio cala regolare col minuto. Già chiamata nel 1° tempo con lo
+    stesso punteggio: nel 2° non si ripete. Il server chiede le quote della partita dal 40'. Resta 🧪 in prova.
+  - OBIETTIVO DEL GIORNO in cima a Live e a Prepartita › Home: risultato delle giocate segnate oggi su 30 € e giocate
+    su 10 (dai "✓ L'ho giocata"). Raggiunto l'obiettivo o finite le giocate: "per oggi basta".
+  - STATISTICHE PIÙ CORTE: un solo Riepilogo con interruttore "Teorico / Quote vere" (prima due riquadri); via le bolle
+    Vinte/Perse/In attesa, che ripetevano gli stessi numeri; i filtri senza segnali nel periodo non occupano più caselle.
+  - VINTE CONTRO BOOK (Riepilogo › Quote vere): per ogni filtro due barre, la tua % vinte e la % che dava il book al
+    segnale, con i punti di differenza. Solo filtri con almeno 5 segnali chiusi.
+  - SCHEDE DEI SEGNALI: quota al segnale su tutti i filtri gol (anche 🔥 💥 💪) e, se l'hai giocata, la tua quota,
+    la puntata e il risultato in euro.
+
+4.33.0 — app e server 4.24.0 (ripubblicare la funzione pronostici-avvisi)
+  - NUOVO FILTRO 🧪 "🎯 gol 2T 1-0 campionati top" (in prova, con notifica 🟠 da valutare): 2° tempo dal 46' al 55',
+    punteggio 1-0 o 0-1, quota bet365 di "un altro gol" tra 1,20 e 1,45 → +1 gol entro la fine.
+    Solo top 7, prime divisioni, coppe UEFA e competizioni ufficiali per nazionali (Nations League, qualificazioni
+    europee, Europei, Mondiali). Fuori amichevoli, serie minori, femminili, giovanili, partite con espulsioni.
+    Archivio quote 28/10-9/11: 188 partite, vinte 82% contro 77% del book, quota ≈1,22, circa 12 al giorno.
+    Sulla traccia dal vivo i casi con quota vera sono ancora pochi (17, 11 vinti): per questo resta in prova.
+    Parte solo con la quota vera: il server ora la chiede per le candidate (1-0, 46'-55', campionati giusti).
+    Stessa partita e punteggio di un altro segnale gol = una sola giocata.
+    Avvisi: se le notifiche 🟠 da valutare o 🧪 in prova sono spente, il filtro va sbloccato dalla campanella.
+
+4.32.0 — app e server 4.23.0 (ripubblicare la funzione pronostici-avvisi)
+  - GRAFICO DELLA PARTITA nella scheda del segnale (Live): tiri ogni ~6 minuti (casa blu, ospiti viola), ritmo (attacchi
+    pericolosi al minuto, linea verde), ⚽ ai minuti dei gol e la linea arancione del segnale; sotto i numeri all'ultimo
+    minuto. Dati dalla traccia del server (nuova azione trace_match, lettura piccola).
+  - PREFERITI E NOTIFICHE NEGLI AVVISI (campanella): ogni filtro ha ★ (lo vedi in Live › Preferiti), 🔔 (notifica) e sotto
+    il livello (🟢 Ottime, 🟠 Da valutare, Entrambe). Il vecchio pannello "Filtri preferiti" non c'è più: tutto lì.
+    Senza notifiche attive si scelgono comunque i ★.
+  - "✓ L'HO GIOCATA" anche nella scheda del segnale: quota ed euro (ricorda l'ultima puntata); se il segnale è già chiuso
+    prende subito il suo esito. "Togli" per cancellare.
+  - SALDO › ANDAMENTO: nuovo riquadro "Saldo e giocate", ultimi 14 giorni: risultato vero del saldo accanto al risultato
+    delle giocate segnate; sotto i totali (saldo, giocate segnate, non segnato = giocate fatte senza segnarle).
+
+4.31.0 — app e server 4.22.0 (ripubblicare la funzione pronostici-avvisi)
+  - PREPARTITA SI APRE SU OGGI: ogni volta che entri nella scheda il giorno scelto è Oggi (prima "Tutti", tutti i giorni).
+  - STRISCIA DEI GIORNI: Oggi è il primo a sinistra; i 3 giorni passati si vedono solo scorrendo a sinistra, dopo la
+    linea "passati", più scuri e tratteggiati, con la % vinte e una barretta colorata. Oggi ha il bordo verde.
+  - FILTRI IN UN PANNELLO (Prepartita e Live). A schermo resta un pulsante "Filtri" con il numero dei filtri accesi e, in
+    piccolo, i filtri accesi da togliere con ✕.
+    · Partite: ricerca · Filtri · Ordina. Nel pannello: con pronostico / tutte, stato (Prossime, In corso, Finite, Verifica,
+      Tutte), esito, campionato (i più presenti del giorno + "Altri campionati…"), solo preferite.
+    · Top: il mercato si sceglie da Filtri (barra con la % vinte delle Top chiuse per ogni mercato).
+    · Live (Adesso e Oggi): l'imbuto in alto apre il pannello; a schermo una riga sola con il riassunto ("★ Preferiti ·
+      Prime divisioni"). Nel pannello: Mostra (★ Preferiti, Tutti, ⏳ Quota raggiunta), Filtro e Campionati con barra e
+      % vinte di oggi, Stabili / In prova, "Altri filtri" (livello, tempo, esito, gol, profilo, ritmo) e il collegamento a
+      "Preferiti e notifiche, filtro per filtro". Stabili / In prova e gli altri filtri valgono ora anche in Adesso.
+    · In fondo al pannello "Azzera" e "Mostra N" (il numero si aggiorna mentre scegli).
+  - GRAFICI: Statistiche (Live e Prepartita) con "Andamento", una barra al giorno con la % vinte e la linea della stima
+    (tocca una barra per vedere solo quel giorno); Live › Oggi con l'anello della %; partita prepartita con 1-X-2 in una
+    barra e una barra per mercato con la tacca della soglia; Home del Prepartita con le barre delle partite dei 7 giorni.
+  - NOTIFICHE (server 4.22.0): titolo = il filtro che chiama ("🔥 Gol 2T partita da gol  🟢🛡️"); 🟢 OTTIMA / 🟠 DA VALUTARE
+    e 🛡️ stabile / 🧪 in prova solo con l'icona; sotto "👉 Over 2.5 · 91% · quota 1.40", la partita, minuto, risultato e
+    campionato, il perché. Tolta la riga "linea gol prepartita".
 
 4.30.0 — solo app (server invariato 4.21.1)
   - Tolto l'OBIETTIVO DEL MESE (30 € al giorno): via il riquadro in cima a Saldo e la striscia in Prepartita e Live.

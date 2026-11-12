@@ -1,4 +1,4 @@
-const APP_VERSION = '4.30.0';
+const APP_VERSION = '4.34.0';
 ('use strict');
 const KEY = 'bet_tracker_v1',
   main = document.getElementById('main'),
@@ -3429,7 +3429,8 @@ function diaryPage(which) {
     '<section class="card diary-card"><h2>Per giorno della settimana</h2><p class="muted diary-hint">Risultato medio nel periodo scelto, per giorno.</p>' +
     diaryWeekdayChart(points) +
     '</section>';
-  return chart + bars + diaryBubCard() + stats + weekday + monthly + log;
+  var svp = ''; try { svp = typeof tipSaldoVsPlayed === 'function' ? tipSaldoVsPlayed() : ''; } catch (e) { svp = ''; } /* 4.31.0 — saldo e giocate segnate */
+  return chart + bars + svp + diaryBubCard() + stats + weekday + monthly + log;
 }
 
 /* ---------- 2.1.0 — Per giorno della settimana ---------- */
