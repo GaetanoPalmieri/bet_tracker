@@ -5733,8 +5733,6 @@ function tipsPage() {
   var body = pn === 'top' ? tipTopBody(list) /* 4.16.0 — Prossimi giorni / Giorni passati, statistiche veloci */
     : pn === 'live' ? tipLivePanel(list) /* 3.99.3 — la barra di stato della sezione sostituisce l'intestazione */
     : pn === 'list' ? (function () { var LA = tipUI.preNoEph ? list : list.concat(tipEphList()); return '<div class="pst-head">' + tipHead('Partite', '') +
-      /* 4.34.2 — interruttore veloce accanto al titolo (a destra): ★ = solo con pronostico (ambra), Tutte = tutte le partite */
-      (tipEphList().length || tipUI.preNoEph ? '<div class="pr-eph3" role="group" aria-label="Quali partite"><button type="button" class="pk' + (tipUI.preNoEph ? ' on' : '') + '" aria-pressed="' + !!tipUI.preNoEph + '" data-pre-eph="1" data-no-icon>★ Pronostico</button><button type="button" class="al' + (tipUI.preNoEph ? '' : ' on') + '" aria-pressed="' + !tipUI.preNoEph + '" data-pre-eph="0" data-no-icon>Tutte</button></div>' : '') +
       tipPreQuickBtn() + '</div>' + (tipUI.preStale ? '<p class="tip-amber-text tip-warn">' + U.esc(tipUI.preStale) + '</p>' : '') + tipDayChips(LA, 'Tutti') + (tipUI.preQuick ? tipPreQuick(list) : '') + tipListPanel(LA); })()
     : tipHubPanel(list);
   return tipNav(list) + '<div class="tip-body tip-body-' + pn + '">' + body + '</div>';
@@ -5799,12 +5797,19 @@ function tipListPanel(list) {
   tipUI._pf = { views: views.map(function (v) { return [v[0], v[1], dayCnt[v[0]]]; }), eph: !!(ephAll.length || tipUI.preNoEph), nPk: nPk, nAll: nPk + nEph, mkCnt: mkCnt,
     leagues: Object.keys(lgCnt).sort(function (a, b) { return lgCnt[b] - lgCnt[a] || a.localeCompare(b, 'it'); }).map(function (l) { return [l, lgCnt[l]]; }), nStar: nStar, n: shown.length };
   var nAct = tipPfActive();
-  var tools = '<div class="pr-tools pr-tools2"><span class="tip-search pr-search">' + TIP_IC.search + '<input id="tip-q" type="search" placeholder="Cerca squadra o lega" value="' + U.esc(tipUI.q || '') + '" aria-label="Cerca squadra o campionato"></span>' +
+  /* 4.35.1 — DUE FILTRI VELOCI in una riga sotto i giorni, uguali in Partite e Top: quali partite (★ Pronostico / Tutte) e
+     quando (Prossime / In corso, con il numero di quelle in corso). Gli altri stati (Finite, Verifica, Tutte) restano in Filtri. */
+  var qseg = function (lab, a) { return '<div class="pr-qseg" role="group" aria-label="' + lab + '">' + a.join('') + '</div>'; };
+  var qb = function (attr, cls, on, txt) { return '<button type="button" class="' + cls + (on ? ' on' : '') + '" aria-pressed="' + !!on + '" ' + attr + ' data-no-icon>' + txt + '</button>'; };
+  var quick = '<div class="pr-quick">' +
+    (ephAll.length || tipUI.preNoEph ? qseg('Quali partite', [qb('data-pre-eph="1"', 'pk', !!tipUI.preNoEph, '★ Pronostico'), qb('data-pre-eph="0"', 'al', !tipUI.preNoEph, 'Tutte')]) : '') +
+    qseg('Quando', [qb('data-pre-view="open"', 'al', tipUI.view === 'open', 'Prossime'), qb('data-pre-view="live"', 'lv', tipUI.view === 'live', '<i class="pr-live-dot"></i>In corso' + (dayCnt.live ? ' <em>' + dayCnt.live + '</em>' : ''))]) + '</div>';
+  var tools = quick + '<div class="pr-tools pr-tools2"><span class="tip-search pr-search">' + TIP_IC.search + '<input id="tip-q" type="search" placeholder="Cerca squadra o lega" value="' + U.esc(tipUI.q || '') + '" aria-label="Cerca squadra o campionato"></span>' +
     '<button type="button" class="pr-fbtn' + (nAct ? ' on' : '') + '" data-pf-open="list">' + TIP_IC_FILTER + '<span>Filtri</span>' + (nAct ? '<i>' + nAct + '</i>' : '') + '</button>' +
     '<button type="button" class="pr-tb' + (byProb ? ' on' : '') + '" data-tip-filter="sort" aria-label="Ordina">' + TIP_IC_SORT + '</button></div>';
   var act = [];
   var VN = { open: 'Prossime', live: 'In corso', done: 'Finite', check: 'Verifica', all: 'Tutte' };
-  if (tipUI.view !== 'open') act.push(['view', VN[tipUI.view] || tipUI.view]);
+  if (tipUI.view !== 'open' && tipUI.view !== 'live') act.push(['view', VN[tipUI.view] || tipUI.view]);
   if (mk) act.push(['mk', (TIP_LIST_MK.find(function (o) { return o[0] === mk; }) || [0, mk])[1]]);
   if (tipUI.league) act.push(['league', '🏆 ' + tipUI.league]);
   if (tipUI.starOnly) act.push(['star', '★ Preferite']);
@@ -6835,14 +6840,27 @@ function tipDetailEph(m) {
   d.classList.add('tip-dlg');
 }
 document.addEventListener('click', function (ev) {
-  var b = ev.target.closest && ev.target.closest('[data-pre-eph]');
+  var b = ev.target.closest && ev.target.closest('[data-pre-eph],[data-pre-view],[data-top-view]');
   if (!b) return;
-  tipUI.preNoEph = b.getAttribute('data-pre-eph') === '1';
+  if (b.hasAttribute('data-pre-view')) { tipUI.view = b.getAttribute('data-pre-view'); tipUI._viewAuto = null; }
+  else if (b.hasAttribute('data-top-view')) tipUI.topView = b.getAttribute('data-top-view');
+  else tipUI.preNoEph = b.getAttribute('data-pre-eph') === '1';
   render();
 });
 function tipTopList(list, days) {
   var P = tipParams(), sel = tipUI.topMk || 'all', top = tipPreTopSet(list);
   var per = days.map(function (d) { return { d: d, T: tipTopFor(d, list, P), tt: tipTopLeagues(d, list).slice(0, 10) }; });
+  /* 4.35.1 — filtro veloce Tutte / Prossime / In corso anche nelle Top */
+  var tv = tipUI.topView === 'open' || tipUI.topView === 'live' ? tipUI.topView : 'all', nLiveTop = 0, seenL = {};
+  per.forEach(function (x) { x.T.all.forEach(function (c) { if (tipState(c.m) === 'live' && !seenL[c.m.id]) { seenL[c.m.id] = 1; nLiveTop++; } }); });
+  if (tv !== 'all') per = per.map(function (x) {
+    var ok = function (c) { return tipState(c.m) === tv; }, T2 = Object.assign({}, x.T);
+    TIP_TOP_MK.forEach(function (k) { T2[k[0]] = Object.assign({}, x.T[k[0]], { items: x.T[k[0]].items.filter(ok) }); });
+    T2.all = x.T.all.filter(ok);
+    return { d: x.d, T: T2, tt: x.tt.filter(ok) };
+  });
+  var tvBtn = function (v, cls, txt) { return '<button type="button" class="' + cls + (tv === v ? ' on' : '') + '" aria-pressed="' + (tv === v) + '" data-top-view="' + v + '" data-no-icon>' + txt + '</button>'; };
+  var topQuick = '<div class="pr-quick"><div class="pr-qseg" role="group" aria-label="Quando">' + tvBtn('all', 'al', 'Tutte') + tvBtn('open', 'al', 'Prossime') + tvBtn('live', 'lv', '<i class="pr-live-dot"></i>In corso' + (nLiveTop ? ' <em>' + nLiveTop + '</em>' : '')) + '</div></div>';
   var itemsOf = function (k) {
     var a = [];
     per.forEach(function (x) { a = a.concat(k === 'tt' ? x.tt : k === 'all' ? [].concat.apply([], TIP_TOP_MK.map(function (q) { return x.T[q[0]].items; })) : x.T[k].items); });
@@ -6866,7 +6884,7 @@ function tipTopList(list, days) {
     return { k: o[0], label: o[1], ic: o[2], n: count(o[0]), pc: w + l ? Math.round(w / (w + l) * 100) : null, color: !o[2] };
   }).filter(function (o) { return o.n || o.k === 'all'; }) };
   void chips;
-  chips = sel !== 'all' ? '<div class="pr-act"><button type="button" class="pr-actc" data-pfx="topmk">' + U.esc(((tipUI._tf.opts.find(function (o) { return o.k === sel; }) || {}).label) || sel) + ' <span aria-hidden="true">✕</span></button></div>' : '';
+  chips = topQuick + (sel !== 'all' ? '<div class="pr-act"><button type="button" class="pr-actc" data-pfx="topmk">' + U.esc(((tipUI._tf.opts.find(function (o) { return o.k === sel; }) || {}).label) || sel) + ' <span aria-hidden="true">✕</span></button></div>' : '');
   var byTime = function (a, b) { return tipKickoff(a.m) - tipKickoff(b.m); };
   var corInfo = function (c) {
     if (!TIP_COR_MK[c.p.m]) return '';
@@ -8989,7 +9007,7 @@ function tipFpOpen(title, build, act, reset, attrName) {
 }
 /* --- Prepartita › Partite --- */
 function tipPfActive() {
-  return (tipUI.view !== 'open' ? 1 : 0) + (tipUI.mk ? 1 : 0) + (tipUI.league ? 1 : 0) + (tipUI.starOnly ? 1 : 0);
+  return (tipUI.view !== 'open' && tipUI.view !== 'live' ? 1 : 0) + (tipUI.mk ? 1 : 0) + (tipUI.league ? 1 : 0) + (tipUI.starOnly ? 1 : 0);
 }
 function tipPfSheet() {
   var VIC = { open: '◷', live: '●', done: '✓', check: '?', all: '•' };

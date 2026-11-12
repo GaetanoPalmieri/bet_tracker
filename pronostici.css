@@ -2051,3 +2051,19 @@ button.pr-actc span { opacity: .7; font-size: 10px; }
 .goal-form .goal-chk{flex-direction:row;align-items:center;gap:6px;flex:1 1 100%;font-size:12px}
 .goal-form button{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:9px;padding:8px 14px;background:rgba(47,191,143,.25);color:inherit;cursor:pointer}
 button.lv2{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+
+/* ===== 4.35.1 — due filtri veloci in riga (Partite e Top); intestazione staccata dai giorni ===== */
+.pst-head{margin-bottom:10px}
+.pr-quick{display:flex;gap:8px;margin:10px 0 10px}
+.pr-qseg{flex:1 1 0;min-width:0;display:flex;border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:2px;background:rgba(0,0,0,.16)}
+.pr-qseg button{flex:1 1 0;min-width:0;border:0;background:none;color:inherit;font:inherit;font-size:12px;font-weight:700;padding:7px 4px;border-radius:10px;opacity:.6;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-qseg button.on{opacity:1}
+.pr-qseg button.pk.on{background:#f0b34a;color:#1c1405}
+.pr-qseg button.al.on{background:rgba(255,255,255,.15)}
+.pr-qseg button.lv.on{background:rgba(47,191,143,.28)}
+.pr-qseg button em{font-style:normal;font-weight:600;opacity:.75;margin-left:2px}
+.pr-live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#2fbf8f;margin-right:5px;vertical-align:middle}
+
+.pr-qseg{flex:1 1 auto}
+.pr-qseg button{flex:1 1 auto;font-size:11.5px;padding:7px 8px;overflow:visible;text-overflow:clip}
+.pr-quick{gap:6px}
