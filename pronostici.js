@@ -3751,7 +3751,7 @@ function tipExcellentArchive() {
   var cutLbl = cut ? new Date(cut).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
   var w = 0, l = 0, wait = 0;
   arrS.forEach(function (e) { if (e.res === 1) w++; else if (e.res === 0) l++; else wait++; });
-  var rate = w + l ? Math.round(w / (w + l) * 100) : null, mine = arrS.filter(function (e) { return e.played; }).length;
+  var rate = w + l ? Math.round(w / (w + l) * 100) : null, mine = 0;
   var sum = '<div class="lv3-sum"><div class="lv3-rate lv3-ringbox">' + tipRing(rate, rate == null ? '' : rate >= 80 ? 'good' : rate >= 70 ? 'mid' : 'bad') + '<small>' + (tipUI.lvK ? U.esc(tipLvFilterName({ k: tipUI.lvK })) : qrMode ? 'quote raggiunte' : 'vinte oggi') + '</small></div>' +
     '<div class="lv3-counts"><span class="w"><b>' + w + '</b> vint' + (w === 1 ? 'a' : 'e') + '</span><span class="l"><b>' + l + '</b> pers' + (l === 1 ? 'a' : 'e') + '</span><span class="o"><b>' + wait + '</b> in attesa</span>' +
     (mine ? '<span class="o"><b>' + mine + '</b> giocat' + (mine === 1 ? 'a' : 'e') + '</span>' : '') + '</div>' +
@@ -4299,7 +4299,7 @@ function tipLvRow(e, o) {
   /* 4.34.0 — quota al segnale su ogni scheda (anche 🔥 💥 💪) e, se l'hai giocata, la tua quota e il risultato in euro */
   if (!quote && !wait) { var QA = tipQuotaInfo(e); if (QA && QA.q) quote = '<i class="lv2-q">@' + QA.q.toFixed(2) + (QA.est ? '≈' : '') + '</i>'; }
   var mineH = '';
-  if (e.played && U.finite(e.played.q)) { var mpl = e.played.res === 1 || e.played.res === 0 ? tipPlayedPL(e) : null; mineH = '<span class="lv2-mine' + (mpl == null ? '' : mpl >= 0 ? ' up' : ' dn') + '">✓ giocata @' + Number(e.played.q).toFixed(2) + ' · ' + e.played.s + '€' + (mpl == null ? ' · in attesa' : ' · <b>' + (mpl >= 0 ? '+' : '−') + Math.abs(mpl).toFixed(2) + '€</b>') + '</span>'; }
+  if (false && e.played && U.finite(e.played.q)) { var mpl = e.played.res === 1 || e.played.res === 0 ? tipPlayedPL(e) : null; mineH = '<span class="lv2-mine' + (mpl == null ? '' : mpl >= 0 ? ' up' : ' dn') + '">✓ giocata @' + Number(e.played.q).toFixed(2) + ' · ' + e.played.s + '€' + (mpl == null ? ' · in attesa' : ' · <b>' + (mpl >= 0 ? '+' : '−') + Math.abs(mpl).toFixed(2) + '€</b>') + '</span>'; }
   var lvId = U.esc(String(e.key || e.id || '') + '§' + (e.k || '') + '§' + (e.t || 0));
   return '<button type="button" data-lv-open="' + lvId + '" class="lv2 lv2-' + (wait ? 'qr' : t) + (trial ? ' lv2-trial' : '') + (o.isNew ? ' lv2-new' : '') + (o.showRes ? ' lv2-' + st : '') + '"' + (o.showRes && st !== 'wait' ? ' aria-label="' + (st === 'win' ? 'Vinta' : 'Persa') + '"' : '') + '>' +
     tipLvCorner(e) +
@@ -4388,13 +4388,11 @@ function tipSignalSheet(e) {
     resBox +
     (early ? '<p class="sg-early">' + U.esc(early) + '</p>' : '') +
     '<div class="sg-rows">' + info + '</div>' + (wait ? '' : tipProgSheet(e)) + tipFilterRecap(e) + stats +
-    (wait ? '' : '<div class="sg-pwrap">' + tipSgPlayedHtml(e) + '</div>') +
     (e.afId ? '<h3 class="sheet-section">Andamento della partita</h3><div class="sg-trend" data-sg-trend></div>' : '') + /* 4.31.0 */
     (wait ? '<p class="sheet-note">Quota raggiunta: la quota bet365 del prossimo gol è arrivata alla tua soglia. La % è quella del book, non è un consiglio: è contata a parte.</p>' : '') +
     '</div>',
   );
   tipSgTrendLoad(e, d); /* 4.31.0 */
-  tipSgPlayedBind(e, d);
   return d;
 }
 document.addEventListener('click', function (ev) {
@@ -4549,7 +4547,6 @@ function tipLivePanel(list) {
   var fresh = S && Date.now() - S.at < 5 * 60e3, agoM = S ? Math.max(0, Math.round((Date.now() - S.at) / 60e3)) : null;
   var bar = '<div class="lv2-status lv2-statusx' + (fresh ? ' fresh' : ' stale') + (tipUI._lvRef ? ' busy' : '') + '" data-lv-tapref role="button" tabindex="0" aria-label="Aggiorna adesso"><span class="lv-dot' + (fresh ? ' on' : '') + '"></span><span class="lv2-st"><b>' + (S ? 'Aggiornato alle ' + new Date(S.at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'In attesa del controllo') + '</b>' +
     '<small>' + (S ? (agoM < 1 ? 'adesso' : agoM + ' min fa') + ' · ' : '') + nLive + ' partite live' + (svTxt ? ' · <span class="' + (svOld ? 'lv2-warn' : 'lv2-ver') + '">' + (svOld ? '⚠ ' : '') + 'server ' + U.esc(svTxt) + '</span>' : '') + '</small><small class="lv2-hint">' + (tipUI._lvRef ? 'Aggiorno…' : '') + '</small></span></div>' +
-    tipGoalBar() +
     '<div class="lv-tabs lv2-tabs" role="tablist">' + tb('now', 'Adesso', items.length) + tb('today', 'Oggi', nToday) + tb('all', 'Partite', nLive) + '</div>' +
     (tab === 'all' || true ? '' : (function () {
       var a = tab === 'today' ? nTodaySig : nNowSig, b = tab === 'today' ? nTodayQr : nNowQr;
@@ -5539,13 +5536,17 @@ function tipGoalBar() {
     '<p class="goal-msg">' + msg + '</p>' + form + '</section>';
 }
 function tipGoalPauseCheck() {
+  return; /* 4.36.0 */
   try {
     var S = tipGoalState(), A = tipAlertPrefs(), want = (S.done || S.full) && A.goalStop !== false ? S.today : '';
     if ((A.pauseDay || '') === want || (!want && A.pauseDay !== S.today && !A.pauseDay)) return;
     mutate(function (n) { n.predModel = n.predModel || {}; var a = n.predModel.alerts = Object.assign({}, n.predModel.alerts || {}); if (want) a.pauseDay = want; else delete a.pauseDay; });
   } catch (e) { /* ok */ }
 }
-setInterval(tipGoalPauseCheck, 60e3);
+/* 4.36.0 — OBIETTIVO DEL GIORNO E "L'HO GIOCATA" TOLTI (non usati): niente barra, niente tocco lungo, niente pulsante nella
+   scheda, niente riga "giocata" sulle schede, niente riquadro "Saldo e giocate". Un'eventuale pausa degli avvisi rimasta
+   accesa si toglie da sola. Le giocate già segnate restano nei dati ma non si vedono più. */
+setTimeout(function () { try { var A = (db.predModel || {}).alerts; if (A && (A.pauseDay || A.goalStop === false)) mutate(function (n) { var a = n.predModel.alerts = Object.assign({}, n.predModel.alerts); delete a.pauseDay; delete a.goalStop; }); } catch (e) { /* ok */ } }, 4000);
 document.addEventListener('click', function (ev) {
   var t = ev.target; if (!t.closest) return;
   if (t.closest('[data-goal-edit]')) { tipUI.goalEdit = !tipUI.goalEdit; render(); return; }
@@ -5564,6 +5565,7 @@ document.addEventListener('click', function (ev) {
   document.addEventListener('pointerdown', function (ev) {
     var b = ev.target.closest && ev.target.closest('button.lv2[data-lv-open]'); clear(); fired = false;
     if (!b) return; sx = ev.clientX; sy = ev.clientY;
+    return; /* 4.36.0 — tocco lungo tolto */
     tm = setTimeout(function () {
       tm = null; fired = true;
       var e = tipLvFind(b.getAttribute('data-lv-open')); if (!e || TIP_WAIT_K[e.k]) return;
@@ -5613,7 +5615,7 @@ function tipHubPanel(list) {
   var listBody = '<span class="tip-hubdays tip-hubbars">' + days.map(function (d) { return '<span' + (d[2] ? '' : ' class="empty"') + '><small>' + U.esc(d[1]) + '</small><em>' + new Date(d[0] + 'T12:00:00').getDate() + '</em><span class="hb-col"><i style="height:' + Math.round(8 + 92 * d[2] / dMax) + '%"></i></span><b>' + (d[2] || '–') + '</b></span>'; }).join('') + '</span><span class="tip-hubnote">partite previste per giorno</span>';
   var R = (db.predModel || {}).reports || {}, rk = Object.keys(R).sort().pop(), rep = rk ? R[rk] : null;
   var statBody = rep ? row(U.esc(tipCap(tipDayLabel(rk))), '◆ ' + rep.tot.w + '/' + rep.tot.n + ' · ' + (rep.tot.pl >= 0 ? '+' : '') + rep.tot.pl.toFixed(2) + '€' + (rep.trial && rep.trial.n ? ' · 🧪 ' + rep.trial.w + '/' + rep.trial.n : ''), rep.mine && rep.mine.n ? 'tue ' + (rep.mine.pl >= 0 ? '+' : '') + rep.mine.pl.toFixed(2) + '€' : 'a quota minima', rep.tot.pl >= 0 ? 'positive' : 'negative') : '<span class="tip-hubempty">Ancora nessun resoconto.</span>';
-  return tipGoalBar() + card('top', TIP_IC.star, 'Top di oggi', T.all.length + (T.all.length === 1 ? ' partita' : ' partite'), topBody, 'tip-hub-top') +
+  return card('top', TIP_IC.star, 'Top di oggi', T.all.length + (T.all.length === 1 ? ' partita' : ' partite'), topBody, 'tip-hub-top') +
     /* 4.5.0 — il riquadro "Live adesso" non c'è più: il Live ha la sua scheda nella barra in basso (con il numero di OTTIME nuove) */
     card('list', TIP_IC.list, 'Partite', days.reduce(function (a, d) { return a + d[2]; }, 0) + ' nei prossimi ' + TIP_PRE_DAYS + ' giorni', listBody) +
     card('stats', TIP_IC.stats, 'Resoconto', rep ? 'ultimo giorno' : '', statBody);
@@ -5980,7 +5982,7 @@ function tipStatsLiveSummary() {
   /* 3.96.0 — tutto il riepilogo solo con chi passa il filtro qualità; gli esclusi in un riquadro a parte, in fondo */
   /* 4.2.0 — il riepilogo segue la scelta Tutti / Stabili / In prova del menu (con Tutti mostra anche stabili e in prova separati) */
   var smp = (tipUI.stF || {}).sample || '', QL = tipQSplit(tipStatLog()), L = QL.pass;
-  var mine = L.filter(function (e) { return e.played; }), mpl = mine.reduce(function (s2, e) { return s2 + tipPlayedPL(e); }, 0), mw = mine.filter(function (e) { return e.played.res === 1; }).length;
+  var mine = [], mpl = mine.reduce(function (s2, e) { return s2 + tipPlayedPL(e); }, 0), mw = mine.filter(function (e) { return e.played.res === 1; }).length;
   var html = '<section class="card st-sumcard">' + (L.length ? tipStHero(L, smp, mine.length ? '<p class="tip-mine">Giocate da te: <b>' + mw + '/' + mine.length + '</b> · <b class="' + (mpl >= 0 ? 'positive' : 'negative') + '">' + (mpl >= 0 ? '+' : '') + mpl.toFixed(2) + '€ veri</b></p>' : '') : '<p class="muted tip-tnone">Nessun consiglio nel periodo e con i filtri scelti.</p>') + '</section>';
   var excBox = QL.exc.length ? '<section class="card diary-card">' + tipQualityBox(L, QL.exc, 'riep') + '</section>' : '';
   if (!L.length) return html + excBox;
@@ -6679,7 +6681,7 @@ function tipStMoreBtn(n, attr, what) { return n > 0 ? '<button type="button" cla
 function tipStatsLive2(bub) {
   var smp = (tipUI.stF || {}).sample || '', QL = tipQSplit(tipStatLog()), L = QL.pass, c = tipStatCount(L);
   var selK = tipFArr((tipUI.stF || {}).k), selName = selK.length === 1 ? U.esc(TIP_PLAY_SHORT[selK[0]] || selK[0]) : selK.length ? selK.length + ' filtri' : 'tutti i filtri';
-  var mine = L.filter(function (e) { return e.played; }), mpl = mine.reduce(function (s2, e) { return s2 + tipPlayedPL(e); }, 0), mw = mine.filter(function (e) { return e.played.res === 1; }).length;
+  var mine = [], mpl = mine.reduce(function (s2, e) { return s2 + tipPlayedPL(e); }, 0), mw = mine.filter(function (e) { return e.played.res === 1; }).length;
   var sb = tipUI.stSplitBy = tipUI.stSplitBy || {}, key = sb.live || 'k';
   if (!TIP_ST_LSPLIT.some(function (o) { return o[0] === key; })) key = 'k'; /* 4.22.0 — "Filtro" di nuovo qui (la barra in cima sceglie) */
   var S = L.length ? tipStLiveSplit(L, key) : { rows: [] };
@@ -9330,6 +9332,7 @@ function tipSgPlayedBind(e, d) {
 /* 4.31.0 — SALDO E GIOCATE: giorno per giorno il risultato vero del saldo accanto al risultato delle giocate che hai
    segnato ("L'ho giocata"). La differenza è quello che hai giocato senza segnarlo (o altro). Ultimi 14 giorni con dati. */
 function tipSaldoVsPlayed() {
+  return ''; /* 4.36.0 */
   var real = {}, pl = {}, cnt = {};
   try { diarySeries().forEach(function (p) { if (p.delta != null) real[p.date] = p.delta; }); } catch (e) { return ''; }
   (((db.predModel || {}).playLog) || []).forEach(function (e) {
