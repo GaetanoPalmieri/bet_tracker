@@ -1,10 +1,10 @@
-Bet Tracker 4.36.0 · server pronostici-avvisi 4.26.0
+Bet Tracker 4.37.0 · server pronostici-avvisi 4.28.0
 
 PER AGGIORNARE
   1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
   2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
   3. Se non l'hai già fatto: lancia supabase/migrazione-4.29.0.sql nel SQL Editor (meno traffico Supabase).
-  Dopo: in Altro "4.36.0", in Live la barra "server 4.26.0" (con un server più vecchio compare ⚠).
+  Dopo: in Altro "4.37.0", in Live la barra "server 4.28.0" (con un server più vecchio compare ⚠).
 
 CARTELLE
   (principale)    l'app: solo i file che usa
@@ -15,6 +15,21 @@ CARTELLE
   note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
                   PULIZIA-4.25.0.txt = file tolti
   Il server è SOLO supabase/pronostici-avvisi.txt: la copia nella cartella principale è vecchia (4.17.3), non usarla.
+
+4.37.0 — app e server 4.28.0 (ripubblicare la funzione pronostici-avvisi)
+  Segnali più puliti dall'export 10-16/11 (segnali chiusi, 10 € alla quota minima):
+  - 🎯 GOL 1-0 CAMPIONATI TOP: solo statistiche (8/13, 62%; alla quota minima 1.20 serve l'83%) → niente notifica né Live.
+  - 📉 2T PER CAMPIONATO (nuovo, acceso di base; Avvisi › Opzioni avanzate › Limiti):
+      💥 gol 2T tiri e ritmo e 💪 gol 2T favorita arrivano solo da serie minori e giovanili dei Paesi non forti
+      (46/50, +69 €); da Top, prime divisioni e minori/giovanili dei Paesi forti 47/68 (69%, −105 €) → solo statistiche.
+      🎯 prossimo gol 2T: niente notifica dalle femminili (5/7 con pareggio al 92%).
+  - I segnali silenziati restano registrati (Statistiche, export). Dalle Statistiche "Tutti i filtri" escono solo quelli
+    da domani: lo storico resta com'era. Con l'interruttore spento torna tutto come prima.
+  - Campione di una settimana: da ricontrollare con il prossimo export.
+
+4.36.1 — app e server 4.27.0 (ripubblicare la funzione pronostici-avvisi)
+  - CAMPANELLA SPENTA = SOLO NIENTE NOTIFICHE: il server registra i segnali sempre (Live › Oggi, Statistiche, export).
+    Prima con la campanella spenta i segnali si registravano solo con l'app aperta.
 
 4.36.0 — solo app (server resta 4.26.0)
   - TOLTI l'obiettivo del giorno (30 € / 10 giocate) e tutto il "✓ L'ho giocata": barra in Live e Prepartita, tocco lungo

@@ -3724,7 +3724,7 @@ function tipExcellentArchive() {
   var today0 = U.local().slice(0, 10), smp = tipUI.splitSample || '', from = tipStatsFrom();
   var all = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) {
     var t = e.t || 0;
-    return t >= from && new Date(t).toLocaleDateString('sv-SE') === today0 && tipSigOk(e) && !TIP_LIVE_HIDE[e.k] && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip' && tipLblPass(e.prof || 'nq', e.rit || 'norm') && tipEFilter(tipUI.arcF, e);
+    return t >= from && new Date(t).toLocaleDateString('sv-SE') === today0 && tipSigOk(e) && !tipLiveHidden(e) && (e.tier === 'excellent' || e.tier === 'try' || !e.tier) && !e.conditional && !e.costly && e.res !== 'skip' && tipLblPass(e.prof || 'nq', e.rit || 'norm') && tipEFilter(tipUI.arcF, e);
   }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
   /* 4.20.11 — dopo "Azzera Oggi" elenco, contatori e filtri veloci contano solo i segnali nuovi (quelli di prima con un tocco) */
   var cut0 = tipTodayFrom(), nOldAll = cut0 ? all.filter(function (e) { return (e.t || 0) < cut0; }).length : 0;
@@ -3891,7 +3891,23 @@ function tipAlertGroup(k) {
 /* 4.2.5 — angolo 1T senza notifica. 4.2.8 — ANGOLI: solo registrati (statistiche e storico), niente in Live e niente notifiche:
    dal vivo 19-24/10 l'angolo 1T ha fatto 66% (stima 81%), l'angolo finale 73% (stima 79%) */
 var TIP_CORNER_K = { tk1: 1, tk2: 1, th1: 1, th2: 1, tc1: 1, tc2: 1 };
-var TIP_NO_PUSH = Object.assign({ t1t: 1 }, TIP_CORNER_K), TIP_LIVE_HIDE = Object.assign({ t1t: 1 }, TIP_CORNER_K); /* 4.29.0 — 💥 1T: solo statistiche (segnali veri 6-10/11 sotto il book) */
+var TIP_NO_PUSH = Object.assign({ t1t: 1, tz2: 1 }, TIP_CORNER_K), TIP_LIVE_HIDE = Object.assign({ t1t: 1, tz2: 1 }, TIP_CORNER_K); /* 4.29.0 — 💥 1T: solo statistiche (segnali veri 6-10/11 sotto il book); 4.37.0 — 🎯 1-0 idem (8/13, pareggio 83%) */
+/* 4.37.0 / server 4.28.0 — SEGNALI 2T SOLO STATISTICHE PER CAMPIONATO (export 10-16/11, 10 € alla quota minima):
+   💥 gol 2T tiri e ritmo e 💪 gol 2T favorita nei campionati forti (Top, prime divisioni, minori e giovanili dei Paesi forti)
+   47/68 (69%) con pareggio a ~81% → −105 €; negli altri campionati 46/50 (92%) → +69 €. 🎯 prossimo gol 2T nelle femminili
+   5/7 con pareggio al 92% → −15 €. Restano registrati (Statistiche, export) ma niente notifica e niente Live.
+   Interruttore: Avvisi › Opzioni avanzate › Limiti › 📉 2T per campionato (acceso di base). Nelle Statistiche escono dai
+   totali di "Tutti i filtri" solo i segnali da oggi in poi: lo storico resta com'era. */
+var TIP_SILENT_LG = { t2t: { major: 1, 'minor+': 1, 'youth+': 1 }, tfp2: { major: 1, 'minor+': 1, 'youth+': 1 }, tm2: { women: 1 } };
+var TIP_SILENT_FROM = new Date(2026, 10, 17).getTime();
+function tipSilentOn(A) { A = A || ((db.predModel || {}).alerts) || {}; return A.lgCut !== false; }
+function tipSilentWhy(e) {
+  var S = e && TIP_SILENT_LG[e.k]; if (!S) return '';
+  var lg = e.lg || tipLeagueTier({ league: e.league || (e.m && e.m.league), home: e.home || (e.m && e.m.home), away: e.away || (e.m && e.m.away) });
+  return S[lg] ? 'solo statistiche in questo campionato (📉 2T per campionato)' : '';
+}
+function tipSilentNote(k) { return !TIP_SILENT_LG[k] ? '' : k === 'tm2' ? ' · femminili solo statistiche' : ' · campionati forti solo statistiche'; }
+function tipLiveHidden(e) { var k = e && e.k; return !!(k && (TIP_LIVE_HIDE[k] || (tipSilentOn() && tipSilentWhy(e)))); }
 /* 3.89.0 — analisi del 21/10 (423 consigli chiusi): stabili con p ≥ 65% e campionato forte 23/27 (85%), tutto il resto ~50%.
    Soglia portata da 62% a 65%. */
 /* 3.96.0 — analisi del 22/10 (454 consigli chiusi, 19-22/10): le giovanili dei Paesi forti dentro il filtro facevano
@@ -3936,6 +3952,7 @@ function tipAlertWhy(A, e) {
   if (!e) return 'segnale vuoto';
   if (!A || !A.on) return 'avvisi spenti';
   if (TIP_NO_PUSH[e.k]) return 'tipo senza notifiche';
+  if (tipSilentOn(A) && tipSilentWhy(e)) return tipSilentWhy(e); /* 4.37.0 */
   if (!tipKindActive(e.k)) return 'tipo sospeso';
   if (tipIsTrial(e) ? A.trial === false : A.stable === false) return tipIsTrial(e) ? 'segnali in prova spenti' : 'segnali stabili spenti';
   /* 4.3.7 — per ogni filtro si può scegliere OTTIME, DA VALUTARE o entrambe (A.tierK); senza scelta valgono quelle generali */
@@ -4016,7 +4033,7 @@ function tipAlertCard() {
   var extra = favKs.filter(function (k) { return kinds.indexOf(k) < 0; });
   var rows = kinds.map(function (k) {
     var off = !!(A.off && A.off[k]), blk = tipAlertBlock(A, k), on = !off && !blk;
-    var st = off ? '<small>🔕 spento da te</small>' : blk ? '<small class="al-blk">⚠ non arriva: ' + U.esc(blk[0]) + ' <button type="button" data-alert-fix="' + blk[1] + '">Sblocca</button></small>' : '<small>🔔 arriva' + (TIP_ALERT_TIER[k] === 'try' ? ' · di solito DA VALUTARE' : TIP_ALERT_TIER[k] === 'excellent' ? ' · di solito OTTIMA' : '') + '</small>';
+    var st = off ? '<small>🔕 spento da te</small>' : blk ? '<small class="al-blk">⚠ non arriva: ' + U.esc(blk[0]) + ' <button type="button" data-alert-fix="' + blk[1] + '">Sblocca</button></small>' : '<small>🔔 arriva' + (TIP_ALERT_TIER[k] === 'try' ? ' · di solito DA VALUTARE' : TIP_ALERT_TIER[k] === 'excellent' ? ' · di solito OTTIMA' : '') + (tipSilentOn(A) ? tipSilentNote(k) : '') + '</small>';
     return '<div class="al-row al-row2' + (on ? ' on' : '') + '"><span class="al-rl"><b>' + U.esc(TIP_PLAY_SHORT[k]) + '</b><i>' + (tipAlertGroup(k) === 'gol1' ? '1° tempo' : '2° tempo') + (TIP_TRIAL[k] ? ' · 🧪 in prova' : ' · 🛡️ stabile') + '</i>' + st + '</span>' +
       star(k) + '<button type="button" class="al-sw' + (off ? '' : ' on') + '" data-alert-k="' + k + '" aria-pressed="' + !off + '" aria-label="Notifica ' + U.esc(TIP_PLAY_SHORT[k]) + '"><i></i></button>' + (off ? '' : tierSeg(k)) + '</div>';
   }).join('') + extra.map(function (k) {
@@ -4032,17 +4049,18 @@ function tipAlertCard() {
     '<p class="al-h">Livello</p><div class="tip-chips">' + btn('excellent', on('excellent'), 'OTTIME') + btn('amber', on('amber'), 'DA VALUTARE') + '</div>' +
     '<p class="al-h">Segnali</p><div class="tip-chips">' + btn('stable', on('stable'), '◆ Stabili') + btn('trial', on('trial'), '🧪 In prova') + '</div>' +
     '<p class="al-h">Tempo</p><div class="tip-chips">' + btn('gol1', on('gol1'), 'Gol 1° tempo') + btn('gol2', on('gol2'), 'Gol 2° tempo') + '</div>' +
-    '<p class="al-h">Limiti</p><div class="tip-chips">' + btn('top', !!A.top, '⭐ Solo top campionati') + btn('stars', !!A.stars, '★ Solo preferite') + btn('valOnly', !!A.valOnly, '💰 Solo con valore') + btn('quality', on('quality'), 'Solo qualità') + '</div>' +
-    '<p class="muted tip-hint">I filtri live di oggi passano sempre "Solo qualità". 💰 Solo con valore vale per i 🎯: arrivano solo con la quota bet365 vera sopra la minima.</p>' +
+    '<p class="al-h">Limiti</p><div class="tip-chips">' + btn('top', !!A.top, '⭐ Solo top campionati') + btn('stars', !!A.stars, '★ Solo preferite') + btn('valOnly', !!A.valOnly, '💰 Solo con valore') + btn('quality', on('quality'), 'Solo qualità') + btn('lgCut', on('lgCut'), '📉 2T per campionato') + '</div>' +
+    '<p class="muted tip-hint">I filtri live di oggi passano sempre "Solo qualità". 📉 2T per campionato: 💥 e 💪 gol 2T solo da serie minori e giovanili dei Paesi non forti, 🎯 prossimo gol 2T non dalle femminili. 💰 Solo con valore vale per i 🎯: arrivano solo con la quota bet365 vera sopra la minima.</p>' +
     tipSignalStatus(A) + '</details>';
   return '<section class="card tip-top tip-alerts al-card">' + head +
     '<div class="al-h al-hrow"><span>Filtri live</span><small>★ preferito · ' + favN + ' di ' + favKs.length + ' &nbsp; 🔔 notifica</small></div><div class="al-list">' + rows + '</div>' +
     (silent.length ? '<p class="muted tip-hint">📊 Solo statistiche, senza notifica: ' + U.esc(silent.map(function (k) { return TIP_PLAY_SHORT[k]; }).join(', ')) + '.</p>' : '') +
+    (tipSilentOn(A) ? '<p class="muted tip-hint">📉 ' + U.esc(TIP_PLAY_SHORT.t2t + ' e ' + TIP_PLAY_SHORT.tfp2) + ': niente notifica da Top, prime divisioni e serie minori/giovanili dei Paesi forti (69% con pareggio a 81%); ' + U.esc(TIP_PLAY_SHORT.tm2) + ': niente notifica dalle femminili. Restano nelle Statistiche.</p>' : '') +
     '<p class="al-h">Campionati</p>' + lvSec +
     '<p class="al-h">⏰ Prepartita 10’ prima</p>' + pre + '<p class="muted tip-hint">Solo le partite con un pronostico: squadre, pronostico e %.</p>' +
     adv + tipAlertDiag() + '</section>';
 }
-function tipAlertOn(A, k) { return ['stable', 'trial', 'excellent', 'gol1', 'gol2', 'cor1', 'cor2', 'quality'].indexOf(k) >= 0 ? A[k] !== false : !!A[k]; }
+function tipAlertOn(A, k) { return ['stable', 'trial', 'excellent', 'gol1', 'gol2', 'cor1', 'cor2', 'quality', 'lgCut'].indexOf(k) >= 0 ? A[k] !== false : !!A[k]; }
 function tipAlertSummary(A) {
   var on = function (k) { return tipAlertOn(A, k); };
   var lv = [on('excellent') && 'OTTIME', on('amber') && 'DA VALUTARE'].filter(Boolean), sg = [on('stable') && 'stabili', on('trial') && 'in prova'].filter(Boolean);
@@ -4113,7 +4131,7 @@ function tipSignalStatus(A) {
 }
 /* 3.82.0 — controllo: versione della funzione sul server e ultimi segnali con l'esito della notifica */
 function tipAlertDiag() {
-  var v = tipUI.serverVer, need = '4.26.0', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League); 4.24.2 — 4.17.2 (1T senza 🔴) */
+  var v = tipUI.serverVer, need = '4.28.0', old = v && (v === 'vecchia' || tipVerCmp(v, need) < 0); /* 4.22.0 — serve il server 4.16.0; 4.23.1 — 4.16.1 (🔥 2T Youth League); 4.24.2 — 4.17.2 (1T senza 🔴) */
   var L = (((db.predModel || {}).playLog) || []).filter(function (e) { return e.src === 'server' && e.t > Date.now() - 24 * 3600e3; })
     .sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).slice(0, 12);
   var rows = L.map(function (e) {
@@ -4404,7 +4422,7 @@ document.addEventListener('click', function (ev) {
 /* numero sul tasto Live della barra in basso: OTTIME dei filtri preferiti negli ultimi 5 minuti (le nuove) */
 function tipLiveBadge() {
   var now = Date.now(), n = 0;
-  (((db.predModel || {}).playLog) || []).forEach(function (e) { if ((e.tier === 'excellent' || TIP_WAIT_K[e.k]) && e.res == null && e.t > now - 5 * 60e3 && e.t <= now + 60e3 && !TIP_LIVE_HIDE[e.k] && tipKindActive(e.k) && !e.conditional && !e.costly && tipFavOn(e.fromK || e.k)) n++; });
+  (((db.predModel || {}).playLog) || []).forEach(function (e) { if ((e.tier === 'excellent' || TIP_WAIT_K[e.k]) && e.res == null && e.t > now - 5 * 60e3 && e.t <= now + 60e3 && !tipLiveHidden(e) && tipKindActive(e.k) && !e.conditional && !e.costly && tipFavOn(e.fromK || e.k)) n++; });
   return n;
 }
 function tipLivePanel(list) {
@@ -4443,7 +4461,7 @@ function tipLivePanel(list) {
   tipPlayDedup((db.predModel || {}).playLog || []).forEach(function (e) {
     var t = e.t || 0;
     if (t <= nowT - NOW_MS || t > nowT + 60e3 || t < tipStatsFrom() || t < tipNowFrom() || new Date(t).toLocaleDateString('sv-SE') !== dayNow) return;
-    if (!tipKindActive(e.k) || TIP_LIVE_HIDE[e.k] || !(e.tier === 'excellent' || e.tier === 'try' || !e.tier) || e.conditional || e.costly || e.res === 'skip') return; /* Adesso: tutti i segnali dei filtri accesi (anche da un server non ancora aggiornato) */
+    if (!tipKindActive(e.k) || tipLiveHidden(e) || !(e.tier === 'excellent' || e.tier === 'try' || !e.tier) || e.conditional || e.costly || e.res === 'skip') return; /* Adesso: tutti i segnali dei filtri accesi (anche da un server non ancora aggiornato) */
     if (!tipLblPass(e.prof || 'nq', e.rit || 'norm')) return;
     var y = e.afId ? rowsBy[e.afId] : null;
     var it = { e: e, k: e.k, isNew: t > nowT - 2 * 60e3,
@@ -4472,7 +4490,7 @@ function tipLivePanel(list) {
   if (tipUI.splitSample) items = items.filter(function (x) { return tipUI.splitSample === 'trial' ? !!tipIsTrial(x.e) : !tipIsTrial(x.e); });
   items = items.filter(function (x) { return tipEFilter(tipUI.arcF, x.e); });
   /* 4.11.0 — filtri veloci anche in Adesso (stessa scelta di Oggi); le % sono quelle di oggi */
-  var today0 = U.local().slice(0, 10), todayL = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipSigOk(e) && !TIP_LIVE_HIDE[e.k] && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= tipStatsFrom() && (e.t || 0) >= tipTodayFrom() && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipQShown(e); });
+  var today0 = U.local().slice(0, 10), todayL = tipPlayDedup((db.predModel || {}).playLog || []).filter(function (e) { return tipSigOk(e) && !tipLiveHidden(e) && !e.conditional && !e.costly && e.res !== 'skip' && (e.t || 0) >= tipStatsFrom() && (e.t || 0) >= tipTodayFrom() && new Date(e.t || 0).toLocaleDateString('sv-SE') === today0 && tipQShown(e); });
   var modeL = todayL.filter(function (e) { return qrMode ? !!TIP_WAIT_K[e.k] : !TIP_WAIT_K[e.k]; });
   var lvF = { tab: 'now', qr: qrMode, fav: favMode, nMode: nOne, smp: smpN, kinds: tipLvKindsData(items.map(function (x) { return x.e; }), tipTodayKStats(modeL), tipUI.lvK || '') };
   if (tipUI.lvK) items = items.filter(function (x) { return tipKOf(x.e) === tipUI.lvK; });
@@ -4540,7 +4558,7 @@ function tipLivePanel(list) {
   var tb = function (k, t, n) { return '<button type="button" role="tab" aria-selected="' + (tab === k) + '" class="lv-tab' + (tab === k ? ' on' : '') + '" data-lv-tab="' + k + '">' + t + (n != null ? ' <i>' + n + '</i>' : '') + '</button>'; };
   var S = tipUI.scan;
   /* 3.99.8 — barra su due righe: LIVE + ora, poi partite e versione del server (niente più testo tagliato a destra) */
-  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.26.0') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
+  var sv = tipUI.serverVer, svOld = !sv || sv === 'vecchia' || tipVerCmp(sv, '4.28.0') < 0; /* 4.22.0 — ⚠ finché il server non è 4.16.0; 4.23.1 — 4.16.1 */
   var svTxt = sv ? (sv === 'vecchia' ? 'vecchio' : sv) : '';
   /* 4.8.1 — STATO IN EVIDENZA: riquadro in cima con l'ora dell'ultimo controllo (ambra se più vecchio di 5 minuti) e un
      pulsante "Aggiorna" grande, che durante il controllo gira senza cambiare larghezza (prima la scritta veniva tagliata). */
@@ -5594,7 +5612,7 @@ document.addEventListener('click', function (ev) {
 function tipHubPanel(list) {
   var today = U.local().slice(0, 10), P = tipParams(), T = tipTopFor(today, list, P), now = Date.now();
   var live = list.filter(tipIsLiveNow), L = ((db.predModel || {}).playLog) || [];
-  var hot = tipLiveNowPlays() || tipPlayDedup(L.filter(function (e) { return tipKindActive(e.k) && !TIP_LIVE_HIDE[e.k] && e.res == null && e.t > now - 30 * 60e3 && (e.tier === 'excellent' || e.tier === 'try') && !e.conditional && !e.costly && tipQShown(e); }))
+  var hot = tipLiveNowPlays() || tipPlayDedup(L.filter(function (e) { return tipKindActive(e.k) && !tipLiveHidden(e) && e.res == null && e.t > now - 30 * 60e3 && (e.tier === 'excellent' || e.tier === 'try') && !e.conditional && !e.costly && tipQShown(e); }))
     .sort(function (a, b) { return (a.tier === 'try' ? 1 : 0) - (b.tier === 'try' ? 1 : 0) || b.t - a.t; });
   var nOtt = hot.filter(function (e) { return e.tier === 'excellent'; }).length;
   var row = function (a, b, c, cls) { return '<span class="tip-hubrow"><span>' + a + '</span><b class="' + (cls || '') + '">' + b + '</b>' + (c ? '<small>' + c + '</small>' : '') + '</span>'; };
@@ -5635,7 +5653,7 @@ function tipBellBind(b) {
     if (long) { long = false; return; }
     var on = !tipAlertPrefs().on;
     mutate(function (n) { n.predModel = n.predModel || {}; var A = n.predModel.alerts = Object.assign({ on: false, amber: false, stars: false }, n.predModel.alerts || {}); A.on = on; A.at = Date.now(); });
-    U.toast(on ? '🔔 Notifiche accese · tieni premuto per le impostazioni' : '🔕 Notifiche spente · tieni premuto per le impostazioni');
+    U.toast(on ? '🔔 Notifiche accese · tieni premuto per le impostazioni' : '🔕 Notifiche spente · i segnali si registrano lo stesso');
   };
 }
 function tipAlertSheet() {
@@ -5885,7 +5903,9 @@ function tipLiveAll(trial) {
 }
 /* 4.29.0 — FILTRI SOLO STATISTICHE (💥 1T): si calcolano e si registrano, ma non notificano, non compaiono in Adesso/Oggi e
    non entrano nei totali di "Tutti i filtri". Hanno la loro riga in Statistiche › Filtri. */
-var TIP_STAT_SILENT = { t1t: 1 };
+var TIP_STAT_SILENT = { t1t: 1, tz2: 1 }; /* 4.37.0 — anche 🎯 1-0 */
+/* 4.37.0 — fuori dai totali anche i 2T solo statistiche per campionato, ma solo dal 17/11 (prima ti arrivavano) */
+function tipStatSilentE(e) { return !!(e && (TIP_STAT_SILENT[e.k] || ((e.t || 0) >= TIP_SILENT_FROM && tipSilentOn() && tipSilentWhy(e)))); }
 function tipStatLog(anySample) {
   /* 4.22.0 — stesse scelte della barra dei filtri (tipSbLiveFilter): filtro, tempo, esito, livello, campionato, gol, minuto,
      favorita, campione, profilo, ritmo e ricerca. Le quote raggiunte (spente) solo se scelte. */
@@ -5893,7 +5913,7 @@ function tipStatLog(anySample) {
   var base = tipLiveAll(false).concat(tipLiveAll(true)).filter(function (e) {
     var d = tipLiveDay(e);
     return d >= R.from && d <= R.to && (!TIP_WAIT_K[e.k] || sel.indexOf(e.k) >= 0) &&
-      (!TIP_STAT_SILENT[e.k] || sel.indexOf(e.k) >= 0 || tipUI._stSilent); /* 4.29.0 — filtri solo statistiche: fuori dai totali */
+      (!tipStatSilentE(e) || sel.indexOf(e.k) >= 0 || tipUI._stSilent); /* 4.29.0 — filtri solo statistiche: fuori dai totali */
   });
   return tipSbLiveFilter(base, anySample ? 'sample' : null).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
 }
@@ -7534,7 +7554,7 @@ function tipSbBar(A, list) {
     var ks = TIP_ST3_ORDER.filter(function (k) { return tipKindActive(k) || inR.some(function (e) { return e.k === k; }); });
     var Lk = tipSbLiveFilter(inR, 'k'), Ck = tipSbCount(Lk, 'k', ks, tipSbLiveTest('k')), selK = tipFArr(F.k);
     ks = ks.filter(function (k) { return (Ck[k] || []).length || selK.indexOf(k) >= 0; }); /* 4.34.0 — niente caselle vuote */
-    html += '<div class="sb-kinds" role="group" aria-label="Filtri">' + tipSbK('data-sb="k:"', 'Tutti i filtri', !selK.length, Lk.filter(function (e) { return !TIP_STAT_SILENT[e.k]; }), tipStatCount, 'all') + ks.map(function (k) {
+    html += '<div class="sb-kinds" role="group" aria-label="Filtri">' + tipSbK('data-sb="k:"', 'Tutti i filtri', !selK.length, Lk.filter(function (e) { return !tipStatSilentE(e); }), tipStatCount, 'all') + ks.map(function (k) {
       return tipSbK('data-sb="k:' + k + '"', U.esc(TIP_SB_KLBL[k] || TIP_PLAY_SHORT[k] || k) + (tipKindActive(k) ? (TIP_STAT_SILENT[k] ? ' 📊' : '') : ' ⛔'), selK.indexOf(k) >= 0, Ck[k], tipStatCount);
     }).join('') + '</div>';
     var row = function (dim, opts, src) {
