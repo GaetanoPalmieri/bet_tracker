@@ -1,0 +1,17 @@
+Bet Tracker 4.40.0 — app e server 4.30.0 (ripubblicare la funzione pronostici-avvisi)
+  Retraining del 23/11 (segnali veri 15-22/11, traccia 17-23/11, prepartita 13-22/11). Analisi: analisi/analisi-2026-11-23.md
+  LIVE
+  - 🔥 GOL 2T: solo statistiche. 54/72 (75%) contro 83% del book, −107 € (rigioco 68%). Registrato, niente notifica né Live.
+  - 🔥 GOL 1T: notifica solo con linea gol prepartita 4 o più (29/34, 85%, +16 €; sotto 56/77, 73%, −24 €; rigioco 83% / 67%).
+  - 🎯 PROSSIMO GOL 2T: notifica solo con linea gol live 3,5 o più (32/33, 97%, +16 €; sotto 20/26, 77%, −43 €; rigioco 20/20 e 13/19).
+    Interruttore: Avvisi › Opzioni avanzate › Limiti › 📉 filtri 1T/2T più stretti (acceso di base). I segnali fuori regola restano
+    registrati; nelle Statistiche escono dai totali solo quelli da domani 24/11.
+  - 🎯 GOL 1T FAVORITA: invariato (79%, sopra il book).
+  - NUOVO 📉 GOL 2T LINEA SCESA (in prova, solo statistiche, niente notifica): dal 50' al 63', 0-3 gol, il book ha abbassato la linea
+    rispetto al via (keep sotto 0,89). Sulla traccia 264/369 (72%) contro 62% del modello. Non è provato con le quote vere: il server
+    registra la quota bet365 al segnale; si ricontrolla con ~100 segnali veri.
+  PREPARTITA (solo app)
+  - OVER 2.5: +3 punti sulla stima (vinto 77% con stima 71% su 601).
+  - OVER 0.5 1T: stima al massimo 88% (fascia alta vinta 87%).
+  Per aggiornare: pubblica su GitHub i file della cartella principale e ridistribuisci la funzione pronostici-avvisi
+  (supabase/pronostici-avvisi.txt). Deve comparire Versione 4.40.0 in Altro e "server 4.30.0" in Live.

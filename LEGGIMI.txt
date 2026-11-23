@@ -1,20 +1,70 @@
-Bet Tracker 4.37.0 · server pronostici-avvisi 4.28.0
+Bet Tracker 4.41.0 · server pronostici-avvisi 4.31.0
 
 PER AGGIORNARE
   1. App: pubblica i file della cartella principale (index.html, *.js, *.css, sw.js, manifest, icone, pronostici.json).
   2. Server: ridistribuisci la funzione "pronostici-avvisi" con supabase/pronostici-avvisi.txt.
   3. Se non l'hai già fatto: lancia supabase/migrazione-4.29.0.sql nel SQL Editor (meno traffico Supabase).
-  Dopo: in Altro "4.37.0", in Live la barra "server 4.28.0" (con un server più vecchio compare ⚠).
+  Dopo: in Altro "4.41.0", in Live la barra "server 4.31.0" (con un server più vecchio compare ⚠).
 
 CARTELLE
   (principale)    l'app: solo i file che usa
   supabase/       pronostici-avvisi.txt, pronostici-dati.txt (funzioni), avvisi-live.sql, promemoria.sql,
                   ripristino-server.sql (ricrea tabelle e giro se sono state cancellate);
                   vecchie/ = migrazioni già applicate
-  analisi/        analisi ed export usati per le decisioni (ultima: analisi-2026-11-10.md)
+  analisi/        analisi ed export usati per le decisioni (ultima: analisi-2026-11-23.md)
   note_versioni/  note di tutte le versioni (NOTE_4.x-storico.txt = note dalla 3.x alla 4.24.8),
                   PULIZIA-4.25.0.txt = file tolti
   Il server è SOLO supabase/pronostici-avvisi.txt: la copia nella cartella principale è vecchia (4.17.3), non usarla.
+
+4.41.0 — app e server 4.31.0 (ripubblicare la funzione pronostici-avvisi)
+  Due filtri nuovi dalla traccia 17-23/11 (analisi/analisi-2026-11-23.md, sezione 9):
+  - NUOVO 🧊 GOL 2T FAVORITA AVANTI, PARTITA FERMA (in prova, CON NOTIFICA 🟠🧪): dal 63' al 75', la favorita prepartita (57%+) vince
+    e la partita ha pochi attacchi pericolosi (sotto 0,80 al minuto) → +1 gol entro la fine. Sulla traccia 59/72 (82%) contro il 64%
+    del modello, stabile nelle due metà e nei due periodi, ~12 al giorno, quota ≈1,50. Nessun caso aveva la quota vera: da
+    ricontrollare con il prossimo export. Stima mostrata 78%.
+  - NUOVO ⏱ GOL 1T FAVORITA FORTE DOPO IL 25' (in prova, SOLO STATISTICHE): dal 26' al 40', favorita al 70%+, linea gol live 3,75+
+    → +1 gol entro l'intervallo. Traccia 84/136 (62%) contro 52%, ma in calo negli ultimi giorni: solo registrato.
+  Restano come nella 4.40.0 tutti gli altri filtri e i limiti.
+
+4.40.0 — app e server 4.30.0 (ripubblicare la funzione pronostici-avvisi)
+  Retraining del 23/11 (segnali veri 15-22/11, traccia 17-23/11, prepartita 13-22/11). Analisi: analisi/analisi-2026-11-23.md
+  LIVE
+  - 🔥 GOL 2T: solo statistiche. 54/72 (75%) contro 83% del book, −107 € (rigioco 68%). Registrato, niente notifica né Live.
+  - 🔥 GOL 1T: notifica solo con linea gol prepartita 4 o più (29/34, 85%, +16 €; sotto 56/77, 73%, −24 €; rigioco 83% / 67%).
+  - 🎯 PROSSIMO GOL 2T: notifica solo con linea gol live 3,5 o più (32/33, 97%, +16 €; sotto 20/26, 77%, −43 €; rigioco 20/20 e 13/19).
+    Interruttore: Avvisi › Opzioni avanzate › Limiti › 📉 filtri 1T/2T più stretti (acceso di base). I segnali fuori regola restano
+    registrati; nelle Statistiche escono dai totali solo quelli da domani 24/11.
+  - 🎯 GOL 1T FAVORITA: invariato (79%, sopra il book).
+  - NUOVO 📉 GOL 2T LINEA SCESA (in prova, solo statistiche, niente notifica): dal 50' al 63', 0-3 gol, il book ha abbassato la linea
+    rispetto al via (keep sotto 0,89). Sulla traccia 264/369 (72%) contro 62% del modello. Non è provato con le quote vere: il server
+    registra la quota bet365 al segnale; si ricontrolla con ~100 segnali veri.
+  PREPARTITA (solo app)
+  - OVER 2.5: +3 punti sulla stima (vinto 77% con stima 71% su 601).
+  - OVER 0.5 1T: stima al massimo 88% (fascia alta vinta 87%).
+
+4.39.1 — app e server 4.29.1 (ripubblicare la funzione pronostici-avvisi)
+  - 🔥 e 🎯 gol 1T: la notifica arriva anche quando il book è già all'80% o più (quota bassa, ~1.14).
+    Il taglio resta come scelta: Avvisi › Opzioni avanzate › Limiti › 📉 1T col book sotto l'80% (ora spento di base).
+
+4.39.0 — app e server 4.29.0 (ripubblicare la funzione pronostici-avvisi)
+  Segnali live dall'export 18/11 (1-18/11, 10 € a segnale alla quota del book stimata):
+  - CON NOTIFICA restano: 🔥 gol 1T partita da gol, 🎯 gol 1T favorita, 🔥 gol 2T partita da gol, 🎯 prossimo gol 2T.
+  - 💥 GOL 2T TIRI E RITMO e 💪 GOL 2T FAVORITA: solo statistiche (66/83 con pareggio all'81%: −27 €; 35/47 con
+    pareggio al 77%: −19 €). Registrati, niente notifica e niente Live.
+  - 1T COL BOOK GIÀ ALL'80% O PIÙ (quota ~1.14): niente notifica per 🔥 e 🎯 gol 1T (31/38, −29 €, sotto in entrambe le
+    settimane). Interruttore: Avvisi › Opzioni avanzate › Limiti › 📉 1T col book sotto l'80%.
+  - 🎯 prossimo gol 2T resta senza le femminili (📉 2T senza femminili).
+  - Il filtro per campionato della 4.37 su 💥/💪 gol 2T non serve più (non hanno notifica): dopo il 15/11 non aveva retto.
+
+4.38.0 — solo app (server resta 4.28.0)
+  PREPARTITA, dall'export 18/11 (627 partite chiuse, pronostici automatici dalle quote bet365 dal 13/11):
+  - GOL 1° TEMPO: niente correzione verso l'alto. Vinceva l'85% (book 84%) ma l'app mostrava il 90%.
+    Ora la % è quella del book (la correzione verso il basso resta). Entrano meno partite nella lista 1° tempo.
+  - TOP SENZA I PRONOSTICI DAL 95% IN SU (quota sotto 1.05): Segna squadra 145/154 e Over 1.5 21/23 a quote 1.00-1.04
+    andavano sotto. Restano nei pronostici della partita, ma non occupano posti nelle Top.
+  - 💰 OVER 2.5 DALL'80% IN SU in evidenza (Top e partite): 67/74 (91%) col book intorno al 78%, uguale nelle due metà
+    del periodo (34/39 e 33/35). Sotto l'80% l'Over 2.5 va come il book o peggio (70-74%: 32/56).
+  Le Top già bloccate (partite iniziate) restano com'erano; cambiano quelle ancora aperte.
 
 4.37.0 — app e server 4.28.0 (ripubblicare la funzione pronostici-avvisi)
   Segnali più puliti dall'export 10-16/11 (segnali chiusi, 10 € alla quota minima):

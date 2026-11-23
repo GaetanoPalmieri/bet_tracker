@@ -1,0 +1,11 @@
+Bet Tracker 4.41.0 — app e server 4.31.0 (ripubblicare la funzione pronostici-avvisi)
+  Due filtri nuovi dalla traccia 17-23/11 (analisi/analisi-2026-11-23.md, sezione 9):
+  - NUOVO 🧊 GOL 2T FAVORITA AVANTI, PARTITA FERMA (in prova, CON NOTIFICA 🟠🧪): dal 63' al 75', la favorita prepartita (57%+) vince
+    e la partita ha pochi attacchi pericolosi (sotto 0,80 al minuto) → +1 gol entro la fine. Sulla traccia 59/72 (82%) contro il 64%
+    del modello, stabile nelle due metà e nei due periodi, ~12 al giorno, quota ≈1,50. Nessun caso aveva la quota vera: da
+    ricontrollare con il prossimo export. Stima mostrata 78%.
+  - NUOVO ⏱ GOL 1T FAVORITA FORTE DOPO IL 25' (in prova, SOLO STATISTICHE): dal 26' al 40', favorita al 70%+, linea gol live 3,75+
+    → +1 gol entro l'intervallo. Traccia 84/136 (62%) contro 52%, ma in calo negli ultimi giorni: solo registrato.
+  Restano come nella 4.40.0 tutti gli altri filtri e i limiti.
+  Per aggiornare: pubblica su GitHub i file della cartella principale e ridistribuisci la funzione pronostici-avvisi
+  (supabase/pronostici-avvisi.txt). Deve comparire Versione 4.41.0 in Altro e "server 4.31.0" in Live.
