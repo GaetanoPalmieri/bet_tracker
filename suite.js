@@ -235,8 +235,15 @@
       var ref = await rowRef();
       if (opts.scope === 'couple' && A.coupleId && !A.rt) startRealtime(A);
       var m = A.meta();
-      var rows = await api('/rest/v1/' + ref.table + '?select=data,updated_at&' + ref.filter);
+      /* bet 4.41.1 — MENO TRAFFICO (egress Supabase oltre la quota): prima ogni sincronizzazione (ogni 2 minuti con l'app aperta,
+         a ogni ritorno sull'app e a ogni modifica) scaricava TUTTO il salvataggio anche se non era cambiato. Ora si legge solo
+         la data dell'ultima modifica; i dati si scaricano solo se sono cambiati da un altro dispositivo. */
+      var rows = await api('/rest/v1/' + ref.table + '?select=updated_at&' + ref.filter);
       var row = rows[0] || null;
+      if (row && row.updated_at !== m.remoteAt) {
+        var fullRows = await api('/rest/v1/' + ref.table + '?select=data,updated_at&' + ref.filter);
+        row = fullRows[0] || null;
+      }
       if (row && row.updated_at !== m.remoteAt) {
         var first = !m.linked;
         if ((m.dirty || first) && opts.hasLocalData()) {
@@ -264,12 +271,12 @@
         }
         var res;
         if (row) {
-          res = await api('/rest/v1/' + ref.table + '?' + ref.filter + '&updated_at=eq.' + encodeURIComponent(row.updated_at), { method: 'PATCH', json: body, headers: { Prefer: 'return=representation' } });
+          res = await api('/rest/v1/' + ref.table + '?select=updated_at&' + ref.filter + '&updated_at=eq.' + encodeURIComponent(row.updated_at), { method: 'PATCH', json: body, headers: { Prefer: 'return=representation' } });
           if (!res.length) return 'conflict';
         } else {
           var ins = {}; for (var k in ref.insert) ins[k] = ref.insert[k]; ins.data = body.data; ins.updated_at = body.updated_at;
           if (body.updated_by_person !== undefined) ins.updated_by_person = body.updated_by_person;
-          try { res = await api('/rest/v1/' + ref.table, { method: 'POST', json: ins, headers: { Prefer: 'return=representation' } }); }
+          try { res = await api('/rest/v1/' + ref.table + '?select=updated_at', { method: 'POST', json: ins, headers: { Prefer: 'return=representation' } }); }
           catch (e) { if (e.status === 409) return 'conflict'; throw e; }
         }
         m.remoteAt = res[0].updated_at; m.dirty = A.rev !== rev0; m.linked = true; m.lastSync = now();

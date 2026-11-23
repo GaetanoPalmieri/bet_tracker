@@ -1,0 +1,9 @@
+Bet Tracker 4.41.1 — solo app (server resta 4.31.0)
+  - MENO TRAFFICO SUPABASE (l'organizzazione è oltre la quota di egress: 6,5 GB su 5 GB, limitazioni dal 30/11).
+    La sincronizzazione scaricava TUTTO il salvataggio a ogni giro (ogni 2 minuti con l'app aperta, a ogni ritorno
+    sull'app e a ogni modifica) anche se non era cambiato, e dopo ogni salvataggio Supabase lo rimandava indietro intero.
+    Ora legge solo la data dell'ultima modifica e scarica i dati solo se sono cambiati da un altro dispositivo; dopo il
+    salvataggio torna indietro solo la data. Nessun cambiamento nei dati né nei filtri.
+  - Contiene anche la 4.41.0 (🧊 gol 2T favorita avanti, ⏱ 1T favorita forte) e la 4.40.0.
+  Per aggiornare: pubblica su GitHub i file della cartella principale (anche suite.js). Deve comparire Versione 4.41.1.
+  Il server pronostici-avvisi va ripubblicato solo se non hai ancora messo la 4.31.0.
