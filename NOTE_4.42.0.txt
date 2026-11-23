@@ -1,0 +1,9 @@
+Bet Tracker 4.42.0 — app e server 4.32.0 (ripubblicare la funzione pronostici-avvisi)
+  - NUOVO ⏰ GOL ENTRO LA FINE DAL 1T (in prova, CON NOTIFICA 🟠🧪): chiama dal 30' al 40' del 1° tempo, al massimo 2 gol, quando
+    la linea gol live è scesa rispetto al via e la partita tira in porta (almeno ~2 tiri in porta al 35') → +1 gol entro la FINE.
+    Traccia 17-23/11: 156/173 (90%) contro l'81% del book, quota ≈1,17, ~28 al giorno. Senza queste condizioni dal 30' al 40'
+    il gol entro la fine arriva nell'86% e il book dice 86%. Quota bassa: margine piccolo, da ricontrollare dal vivo.
+    Si chiude a fine partita (non all'intervallo); la quota registrata è quella della partita intera. Stima mostrata 88%.
+  - Contiene anche la 4.41.1 (meno traffico Supabase), la 4.41.0 e la 4.40.0.
+  Per aggiornare: pubblica su GitHub i file della cartella principale (anche suite.js) e ridistribuisci la funzione
+  pronostici-avvisi (supabase/pronostici-avvisi.txt). Deve comparire Versione 4.42.0 in Altro e "server 4.32.0" in Live.
